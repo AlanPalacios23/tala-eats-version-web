@@ -6,7 +6,7 @@ set -euo pipefail
 SHA="${1:-}"
 SOURCE="${2:-/home/alan/talaeats_splash_exacto_728x1536.webp}"
 if [[ ! "$SHA" =~ ^[a-f0-9]{40}$ ]]; then echo 'SPLASH_SHA_INVALID'; exit 2; fi
-if [[ ! "$SOURCE" == /home/alan/* ]]; then echo 'SPLASH_SOURCE_MUST_BE_HOME_ALAN'; exit 2; fi
+if [[ ! "$SOURCE" == /home/alan/* && "$SOURCE" != "/home/tala-node-stage/tala-eats-web-assets/splash-exacto-728x1536.webp" ]]; then echo 'SPLASH_SOURCE_NOT_ALLOWED'; exit 2; fi
 ROOT="/home/tala-node-stage/tala-eats-web-releases/$SHA"
 DST="$ROOT/public/branding/splash-exacto-728x1536.webp"
 if [[ ! -d "$ROOT/.git" && ! -f "$ROOT/.git/HEAD" ]]; then echo 'SPLASH_REPO_NOT_CLONED'; exit 2; fi
@@ -25,7 +25,10 @@ width,height=struct.unpack_from('<HH',d,mark+3);width&=0x3fff;height&=0x3fff
 if (width,height)!=(728,1536):raise SystemExit('SPLASH_EXPECTED_728x1536_GOT_'+str((width,height)))
 print('SPLASH_ASSET_VALID=728x1536')
 PY
+STORE="/home/tala-node-stage/tala-eats-web-assets/splash-exacto-728x1536.webp"
+if [[ "$SOURCE" != "$STORE" ]]; then install -D -o tala-node-stage -g tala-node-stage -m 0644 "$SOURCE" "$STORE"; fi
 install -D -o tala-node-stage -g tala-node-stage -m 0644 "$SOURCE" "$DST"
 cmp -s "$SOURCE" "$DST"
 echo "SPLASH_ASSET_STAGED=$DST"
+echo "SPLASH_ASSET_PERMANENT=$STORE"
 echo "SPLASH_BACKEND_STRIPE_CLOUDFLARE=UNMODIFIED"
