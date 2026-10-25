@@ -98,15 +98,22 @@ function Commerce({add}:{add:(item:MenuItem)=>void}){
  const {value:r,loading,error,refresh}=useLoad(()=>good?api.restaurant(parsed):Promise.reject(Error('Comercio inválido')),[parsed]);
  const [filter,setFilter]=useState('Todos');
  const [favorite,setFavorite]=useState(false);
+ const [headerCompact,setHeaderCompact]=useState(false);
+ useEffect(()=>{
+  const track=()=>setHeaderCompact(window.scrollY>160);
+  track();
+  window.addEventListener('scroll',track,{passive:true});
+  return ()=>window.removeEventListener('scroll',track);
+ },[]);
  useEffect(()=>{try{setFavorite(window.localStorage.getItem('tala-eats-favorite-'+parsed)==='1');}catch{setFavorite(false);}},[parsed]);
  const toggleFavorite=()=>{const next=!favorite;setFavorite(next);try{if(next)localStorage.setItem('tala-eats-favorite-'+parsed,'1');else localStorage.removeItem('tala-eats-favorite-'+parsed);}catch{/* Browser may disable storage */}};
  const categories=['Todos',...new Set((r?.menu_items??[]).map(i=>i.category||'General'))];
  const products=(r?.menu_items??[]).filter(i=>filter==='Todos'||(i.category||'General')===filter);
  const rating=r?.rating?Number(r.rating):0;
  return <div className="te-customer-commerce te-motion-page">
-  <div className="te-commerce-header">
+  <div className={"te-commerce-header"+(headerCompact?" compact":"")}>
    <Link to="/clientes" className="te-commerce-back" aria-label="Regresar a Inicio"><ArrowLeft size={21}/></Link>
-   <span>Restaurante y comercio</span>
+   <span>{headerCompact?r?.name||"Restaurante":""}</span>
    <button type="button" className="te-commerce-fav" aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'} aria-pressed={favorite} onClick={toggleFavorite}><Heart size={20} fill={favorite?'currentColor':'none'}/></button>
   </div>
   {loading?<div className="te-commerce-loading" role="status"><Spinner/></div>:
