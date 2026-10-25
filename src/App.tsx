@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
@@ -136,21 +136,46 @@ function Auth(){
 function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  const {user}=useSession();
  const [notes,setNotes]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Order|null>(null);
- const [reference,setReference]=useState<string|null>(null);
+ const [reference,setReference]=useState<string|null>(null);const pendingOrder=useRef(false);
  const items=useMemo(()=>lineItems(cart),[cart]);
  const detail=useLoad(()=>cart.restaurantId?api.restaurant(cart.restaurantId):Promise.reject(Error('Carrito vacío')),[cart.restaurantId]);
  const quote=useLoad(()=>cart.restaurantId&&items.length&&user?api.quote(cart.restaurantId,items):Promise.reject(Error('Inicia sesión y agrega productos para obtener una cotización real.')),[cart.restaurantId,JSON.stringify(items),user?.id]);
  const methods=useLoad(()=>user?api.paymentOptions():Promise.reject(Error('Inicia sesión para ver medios de pago.')),[user?.id]);
- const cash=methods.value?.methods?.find(m=>m.id==='cash')?.enabled===true;
- const canCheckout=Boolean(cart.restaurantId&&items.length&&user?.role==='customer'&&quote.value&&cash&&detail.value?.is_open&&detail.value?.pickup_enabled);
- async function submit(){if(!canCheckout||!cart.restaurantId)return;setBusy(true);setError('');
-  const ref=reference??crypto.randomUUID().replace(/-/g,'');setReference(ref);
-  try{const order=await api.placeCashPickup(cart.restaurantId,items,ref,notes);setResult(order);setCart(EMPTY_CART);setReference(null);}
-  catch(err){
-   // Unknown network outcome: look up the SAME idempotency reference before retry.
-   try{const existing=await api.byReference(ref);setResult(existing);setCart(EMPTY_CART);setReference(null);}
-   catch{setError(err instanceof ApiError?err.message:'No pudimos confirmar el pedido. Consulta Mis pedidos antes de volver a intentarlo.');}
-  }finally{setBusy(false);}
+ const cash=pickupCashAllowed(methods.value);
+ const canCheckout=Boolean(cart.restaurantId&&items.length&&user?.role==='customer'&&quoteIsUsable(quote.value)&&cash&&detail.value?.is_open&&detail.value?.pickup_enabled);
+ async function submit(){
+  if(pendingOrder.current||!canCheckout||!cart.restaurantId||!quote.value)return;
+  pendingOrder.current=true;setBusy(true);setError('');
+  const restaurantId=cart.restaurantId;
+  const visibleQuote=quote.value;
+  let posted=false;
+  const ref=reference??crypto.randomUUID().replace(/-/g,'');
+  try {
+   // Same invariants as Flutter v1.0.46: product availability, backend flags
+   // and server amounts may change between displaying a quote and POST /orders.
+   const fresh=await api.restaurant(restaurantId);
+   if(!fresh.is_open||!fresh.pickup_enabled)throw new Error('El restaurante dejó de aceptar pedidos para recoger. Revisa tu carrito.');
+   for(const entry of cart.entries){
+    const current=fresh.menu_items?.find(p=>p.id===entry.item.id);
+    if(!current||!current.is_available||current.stock<entry.quantity||
+       current.price!==entry.item.price)throw new Error('El menú o sus precios cambiaron. Revisa el pedido antes de continuar.');
+   }
+   if(!pickupCashAllowed(await api.paymentOptions()))throw new Error('El servidor ya no autoriza este método de pago.');
+   const latest=await api.quote(restaurantId,items);
+   if(!quoteIsUsable(latest)||quoteChanged(visibleQuote,latest)){
+    quote.refresh();
+    throw new Error('El total cambió. Revisa la nueva cotización antes de confirmar otra vez.');
+   }
+   setReference(ref);posted=true;
+   const order=await api.placeCashPickup(restaurantId,items,ref,notes);
+   setResult(order);setCart(EMPTY_CART);setReference(null);
+  }catch(err){
+   if(posted){
+    // Never repeat a financial POST after an unknown network outcome.
+    try{const existing=await api.byReference(ref);setResult(existing);setCart(EMPTY_CART);setReference(null);}
+    catch{setError('No se pudo confirmar si el pedido fue recibido. Consulta Mis pedidos antes de reintentar; se conserva la misma referencia.');}
+   }else setError(err instanceof Error?err.message:'No se pudo verificar el pedido. Intenta otra vez.');
+  }finally{pendingOrder.current=false;setBusy(false);}
  }
  if(result)return <div className="container page"><EmptyState icon={<CheckCircle2 size={34}/>} title={'Pedido #'+result.id+' recibido'} description="Tu solicitud se guardó en el servidor. Consulta el estado antes de pasar a recogerlo." action={<Link className="btn primary" to="/pedidos">Ver mis pedidos</Link>}/></div>;
  return <div className="container page"><Link to="/clientes" className="back-link"><ArrowLeft size={18}/> Seguir explorando</Link><SectionTitle eyebrow="TU ELECCIÓN" title="Tu carrito" description="Confirma los productos antes de realizar el pedido."/>
