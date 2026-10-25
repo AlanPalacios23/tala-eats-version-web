@@ -518,3 +518,30 @@
 .tala-review-banner strong{font-size:12px;letter-spacing:1.3px;font-weight:900;color:#ffb187}
 .tala-review-banner span{max-width:840px}
 @media(max-width:400px){.tala-review-banner{padding:11px 13px;gap:4px;font-size:11px}}
+
+
+/* Flutter 1.0.46: no raw alt text leaking into 16:9 restaurant/product cards. */
+.customer-image{position:relative;width:100%;height:100%;min-width:0;min-height:0;display:block;overflow:hidden;background:#f6eae4}
+.customer-image>img{position:absolute;inset:0;width:100%;height:100%;max-width:100%;object-fit:cover;display:block}
+.customer-image-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(140deg,#ffeadf 0%,#fff6f0 46%,#eee4dd 100%);color:#bf4a20}
+.customer-image-fallback>span{font:normal clamp(30px,8vw,60px)/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif;opacity:.86}
+.customer-image-fallback>svg{position:absolute;right:12px;bottom:11px;color:#b08b79;opacity:.72}
+.mobile-merchant-photo>.customer-image,.mobile-commerce-hero>.customer-image,.mobile-dish-photo>.customer-image,.mobile-sheet-photo>.customer-image{width:100%;height:100%}
+.mobile-dish-photo>.customer-image,.mobile-sheet-photo>.customer-image,.mobile-dish-search-photo{border-radius:16px}
+.mobile-dish-search-photo.customer-image{width:88px;height:88px;flex:0 0 88px}
+.mobile-dish-photo>.customer-image .customer-image-fallback>span{font-size:35px}
+.mobile-commerce-hero .customer-image-fallback>span{font-size:clamp(60px,13vw,95px)}
+.mobile-sheet-photo .customer-image-fallback>span{font-size:65px}
+/* Splash mirrors actual Flutter LaunchScreen: white, centered wordmark,
+   slogan at bottom and gentle motion. No synthetic loading completion. */
+.customer-launch-screen{position:fixed;inset:0;z-index:10000;min-height:100dvh;display:flex;justify-content:center;align-items:center;background:#fff;color:#171717;overflow:hidden}
+.customer-launch-wordmark{display:flex;flex-direction:column;align-items:center;gap:2px;animation:customer-launch-intro .95s cubic-bezier(.215,.61,.355,1) both;letter-spacing:-1.6px}
+.customer-launch-tala{font:italic 800 clamp(54px,11vw,83px)/1 Georgia,serif;color:#ce3c0a}
+.customer-launch-eats{font:800 17px/1.2 Arial,sans-serif;color:#ce3c0a;letter-spacing:9px;margin-left:9px}
+.customer-launch-bottom{position:absolute;left:16px;right:16px;bottom:max(44px,calc(env(safe-area-inset-bottom) + 42px));text-align:center;display:flex;flex-direction:column;align-items:center;gap:19px;color:#777;font-size:17px;animation:customer-launch-tagline .65s ease .28s both}
+.customer-launch-progress{height:3px;width:88px;background:#f6eae4;border-radius:10px;overflow:hidden}
+.customer-launch-progress span{display:block;width:48%;height:100%;background:#ce3c0a;animation:customer-launch-bar .95s ease-in-out infinite alternate;border-radius:10px}
+@keyframes customer-launch-intro{from{opacity:.15;transform:translateY(12px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes customer-launch-tagline{from{opacity:0}to{opacity:1}}
+@keyframes customer-launch-bar{from{transform:translateX(-90%)}to{transform:translateX(185%)}}
+@media(prefers-reduced-motion:reduce){.customer-launch-wordmark,.customer-launch-bottom,.customer-launch-progress span{animation:none}}
