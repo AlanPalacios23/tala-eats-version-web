@@ -59,3 +59,7 @@
  .te-auth-success-orb::before,.te-auth-success-orb>span { animation:none; }
  .te-auth-strength span,.te-auth-rules-list span { transition:none; }
 }
+
+.te-auth-otp-toggle { border:0;background:transparent;text-align:left;color:#737373;font:650 12px/1.4 Roboto,Arial,sans-serif;padding:5px 0;margin-top:-3px; }
+.te-auth-otp-toggle[aria-expanded="true"] { color:#ce3c0a; }
+.te-auth-otp-toggle:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
