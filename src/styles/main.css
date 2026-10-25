@@ -125,3 +125,24 @@
  .reveal-enter,.mobile-search-results,.mobile-favorite.active,.customer-card-skeleton div{animation:none!important}
  .mobile-search-pill,.mobile-merchant-photo,.mobile-favorite,.mobile-search-input{transition:none!important}
 }
+
+
+/* Login / registro: AuthLiquidBackdrop + AuthGlassCard de Mobile Usuarios */
+.customer-shell .auth-page{display:block;min-height:calc(100vh - 82px);background:white}
+.customer-shell .auth-side{display:none}
+.customer-shell .auth-box{position:relative;isolation:isolate;display:block;min-height:calc(100vh - 82px);padding:34px 14px 50px;background:radial-gradient(circle 185px at calc(50% + 210px) 5%,#ffa47748,transparent 100%),radial-gradient(circle 190px at calc(50% - 220px) 60%,#ffbc9f22,transparent 100%),radial-gradient(circle 180px at calc(50% + 210px) 97%,#ff9c6920,transparent 100%),#fff}
+.customer-shell .auth-card{width:min(460px,100%);margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.customer-shell .auth-head,.customer-shell .form-stack{border-radius:26px;border:1.3px solid #fffffff5;background:linear-gradient(135deg,#fffffff5,#ffffffdb);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 26px #2e201912}
+.customer-shell .auth-head{text-align:left;padding:22px 20px;margin:0;animation:mobile-reveal 300ms ease-out both}
+.customer-shell .auth-head .brand-mark{width:42px;height:42px;border-radius:16px;background:#ffe9df;color:#ce3c0a;box-shadow:none;margin:0 0 20px}
+.customer-shell .auth-head h2{font:800 30px/1.08 Roboto,Arial,sans-serif;letter-spacing:-1px;color:#171717;margin:0 0 8px}
+.customer-shell .auth-head p{font:500 15px/1.4 Roboto,Arial,sans-serif;color:#737373;margin:0}
+.customer-shell .form-stack{padding:22px 14px;gap:14px;animation:mobile-reveal 300ms ease-out 90ms both}
+.customer-shell .form-stack label{font-size:13px;color:#3b3633;font-weight:600}
+.customer-shell .form-stack input{min-height:54px;border:1px solid #d8d1cb;border-radius:18px;background:#ffffffe6;margin-top:7px;font-size:15px}
+.customer-shell .form-stack input:focus{outline:2px solid #ce3c0a;outline-offset:0}
+.customer-shell .form-stack .btn.primary{min-height:54px;border-radius:18px;background:#ce3c0a;box-shadow:none;font-size:16px;font-weight:700}
+.customer-shell .switch-auth{margin:0;text-align:center;color:#737373;font-size:14px}
+.customer-shell .auth-card>.fineprint{margin:0;text-align:center}
+@media(max-width:700px){.customer-shell .auth-page,.customer-shell .auth-box{min-height:100vh}.customer-shell .auth-box{padding-top:28px;padding-bottom:110px}}
+@media(prefers-reduced-motion:reduce){.customer-shell .auth-head,.customer-shell .form-stack{animation:none}}
