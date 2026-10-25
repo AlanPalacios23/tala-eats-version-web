@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, Bell, Bike, ChevronRight, Heart, Headphones, LogOut, MapPin, Package, RefreshCw, ShieldCheck, Store, UserRound, Wallet, WifiOff } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, isMerchantRole, isDriverRole, pesos } from '../lib/api';
 import { useSession } from '../lib/session';
 import type { Restaurant } from '../lib/types';
@@ -85,27 +85,27 @@ export function CustomerNotifications(){
 interface Ticket{id:number;user_id?:number;order_id?:number|null;category?:string;message:string;status?:string;created_at?:string}
 const categories:{value:string;label:string}[]=[{value:'general',label:'General'},{value:'pedido',label:'Pedido'},{value:'pago',label:'Pago'},{value:'cuenta',label:'Cuenta'},{value:'reembolso',label:'Reembolso'},{value:'otro',label:'Otro'}];
 export function CustomerSupport(){
- const {user}=useSession();const [tickets,setTickets]=useState<Ticket[]|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[sendError,setSendError]=useState('');
- const [category,setCategory]=useState('general'),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[uncertain,setUncertain]=useState(false),[tick,setTick]=useState(0);
+ const {user}=useSession();const [params]=useSearchParams();const rawOrder=Number(params.get('pedido'));const orderId=Number.isSafeInteger(rawOrder)&&rawOrder>0?rawOrder:null;const [tickets,setTickets]=useState<Ticket[]|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[sendError,setSendError]=useState('');
+ const [category,setCategory]=useState(orderId?'pedido':'general'),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[uncertain,setUncertain]=useState(false),[tick,setTick]=useState(0);
  const refresh=()=>setTick(v=>v+1);
  useEffect(()=>{let active=true;setLoading(true);setError('');
-  api.supportTickets().then(rows=>{if(active){setTickets(rows.filter(row=>row.user_id===undefined||row.user_id===user?.id).reverse());setUncertain(false);}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'No logramos cargar tus solicitudes.');}).finally(()=>{if(active)setLoading(false);});
+  api.supportTickets().then(rows=>{if(active){setTickets(rows.filter(row=>(row.user_id===undefined||row.user_id===user?.id)&&(orderId===null||row.order_id===orderId)).reverse());setUncertain(false);}}).catch(e=>{if(active)setError(e instanceof Error?e.message:'No logramos cargar tus solicitudes.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false};
- },[tick,user?.id]);
+ },[tick,user?.id,orderId]);
  async function submit(e:FormEvent){
   e.preventDefault();if(busy||uncertain)return;
   const trimmed=message.trim();
   if(trimmed.length<5||trimmed.length>3000){setSendError('Escribe un mensaje entre 5 y 3000 caracteres.');return;}
   setBusy(true);setSendError('');
   try{
-   const ticket=await api.createSupportTicket(category,trimmed,null);
+   const ticket=await api.createSupportTicket(category,trimmed,orderId);
    if(!Number.isSafeInteger(Number(ticket.id))||Number(ticket.id)<=0)throw new Error('El servidor no confirmó el número de solicitud. Consulta el historial.');
    setTickets(prev=>[...(prev??[]),ticket]);setMessage('');
   }catch(e){setUncertain(true);setSendError(e instanceof Error?e.message:'No pudimos confirmar el envío. Consulta tu historial antes de reintentar.');}
   finally{setBusy(false);}
  }
  return <div className="mobile-customer-page mobile-support" data-mobile-screen="support">
-  <Heading title="Ayuda y soporte" refresh={refresh}/>
+  <Heading title={orderId?'Ayuda · Pedido #'+orderId:'Ayuda y soporte'} refresh={refresh}/>
   {error&&<div className="mobile-address-error" role="alert">{error}</div>}
   <section className="mobile-support-thread">
    {loading&&!tickets?<div className="mobile-loading-order"><RefreshCw className="spin" size={18}/>Cargando conversaciones…</div>:!tickets?.length?<div className="mobile-status"><Headphones size={30}/><h3>{error?'Historial no disponible':'¿En qué podemos ayudarte?'}</h3><p>{error?'No significa que no tengas solicitudes.':'Envía tu consulta y conserva el número de solicitud.'}</p></div>:
