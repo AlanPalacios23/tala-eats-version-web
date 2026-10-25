@@ -190,7 +190,7 @@ function CustomerHashScroll(){
 export default function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
