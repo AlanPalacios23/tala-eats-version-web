@@ -99,6 +99,7 @@ function Commerce({add}:{add:(item:MenuItem)=>void}){
  const [filter,setFilter]=useState('Todos');
  const [favorite,setFavorite]=useState(false);
  const [headerCompact,setHeaderCompact]=useState(false);
+ useEffect(()=>{window.scrollTo(0,0);},[parsed]);
  useEffect(()=>{
   const track=()=>setHeaderCompact(window.scrollY>160);
   track();
@@ -288,5 +289,5 @@ export default function App(){
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main>{isCustomerTab&&<CustomerDock/>}{!isGateway&&!isCustomer&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main>{isCustomerTab&&<CustomerDock/>}{!isGateway&&!isCustomer&&<AppFooter/>}{location.pathname.startsWith('/comercio/')&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
