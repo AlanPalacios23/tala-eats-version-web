@@ -1,6 +1,5 @@
 /* Tala Eats Flutter LaunchScreen, faithfully mapped from main.dart 1390-1468.
    Single 1100ms entrance; no perpetual logo loop. */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
 .te-launch {
  --brand:#ff5a1f;--background:#fffaf6;
  position:fixed;inset:0;z-index:1000;isolation:isolate;
@@ -28,9 +27,7 @@
  opacity:0;transform:scale(.86);
  animation:te-launch-mark 682ms cubic-bezier(.215,.61,.355,1) both;
 }
-.te-launch-logo .material-icons-round {
- font-size:47.5px;line-height:1;font-weight:normal;font-feature-settings:'liga';white-space:nowrap;
-}
+.te-launch-logo img { width:47.5px;height:47.5px;display:block;object-fit:contain; }
 .te-launch-copy {
  display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:22px;
  opacity:0;transform:translateY(14px);
