@@ -130,9 +130,32 @@ install -m 644 "$REPO/deploy/talaeats-web-pwa.service" "$SERVICE"
 # /etc/nginx/nginx.conf or /etc/nginx/sites-enabled/*.
 systemctl daemon-reload
 systemctl enable --now "$NAME"
+# systemd Type=simple reports active before Nginx has necessarily finished
+# ExecStart and bound 18195. Wait for REAL HTTP readiness, not just "active".
+# Never start/reload global nginx.service.
+NGINX_LISTEN_READY=no
+for attempt in $(seq 1 30);do
+ if curl -fsS --max-time 2 -H 'Host: web-talaeats.alan-palacios-dev.com' \
+   http://127.0.0.1:18195/ 2>/dev/null | grep -q '<div id="root">';then
+  NGINX_LISTEN_READY=yes
+  break
+ fi
+ if systemctl is-failed --quiet "$NAME";then
+  echo 'PWA_ISOLATED_ABORT=DEDICATED_NGINX_SYSTEMD_FAILED'
+  systemctl show "$NAME" -p ActiveState -p SubState -p Result --no-pager || true
+  exit 1
+ fi
+ sleep 1
+done
+if [[ "$NGINX_LISTEN_READY" != yes ]];then
+ echo 'PWA_ISOLATED_ABORT=NGINX_18195_NOT_READY_AFTER_30_CHECKS'
+ systemctl show "$NAME" -p ActiveState -p SubState -p Result --no-pager || true
+ exit 1
+fi
 systemctl is-active --quiet "$NAME" || {
- echo 'PWA_ISOLATED_ABORT=SERVICE_DID_NOT_START';exit 1
+ echo 'PWA_ISOLATED_ABORT=DEDICATED_NGINX_NOT_ACTIVE_AFTER_BIND';exit 1
 }
+echo 'PWA_ISOLATED_NGINX_HTTP_READY=PASS'
 for path in / /clientes /restaurante /repartidor;do
  curl -fsS --max-time 8 -H 'Host: web-talaeats.alan-palacios-dev.com' \
   "http://127.0.0.1:18195$path" | grep -q '<div id="root">' || {
