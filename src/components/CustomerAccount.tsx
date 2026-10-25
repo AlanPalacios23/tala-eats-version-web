@@ -22,7 +22,7 @@ export function CustomerAccount(){
  }
  return <div className="mobile-customer-page mobile-account" data-mobile-screen="account">
   <h1>Cuenta</h1>
-  <section className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div></section>
+  <Link to="/editar-perfil" className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div><ChevronRight size={20}/></Link>
   <Link to="/tala-club" className="mobile-account-club"><Wallet size={23}/><div><strong>Tala Club</strong><small>Consulta saldo, puntos y movimientos verificados</small></div><ChevronRight size={20}/></Link>
   <h2>Tu cuenta</h2><div className="mobile-account-group">
    <AccountLink to="/favoritos" label="Favoritos" icon={<Heart size={21}/>}/>
