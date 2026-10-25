@@ -45,7 +45,7 @@ import struct,sys
 d=open(sys.argv[1],"rb").read(128)
 if d[:4]!=b"RIFF" or d[8:12]!=b"WEBP" or d[12:16]!=b"VP8 ":
  raise SystemExit("TACOS_IMAGE_INVALID")
-m=d.find(b"\\x9d\\x01\\x2a".decode("unicode_escape").encode("latin1"))
+m=d.find(bytes([0x9d,0x01,0x2a]))
 if m<0 or m+7>len(d):raise SystemExit("TACOS_DIMENSIONS_MISSING")
 w,h=struct.unpack_from("<HH",d,m+3)
 if (w&0x3fff,h&0x3fff)!=(729,1536):raise SystemExit("TACOS_WRONG_RESOLUTION")
