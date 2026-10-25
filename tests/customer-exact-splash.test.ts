@@ -26,6 +26,19 @@ describe('User-supplied precise 728x1536 first splash',()=>{
   expect(boot).not.toContain('/branding/tala-script-gradient.svg');
   expect(css).toContain('.customer-launch-exact-art');
  });
+ it('replaces crowded second welcome with exact tacos photo, not old extra logo/text/white Continue bar',()=>{
+  expect(source).toContain('src="/branding/onboarding-comida-tu-ciudad-729x1536.webp"');
+  expect(source).toContain('width="729" height="1536"');
+  expect(source).toContain("onClick={()=>setStage('methods')}");
+  expect(source).toContain('aria-label="Avanzar desde Comida de tu ciudad"');
+  expect(source).not.toContain('<h1>Bienvenido<br/>a Tala Eats</h1>');
+  expect(source).not.toContain('className="customer-onboarding-cta glass"');
+ });
+ it('uses precisely the same circular button class for both screens',()=>{
+  const arrowMarkup=(source.match(/className="customer-splash-next"/g)||[]).length;
+  expect(arrowMarkup).toBe(2);
+  expect(css).toContain('.customer-splash-next{');
+ });
  it('never draws fake mobile status bars and respects phone viewport constraints',()=>{
   expect(css).toContain('object-fit:cover');
   expect(css).toContain('env(safe-area-inset-bottom)');
