@@ -51,11 +51,23 @@ w,h=struct.unpack_from("<HH",d,m+3)
 if (w&0x3fff,h&0x3fff)!=(729,1536):raise SystemExit("TACOS_WRONG_RESOLUTION")
 print("TACOS_GITHUB_IMAGE_729x1536=PASS")
 PY
+# The exact third-onboarding bag image is a tracked JPEG, NOT a generated mock.
+BAG="public/branding/onboarding-rapido-seguro-864x1536.jpg"
+test -s "$BAG" || { echo 'BAG_ORIGINAL_MISSING_IN_GITHUB'; exit 1; }
+test "$(git hash-object "$BAG")" = "04f05eb2a7347d6f41ba84417ae3ca936e8f66af" || {
+  echo 'BAG_GITHUB_IMAGE_MISMATCH'; exit 1;
+}
+test "$(sha256sum "$BAG" | cut -d' ' -f1)" = "f6e5db7fcf4430961d5b9f2eb55720b307b7fe9a81102c02d01515a341a54065" || {
+  echo 'BAG_ORIGINAL_SHA256_MISMATCH'; exit 1;
+}
+echo 'BAG_GITHUB_APPROVED_ORIGINAL=PASS'
 npm install --no-audit --no-fund
 npm run check
 env -u VITE_PREVIEW_READONLY npm run build
 cmp -s "$IMG" "dist/branding/splash-exacto-728x1536.webp"
 cmp -s "$TACOS" "dist/branding/onboarding-comida-tu-ciudad-729x1536.webp"
+cmp -s "$BAG" "dist/branding/onboarding-rapido-seguro-864x1536.jpg"
+echo 'THREE_ONBOARDING_IMAGES_IN_BUILD=PASS'
 printf '%s\n' "$SHA" > "$HOME/tala-eats-web-releases/.last-splash-ready-sha"
 echo "BUILD_AND_IMAGE=PASS"
 BUILD
@@ -74,6 +86,14 @@ test "$TYPE" = "image/webp"
 TACOS_TYPE="$(curl -sSIL --max-time 20 -o /dev/null -w '%{content_type}' "$DOMAIN/branding/onboarding-comida-tu-ciudad-729x1536.webp")"
 test "$TACOS_TYPE" = "image/webp"
 echo "TACOS_PUBLIC_729x1536=PASS"
+BAG_TYPE="$(curl -sSIL --max-time 20 -o /dev/null -w '%{content_type}' "$DOMAIN/branding/onboarding-rapido-seguro-864x1536.jpg")"
+test "$BAG_TYPE" = "image/jpeg" || { echo "BAG_PUBLIC_MIMETYPE_INVALID=$BAG_TYPE"; exit 1; }
+BAG_LIVE_HASH="$(curl -fsSL --max-time 25 "$DOMAIN/branding/onboarding-rapido-seguro-864x1536.jpg" | sha256sum | cut -d' ' -f1)"
+test "$BAG_LIVE_HASH" = "f6e5db7fcf4430961d5b9f2eb55720b307b7fe9a81102c02d01515a341a54065" || {
+ echo 'BAG_PUBLIC_BYTES_DIFFER'; exit 1;
+}
+echo 'BAG_THIRD_SCREEN_PUBLIC=PASS'
+
 echo "SPLASH_DEPLOY_SHA=$SHA"
 echo "PUBLIC_VERSION_VERIFIED=PASS"
 echo "BACKEND_PM2_STRIPE_CLOUDFLARED=UNMODIFIED"
