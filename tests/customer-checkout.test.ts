@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {EMPTY_CART,addVariantItem} from '../src/lib/cart';
-import {assertServerQuote,buildCheckoutRequest,checkoutAllowed,fingerprint,quoteMateriallyChanged,validAddress,validateCartAgainstRestaurant} from '../src/lib/customer-checkout';
+import {assertServerQuote,buildCheckoutRequest,checkoutAllowed,fingerprint,normalizeCustomerAddress,parseCoordinate,quoteMateriallyChanged,validAddress,validateCartAgainstRestaurant} from '../src/lib/customer-checkout';
 import type {CustomerAddress,VerifiedQuote} from '../src/lib/customer-checkout';
 import type {MenuItem,PaymentOptions,Quote,Restaurant} from '../src/lib/types';
 const item:MenuItem={id:6,restaurant_id:2,name:'Tacos',price:'45.00',stock:3,is_available:true};
@@ -22,6 +22,15 @@ describe('Mobile 1.0.46 checkout security parity',()=>{
   expect(checkoutAllowed({...methods,pickup_quote_supported:false},'pickup','cash')).toBe(false);
   expect(checkoutAllowed(methods,'delivery','stripe')).toBe(false);
   expect(checkoutAllowed(null,'pickup','cash')).toBe(false);
+ });
+ it('normalizes Flutter-style decimal coordinate strings without treating missing coords as zero',()=>{
+  expect(parseCoordinate('20.650000','lat')).toBe(20.65);
+  expect(parseCoordinate('-103.7','lng')).toBe(-103.7);
+  expect(parseCoordinate(null,'lat')).toBeNull();
+  expect(parseCoordinate('', 'lat')).toBeNull();
+  expect(parseCoordinate('200','lat')).toBeNull();
+  expect(validAddress(normalizeCustomerAddress({id:4,label:'Casa',address:'Centro',lat:'20.65',lng:'-103.7',is_default:true}))).toBe(true);
+  expect(validAddress(normalizeCustomerAddress({id:4,label:'Casa',address:'Centro',lat:null,lng:null}))).toBe(false);
  });
  it('will never send delivery without server-validated coordinates',()=>{
   expect(validAddress(address)).toBe(true);
