@@ -40,7 +40,7 @@ describe('Latest Flutter Usuarios v1.0.46 startup/auth parity',()=>{
  it('uses real Flutter 2-step login and 4-step signup, not obsolete auth form',()=>{
   expect(step).toContain("type Mode='signIn'|'signUp'");
   expect(step).toContain("const signupTitles=");
-  expect(step).toContain("mode==='signUp'?3:1");
+  expect(step).toContain('maxStep=signUp?3:1');
   expect(step).toContain('Ingresa tu correo');
   expect(step).toContain('¿Cuál es tu apellido?');
   expect(step).toContain('Crea tu contraseña');
