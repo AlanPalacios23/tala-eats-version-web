@@ -4,10 +4,7 @@
  */
 export function CustomerLaunch(){
  return <div className="customer-launch-screen" role="status" aria-label="Tala Eats: preparando tu experiencia" data-mobile-screen="launch">
-   <div className="customer-launch-wordmark" aria-label="Tala Eats">
-     <span className="customer-launch-tala">Tala</span>
-     <span className="customer-launch-eats">EATS</span>
-   </div>
+   <img className="customer-brand-script customer-launch-logo" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="320" height="97"/>
    <div className="customer-launch-bottom">
      <span>Pide, disfruta y repite.</span>
      <div className="customer-launch-progress" aria-hidden="true"><span/></div>
