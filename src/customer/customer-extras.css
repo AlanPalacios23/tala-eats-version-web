@@ -1,0 +1,28 @@
+.te-extra {min-height:100dvh;background:#fafaf9;color:#171717;font-family:Roboto,Arial,sans-serif;}
+.te-extra-inner {max-width:600px;margin:0 auto;padding:22px 20px 138px;}
+.te-extra-back {display:inline-flex;align-items:center;gap:8px;color:#ce3c0a;font-size:14px;font-weight:700;margin-bottom:20px;}
+.te-extra h1 {font:800 29px/1.12 Roboto,Arial,sans-serif;letter-spacing:-.7px;margin:0 0 20px;}
+.te-extra h2 {font:800 20px Roboto,Arial,sans-serif;margin:25px 0 12px;}
+.te-extra-hero {background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:21px;display:flex;flex-direction:column;gap:12px;}
+.te-extra-hero svg {color:#ce3c0a;}
+.te-extra-hero>span {font-size:13px;font-weight:600;color:#737373;}
+.te-extra-hero>strong {font-size:32px;font-weight:800;}
+.te-extra-hero p {font-size:14px;color:#737373;margin:0;}
+.te-extra-hero h2 {margin:0;}
+.te-extra-entry {display:flex;align-items:center;gap:13px;padding:16px;background:#fff;border:1px solid #eae8e5;color:#171717;text-align:left;width:100%;border-radius:15px;margin-top:9px;font-size:14px;}
+.te-extra-entry>div,.te-extra-entry>span {flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.te-extra-entry small {color:#737373;font-size:12px;font-weight:500;}
+.te-extra-entry b {white-space:nowrap;}
+.te-extra-note:not(:disabled) {cursor:pointer;}
+.te-extra-note>svg {color:#ff5a1f;flex:none;}
+.te-extra-note em {color:#ff5a1f;}
+.te-extra-action {border:0;background:none;color:#ce3c0a;padding:10px 0;font-weight:700;}
+.te-extra-message {background:#fff3ec;border-radius:18px;padding:18px;line-height:1.5;color:#873013;}
+.te-extra-message button {display:block;background:#ce3c0a;color:white;border:0;border-radius:11px;padding:12px 18px;margin-top:12px;font-weight:700;}
+.te-extra-form {display:flex;flex-direction:column;gap:18px;background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:18px;margin-top:16px;}
+.te-extra-form label {display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:700;}
+.te-extra-form textarea,.te-extra-form select {width:100%;border-radius:14px;border:1px solid #eae8e5;background:#fff;color:#171717;padding:13px;font:500 14px Roboto,Arial,sans-serif;}
+.te-extra-form button {height:52px;background:#ce3c0a;color:#fff;border:none;border-radius:15px;font-size:15px;font-weight:800;}
+.te-extra-form button:disabled {background:#f2d6cb;}
+.te-extra :is(a,button,input,textarea,select):focus-visible{outline:2px solid #ff5a1f;outline-offset:3px;}
+@media(max-width:360px){.te-extra-inner{padding-left:16px;padding-right:16px;}}
