@@ -1,0 +1,63 @@
+/* Latest Flutter Usuarios 1.0.46: photo B welcome, photo A login selector.
+   The source APK's four approved HD assets are not in the GitHub repository.
+   Dark fallback surfaces deliberately reveal missing assets (no stock substitution).
+*/
+.te-journey {
+ position:relative;isolation:isolate;min-height:100dvh;height:100dvh;width:100%;
+ overflow:hidden;color:#fff;font:500 16px/1.4 Roboto,Arial,system-ui,sans-serif;
+}
+.te-journey * {box-sizing:border-box;}
+.te-welcome { background:#25291c; }
+.te-methods { background:#251c32; }
+.te-journey-photo {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:-2;}
+.te-journey-scrim {position:absolute;inset:0;z-index:-1;pointer-events:none;}
+.te-welcome .te-journey-scrim {background:linear-gradient(to bottom,rgba(0,0,0,.039) 0%,rgba(0,0,0,.133) 27%,rgba(0,0,0,.204) 65%,rgba(0,0,0,.376) 100%);}
+.te-methods .te-journey-scrim {background:linear-gradient(to bottom,rgba(0,0,0,.039) 0%,transparent 32%,rgba(0,0,0,.149) 70%,rgba(0,0,0,.40) 100%);}
+.te-welcome-inner {
+ display:flex;flex-direction:column;min-height:100%;height:100%;
+ padding:calc(10px + env(safe-area-inset-top,0px)) 25px calc(24px + env(safe-area-inset-bottom,0px));
+}
+.te-welcome-middle {flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow-y:auto;min-height:0;}
+.te-welcome-wordmark {width:290px;max-width:100%;height:92px;object-fit:contain;}
+.te-welcome-wordmark-fallback {width:290px;max-width:100%;height:92px;display:flex;align-items:center;justify-content:center;font-size:35px;font-weight:800;color:#ff5a1f;}
+.te-welcome h1,.te-methods h1 {white-space:pre-line;color:#fff;font-family:Roboto,Arial,system-ui,sans-serif;font-weight:800;margin:0;text-align:center;}
+.te-welcome h1 {font-size:40px;letter-spacing:-1.1px;line-height:1.08;margin-top:28px;}
+.te-welcome p {white-space:pre-line;font-size:19px;font-weight:500;line-height:1.4;margin:14px 0 0;text-align:center;}
+.te-welcome-continue {
+ position:relative;flex:none;height:64px;width:100%;padding:0 22px;border-radius:24px;
+ border:1.2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.533);
+ color:#171717;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+ display:flex;align-items:center;justify-content:center;overflow:hidden;
+ box-shadow:none;font:800 18px Roboto,Arial,sans-serif;
+}
+.te-welcome-continue span {flex:1;text-align:center;padding-left:24px;}
+.te-welcome-continue svg {position:absolute;right:22px;top:calc(50% - 11.5px);color:#ce3c0a;}
+.te-methods-back {
+ position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:18px;
+ width:48px;height:48px;display:grid;place-items:center;background:rgba(0,0,0,.376);
+ color:white;border:0;border-radius:50%;
+}
+.te-methods-center {position:absolute;left:28px;right:28px;top:50%;transform:translateY(calc(-50% - 58px));text-align:center;}
+.te-methods h1 {font-size:34px;line-height:1.1;letter-spacing:-.6px;text-shadow:0 3px 14px rgba(0,0,0,.47);}
+.te-methods-center p {font-size:16px;line-height:1.35;color:white;margin:10px 0 0;text-shadow:0 3px 12px rgba(0,0,0,.53);}
+.te-methods-bottom {
+ position:absolute;left:22px;right:22px;bottom:max(20px,calc(18px + env(safe-area-inset-bottom,0px)));
+ display:flex;flex-direction:column;gap:8px;
+}
+.te-methods-email {min-height:64px;background:#ce3c0a;color:white;border:0;border-radius:28px;
+ display:grid;grid-template-columns:32px 1fr 32px;gap:10px;align-items:center;padding:12px 18px;
+ font:800 17px/1.15 Roboto,Arial,sans-serif;}
+.te-methods-email span {text-align:center;}
+.te-methods-register {min-height:44px;display:grid;place-items:center;text-align:center;font:800 14px Roboto,Arial,sans-serif;color:white;text-shadow:0 3px 10px rgba(0,0,0,.6);}
+.te-welcome-continue:active,.te-methods-email:active{transform:scale(.975);}
+.te-welcome-continue:focus-visible,.te-methods-email:focus-visible,.te-methods-back:focus-visible,.te-methods-register:focus-visible{outline:3px solid #ffb498;outline-offset:3px;}
+@media(max-width:350px),(max-height:680px){
+ .te-welcome h1{font-size:33px;margin-top:20px;}
+ .te-welcome p{font-size:17px;}
+ .te-welcome-wordmark,.te-welcome-wordmark-fallback{width:250px;height:75px;}
+ .te-methods h1{font-size:29px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .te-welcome-continue,.te-methods-email {transition:none;transform:none!important;}
+ .te-journey {animation:none!important;}
+}

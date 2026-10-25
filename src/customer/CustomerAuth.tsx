@@ -73,7 +73,7 @@ function SuccessOrb({icon}:{icon:ReactNode}){
 export function CustomerAuth() {
  const session=useSession(),navigate=useNavigate(),location=useLocation();
  const resetToken=new URLSearchParams(location.search).get('token')?.trim()||'';
- const [stage,setStage]=useState<Stage>(location.pathname==='/restablecer'?'reset':
+ const [stage,setStage]=useState<Stage>(location.pathname==='/restablecer'?'reset':location.pathname==='/recuperar'?'forgot':
      (location.state as {create?:boolean}|null)?.create?'signup':'login');
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState('');
  const [confirm,setConfirm]=useState(''),[otp,setOtp]=useState('');

@@ -39,7 +39,8 @@ describe('Flutter Usuarios detailed visual and motion parity',()=>{
    expect(panels).toContain('api.myOrders()');
    expect(panels).toContain('te-order-steps');
    expect(panels).toContain('PIN de entrega');
-   expect(panels).toContain('Consulta de saldo y puntos: no disponible');
+   expect(panels).toContain('Consultar saldo, puntos y movimientos con el servidor');
+   expect(panels).toContain('to="/wallet"');
    expect(panels).toContain('localStorage.getItem');
    expect(panels).not.toContain('api.placeCashPickup');
  });
