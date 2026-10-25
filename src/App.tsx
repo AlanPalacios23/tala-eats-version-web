@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
@@ -96,16 +96,16 @@ function Home(){
  const {value:restaurants,loading,error,refresh}=useLoad(()=>api.restaurants(),[]);
  const [search,setSearch]=useState('');
  const filtered=useMemo(()=>restaurants?.filter(r=>(r.name+' '+(r.cuisine??'')+' '+(r.description??'')).toLowerCase().includes(search.trim().toLowerCase()))??[],[restaurants,search]);
- return <><section className="hero"><div className="container hero-grid"><div className="hero-copy">
-  <div className="hero-kicker"><MapPin size={15}/> Hecho en Tala, Jalisco</div><h1>Lo rico de <em>tu ciudad</em>, a un clic.</h1>
-  <p>Descubre restaurantes y comercios locales. Elige lo que se te antoja y recógelo cuando esté listo.</p>
-  <a href="#comercios" className="btn primary">Explorar comercios <ArrowRight size={18}/></a>
-  <div className="hero-mini"><span><CheckCircle2 size={17}/> Negocios locales</span><span><ShieldCheck size={17}/> Pedido protegido</span></div>
- </div><div className="hero-art" aria-hidden="true"><div className="art-circle art-circle-one"/><div className="art-circle art-circle-two"/><div className="art-card center-card"><span className="art-emoji">🌮</span><strong>Antojos cerca de ti</strong><small>Sabores que nos unen</small></div><div className="art-float float-left">🍔 <span>Recién hecho</span></div><div className="art-float float-right">🥑 <span>Fresco y local</span></div></div></div></section>
+ return <><section className="customer-welcome container" aria-label="Explorar Tala Eats">
+  <span className="customer-location"><MapPin size={16}/> Tala y región</span>
+  <h1>¿Qué se te antoja hoy?</h1>
+  <p>Explora restaurantes y comercios locales con información real del catálogo.</p>
+  <a className="customer-search-shortcut" href="#comercios"><Search size={20}/> Buscar restaurantes y productos <ArrowRight size={18}/></a>
+ </section>
  <section id="comercios" className="container section"><div className="section-title-row"><SectionTitle eyebrow="DESCUBRE" title="¿Qué se te antoja hoy?" description="Encuentra comercios verificados y revisa su menú."/><span className="muted">{filtered.length} comercios</span></div>
  <label className="search-wrap"><Search size={21}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca comida, tiendas o tu restaurante favorito" aria-label="Buscar comercios"/></label>
  {loading?<Spinner/>:error?<Alert><span>{error}</span> <button onClick={refresh}>Reintentar</button></Alert>:filtered.length===0?<EmptyState icon={<Store size={32}/>} title="Todavía no hay resultados" description={search?'Prueba con otra búsqueda.':'Aún no hay comercios verificados publicados. Vuelve pronto.'}/>:<div className="merchant-grid">{filtered.map(r=><Link to={'/comercio/'+r.id} className="merchant-card" key={r.id}><div className="merchant-cover"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍲'} alt={r.name}/><span className={'open-label '+(r.is_open?'open':'closed')}>{r.is_open?'Abierto':'Cerrado'}</span></div><div className="merchant-body"><h3>{r.name}</h3><p>{r.cuisine||r.description||'Un sabor local'}</p><div className="merchant-meta"><span><Clock3 size={15}/>{r.eta_min??'—'} min</span><span><MapPin size={15}/> Tala y región</span></div></div></Link>)}</div>}
- </section><section className="container section"><div className="benefit-grid"><div><span>🏡</span><strong>Apoya a los negocios de aquí</strong><p>Cada pedido impulsa a nuestra comunidad.</p></div><div><span>🛍️</span><strong>Compra sin complicaciones</strong><p>Consulta tu pedido y pasa a recogerlo.</p></div><div><span>🤝</span><strong>Hecho para todos</strong><p>Clientes, restaurantes y repartidores en un mismo lugar.</p></div></div></section></>;
+ </section></>;
 }
 function Commerce({add}:{add:(item:MenuItem)=>void}){
  const {id}=useParams();const parsed=Number(id);const good=Number.isSafeInteger(parsed)&&parsed>0;
@@ -218,11 +218,32 @@ function Driver(){
  {dashboard.error&&<p className="muted">Resumen del repartidor no disponible.</p>}
  </>}</div>;
 }
-export default function App(){
+export default function CustomerBottomDock({cartCount}:{cartCount:number}){
+ const location=useLocation();
+ const tabs=[
+  {to:'/clientes',label:'Inicio',Icon:HomeIcon},
+  {to:'/clientes#comercios',label:'Buscar',Icon:Search},
+  {to:'/pedidos',label:'Pedidos',Icon:ClipboardList},
+  {to:'/cuenta',label:'Cuenta',Icon:UserRound}
+ ];
+ const onCustomerRoute=['/clientes','/pedidos','/cuenta'].includes(location.pathname);
+ if(!onCustomerRoute)return null;
+ return <nav className="customer-bottom-dock" aria-label="Navegación de clientes">
+  {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Buscar'?location.hash==='#comercios'&&location.pathname==='/clientes':label==='Inicio'?location.pathname==='/clientes'&&location.hash!=='#comercios':location.pathname===to)?'selected':'')} aria-label={label}>
+   <Icon size={22}/><span>{label}</span>{label==='Pedidos'&&cartCount>0?<span className="customer-dock-dot" aria-hidden="true"/>:null}
+  </Link>)}
+ </nav>;
+}
+function CustomerHashScroll(){
+ const location=useLocation();
+ useEffect(()=>{if(location.pathname==='/clientes'&&location.hash==='#comercios'){document.getElementById('comercios')?.scrollIntoView({behavior:'smooth',block:'start'});}},[location.pathname,location.hash]);
+ return null;
+}
+function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';
  const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
- return <div className="app">{!isGateway&&<AppHeader count={count}/>}<main><Routes>
+ return <div className="app">{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<Home/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
@@ -232,5 +253,5 @@ export default function App(){
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main><CustomerBottomDock cartCount={count}/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
