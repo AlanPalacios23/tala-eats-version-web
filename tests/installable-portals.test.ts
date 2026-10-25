@@ -46,6 +46,12 @@ describe('portal plus three PWA install identities',()=>{
   const unit=read('../deploy/talaeats-web-pwa.service');
   const config=read('../deploy/nginx-isolated-main.conf');
   expect(install).toContain('PWA_ISOLATED_INSTALL_PLAN=PASS_READ_ONLY');
+  // PM2 and system nginx are untouched; new Type=simple service is not
+  // treated as ready until its actual loopback HTTP socket responds.
+  expect(install).toContain('NGINX_LISTEN_READY=no');
+  expect(install).toContain('PWA_ISOLATED_NGINX_HTTP_READY=PASS');
+  expect(install).toContain('PWA_ISOLATED_ABORT=NGINX_18195_NOT_READY_AFTER_30_CHECKS');
+  expect(install).toContain('systemctl is-failed --quiet "$NAME"');
   expect(install).toContain('I_APPROVE_ISOLATED_PWA_18195_ONLY');
   expect(install).toContain('talaeats-web-pwa.service');
   expect(install).toContain('PWA_GLOBAL_NGINX_PM2_POSTGRES_STRIPE=UNMODIFIED');
