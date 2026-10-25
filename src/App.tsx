@@ -16,13 +16,17 @@ import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders
 import { CustomerCart, CustomerCheckout } from './components/CustomerCheckout';
 import { CustomerAddresses } from './components/CustomerAddresses';
 import { CustomerProfile } from './components/CustomerProfile';
-import { CustomerLegal, CustomerPrivacy } from './components/CustomerLegal';
+import { LEGAL_LINKS } from './lib/legal-links';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 
+function ExternalLegalRedirect({href}:{href:string}){
+ useEffect(()=>{window.location.replace(href)},[href]);
+ return <div role="status" className="mobile-status">Abriendo el documento oficial de Tala Eats… <a href={href}>Abrir documento</a></div>;
+}
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
  const [tick,setTick]=useState(0); const [state,setState]=useState<AsyncState<T>>({value:null,loading:true,error:''});
@@ -209,8 +213,9 @@ export default function App(){
    <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/pago/:id" element={<Protected role="customer"><CustomerStripeTest/></Protected>}/><Route path="/chat/:id" element={<Protected role="customer"><CustomerOrderChat/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/editar-perfil" element={<Protected role="customer"><CustomerProfile/></Protected>}/>
-   <Route path="/terminos" element={<CustomerLegal kind="terms"/>}/><Route path="/aviso-privacidad" element={<CustomerLegal kind="notice"/>}/>
-   <Route path="/privacidad" element={<Protected role="customer"><CustomerPrivacy/></Protected>}/>
+   <Route path="/terminos" element={<ExternalLegalRedirect href={LEGAL_LINKS.terms}/>}/><Route path="/aviso-privacidad" element={<ExternalLegalRedirect href={LEGAL_LINKS.privacy}/>}/>
+   <Route path="/privacidad" element={<ExternalLegalRedirect href={LEGAL_LINKS.privacy}/>}/>
+   <Route path="/eliminar-cuenta" element={<ExternalLegalRedirect href={LEGAL_LINKS.deletion}/>}/>
    <Route path="/acceso" element={<CustomerStepAuth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
