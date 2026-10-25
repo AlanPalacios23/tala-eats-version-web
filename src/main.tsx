@@ -14,7 +14,7 @@ export function manifestForPath(path: string): string {
  if (path === '/repartidor' || path.startsWith('/repartidor/')) return '/manifest-repartidor.webmanifest';
  if (path === '/clientes' || path === '/buscar' || path.startsWith('/clientes/') ||
      path === '/carrito' || path === '/pedidos' ||
-     path === '/acceso' || path === '/restablecer' || path === '/terminos' || path === '/privacidad' ||
+     path === '/bienvenida' || path === '/metodos' || path === '/acceso' || path === '/recuperar' || path === '/restablecer' || path === '/terminos' || path === '/privacidad' ||
      path === '/cuenta' || path.startsWith('/comercio/')) return '/manifest-clientes.webmanifest';
  return '/manifest.webmanifest';
 }
