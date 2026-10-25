@@ -37,10 +37,25 @@ if (w & 0x3fff,h & 0x3fff)!=(728,1536):
  raise SystemExit("SPLASH_WRONG_RESOLUTION")
 print("SPLASH_GITHUB_IMAGE_728x1536=PASS")
 PY
+# Fail closed: never update public Web if the NEW second screen photo is missing.
+TACOS="public/branding/onboarding-comida-tu-ciudad-729x1536.webp"
+test -s "$TACOS"
+python3 - "$TACOS" <<'PY'
+import struct,sys
+d=open(sys.argv[1],"rb").read(128)
+if d[:4]!=b"RIFF" or d[8:12]!=b"WEBP" or d[12:16]!=b"VP8 ":
+ raise SystemExit("TACOS_IMAGE_INVALID")
+m=d.find(b"\\x9d\\x01\\x2a".decode("unicode_escape").encode("latin1"))
+if m<0 or m+7>len(d):raise SystemExit("TACOS_DIMENSIONS_MISSING")
+w,h=struct.unpack_from("<HH",d,m+3)
+if (w&0x3fff,h&0x3fff)!=(729,1536):raise SystemExit("TACOS_WRONG_RESOLUTION")
+print("TACOS_GITHUB_IMAGE_729x1536=PASS")
+PY
 npm install --no-audit --no-fund
 npm run check
 env -u VITE_PREVIEW_READONLY npm run build
 cmp -s "$IMG" "dist/branding/splash-exacto-728x1536.webp"
+cmp -s "$TACOS" "dist/branding/onboarding-comida-tu-ciudad-729x1536.webp"
 printf '%s\n' "$SHA" > "$HOME/tala-eats-web-releases/.last-splash-ready-sha"
 echo "BUILD_AND_IMAGE=PASS"
 BUILD
@@ -56,6 +71,9 @@ JS="$(grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' /srv/talaeats-pwa/current/inde
 curl -fsS --max-time 20 "$DOMAIN/clientes" | grep -Fq "$JS"
 TYPE="$(curl -sSIL --max-time 20 -o /dev/null -w '%{content_type}' "$DOMAIN/branding/splash-exacto-728x1536.webp")"
 test "$TYPE" = "image/webp"
+TACOS_TYPE="$(curl -sSIL --max-time 20 -o /dev/null -w '%{content_type}' "$DOMAIN/branding/onboarding-comida-tu-ciudad-729x1536.webp")"
+test "$TACOS_TYPE" = "image/webp"
+echo "TACOS_PUBLIC_729x1536=PASS"
 echo "SPLASH_DEPLOY_SHA=$SHA"
 echo "PUBLIC_VERSION_VERIFIED=PASS"
 echo "BACKEND_PM2_STRIPE_CLOUDFLARED=UNMODIFIED"
