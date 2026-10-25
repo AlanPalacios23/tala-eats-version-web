@@ -175,7 +175,7 @@ function CustomerBottomDock(){
   {to:'/pedidos',label:'Pedidos',Icon:ClipboardList},
   {to:'/cuenta',label:'Cuenta',Icon:UserRound}
  ];
- const onCustomerRoute=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname)||location.pathname.startsWith('/pedidos/');
+ const onCustomerRoute=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname)||location.pathname.startsWith('/pedidos/')||location.pathname.startsWith('/pago/');
  if(!onCustomerRoute)return null;
  return <nav className="customer-bottom-dock" aria-label="Navegación de clientes">
   {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Inicio'?location.pathname==='/clientes':(label==='Pedidos'&&location.pathname.startsWith('/pedidos/'))||location.pathname===to)?'selected':'')} aria-label={label}>
