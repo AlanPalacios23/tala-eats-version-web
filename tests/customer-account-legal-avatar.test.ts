@@ -28,7 +28,8 @@ describe('Flutter-style profile avatar and privacy P0 regression',()=>{
   expect(legal).toContain('Términos y Condiciones de Uso');
   expect(legal).toContain('Aviso de Privacidad');
   expect(legal).toContain("typed!=='ELIMINAR'");
-  expect(legal).toContain("api.privacyRequest('delete')");
+  expect(legal).toContain("api.privacyRequest(kind)");
+  expect(legal).toContain("requestPrivacy('delete')");
  });
  it('removes orders toolbar refresh while retaining error recovery',()=>{
   const orders=readFileSync(new URL('../src/components/CustomerOrders.tsx',import.meta.url),'utf8');
