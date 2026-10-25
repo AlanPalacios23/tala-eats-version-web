@@ -136,6 +136,8 @@ export function CustomerAccount() {
       <h2>Tu cuenta</h2>
       <button className="te-account-link" onClick={()=>setShowFavorites(true)}><Heart size={20}/><span>Favoritos</span><ChevronRight size={19}/></button>
       <Link className="te-account-link" to="/pedidos"><Package size={20}/><span>Mis pedidos</span><ChevronRight size={19}/></Link>
+      {(user?.role==='restaurant'||user?.role==='admin')&&<Link className="te-account-link" to="/restaurante"><Store size={20}/><span>Panel restaurante</span><ChevronRight size={19}/></Link>}
+      {user?.role==='driver'&&<Link className="te-account-link" to="/repartidor"><Package size={20}/><span>Panel repartidor</span><ChevronRight size={19}/></Link>}
     </section>
     <section className="te-account-group">
       <h2>Seguridad y privacidad</h2>
