@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, MapPin, Minus, Plus, Store, X } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Restaurant } from '../lib/types';
 import { basketTotal } from '../lib/cart';
@@ -41,7 +41,7 @@ function ProductSheet({item,merchant,onClose,onAdd}:{item:MenuItem;merchant:Rest
  </div>;
 }
 export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean;market:MarketCode}){
- const {id}=useParams(),restaurantId=Number(id);
+ const {id}=useParams(),restaurantId=Number(id);const [params,setParams]=useSearchParams();
  const [merchant,setMerchant]=useState<Restaurant|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [retry,setRetry]=useState(0),[category,setCategory]=useState('Todos'),[selected,setSelected]=useState<MenuItem|null>(null);
  useEffect(()=>{let active=true;setLoading(true);setError('');setMerchant(null);
@@ -49,6 +49,13 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
   api.restaurant(restaurantId).then(value=>{if(value.market_code?.trim().toUpperCase()!==market)throw new Error('Este comercio no pertenece a la localidad seleccionada o el servidor no confirma su zona.');if(active)setMerchant(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos cargar el menú');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[restaurantId,retry,market]);
+ useEffect(()=>{
+  const requested=Number(params.get('platillo'));
+  if(!Number.isSafeInteger(requested)||requested<=0||!merchant||selected)return;
+  const found=merchant.menu_items?.find(p=>p.id===requested);
+  if(found&&found.is_available&&found.stock>0&&merchant.is_open)setSelected(found);
+ },[merchant,params,selected]);
+ const closeProduct=()=>{setSelected(null);if(params.has('platillo')){const next=new URLSearchParams(params);next.delete('platillo');setParams(next,{replace:true});}};
  const cats=useMemo(()=>['Todos',...new Set((merchant?.menu_items||[]).map(item=>item.category||'General'))],[merchant]);
  const dishes=(merchant?.menu_items||[]).filter(item=>category==='Todos'||(item.category||'General')===category);
  const canOrder=Boolean(merchant?.is_open&&merchant?.pickup_enabled);
@@ -78,7 +85,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
     </article>;
    }):<div className="mobile-status"><Store size={30}/><h3>Menú en preparación</h3><p>Este comercio aún no tiene productos en esta categoría.</p></div>}</div>
    {quantity>0&&<Link to="/carrito" className="mobile-commerce-cartbar"><span>{quantity}</span><strong>Ver carrito</strong><strong>{pesos(basketTotal(cart))}</strong><ChevronRight size={21}/></Link>}
-   {selected&&<ProductSheet item={selected} merchant={merchant} onClose={()=>setSelected(null)} onAdd={onAdd}/>}
+   {selected&&<ProductSheet item={selected} merchant={merchant} onClose={closeProduct} onAdd={onAdd}/>}
   </>}
  </div>;
 }
