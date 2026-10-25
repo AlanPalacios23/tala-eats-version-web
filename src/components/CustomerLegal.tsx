@@ -38,9 +38,9 @@ export function CustomerLegal({kind}:{kind:'terms'|'notice'}){
  </article>;
 }
 const preferences=[
- {key:'personalized_experience',label:'Experiencia personalizada',desc:'Usar tus favoritos y pedidos para recomendarte mejor.'},
- {key:'analytics',label:'Analítica de producto',desc:'Ayudar a mejorar el rendimiento de la app.'},
- {key:'marketing',label:'Comunicaciones',desc:'Promociones y novedades de Tala Eats.'}
+ {key:'personalization_opt_in',label:'Experiencia personalizada',desc:'Usar tus favoritos y pedidos para recomendarte mejor.'},
+ {key:'analytics_opt_in',label:'Analítica de producto',desc:'Ayudar a mejorar el rendimiento de la app.'},
+ {key:'marketing_opt_in',label:'Comunicaciones',desc:'Promociones y novedades de Tala Eats.'}
 ] as const;
 type PreferenceKey=typeof preferences[number]['key'];
 type PreferenceValues=Record<PreferenceKey,boolean>;
@@ -48,7 +48,7 @@ function parsePreferences(raw:unknown):PreferenceValues{
  if(!raw||typeof raw!=='object')throw new Error('El servidor no proporcionó preferencias verificables.');
  const d=raw as Record<string,unknown>;
  if(!preferences.every(p=>typeof d[p.key]==='boolean'))throw new Error('El servidor no confirmó las preferencias actuales.');
- return {personalized_experience:d.personalized_experience as boolean,analytics:d.analytics as boolean,marketing:d.marketing as boolean};
+ return {personalization_opt_in:d.personalization_opt_in as boolean,analytics_opt_in:d.analytics_opt_in as boolean,marketing_opt_in:d.marketing_opt_in as boolean};
 }
 export function CustomerPrivacy(){
  const [values,setValues]=useState<PreferenceValues|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
