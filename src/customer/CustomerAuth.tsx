@@ -57,7 +57,7 @@ function AuthScaffold({title,subtitle,children,showBack,onBack}:{
    <div className="te-auth-content">
     <div className="te-auth-brand">
      {showBack?<button type="button" className="te-auth-circle-back" onClick={onBack} aria-label="Regresar"><ArrowLeft size={21}/></button>:
-      <><span className="te-auth-logo"><span className="material-icons-round">delivery_dining</span></span><strong>Tala Eats</strong></>}
+      <><span className="te-auth-logo"><img src="/icons/delivery_dining_rounded.svg" width="20" height="20" alt="" decoding="async"/></span><strong>Tala Eats</strong></>}
     </div>
     <div className="te-auth-heading te-motion-reveal"><h1>{title}</h1><p>{subtitle}</p></div>
     <div className="te-auth-body te-motion-reveal">{children}</div>
