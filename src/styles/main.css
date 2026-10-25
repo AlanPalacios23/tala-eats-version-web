@@ -830,3 +830,23 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 }
 .customer-welcome-tacos-fallback h1{font:800 clamp(30px,8vw,44px)/1.1 Roboto,Arial,sans-serif;letter-spacing:-.5px;color:#fff;margin:0}
 .customer-welcome-tacos-fallback p{color:#fff;font-size:clamp(16px,4vw,19px);line-height:1.55;max-width:370px;text-align:left;margin:16px 0 0}
+
+/* Screen 3: untouched 864x1536 user photograph with baked-in copy and arrow.
+   Stretch the exact reference to viewport so the real CTA remains on top of
+   the original circle instead of drifting with object-fit:cover cropping.
+   No separate text overlays; navigation remains a real accessible Link. */
+.customer-bag-screen{background:#160701}
+.customer-bag-art>img{object-fit:fill;object-position:center}
+.customer-bag-screen .customer-bag-next{
+ left:min(89.7%,calc(100% - 40px));
+ top:92.8%;right:auto;bottom:auto;
+ transform:translate(-50%,-50%);
+ text-decoration:none;
+}
+.customer-bag-screen .customer-bag-next:active{transform:translate(-50%,-50%) scale(.96)}
+.customer-bag-screen .customer-bag-fallback{
+ align-items:flex-start;justify-content:flex-end;text-align:left;
+ padding:0 10% 25%;background:linear-gradient(150deg,#3f1908,#100601);
+}
+.customer-bag-fallback h1{margin:0;font:800 clamp(32px,8vw,44px)/1.13 Roboto,Arial,sans-serif;color:#fff}
+.customer-bag-fallback p{margin:12px 0 0;color:#fff;font:400 clamp(16px,4vw,19px)/1.5 Roboto,Arial,sans-serif;max-width:340px}
