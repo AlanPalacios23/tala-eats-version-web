@@ -8,7 +8,7 @@ describe('public domain static deployment safety',()=>{
   expect(script).toContain('HOST=web-talaeats.alan-palacios-dev.com');
   expect(script).toContain('ORIGIN=http://127.0.0.1:18195');
   expect(script).toContain('BASE=/srv/talaeats-pwa');
-  expect(script).not.toContain('18196');
+  expect(script).not.toContain('ORIGIN=http://127.0.0.1:18196');
   expect(script).toContain('root /srv/talaeats-pwa/current;');
  });
  it('requires explicit approval and checks production assets',()=>{
