@@ -16,6 +16,7 @@ function safeDestination(value:unknown):string{
 export function CustomerEntry(){
  const {user}=useSession(),navigate=useNavigate(),location=useLocation();
  const [stage,setStage]=useState<'splash'|'welcome'|'methods'>('splash');
+ const [splashArtFailed,setSplashArtFailed]=useState(false);
  const from=safeDestination((location.state as {from?:string}|null)?.from);
  useEffect(()=>{
   if(user?.role==='customer')navigate(from,{replace:true});
@@ -23,9 +24,9 @@ export function CustomerEntry(){
  if(user?.role==='customer')return null;
  return <div className={'customer-entry-screen stage-'+stage} data-mobile-screen={stage} aria-label="Bienvenida a Tala Eats">
   {stage==='splash'?<div className="customer-onboarding-splash customer-splash-exact">
-    <picture className="customer-splash-art" aria-hidden="true">
+    <picture className="customer-splash-art" aria-hidden="true" style={{display:splashArtFailed?'none':undefined}}>
       <source srcSet="/branding/splash-exacto-728x1536.webp" type="image/webp"/>
-      <img src="/branding/splash-exacto-728x1536.webp" width="728" height="1536" alt="" draggable={false}/>
+      <img src="/branding/splash-exacto-728x1536.webp" width="728" height="1536" alt="" draggable={false} onError={()=>setSplashArtFailed(true)}/>
     </picture>
     <div className="customer-splash-fallback" aria-hidden="true"><img src="/branding/tala-script-gradient.svg" alt="" width="340" height="104"/><span>COMERCIO LOCAL</span><p>Pide, disfruta y repite.</p></div>
     <button type="button" className="customer-splash-next" onClick={()=>setStage('welcome')} aria-label="Siguiente pantalla" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
