@@ -10,6 +10,8 @@ import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch, CustomerDock } from './customer/CustomerExperience';
 import { CustomerOrders, CustomerAccount } from './customer/CustomerPanels';
 import { CustomerStartup } from './customer/CustomerStartup';
+import { CustomerWelcome, CustomerMethods } from './customer/CustomerJourney';
+import { CustomerStepAuth } from './customer/CustomerStepAuth';
 import { CustomerAuth } from './customer/CustomerAuth';
 import { CustomerLegal } from './customer/CustomerLegal';
 
@@ -242,7 +244,7 @@ function Driver(){
  </>}</div>;
 }
 export default function App(){
- const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerTab=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);const isCustomer=isCustomerTab||location.pathname.startsWith('/comercio/')||['/carrito','/acceso','/restablecer','/terminos','/privacidad'].includes(location.pathname);
+ const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerTab=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);const isCustomer=isCustomerTab||location.pathname.startsWith('/comercio/')||['/carrito','/bienvenida','/metodos','/acceso','/recuperar','/restablecer','/terminos','/privacidad'].includes(location.pathname);
  const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomer?" is-customer":"")}>{!isGateway&&!isCustomer&&<AppHeader count={count}/>}<main><Routes>
@@ -253,7 +255,10 @@ export default function App(){
     <Route path="/comercio/:id" element={<Commerce add={add}/>}/>
     <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
     <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/>
-    <Route path="/acceso" element={<CustomerAuth/>}/>
+    <Route path="/bienvenida" element={<CustomerWelcome/>}/>
+    <Route path="/metodos" element={<CustomerMethods/>}/>
+    <Route path="/acceso" element={<CustomerStepAuth/>}/>
+    <Route path="/recuperar" element={<CustomerAuth/>}/>
     <Route path="/restablecer" element={<CustomerAuth/>}/>
     <Route path="/terminos" element={<CustomerLegal/>}/>
     <Route path="/privacidad" element={<CustomerLegal/>}/>
