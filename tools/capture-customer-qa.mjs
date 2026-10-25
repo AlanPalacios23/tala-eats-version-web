@@ -104,7 +104,7 @@ await authPage.getByRole('link',{name:/Continuar con tu correo/}).click();
 await authPage.waitForURL(ORIGIN+'/acceso');
 await authPage.getByLabel('Correo electrónico').fill('qa@example.test');
 await authPage.getByRole('button',{name:'Continuar'}).click();
-await authPage.getByLabel('Contraseña').fill('synthetic_password_not_used');
+await authPage.getByLabel('Contraseña',{exact:true}).fill('synthetic_password_not_used');
 await authPage.getByRole('button',{name:'Iniciar sesión'}).click();
 await authPage.waitForURL(ORIGIN+'/clientes',{timeout:12000});
 await authPage.getByText('Hola, Cliente',{exact:false}).first().waitFor({state:'visible',timeout:10000});
