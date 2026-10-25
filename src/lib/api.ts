@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
 import type { MarketCode } from './markets';
 import type { AuthResponse, DriverProfile, MenuItem, Order, PaymentOptions, Quote, Restaurant, User } from './types';
 
@@ -51,6 +52,13 @@ export const api = {
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
+  customerAddresses: () => request<CustomerAddress[]>('/platform/addresses'),
+  addCustomerAddress: (body:{label:string;address:string;lat:number;lng:number;is_default:boolean}) => request<CustomerAddress>('/platform/addresses',json('POST',body)),
+  updateCustomerAddress: (id:number,body:{is_default:boolean}) => request<CustomerAddress>(`/platform/addresses/${id}`,json('PATCH',body)),
+  deleteCustomerAddress: (id:number) => request<void>(`/platform/addresses/${id}`,json('DELETE')),
+  geocode: (address:string) => request<{results:{lat:number;lng:number}[]}>('/v11/maps/geocode',json('POST',{query:address+', Jalisco, México',limit:1})),
+  checkoutQuote: (body:CheckoutRequest) => request<Quote>(body.order_type==='delivery'?'/orders/delivery-quote':'/orders/quote',json('POST',body)),
+  createCheckoutOrder: (body:CheckoutRequest,reference:string,notes:string,addressText:string) => request<Order>('/orders',json('POST',{...body,address:addressText,notes,client_reference:reference})),
   quote: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:string}[]) => request<Quote>('/orders/quote',json('POST', {
     restaurant_id:restaurantId,order_type:'pickup',payment_method:'cash',items,tip:'0',coupon_code:'',delivery_lat:null,delivery_lng:null
   })),
