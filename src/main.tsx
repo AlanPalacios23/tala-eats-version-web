@@ -13,7 +13,7 @@ export function manifestForPath(path: string): string {
  if (path === '/restaurante' || path.startsWith('/restaurante/')) return '/manifest-restaurante.webmanifest';
  if (path === '/repartidor' || path.startsWith('/repartidor/')) return '/manifest-repartidor.webmanifest';
  if (path === '/clientes' || path.startsWith('/clientes/') ||
-     path === '/buscar' || path === '/acceso' || path === '/carrito' || path === '/pedidos' ||
+     path === '/buscar' || path === '/acceso' || path === '/carrito' || path === '/pedidos' || path.startsWith('/pedidos/') ||
      path === '/cuenta' || path.startsWith('/comercio/')) return '/manifest-clientes.webmanifest';
  return '/manifest.webmanifest';
 }
