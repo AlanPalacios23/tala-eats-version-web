@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { Bell, Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api, safeImage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { foldSearch } from '../lib/mobile-parity';
@@ -87,11 +87,20 @@ function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:Mark
 }
 export function CustomerHome({market,onSelectMarket}:{market:MarketCode;onSelectMarket:(next:MarketCode)=>boolean}){
  const {user}=useSession();const {restaurants,loading,error,refresh}=useRestaurants(market);
+ const [address,setAddress]=useState('Agregar dirección');
+ useEffect(()=>{
+  let active=true;
+  if(!user){setAddress('Agregar dirección');return ()=>{active=false};}
+  setAddress('Verificando dirección…');
+  api.customerAddresses().then(rows=>{if(active)setAddress((rows.find(row=>row.is_default)??rows[0])?.label||'Agregar dirección');})
+   .catch(()=>{if(active)setAddress('Dirección sin verificar');});
+  return()=>{active=false};
+ },[user?.id]);
  const first=(user?.name||'').trim().split(/\s+/)[0];
  return <div className="mobile-customer-page mobile-home" data-mobile-screen="home">
   <div className="mobile-home-top">
-   <div className="mobile-address"><span className="mobile-address-icon"><MapPin size={22}/></span><div><small>Entregar en</small><strong>Tala y región <span aria-hidden="true">⌄</span></strong></div></div>
-   <Link to="/cuenta" className="mobile-round-action" aria-label="Mi cuenta"><UserRound size={21}/></Link>
+   <Link to={user?'/direcciones':'/acceso'} state={user?undefined:{from:'/direcciones'}} className="mobile-address"><span className="mobile-address-icon"><MapPin size={22}/></span><div><small>Entregar en</small><strong>{address} <span aria-hidden="true">⌄</span></strong></div></Link>
+   <div className="mobile-home-actions"><Link to="/notificaciones" className="mobile-round-action" aria-label="Notificaciones"><Bell size={21}/></Link><Link to="/cuenta" className="mobile-round-action" aria-label="Mi cuenta"><UserRound size={21}/></Link></div>
   </div>
   <MarketSelector market={market} onChange={onSelectMarket}/>
   <div className="mobile-greeting reveal-enter"><span>{first?'Hola, '+first+' 👋':'Hola 👋'}</span><h1>¿Qué se te antoja hoy?</h1></div>
