@@ -1,3 +1,5 @@
+import { verifyMarketPage } from './markets';
+import type { MarketCode } from './markets';
 import type { AuthResponse, DriverProfile, MenuItem, Order, PaymentOptions, Quote, Restaurant, User } from './types';
 
 export class ApiError extends Error {
@@ -36,6 +38,15 @@ export const api = {
   me: () => request<User>('/auth/me'),
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
+  restaurantsForMarket: async (code:MarketCode):Promise<Restaurant[]> => {
+    const found:Restaurant[]=[];const seen=new Set<number>();
+    for(let page=0;page<20;page++){
+      const rows=await request<Restaurant[]>(`/restaurants?market_code=${encodeURIComponent(code)}&limit=100&offset=${page*100}`);
+      verifyMarketPage(code,rows,seen);found.push(...rows);
+      if(rows.length<100)return found;
+    }
+    throw new ApiError(503,'El catálogo supera el máximo seguro de páginas.');
+  },
   favorites: () => request<{id:number}[]>('/platform/favorites'),
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
