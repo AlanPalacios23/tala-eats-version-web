@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
 import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { PREVIEW_READONLY } from './lib/preview';
@@ -19,6 +19,7 @@ import { CustomerProfile } from './components/CustomerProfile';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
+import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -72,7 +73,7 @@ function AppFooter(){return <footer className="footer"><div className="container
 function PortalLanding(){
  const [menuOpen,setMenuOpen]=useState(false);
  const links=[
-  {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/clientes',number:'01'},
+  {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/iniciar',number:'01'},
   {title:'Restaurantes',description:'Pedidos, menús y gestión de tu comercio',path:'/restaurante',number:'02'},
   {title:'Repartidores',description:'Tu espacio para gestionar entregas',path:'/repartidor',number:'03'},
  ];
@@ -80,7 +81,7 @@ function PortalLanding(){
   <header className="gateway-header" aria-label="Encabezado Tala Eats">
    <Link to="/" className="gateway-brand" aria-label="Tala Eats, inicio"><span>Tala</span><b>Eats</b><span className="gateway-brand-dot"/></Link>
    <div className="gateway-header-actions">
-    <Link className="gateway-login" to="/acceso" state={{from:'/clientes'}}>Entrar</Link>
+    <Link className="gateway-login" to="/iniciar" state={{from:'/clientes'}}>Entrar</Link>
     <Link className="gateway-signup" to="/acceso" state={{create:true,from:'/clientes'}}>Registrarse</Link>
     <button type="button" className="gateway-menu-toggle" aria-label={menuOpen?'Cerrar menú':'Abrir menú'} aria-expanded={menuOpen} aria-controls="gateway-menu" onClick={()=>setMenuOpen(x=>!x)}>{menuOpen?<X size={22}/>:<Menu size={23}/>}</button>
    </div>
@@ -101,7 +102,7 @@ function PortalLanding(){
     </Link>)}
    </nav>
   </main>
-  <footer className="gateway-footer"><div><span className="gateway-footer-brand">Tala Eats</span><p>Hecho para Tala y nuestra región.</p></div><div><Link to="/clientes">Explorar comercios</Link><Link to="/acceso">Mi cuenta</Link><InstallPWA/></div><span className="gateway-copyright">© 2026 TALA EATS</span></footer>
+  <footer className="gateway-footer"><div><span className="gateway-footer-brand">Tala Eats</span><p>Hecho para Tala y nuestra región.</p></div><div><Link to="/iniciar" state={{from:"/clientes"}}>Explorar comercios</Link><Link to="/acceso">Mi cuenta</Link><InstallPWA/></div><span className="gateway-copyright">© 2026 TALA EATS</span></footer>
  </div>;
 }
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
@@ -111,24 +112,14 @@ function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role)))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
-function Auth(){
- const {user,login,register}=useSession();const nav=useNavigate();const loc=useLocation();
- const [create,setCreate]=useState(Boolean((loc.state as {create?:boolean}|null)?.create)),[name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{
-  if(create)await register(name,email,password);else await login(email,password,otp);
-  const from=(loc.state as {from?:string}|null)?.from;
-  nav(from?.startsWith('/')&&!from.startsWith('//')&&from!=='/acceso'?from:'/clientes',{replace:true});
- }catch(e){setError(e instanceof Error?e.message:'Error al iniciar sesión');}finally{setBusy(false);}};
- if(user)return <div className="container page"><EmptyState icon={<CheckCircle2 size={32}/>} title="Ya tienes una sesión activa" description={'Has iniciado sesión como '+user.name} action={<Link to="/cuenta" className="btn primary">Ir a mi cuenta</Link>}/></div>;
- return <div className="auth-page"><div className="auth-side"><span className="eyebrow">BIENVENIDO A TALA EATS</span><h1>Lo mejor de tu ciudad está aquí.</h1><p>Una sola cuenta para disfrutar los sabores de nuestra comunidad.</p><div className="auth-illustration">🥑 <span>🌮</span> 🍊</div></div><div className="auth-box"><div className="auth-card"><div className="auth-head"><span className="brand-mark"><ChefHat size={24}/></span><h2>{create?'Crea tu cuenta':'Bienvenido de vuelta'}</h2><p>{create?'Únete a Tala Eats.':'Pide lo que se te antoje y sigue tu pedido en tiempo real.'}</p></div>
- {error&&<Alert>{error}</Alert>}<form onSubmit={submit} className="form-stack">
- {create&&<label>Nombre completo<input autoComplete="name" value={name} required minLength={2} maxLength={120} onChange={e=>setName(e.target.value)} placeholder="Tu nombre"/></label>}
- <label>Correo electrónico<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="correo@ejemplo.com"/></label>
- <label>Contraseña<input type="password" autoComplete={create?'new-password':'current-password'} value={password} required minLength={create?8:1} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/></label>
- {!create&&<label>Código de autenticación (si tienes 2FA)<input value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} inputMode="numeric" placeholder="Código de 6 dígitos"/></label>}
- <button className="btn primary full" disabled={busy}>{busy?'Un momento...':create?'Crear cuenta':'Entrar a Tala Eats'} <ArrowRight size={18}/></button></form>
- <p className="switch-auth">{create?'¿Ya tienes una cuenta?':'¿Todavía no tienes cuenta?'} <button className="link-inline" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear una cuenta'}</button></p>
- <p className="fineprint">Las cuentas nuevas son de cliente. Los permisos de comercio o repartidor requieren aprobación.</p></div></div></div>;
+function CustomerGate({children}:{children:ReactNode}){
+ const {user,loading}=useSession();const location=useLocation();
+ if(loading)return <CustomerLaunch/>;
+ // Catalog belongs to authenticated Usuarios, like the Flutter CustomerShell.
+ // Returning from the gateway must display onboarding before any catalog data.
+ if(!user)return <Navigate to="/iniciar" replace state={{from:location.pathname}}/>;
+ if(user.role!=='customer')return <div className="mobile-status" role="alert">Esta cuenta pertenece a otra aplicación de TALA EATS.</div>;
+ return <>{children}</>;
 }
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -188,7 +179,7 @@ function CustomerBottomDock(){
 }
 function CustomerHashScroll(){
  const location=useLocation();
- useEffect(()=>{if(location.pathname==='/clientes'&&location.hash==='#comercios'){document.getElementById('comercios')?.scrollIntoView({behavior:'smooth',block:'start'});}},[location.pathname,location.hash]);
+ useEffect(()=>{const viewport=document.querySelector('.customer-shell > main');if(viewport instanceof HTMLElement)viewport.scrollTop=0;else window.scrollTo(0,0);if(location.pathname==='/clientes'&&location.hash==='#comercios'){document.getElementById('comercios')?.scrollIntoView({behavior:'instant' as ScrollBehavior,block:'start'});}},[location.pathname,location.hash]);
  return null;
 }
 export default function App(){
@@ -205,21 +196,22 @@ export default function App(){
   else sessionStorage.removeItem(CUSTOMER_CART_STORAGE_KEY);
  }catch{/* Private browsing or storage full: in-memory cart remains functional. */}},[cart]);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isOnboarding=['/iniciar','/acceso'].includes(location.pathname);const isCustomerShell=['/iniciar','/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  if(session.loading && (location.pathname!=='/' && location.pathname!=='/restaurante' && location.pathname!=='/repartidor'))return <CustomerLaunch/>;
- return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{PREVIEW_READONLY&&<div className="tala-review-banner" role="status"><strong>VISTA PREVIA</strong><span>Modo de revisión: pedidos, pagos y cambios de datos bloqueados. La información consultada puede proceder del backend existente.</span></div>}{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
+ return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{PREVIEW_READONLY&&<div className="tala-review-banner" role="status"><strong>VISTA PREVIA</strong><span>Modo de revisión: pedidos, pagos y cambios de datos bloqueados. La información consultada puede proceder del backend existente.</span></div>}{!isGateway&&!isOnboarding&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
-   <Route path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}/><Route path="/buscar" element={<CustomerSearch market={market}/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add} market={market}/>}/>
+   <Route path="/iniciar" element={<CustomerEntry/>}/>
+   <Route path="/clientes" element={<CustomerGate><CustomerHome market={market} onSelectMarket={selectMarket}/></CustomerGate>}/><Route path="/buscar" element={<CustomerGate><CustomerSearch market={market}/></CustomerGate>}/><Route path="/comercio/:id" element={<CustomerGate><CustomerCommerce cart={cart} onAdd={add} market={market}/></CustomerGate>}/>
    <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/pago/:id" element={<Protected role="customer"><CustomerStripeTest/></Protected>}/><Route path="/chat/:id" element={<Protected role="customer"><CustomerOrderChat/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/editar-perfil" element={<Protected role="customer"><CustomerProfile/></Protected>}/>
-   <Route path="/acceso" element={<Auth/>}/>
+   <Route path="/acceso" element={<CustomerStepAuth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main>{!isOnboarding&&<CustomerBottomDock/>}{!isGateway&&!isOnboarding&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
