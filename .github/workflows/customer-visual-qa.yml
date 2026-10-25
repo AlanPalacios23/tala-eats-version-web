@@ -6,6 +6,9 @@ on:
       - 'src/**'
       - 'tools/capture-customer-qa.mjs'
       - '.github/workflows/customer-visual-qa.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
