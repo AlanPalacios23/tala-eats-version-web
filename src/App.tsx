@@ -6,7 +6,7 @@ import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { EMPTY_CART, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
-import type { MenuItem, Order } from './lib/types';
+import type { MenuItem } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
 import { CustomerCommerce } from './components/CustomerCommerce';
 import { isMarketCode, PILOT_MARKET } from './lib/markets';
