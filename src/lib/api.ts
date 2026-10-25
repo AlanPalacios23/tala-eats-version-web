@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import type { StripeTestConfig, StripeIntentReply } from './stripe-test';
 import { normalizeCustomerAddress } from './customer-checkout';
 import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
 import type { MarketCode } from './markets';
@@ -54,6 +55,9 @@ export const api = {
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
+  stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
+  stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
+  liveOrder: (orderId:number) => request<{order:Order}>(`/v11/orders/${orderId}/live`),
   customerAddresses: async ():Promise<CustomerAddress[]> => {const raw=await request<unknown>('/platform/addresses');if(!Array.isArray(raw))throw new ApiError(502,'El servidor no devolvió direcciones válidas.');return raw.map(normalizeCustomerAddress);},
   wallet: () => request<{balance:string|number;points:number;plus_member?:boolean;referral_code?:string;tier?:string;transactions?:{id?:number;kind?:string;description?:string;amount?:number|string;created_at?:string}[]}>('/platform/wallet'),
   redeemReward: () => request<Record<string,unknown>>('/platform/rewards/redeem?points=500',json('POST')),
