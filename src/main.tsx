@@ -34,6 +34,11 @@ function PortalInstallIdentity() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
  <React.StrictMode><BrowserRouter><PortalInstallIdentity/><SessionProvider><App/></SessionProvider></BrowserRouter></React.StrictMode>
 );
+// Replace the HTML first-paint brand only after React has committed.
+// React continues the real authenticated-startup splash during /auth/me.
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+ document.getElementById('tala-first-paint')?.remove();
+}));
 if ('serviceWorker' in navigator && import.meta.env.PROD && !PREVIEW_READONLY) {
  window.addEventListener('load', () => {
    navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(() => {});
