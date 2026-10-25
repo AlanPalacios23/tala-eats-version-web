@@ -26,12 +26,12 @@ export function checkoutAllowed(options:PaymentOptions|null|undefined,mode:Fulfi
  if(mode==='pickup')return options.pickup_quote_supported===true&&options.pickup_checkout_supported!==false;
  return options.delivery_cash_supported===true&&options.delivery_checkout_supported===true&&options.delivery_quote_supported===true;
 }
-export function buildCheckoutRequest(cart:Cart,mode:FulfillmentMode,coupon:string,tip:string,address?:CustomerAddress|null):CheckoutRequest{
+export function buildCheckoutRequest(cart:Cart,mode:FulfillmentMode,coupon:string,tip:string,address?:CustomerAddress|null,method:PaymentKind='cash'):CheckoutRequest{
  if(!cart.restaurantId||!cart.entries.length)throw new Error('El carrito está vacío.');
  if(mode==='delivery'&&!validAddress(address))throw new Error('Agrega una dirección con coordenadas válidas.');
  if(!/^[0-9]{1,6}([.][0-9]{1,2})?$/.test(tip))throw new Error('La propina no es válida.');
  return {
-  restaurant_id:cart.restaurantId,order_type:mode,payment_method:'cash',
+  restaurant_id:cart.restaurantId,order_type:mode,payment_method:method,
   items:cart.entries.map(e=>({menu_item_id:e.item.id,quantity:e.quantity,options:e.note??''})),
   tip:mode==='pickup'?'0':tip,coupon_code:coupon.trim(),
   delivery_lat:mode==='delivery'?address!.lat:null,delivery_lng:mode==='delivery'?address!.lng:null
