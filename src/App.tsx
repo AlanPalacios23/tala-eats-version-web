@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X, Heart, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X, Heart, Star, AtSign, LockKeyhole, EyeOff, Eye } from 'lucide-react';
 import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
@@ -163,23 +163,41 @@ function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';
 }
 function Auth(){
  const {user,login,register}=useSession();const nav=useNavigate();const loc=useLocation();
- const [create,setCreate]=useState(Boolean((loc.state as {create?:boolean}|null)?.create)),[name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [create,setCreate]=useState(Boolean((loc.state as {create?:boolean}|null)?.create));
+ const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
+ const [showPassword,setShowPassword]=useState(false);
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{
   if(create)await register(name,email,password);else await login(email,password,otp);
   const from=(loc.state as {from?:string}|null)?.from;
   nav(from?.startsWith('/')&&!from.startsWith('//')?from:'/cuenta',{replace:true});
  }catch(e){setError(e instanceof Error?e.message:'Error al iniciar sesión');}finally{setBusy(false);}};
- if(user)return <div className="container page"><EmptyState icon={<CheckCircle2 size={32}/>} title="Ya tienes una sesión activa" description={'Has iniciado sesión como '+user.name} action={<Link to="/cuenta" className="btn primary">Ir a mi cuenta</Link>}/></div>;
- return <div className="auth-page"><div className="auth-side"><span className="eyebrow">BIENVENIDO A TALA EATS</span><h1>Lo mejor de tu ciudad está aquí.</h1><p>Una sola cuenta para disfrutar los sabores de nuestra comunidad.</p><div className="auth-illustration">🥑 <span>🌮</span> 🍊</div></div><div className="auth-box"><div className="auth-card"><div className="auth-head"><span className="brand-mark"><ChefHat size={24}/></span><h2>{create?'Crea tu cuenta':'¡Qué bueno verte!'}</h2><p>{create?'Únete a Tala Eats.':'Ingresa para continuar tu experiencia.'}</p></div>
- {error&&<Alert>{error}</Alert>}<form onSubmit={submit} className="form-stack">
- {create&&<label>Nombre completo<input autoComplete="name" value={name} required minLength={2} maxLength={120} onChange={e=>setName(e.target.value)} placeholder="Tu nombre"/></label>}
- <label>Correo electrónico<input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="correo@ejemplo.com"/></label>
- <label>Contraseña<input type="password" autoComplete={create?'new-password':'current-password'} value={password} required minLength={create?8:1} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/></label>
- {!create&&<label>Código de autenticación (si tienes 2FA)<input value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} inputMode="numeric" placeholder="Código de 6 dígitos"/></label>}
- <button className="btn primary full" disabled={busy}>{busy?'Un momento...':create?'Crear cuenta':'Entrar a Tala Eats'} <ArrowRight size={18}/></button></form>
- <p className="switch-auth">{create?'¿Ya tienes una cuenta?':'¿Todavía no tienes cuenta?'} <button className="link-inline" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear una cuenta'}</button></p>
- <p className="fineprint">Las cuentas nuevas son de cliente. Los permisos de comercio o repartidor requieren aprobación.</p></div></div></div>;
+ if(user)return <div className="te-customer te-panel-page"><div className="te-panel-inner">
+  <EmptyState icon={<CheckCircle2 size={32}/>} title="Ya tienes una sesión activa" description={'Has iniciado sesión como '+user.name}
+   action={<Link to="/cuenta" className="btn primary">Ir a mi cuenta</Link>}/></div></div>;
+ return <div className="te-customer-auth te-motion-page">
+   <div className="te-auth-glow" aria-hidden="true"/>
+   <div className="te-auth-content">
+     <div className="te-auth-brand"><span className="te-auth-logo"><ChefHat size={24}/></span><strong>Tala Eats</strong></div>
+     <div className="te-auth-heading te-motion-reveal">
+       <h1>{create?'Crea tu cuenta':'Bienvenido de vuelta'}</h1>
+       <p>{create?'Únete a Tala Eats y disfruta lo mejor de tu ciudad.':'Pide lo que se te antoje y sigue tu pedido en tiempo real.'}</p>
+     </div>
+     <form className="te-auth-form te-motion-reveal" onSubmit={submit} aria-label={create?'Crear cuenta':'Iniciar sesión'}>
+       {create&&<label>Nombre completo<div className="te-auth-input"><UserRound size={19}/><input autoComplete="name" value={name} required minLength={2} maxLength={120} onChange={e=>setName(e.target.value)} placeholder="Tu nombre"/></div></label>}
+       <label>Correo electrónico<div className="te-auth-input"><AtSign size={19}/><input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="correo@ejemplo.com"/></div></label>
+       <label>Contraseña<div className="te-auth-input"><LockKeyhole size={19}/><input type={showPassword?'text':'password'} autoComplete={create?'new-password':'current-password'} value={password} required minLength={create?8:1} onChange={e=>setPassword(e.target.value)} placeholder="Tu contraseña"/><button type="button" className="te-auth-toggle" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?'Ocultar contraseña':'Mostrar contraseña'}>{showPassword?<EyeOff size={19}/>:<Eye size={19}/>}</button></div></label>
+       {!create&&<label>Código de autenticación (solo si tienes 2FA)<div className="te-auth-input"><ShieldCheck size={19}/><input value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} inputMode="numeric" autoComplete="one-time-code" placeholder="Código de 6 dígitos"/></div></label>}
+       {error&&<div className="te-auth-error" role="alert">{error}</div>}
+       <button className="te-auth-submit" disabled={busy}>{busy?'Un momento…':create?'Crear cuenta':'Iniciar sesión'}<ArrowRight size={19}/></button>
+     </form>
+     <p className="te-auth-switch">{create?'¿Ya tienes una cuenta?':'¿Aún no tienes cuenta?'} <button type="button" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear cuenta'}</button></p>
+     <p className="te-auth-fineprint">Tu cuenta nueva será de cliente. Restaurantes y repartidores requieren autorización independiente.</p>
+     <Link className="te-auth-back" to="/clientes"><ArrowLeft size={16}/>Volver a Inicio</Link>
+   </div>
+ </div>;
 }
+
 function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  const {user}=useSession();
  const [notes,setNotes]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Order|null>(null);
