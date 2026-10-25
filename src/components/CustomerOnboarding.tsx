@@ -26,15 +26,15 @@ export function CustomerEntry(){
  },[user?.role,navigate,from]);
  if(user?.role==='customer')return null;
  return <div className={'customer-entry-screen stage-'+stage} data-mobile-screen={stage} aria-label="Bienvenida a Tala Eats">
-  {stage==='splash'?<div className="customer-onboarding-splash"><div className="customer-onboarding-wordmark"><strong>Tala</strong><small>EATS</small></div><p>Pide, disfruta y repite.</p></div>:
+  {stage==='splash'?<div className="customer-onboarding-splash"><img className="customer-brand-script splash" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="340" height="104"/><p>Pide, disfruta y repite.</p></div>:
    stage==='welcome'?<div className="customer-onboarding-photo welcome">
-     <div className="customer-onboarding-content"><div className="customer-onboarding-wordmark small"><strong>Tala</strong><small>EATS</small></div><h1>Bienvenido<br/>a Tala Eats</h1><p>Tus platillos favoritos,<br/>más cerca de ti.</p></div>
-     <button className="customer-onboarding-cta glass" onClick={()=>setStage('methods')}>Continuar <ArrowRight size={22}/></button>
+     <div className="customer-onboarding-content"><div className="customer-brand-plaque"><img className="customer-brand-script" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="290" height="88"/></div><h1>Bienvenido<br/>a Tala Eats</h1><p>Tus platillos favoritos,<br/>más cerca de ti.</p></div>
+     <button className="customer-onboarding-cta glass" onClick={()=>setStage('methods')}><span className="customer-cta-label">Continuar</span><ArrowRight size={22} aria-hidden="true"/></button>
     </div>:
     <div className="customer-onboarding-photo methods">
      <button className="customer-onboarding-back" aria-label="Volver a bienvenida" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
-     <div className="customer-onboarding-content"><h1>Un antojo,<br/>mil posibilidades.</h1><p>Tus sabores favoritos están más cerca.</p></div>
-     <div className="customer-onboarding-actions"><Link className="customer-onboarding-cta orange" to="/acceso" state={{from}}><Mail size={23}/> Continuar con tu correo <ArrowRight size={20}/></Link><Link to="/acceso" state={{from,create:true}} className="customer-onboarding-register">¿Aún no tienes cuenta? Crear cuenta</Link></div>
+     <div className="customer-onboarding-content"><div className="customer-brand-plaque subtle"><img className="customer-brand-script" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="240" height="73"/></div><h1>Un antojo,<br/>mil posibilidades.</h1><p>Disfruta lo mejor de los comercios de tu ciudad.</p></div>
+     <div className="customer-onboarding-actions"><Link className="customer-onboarding-cta orange" to="/acceso" state={{from}}><Mail size={23} aria-hidden="true"/><span className="customer-cta-label">Continuar con tu correo</span><ArrowRight size={20} aria-hidden="true"/></Link><Link to="/acceso" state={{from,create:true}} className="customer-onboarding-register">¿Aún no tienes cuenta? <strong>Crear cuenta</strong></Link></div>
     </div>}
  </div>;
 }
@@ -97,7 +97,7 @@ export function CustomerStepAuth(){
     {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> He leído y acepto los <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer">Términos y condiciones</a> y el <a href={LEGAL_LINKS.privacy} target="_blank" rel="noopener noreferrer">Aviso de privacidad</a> de Tala Eats.</label>}
     {error&&<div className="customer-auth-error" role="alert">{error}</div>}
     {step===0&&<button type="button" className="customer-auth-switch" onClick={switchMode}>{mode==='signin'?'¿Aún no tienes cuenta? Crear cuenta en TALA EATS':'¿Ya tienes cuenta? Iniciar sesión'}</button>}
-    <button className="customer-auth-next" type="submit" disabled={!valid||busy||(mode==='signup'&&isPassword&&!consent)}>{busy?'Verificando…':isPassword?mode==='signin'?'Iniciar sesión':'Crear cuenta':'Continuar'} <ArrowRight size={21}/></button>
+    <button className="customer-auth-next" type="submit" disabled={!valid||busy||(mode==='signup'&&isPassword&&!consent)}><span className="customer-cta-label">{busy?'Verificando…':isPassword?mode==='signin'?'Iniciar sesión':'Crear cuenta':'Continuar'}</span><ArrowRight size={21} aria-hidden="true"/></button>
    </form>
  </div>;
 }
