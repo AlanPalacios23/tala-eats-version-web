@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/session';
 import {LEGAL_LINKS} from '../lib/legal-links';
@@ -18,6 +18,7 @@ export function CustomerEntry(){
  const [stage,setStage]=useState<'splash'|'welcome'|'methods'>('splash');
  const [splashArtFailed,setSplashArtFailed]=useState(false);
  const [tacosArtFailed,setTacosArtFailed]=useState(false);
+ const [bagArtFailed,setBagArtFailed]=useState(false);
  const from=safeDestination((location.state as {from?:string}|null)?.from);
  useEffect(()=>{
   if(user?.role==='customer')navigate(from,{replace:true});
@@ -40,10 +41,13 @@ export function CustomerEntry(){
      <div className="customer-splash-fallback customer-welcome-tacos-fallback" aria-hidden="true"><h1>Comida de<br/>tu ciudad</h1><p>Tus restaurantes y comercios favoritos, más cerca de ti.</p></div>
      <button type="button" className="customer-splash-next" onClick={()=>setStage('methods')} aria-label="Avanzar desde Comida de tu ciudad" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
     </div>:
-    <div className="customer-onboarding-photo methods">
-     <button className="customer-onboarding-back" aria-label="Volver a bienvenida" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
-     <div className="customer-onboarding-content"><div className="customer-brand-plaque subtle"><img className="customer-brand-script" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="240" height="73"/></div><h1>Un antojo,<br/>mil posibilidades.</h1><p>Disfruta lo mejor de los comercios de tu ciudad.</p></div>
-     <div className="customer-onboarding-actions"><Link className="customer-onboarding-cta orange" to="/acceso" state={{from}}><Mail size={23} aria-hidden="true"/><span className="customer-cta-label">Continuar con tu correo</span><ArrowRight size={20} aria-hidden="true"/></Link><Link to="/acceso" state={{from,create:true}} className="customer-onboarding-register">¿Aún no tienes cuenta? <strong>Crear cuenta</strong></Link></div>
+    <div className="customer-onboarding-splash customer-splash-exact customer-bag-screen">
+     <picture className="customer-splash-art customer-bag-art" aria-hidden="true" style={{display:bagArtFailed?'none':undefined}}>
+       <img src="/branding/onboarding-rapido-seguro-864x1536.jpg" width="864" height="1536" alt="" draggable={false} onError={()=>setBagArtFailed(true)}/>
+     </picture>
+     <div className="customer-splash-fallback customer-bag-fallback" aria-hidden="true"><h1>Rápido y seguro</h1><p>Haz tu pedido en minutos y sigue cada paso en tiempo real.</p></div>
+     <button type="button" className="customer-onboarding-back" aria-label="Volver a Comida de tu ciudad" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
+     <Link className="customer-splash-next customer-bag-next" to="/acceso" state={{from}} aria-label="Continuar con tu correo electrónico" title="Continuar con tu correo"><ArrowRight size={28} strokeWidth={2.4}/></Link>
     </div>}
  </div>;
 }
