@@ -176,7 +176,7 @@ if [[ "$EXISTING" == no ]];then
  install -m 644 "$SRC/deploy/nginx-preview-server.conf" "$SERVER"
  install -m 644 "$SRC/deploy/talaeats-web-preview.service" "$UNIT"
  systemctl daemon-reload
- nginx -t -c "$NGINX"
+ # The systemd ExecStartPre runs nginx -t AS www-data, avoiding a root-owned PID.
  ln -s "$RELEASE" "$CURRENT"
  SWITCHED=yes
  systemctl enable --now "$SERVICE"
