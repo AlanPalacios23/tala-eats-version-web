@@ -41,4 +41,21 @@ describe('portal plus three PWA install identities',()=>{
   expect(script).not.toContain('pm2 restart');
   expect(script).not.toContain('prisma migrate deploy');
  });
+ it('dedicated Nginx uses a separate unit and has no global-service side effects',()=>{
+  const install=read('../deploy/kali-install-pwa-isolated.sh');
+  const unit=read('../deploy/talaeats-web-pwa.service');
+  const config=read('../deploy/nginx-isolated-main.conf');
+  expect(install).toContain('PWA_ISOLATED_INSTALL_PLAN=PASS_READ_ONLY');
+  expect(install).toContain('I_APPROVE_ISOLATED_PWA_18195_ONLY');
+  expect(install).toContain('talaeats-web-pwa.service');
+  expect(install).toContain('PWA_GLOBAL_NGINX_PM2_POSTGRES_STRIPE=UNMODIFIED');
+  expect(install).not.toContain('systemctl start nginx');
+  expect(install).not.toContain('systemctl reload nginx');
+  expect(install).not.toContain('pm2 restart');
+  expect(unit).toContain('User=www-data');
+  expect(unit).toContain('PrivateTmp=true');
+  expect(unit).toContain('ProtectSystem=strict');
+  expect(config).toContain('include /etc/talaeats-web-pwa/server.conf');
+  expect(config).not.toContain('/etc/nginx/sites-enabled');
+});
 });
