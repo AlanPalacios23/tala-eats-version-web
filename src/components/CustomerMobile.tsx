@@ -7,7 +7,7 @@ import { foldSearch } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
 
 /** Fidelity reference: Mobile Usuarios 1.0.46+57 / HomeScreen, SearchScreen, RestaurantCard.
- * Delivery, favorite persistence and notifications must never be simulated as successful API operations.
+ * Delivery and notifications must never be simulated as successful API operations.
  */
 function useRestaurants() {
  const [restaurants,setRestaurants]=useState<Restaurant[]|null>(null);
@@ -20,16 +20,36 @@ function useRestaurants() {
  },[tick]);
  return {restaurants,loading,error,refresh:()=>setTick(v=>v+1)};
 }
-function MerchantCard({restaurant:r,index}:{restaurant:Restaurant;index:number}){
- const [favorite,setFavorite]=useState(false);
+function useFavorites(){
+ const {user}=useSession();
+ const [ids,setIds]=useState<Set<number>>(new Set());
+ const [ready,setReady]=useState(false);
+ const [error,setError]=useState('');
+ const [pending,setPending]=useState<number|null>(null);
+ useEffect(()=>{let active=true;setIds(new Set());setReady(false);setError('');
+  if(!user){setReady(true);return ()=>{active=false};}
+  api.favorites().then(rows=>{if(active){setIds(new Set(rows.map(row=>row.id)));setReady(true);}}).catch(()=>{if(active){setError('No pudimos verificar tus favoritos.');setReady(false);}});
+  return()=>{active=false};
+ },[user?.id]);
+ const toggle=async(id:number)=>{
+  if(!user||pending!==null||!ready)return;
+  const was=ids.has(id);
+  setPending(id);setError('');setIds(old=>{const next=new Set(old);if(next.has(id))next.delete(id);else next.add(id);return next;});
+  try{const response=await api.toggleFavorite(id);setIds(old=>{const next=new Set(old);if(response.favorite)next.add(id);else next.delete(id);return next;});}
+  catch{setIds(old=>{const next=new Set(old);if(was)next.add(id);else next.delete(id);return next;});setError('No se pudo guardar el favorito. Vuelve a intentarlo.');}
+  finally{setPending(null);}
+ };
+ return {ids,ready,error,pending,toggle,user};
+}
+function MerchantCard({restaurant:r,index,favorite,ready,pending,toggle,user}:{restaurant:Restaurant;index:number;favorite:boolean;ready:boolean;pending:boolean;toggle:(id:number)=>void;user:boolean}){
  return <article className="mobile-merchant-card reveal-enter" style={{animationDelay:Math.min(index,7)*45+'ms'}}>
   <Link to={'/comercio/'+r.id} className="mobile-merchant-photo" aria-label={'Ver '+r.name}>
    {safeImage(r.cover_image_url)?<img src={safeImage(r.cover_image_url)!} alt={r.name} loading="lazy" referrerPolicy="no-referrer"/>:<div className="mobile-merchant-fallback" role="img" aria-label={r.name}>{r.emoji||'🍲'}</div>}
    {!r.is_open&&<span className="mobile-closed">Cerrado</span>}
   </Link>
-  <button type="button" className={'mobile-favorite '+(favorite?'active':'')} aria-pressed={favorite} aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'} title="Favorito temporal de esta pantalla" onClick={()=>setFavorite(v=>!v)}>
+  {user?<button type="button" disabled={!ready||pending} className={'mobile-favorite '+(favorite?'active':'')} aria-pressed={favorite} aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'} title={ready?'Guardar favorito en tu cuenta':'Verificando favoritos'} onClick={()=>toggle(r.id)}>
    <Heart size={21} fill={favorite?'currentColor':'none'}/>
-  </button>
+  </button>:<Link className="mobile-favorite" to="/acceso" state={{from:'/clientes'}} aria-label="Iniciar sesión para guardar favorito"><Heart size={21}/></Link>}
   <Link to={'/comercio/'+r.id} className="mobile-merchant-details">
    <strong>{r.name}</strong>
    <span>{r.cuisine||r.description||'Comercio local'}</span>
@@ -38,10 +58,11 @@ function MerchantCard({restaurant:r,index}:{restaurant:Restaurant;index:number})
  </article>;
 }
 function MerchantList({items,loading,error,refresh,searching=false}:{items:Restaurant[];loading:boolean;error:string;refresh:()=>void;searching?:boolean}){
+ const favorite=useFavorites();
  if(loading)return <div className="mobile-customer-list" aria-label="Cargando comercios">{[0,1,2].map(i=><div className="customer-card-skeleton" key={i}><div/><span/><span/></div>)}</div>;
  if(error)return <div className="mobile-status"><WifiOff size={30}/><h3>No pudimos cargar los comercios</h3><p>Revisa tu conexión e inténtalo de nuevo.</p><button onClick={refresh}>Reintentar</button></div>;
  if(!items.length)return <div className="mobile-status"><Store size={30}/><h3>{searching?'Sin resultados':'Aún no hay comercios disponibles'}</h3><p>{searching?'Prueba con otro nombre o categoría.':'Cuando haya negocios activos en esta zona podrás encontrarlos aquí.'}</p></div>;
- return <div className="mobile-customer-list">{items.map((item,index)=><MerchantCard restaurant={item} index={index} key={item.id}/>)}</div>;
+ return <><div role="status" className="mobile-favorites-error">{favorite.error}</div><div className="mobile-customer-list">{items.map((item,index)=><MerchantCard restaurant={item} index={index} key={item.id} favorite={favorite.ids.has(item.id)} ready={favorite.ready} pending={favorite.pending===item.id} toggle={favorite.toggle} user={Boolean(favorite.user)}/>)}</div></>;
 }
 export function CustomerHome(){
  const {user}=useSession();const {restaurants,loading,error,refresh}=useRestaurants();
