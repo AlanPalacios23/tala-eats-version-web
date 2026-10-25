@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
-import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
+import { EMPTY_CART, addVariantItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
+import { CustomerCommerce } from './components/CustomerCommerce';
 import { amountInCents, pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -94,19 +95,6 @@ function PortalLanding(){
   <footer className="gateway-footer"><div><span className="gateway-footer-brand">Tala Eats</span><p>Hecho para Tala y nuestra región.</p></div><div><Link to="/clientes">Explorar comercios</Link><Link to="/acceso">Mi cuenta</Link><InstallPWA/></div><span className="gateway-copyright">© 2026 TALA EATS</span></footer>
  </div>;
 }
-function Commerce({add}:{add:(item:MenuItem)=>void}){
- const {id}=useParams();const parsed=Number(id);const good=Number.isSafeInteger(parsed)&&parsed>0;
- const {value:r,loading,error,refresh}=useLoad(()=>good?api.restaurant(parsed):Promise.reject(Error('Comercio inválido')),[parsed]);
- const [filter,setFilter]=useState('Todos');
- const categories=['Todos',...new Set((r?.menu_items??[]).map(i=>i.category||'General'))];
- const products=(r?.menu_items??[]).filter(i=>filter==='Todos'||(i.category||'General')===filter);
- return <div className="container page"><Link to="/clientes" className="back-link"><ArrowLeft size={18}/> Volver a comercios</Link>
- {loading?<Spinner/>:error?<Alert>{error} <button onClick={refresh}>Reintentar</button></Alert>:r&&<><div className="commerce-intro"><div className="commerce-pic"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍽️'} alt={r.name}/></div><div><span className="eyebrow">COMERCIO LOCAL</span><h1>{r.name}</h1><p>{r.description||r.cuisine||'De Tala para ti'}</p><div className="commerce-info"><span><Clock3 size={18}/>{r.eta_min??'—'} min</span><span><MapPin size={18}/>{r.address||'Tala, Jalisco'}</span><span className={r.is_open?'text-green':'text-grey'}>{r.is_open?'● Abierto':'● Cerrado'}</span></div>{!r.pickup_enabled&&<Alert kind="info">Este comercio no tiene habilitada la recogida de pedidos.</Alert>}</div></div>
- <div className="section-title-row smaller"><SectionTitle eyebrow="EL MENÚ" title="Elige algo rico"/><span className="muted">{products.length} productos</span></div><div className="chips">{categories.map(c=><button key={c} className={'chip '+(c===filter?'active':'')} onClick={()=>setFilter(c)}>{c}</button>)}</div>
- {products.length===0?<EmptyState icon={<Coffee size={32}/>} title="Menú en preparación" description="Este comercio aún no publica productos en esta categoría."/>:<div className="product-grid">{products.map(p=><article className="product-card" key={p.id}><div className="product-pic"><FoodPicture src={p.image_url} emoji="🍴" alt={p.name}/></div><div className="product-content"><small>{p.category||'Especialidad'}</small><h3>{p.name}</h3><p>{p.description||'Hecho para disfrutar.'}</p><div className="product-bottom"><strong>{pesos(p.price)}</strong><button className="add-product" disabled={!r.is_open||!r.pickup_enabled||!p.is_available||p.stock<=0} onClick={()=>add(p)} title="Agregar al carrito"><Plus size={19}/></button></div>{(!p.is_available||p.stock<=0)&&<small className="text-grey">Agotado</small>}</div></article>)}</div>}
- </>}
- </div>;
-}
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
  if(loading)return <div className="container page"><Spinner/></div>;
@@ -179,7 +167,7 @@ function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  }
  if(result)return <div className="container page"><EmptyState icon={<CheckCircle2 size={34}/>} title={'Pedido #'+result.id+' recibido'} description="Tu solicitud se guardó en el servidor. Consulta el estado antes de pasar a recogerlo." action={<Link className="btn primary" to="/pedidos">Ver mis pedidos</Link>}/></div>;
  return <div className="container page"><Link to="/clientes" className="back-link"><ArrowLeft size={18}/> Seguir explorando</Link><SectionTitle eyebrow="TU ELECCIÓN" title="Tu carrito" description="Confirma los productos antes de realizar el pedido."/>
- {!cart.entries.length?<EmptyState icon={<ShoppingCart size={32}/>} title="Tu carrito está vacío" description="Descubre algo delicioso y agrégalo aquí." action={<Link to="/clientes" className="btn primary">Ver comercios</Link>}/>:<div className="cart-layout"><div className="cart-items"><h3>{detail.value?.name||'Productos elegidos'}</h3>{cart.entries.map(e=><div key={e.item.id} className="cart-line"><div className="cart-icon">🍽️</div><div><strong>{e.item.name}</strong><small>{pesos(e.item.price)} por unidad</small></div><div className="qty"><button onClick={()=>setCart(updateQuantity(cart,e.item.id,-1))} aria-label="Quitar uno"><Minus size={15}/></button><b>{e.quantity}</b><button onClick={()=>setCart(updateQuantity(cart,e.item.id,1))} aria-label="Agregar uno"><Plus size={15}/></button></div></div>)}<label className="note-field">Notas para el restaurante<textarea maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Ej. Sin cebolla..." rows={3}/></label></div><aside className="summary-card"><h3>Resumen de pedido</h3><p className="summary-line">Productos <strong>{pesos(basketTotal(cart))}</strong></p><p className="summary-line">Servicio y total <span>Calculados por el servidor</span></p><hr/>
+ {!cart.entries.length?<EmptyState icon={<ShoppingCart size={32}/>} title="Tu carrito está vacío" description="Descubre algo delicioso y agrégalo aquí." action={<Link to="/clientes" className="btn primary">Ver comercios</Link>}/>:<div className="cart-layout"><div className="cart-items"><h3>{detail.value?.name||'Productos elegidos'}</h3>{cart.entries.map(e=><div key={e.item.id+'-'+(e.note??'')} className="cart-line"><div className="cart-icon">🍽️</div><div><strong>{e.item.name}</strong><small>{pesos(e.item.price)} por unidad{e.note?' · '+e.note:''}</small></div><div className="qty"><button onClick={()=>setCart(updateQuantity(cart,e.item.id,-1,e.note??''))} aria-label="Quitar uno"><Minus size={15}/></button><b>{e.quantity}</b><button onClick={()=>setCart(updateQuantity(cart,e.item.id,1,e.note??''))} aria-label="Agregar uno"><Plus size={15}/></button></div></div>)}<label className="note-field">Notas para el restaurante<textarea maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Ej. Sin cebolla..." rows={3}/></label></div><aside className="summary-card"><h3>Resumen de pedido</h3><p className="summary-line">Productos <strong>{pesos(basketTotal(cart))}</strong></p><p className="summary-line">Servicio y total <span>Calculados por el servidor</span></p><hr/>
  {quote.loading?<p className="muted">Consultando el precio real…</p>:quote.error?<Alert>{quote.error}</Alert>:quote.value?<div className="summary-total"><span>Total confirmado</span><strong>{pesos(quote.value.total)}</strong></div>:null}
  <div className="choice-note"><ShoppingBag size={19}/><div><strong>Recoger en el negocio</strong><span>Sin servicio de repartidor en esta versión LIVE.</span></div></div>
  {!user?<Link to="/acceso" state={{from:'/carrito'}} className="btn primary full">Entrar para pedir</Link>:user.role!=='customer'?<Alert kind="info">El pedido debe realizarse con una cuenta de cliente.</Alert>:<><div className="payment-choice">{methods.loading?'Cargando medios de pago…':<><span className="payment-radio">●</span><div><strong>Efectivo al recoger</strong><small>{cash?'Disponible según validación del restaurante':'No disponible por ahora'}</small></div></>}</div><p className="fineprint">La tarjeta requiere un flujo web Stripe verificado; no está habilitada en este MVP.</p><button className="btn primary full" disabled={busy||!canCheckout} onClick={()=>void submit()}>{busy?'Confirmando...':'Confirmar pedido'} <ArrowRight size={18}/></button></>}
@@ -253,11 +241,11 @@ function CustomerHashScroll(){
 }
 export default function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/');
- const add=(item:MenuItem)=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return;}setCart(v=>addItem(v,item));};
+ const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
-   <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
+   <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add}/>}/>
    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
    <Route path="/pedidos" element={<Protected role="customer"><Orders/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
@@ -265,5 +253,5 @@ export default function App(){
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&!location.pathname.startsWith('/comercio/')&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
