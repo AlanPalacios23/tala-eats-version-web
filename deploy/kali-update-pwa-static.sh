@@ -28,6 +28,19 @@ SITE_HOST="web-talaeats.alan-palacios-dev.com"
 LOCAL="http://127.0.0.1:18195"
 SERVICE="talaeats-web-pwa.service"
 
+# New Flutter v1.0.46 parity relies on four private owner-approved HD assets.
+# Halt BOTH plan and apply if they have not been validated and baked into dist.
+if [[ -f "$SRC/scripts/verify-mobile-hd-assets.py" ]];then
+  python3 "$SRC/scripts/verify-mobile-hd-assets.py" || {
+    echo 'PWA_UPDATE_ABORT=OFFICIAL_LANDING_MEDIA_MISSING_OR_WRONG_HASH';exit 1
+  }
+  for file in food_tala.webp food_fiesta.webp tala_eats_original_wordmark.png tala_eats_wordmark_transparent.png;do
+    [[ -s "$DIST/landing/$file" ]] || {
+      echo "PWA_UPDATE_ABORT=HD_ASSET_MISSING_IN_DIST:$file";exit 1
+    }
+  done
+fi
+
 [[ -d "$SRC" && -d "$DIST" && ! -L "$SRC" && ! -L "$DIST" ]] || {
  echo 'PWA_UPDATE_ABORT=SOURCE_OR_BUILD_NOT_FOUND';exit 1
 }
