@@ -2,12 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, ChevronRight, CreditCard, Info, MapPin, Minus, Plus, RefreshCw, ShoppingBag, Store, Truck, Wallet } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
-import { basketTotal, lineItems, updateQuantity } from '../lib/cart';
+import { basketTotal, updateQuantity } from '../lib/cart';
 import type { Cart } from '../lib/cart';
 import { useSession } from '../lib/session';
-import { amountInCents } from '../lib/mobile-parity';
 import { buildCheckoutRequest, checkoutAllowed, assertServerQuote, fingerprint, quoteMateriallyChanged, validAddress, validateCartAgainstRestaurant } from '../lib/customer-checkout';
-import type { CheckoutRequest, CustomerAddress, FulfillmentMode, VerifiedQuote } from '../lib/customer-checkout';
+import type { CustomerAddress, FulfillmentMode, VerifiedQuote } from '../lib/customer-checkout';
 import type { Order, PaymentOptions, Restaurant } from '../lib/types';
 
 function OrderAmount({label,value,primary=false}:{label:string;value:string|number|undefined;primary?:boolean}){
@@ -55,7 +54,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  const [loading,setLoading]=useState(true),[serverError,setServerError]=useState('');
  const [refresh,setRefresh]=useState(0),[mode,setMode]=useState<FulfillmentMode>('pickup'),[coupon,setCoupon]=useState(''),[notes,setNotes]=useState('');
  const [tip,setTip]=useState('0'),[error,setError]=useState(''),[quote,setQuote]=useState<{fingerprint:string;value:VerifiedQuote}|null>(null),[quoteBusy,setQuoteBusy]=useState(false);
- const [submitting,setSubmitting]=useState(false),[pending,setPending]=useState<PendingReference|null>(null),[rechecking,setRechecking]=useState(false);
+ const [submitting,setSubmitting]=useState(false),[pending,setPending]=useState<PendingReference|null>(null),[rechecking,setRechecking]=useState(false),[quoteEpoch,setQuoteEpoch]=useState(0);
  const lock=useRef(false);
  const restaurantId=cart.restaurantId, userId=user?.id;
  useEffect(()=>{setPending(userId?readPending(userId):null);},[userId]);
@@ -83,12 +82,12 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    .catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo cotizar el pedido.');})
    .finally(()=>{if(active)setQuoteBusy(false);});
   return()=>{active=false;};
- },[key]);
+ },[key,quoteEpoch]);
  const displayed=quote?.fingerprint===key?quote.value:null;
  const ready=Boolean(user?.role==='customer'&&restaurant?.is_open&&
   (mode==='delivery'||restaurant?.pickup_enabled)&&selectedRequest&&displayed&&!loading&&!submitting&&!pending);
  const choose=(next:FulfillmentMode)=>{setMode(next);setError('');};
- const reload=()=>{setQuote(null);setError('');setRefresh(v=>v+1);};
+ const reload=()=>{setQuote(null);setError('');setRefresh(v=>v+1);setQuoteEpoch(v=>v+1);};
  const recover=async()=>{
   if(!userId||!pending||rechecking)return;
   setRechecking(true);setError('');
@@ -121,7 +120,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    sessionStorage.setItem(pendingStorageKey(userId),JSON.stringify(record));
    setPending(record);
    // After entering the pending journal, never auto-post twice on unknown outcomes.
-   const result:Order=await api.createCheckoutOrder(selectedRequest,reference,notes,mode==='pickup'?'Recoger en el establecimiento':address!.address);
+   const result:Order=await api.createCheckoutOrder(selectedRequest,reference,notes,mode==='pickup'?'Recoger en '+freshMerchant.name:address!.address);
    sessionStorage.removeItem(pendingStorageKey(userId));setPending(null);setCart({restaurantId:null,entries:[]});
    navigate('/pedidos/'+result.id,{replace:true});
   }catch(e){setError(e instanceof Error?e.message:'No se pudo verificar el pedido.');}
