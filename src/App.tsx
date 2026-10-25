@@ -8,7 +8,7 @@ import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
-import { pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
+import { amountInCents, pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -158,7 +158,7 @@ function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
    for(const entry of cart.entries){
     const current=fresh.menu_items?.find(p=>p.id===entry.item.id);
     if(!current||!current.is_available||current.stock<entry.quantity||
-       current.price!==entry.item.price)throw new Error('El menú o sus precios cambiaron. Revisa el pedido antes de continuar.');
+       amountInCents(current.price)!==amountInCents(entry.item.price))throw new Error('El menú o sus precios cambiaron. Revisa el pedido antes de continuar.');
    }
    if(!pickupCashAllowed(await api.paymentOptions()))throw new Error('El servidor ya no autoriza este método de pago.');
    const latest=await api.quote(restaurantId,items);
@@ -230,7 +230,7 @@ function Driver(){
  {dashboard.error&&<p className="muted">Resumen del repartidor no disponible.</p>}
  </>}</div>;
 }
-function CustomerBottomDock({cartCount}:{cartCount:number}){
+function CustomerBottomDock(){
  const location=useLocation();
  const tabs=[
   {to:'/clientes',label:'Inicio',Icon:HomeIcon},
@@ -242,7 +242,7 @@ function CustomerBottomDock({cartCount}:{cartCount:number}){
  if(!onCustomerRoute)return null;
  return <nav className="customer-bottom-dock" aria-label="Navegación de clientes">
   {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Inicio'?location.pathname==='/clientes':location.pathname===to)?'selected':'')} aria-label={label}>
-   <Icon size={22}/><span>{label}</span>{label==='Pedidos'&&cartCount>0?<span className="customer-dock-dot" aria-hidden="true"/>:null}
+   <Icon size={22}/><span>{label}</span>
   </Link>)}
  </nav>;
 }
@@ -265,5 +265,5 @@ export default function App(){
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main><CustomerBottomDock cartCount={count}/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
