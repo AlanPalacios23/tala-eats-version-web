@@ -511,3 +511,10 @@
 .mobile-order-support{display:flex;align-items:center;gap:8px;justify-content:space-between;margin:10px 0;border-radius:15px;border:1px solid #eae8e5;background:#fff;padding:13px 16px;font-weight:800;color:#ce3c0a;font-size:14px}
 @media(max-width:700px){.mobile-chat-composer{bottom:0;padding-bottom:max(14px,env(safe-area-inset-bottom))}.mobile-order-chat{padding-bottom:90px}}
 @media(prefers-reduced-motion:reduce){.mobile-chat-bubble{animation:none}}
+
+
+/* Isolated, review-only build: never mistake this for the deployed storefront. */
+.tala-review-banner{position:sticky;top:0;z-index:250;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 14px;background:#222;color:#fff;padding:12px 17px;text-align:center;border-bottom:3px solid #ff5a1f;box-shadow:0 4px 14px #0002;font:500 12px/1.4 Roboto,Arial,sans-serif}
+.tala-review-banner strong{font-size:12px;letter-spacing:1.3px;font-weight:900;color:#ffb187}
+.tala-review-banner span{max-width:840px}
+@media(max-width:400px){.tala-review-banner{padding:11px 13px;gap:4px;font-size:11px}}
