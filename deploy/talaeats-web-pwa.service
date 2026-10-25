@@ -1,0 +1,27 @@
+[Unit]
+Description=Tala Eats Web PWA isolated Nginx (localhost 18195 only)
+After=network.target
+Wants=network.target
+ConditionPathExists=/etc/talaeats-web-pwa/nginx.conf
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+RuntimeDirectory=talaeats-web-pwa
+RuntimeDirectoryMode=0750
+UMask=0027
+ExecStartPre=/usr/sbin/nginx -t -c /etc/talaeats-web-pwa/nginx.conf
+ExecStart=/usr/sbin/nginx -c /etc/talaeats-web-pwa/nginx.conf -g "daemon off;"
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+NoNewPrivileges=true
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
