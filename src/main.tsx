@@ -12,8 +12,9 @@ import './styles/main.css';
 export function manifestForPath(path: string): string {
  if (path === '/restaurante' || path.startsWith('/restaurante/')) return '/manifest-restaurante.webmanifest';
  if (path === '/repartidor' || path.startsWith('/repartidor/')) return '/manifest-repartidor.webmanifest';
- if (path === '/clientes' || path.startsWith('/clientes/') ||
+ if (path === '/clientes' || path === '/buscar' || path.startsWith('/clientes/') ||
      path === '/carrito' || path === '/pedidos' ||
+     path === '/acceso' || path === '/restablecer' || path === '/terminos' || path === '/privacidad' ||
      path === '/cuenta' || path.startsWith('/comercio/')) return '/manifest-clientes.webmanifest';
  return '/manifest.webmanifest';
 }
@@ -21,6 +22,11 @@ function PortalInstallIdentity() {
  const location = useLocation();
  useEffect(() => {
    const href = manifestForPath(location.pathname);
+   // Match Flutter's light launch/system bar only in the customer PWA.
+   // Public portal and the other two PWA identities retain their original theme.
+   const color=href==='/manifest-clientes.webmanifest'?'#FFFAF6':'#080808';
+   const theme=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+   if(theme&&theme.content!==color)theme.content=color;
    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
    if (link && link.getAttribute('href') !== href) link.setAttribute('href', href);
    const label = href.includes('restaurante') ? 'Restaurantes' :

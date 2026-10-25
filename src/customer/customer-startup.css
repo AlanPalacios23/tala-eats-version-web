@@ -1,0 +1,68 @@
+/* Tala Eats Flutter LaunchScreen, faithfully mapped from main.dart 1390-1468.
+   Single 1100ms entrance; no perpetual logo loop. */
+.te-launch {
+ --brand:#ff5a1f;--background:#fffaf6;
+ position:fixed;inset:0;z-index:1000;isolation:isolate;
+ display:grid;place-items:center;min-height:100dvh;width:100vw;
+ background:linear-gradient(180deg,#fff4ec 0%,#fffaf6 45%,#fafaf9 100%);
+ font-family:Roboto,Arial,system-ui,sans-serif;
+ color:#171717;
+ overflow:hidden;
+}
+.te-launch-glow {
+ position:absolute;right:-120px;top:-140px;width:320px;height:320px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,90,31,.122),rgba(255,90,31,0) 73%);
+ pointer-events:none;
+}
+.te-launch-center {
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ position:relative;margin-top:-5px;
+}
+.te-launch-logo {
+ width:88px;height:88px;border-radius:26.4px;
+ display:grid;place-items:center;
+ background:linear-gradient(135deg,#ff7a3d,#ff5a1f 49%,#ce3c0a);
+ box-shadow:0 12.3px 29.9px rgba(255,90,31,.28);
+ color:#fff;
+ opacity:0;transform:scale(.86);
+ animation:te-launch-mark 682ms cubic-bezier(.215,.61,.355,1) both;
+}
+.te-launch-logo img { width:47.5px;height:47.5px;display:block;object-fit:contain; }
+.te-launch-copy {
+ display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:22px;
+ opacity:0;transform:translateY(14px);
+ animation:te-launch-words 693ms cubic-bezier(.215,.61,.355,1) 242ms both;
+}
+.te-launch-copy strong { font-size:32px;line-height:1.25;font-weight:800;letter-spacing:-1.1px; }
+.te-launch-copy span { text-align:center;color:#737373;font-size:15px;line-height:1.4;font-weight:500; }
+.te-launch-loader {
+ position:absolute;left:50%;transform:translateX(-50%);bottom:calc(56px + env(safe-area-inset-bottom,0px));
+ width:64px;height:3px;background:#ffe9df;overflow:hidden;border-radius:99px;
+ opacity:0;animation:te-launch-loader-in 440ms ease-out 660ms both;
+}
+.te-launch-loader span {
+ display:block;height:100%;width:32px;background:#ff5a1f;border-radius:99px;
+ animation:te-launch-progress 1100ms ease-in-out infinite alternate;
+}
+.te-launch-exit { animation:te-launch-stage-out 420ms cubic-bezier(.32,0,.67,0) forwards;pointer-events:none; }
+@keyframes te-launch-mark {
+ from { opacity:0;transform:scale(.86); }
+ to { opacity:1;transform:scale(1); }
+}
+@keyframes te-launch-words {
+ from { opacity:0;transform:translateY(14px); }
+ to { opacity:1;transform:translateY(0); }
+}
+@keyframes te-launch-loader-in { from { opacity:0; } to {opacity:1;} }
+@keyframes te-launch-progress {
+ from { transform:translateX(-35px); } to { transform:translateX(67px); }
+}
+@keyframes te-launch-stage-out {
+ from { opacity:1; } to { opacity:0; }
+}
+@media (max-width:360px) { .te-launch-copy span { font-size:14px; } }
+@media (prefers-reduced-motion:reduce) {
+ .te-launch-logo,.te-launch-copy,.te-launch-loader { animation:none!important;opacity:1;transform:none; }
+ .te-launch-exit { animation:none!important;opacity:0; }
+ .te-launch-loader span { animation:none!important;width:64px; }
+}

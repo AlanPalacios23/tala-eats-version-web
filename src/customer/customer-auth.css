@@ -1,0 +1,93 @@
+/* PremiumAuthScaffold / Login / SignUp / Verify / Forgot / Reset:
+   faithful 460dp Flutter column, 12dp vertical rhythm and calm backdrop. */
+.te-auth-body { margin-top:24px;animation-delay:90ms; }
+.te-auth-body .te-auth-form { margin-top:0; }
+.te-auth-circle-back { width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#171717;
+ background:#fff;border:1px solid #eae8e5; }
+.te-auth-brand .te-auth-logo { width:36px;height:36px;display:grid;place-items:center;border-radius:11px;
+ background:linear-gradient(135deg,#ff7a3d,#ff5a1f,#ce3c0a);color:#fff;box-shadow:0 5px 12px rgba(255,90,31,.23); }
+.te-auth-logo img { width:20px;height:20px;display:block;object-fit:contain; }
+.te-auth-body .te-auth-field { display:block;font:700 13px/1.35 Roboto,Arial,sans-serif;color:#3b3633; }
+.te-auth-body .te-auth-input { min-height:54px; }
+.te-auth-forgot { margin-left:auto;border:0;background:transparent;color:#ce3c0a;font-size:13px;font-weight:700;padding:8px 0;text-align:right; }
+.te-auth-optional-otp { display:flex;flex-direction:column;gap:7px;margin-top:-4px; }
+.te-auth-optional-otp label { color:#737373;font:600 12px/1.4 Roboto,Arial,sans-serif; }
+.te-auth-optional-otp input { height:46px;background:rgba(255,255,255,.89);border:1px solid #e2dbd5;border-radius:14px;padding:0 14px;width:100%;font:500 14px Roboto,Arial,sans-serif; }
+.te-auth-optional-otp input:focus { outline:2px solid #ff5a1f;outline-offset:2px; }
+.te-auth-confirm-card { margin:0 0 18px;background:#fff;border:1px solid #eae8e5;
+ border-radius:20px;display:flex;align-items:center;gap:12px;padding:16px; }
+.te-auth-confirm-card>span { flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#ffe9df;color:#ff5a1f; }
+.te-auth-confirm-card>div { min-width:0;display:flex;flex-direction:column;gap:3px; }
+.te-auth-confirm-card strong { font:700 16px Roboto,Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.te-auth-confirm-card small { color:#737373;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.te-auth-confirm-card+.te-auth-submit { width:100%; }
+.te-auth-secondary { display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;
+ border:0;background:none;color:#ce3c0a;border-radius:14px;font-weight:750;margin-top:9px; }
+.te-auth-secondary.outlined { border:1px solid #e2dbd5;background:#fff;color:#3b3633; }
+.te-auth-accept { display:flex;align-items:start;gap:10px;font-size:13px!important;font-weight:500!important;line-height:1.35;color:#3b3633;margin-top:4px; }
+.te-auth-accept input { width:19px;height:19px;accent-color:#ff5a1f;margin:0;flex:none; }
+.te-auth-legal-links { display:flex;align-items:center;justify-content:flex-start;gap:10px;flex-wrap:wrap;margin:2px 0 2px; }
+.te-auth-legal-links a { color:#ce3c0a;font-weight:700;font-size:13px;display:inline-block;padding:6px 0; }
+.te-auth-legal-links.centered { justify-content:center;margin:0; }
+.te-auth-note { background:#fff3ec;color:#3b3633;font-size:12px;line-height:1.5;
+ border-radius:12px;display:flex;align-items:start;gap:9px;padding:12px 13px; }
+.te-auth-note svg { color:#ce3c0a;flex:none; }
+.te-auth-password-rules { background:#fff;border:1px solid #eae8e5;border-radius:16px;padding:12px 14px; }
+.te-auth-rules-heading { display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;line-height:1.4; }
+.te-auth-rules-heading span { color:#737373;font-weight:600; }
+.te-auth-rules-heading strong { color:#ce3c0a;font-weight:800;flex:none; }
+.te-auth-strength { display:flex;gap:5px;margin:8px 0 10px; }
+.te-auth-strength span { flex:1;height:4px;background:#f3efeb;border-radius:99px;transition:background-color 240ms cubic-bezier(.215,.61,.355,1); }
+.te-auth-strength span.complete { background:#ff5a1f; }
+.te-auth-rules-list { display:flex;flex-wrap:wrap;gap:6px; }
+.te-auth-rules-list span { display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border-radius:99px;
+ background:#f3efeb;color:#737373;font-size:11px;font-weight:700;transition:background-color 200ms ease,color 200ms ease; }
+.te-auth-rules-list span.complete { background:#e7f7ee;color:#168a4a; }
+.te-auth-rules-list svg { flex:none; }
+.te-auth-sent { display:flex;flex-direction:column;gap:18px;align-items:stretch; }
+.te-auth-success-orb { margin:0 auto 4px;width:120px;height:120px;display:grid;place-items:center;position:relative; }
+.te-auth-success-orb::before { content:"";position:absolute;inset:0;border:2px solid rgba(22,138,74,.45);border-radius:50%;
+ animation:te-auth-ring 620ms ease-out both; }
+.te-auth-success-orb>span { width:92px;height:92px;border-radius:50%;background:#e7f7ee;color:#168a4a;
+ display:grid;place-items:center;animation:te-auth-orb 620ms cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes te-auth-ring { from { opacity:.6;transform:scale(.77); } to { opacity:0;transform:scale(1); } }
+@keyframes te-auth-orb { from { transform:scale(.72); } to { transform:scale(1); } }
+.te-auth-submit:disabled { cursor:not-allowed; }
+.te-auth-circle-back:focus-visible,.te-auth-forgot:focus-visible,.te-auth-legal-links a:focus-visible,
+.te-auth-secondary:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+@media(prefers-reduced-motion:reduce) {
+ .te-auth-success-orb::before,.te-auth-success-orb>span { animation:none; }
+ .te-auth-strength span,.te-auth-rules-list span { transition:none; }
+}
+
+.te-auth-otp-toggle { border:0;background:transparent;text-align:left;color:#737373;font:650 12px/1.4 Roboto,Arial,sans-serif;padding:5px 0;margin-top:-3px; }
+.te-auth-otp-toggle[aria-expanded="true"] { color:#ce3c0a; }
+.te-auth-otp-toggle:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+
+/* Flutter InputDecorationTheme: labels float on focus/value, 16px radius,
+   #EAE8E5 stroke; this overrides the earlier stacked-label web layout. */
+.te-auth-body .te-auth-field { display:block;margin:0;font-size:0; }
+.te-auth-body .te-auth-input { margin-top:0;min-height:56px;background:#fff;border:1px solid #eae8e5; }
+.te-auth-body .te-auth-control { min-width:0;flex:1;position:relative;height:54px;display:block; }
+.te-auth-body .te-auth-control input {
+ font:500 15px Roboto,Arial,sans-serif;height:100%;width:100%;margin:0;padding:12px 0 0;
+ background:transparent;outline:0;border:0;color:#171717;
+}
+.te-auth-body .te-auth-floating-label {
+ display:block;position:absolute;left:0;top:18px;pointer-events:none;color:#737373;
+ font:600 14px/1.25 Roboto,Arial,sans-serif;transform-origin:left center;
+ transition:transform 180ms cubic-bezier(.215,.61,.355,1),top 180ms cubic-bezier(.215,.61,.355,1),
+  color 180ms cubic-bezier(.215,.61,.355,1);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+.te-auth-body .te-auth-control input::placeholder { opacity:0; }
+.te-auth-body .te-auth-input:focus-within .te-auth-control input::placeholder {opacity:.7;color:#a29c97;}
+.te-auth-body .te-auth-input:focus-within .te-auth-floating-label,
+.te-auth-body .te-auth-input.has-value .te-auth-floating-label {
+ top:5px;transform:scale(.82);color:#ce3c0a;font-weight:700;
+}
+.te-auth-body .te-auth-input:focus-within { border-color:#ff5a1f;box-shadow:0 0 0 1px #ff5a1f; }
+.te-auth-body .te-auth-submit { background:#ce3c0a;min-height:54px;font-size:16px;font-weight:700;box-shadow:none; }
+.te-auth-body .te-auth-submit:not(:disabled):hover { background:#b63308; }
+@media(prefers-reduced-motion:reduce){
+ .te-auth-body .te-auth-floating-label {transition:none;}
+}

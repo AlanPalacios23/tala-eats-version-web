@@ -1,0 +1,206 @@
+/* Flutter Usuarios account, orders, motion and authenticated surfaces. */
+.te-panel-page { min-height:100dvh; }
+.te-panel-inner { max-width:600px;margin:0 auto;padding:20px 20px 146px; }
+.te-panel-inner h1 { font-family:Roboto,Arial,sans-serif;font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.08;margin:0 0 18px; }
+.te-panel-title-row { display:flex;justify-content:space-between;align-items:center;gap:12px; }
+.te-panel-refresh,.te-panel-back { background:none;border:0;color:#ce3c0a;cursor:pointer;border-radius:11px;padding:10px 8px;font-weight:700; }
+.te-panel-refresh { padding:9px;color:#737373; }
+.te-panel-section { margin-top:21px; }
+.te-panel-section h2 { display:flex;align-items:center;gap:10px;font-size:20px;letter-spacing:-.4px;font-weight:800;font-family:Roboto,Arial,sans-serif;margin:0 0 14px; }
+.te-panel-section h2 small { font-size:12px;background:#fff3ec;color:#ce3c0a;border-radius:99px;padding:5px 8px; }
+.te-panel-loading,.te-panel-empty { padding:46px 20px;text-align:center;color:#737373; }
+.te-panel-empty { background:#fff;border-radius:22px;margin:40px 0 0; }
+.te-panel-empty>svg { display:block;margin:0 auto 16px;color:#ff5a1f; }
+.te-panel-empty h2 { font:800 20px/1.22 Roboto,Arial,sans-serif;letter-spacing:-.4px;color:#171717;margin-bottom:10px; }
+.te-panel-empty p { font-size:14px;line-height:1.5; }
+.te-panel-empty button,.te-panel-cta { display:inline-flex;border:0;background:#ff5a1f;color:#fff;border-radius:15px;font-weight:750;padding:12px 18px;margin-top:8px; }
+.te-order-list { display:grid;gap:12px; }
+.te-order-card { border:1px solid #eae8e5;border-radius:20px;padding:16px;background:#fff;box-shadow:0 6px 20px rgba(37,33,30,.043);display:block;width:100%;text-align:left;color:#171717; }
+.te-order-card-top { display:flex;align-items:center;gap:12px; }
+.te-order-icon { width:48px;height:48px;background:#f3efeb;color:#ff5a1f;display:grid;place-items:center;border-radius:14px;flex:none; }
+.te-order-card-info { display:flex;flex:1;min-width:0;flex-direction:column;gap:4px; }
+.te-order-card-info strong { font-size:15px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.te-order-card-info>span { font-size:12px;color:#737373;font-weight:600; }
+.te-order-state { background:#ffe9df;color:#ce3c0a;flex:none;border-radius:99px;padding:7px 9px;font-weight:800;font-size:11px;max-width:125px;text-align:center; }
+.te-order-state.terminal { background:#e7f7ee;color:#168a4a; }
+.te-order-steps { display:flex;gap:4px;margin:14px 0 12px; }
+.te-order-step { height:5px;background:#f3efeb;border-radius:99px;flex:1;transition:background-color 420ms cubic-bezier(.22,1,.36,1); }
+.te-order-step.done { background:#ff5a1f; }
+.te-order-card-end { display:flex;align-items:center;justify-content:space-between;gap:12px;color:#737373;font-size:12px;font-weight:600; }
+.te-order-card-end>span:last-child { color:#ce3c0a;display:inline-flex;align-items:center;font-size:13px;font-weight:750; }
+.te-order-past .te-order-card-end { margin-top:12px; }
+.te-panel-card { background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:18px;margin-top:14px; }
+.te-panel-card h2 { font:800 17px/1.3 Roboto,Arial,sans-serif;margin:0 0 14px; }
+.te-panel-card>p { color:#737373;font-size:13px; }
+.te-panel-amount { display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:8px 0; }
+.te-panel-amount.total { border-top:1px solid #eae8e5;margin-top:8px;padding-top:14px; }
+.te-pin-notice { background:#fff3ec;color:#b73808;border-radius:13px;padding:12px;display:flex;gap:8px;line-height:1.5;align-items:start; }
+.te-account-profile,.te-account-club { display:flex;align-items:center;gap:14px;padding:16px;background:#fff;border:1px solid #eae8e5;border-radius:20px;margin-bottom:12px;box-shadow:0 6px 20px rgba(37,33,30,.04); }
+.te-account-profile>svg,.te-account-club>svg { color:#a29c97;flex:none; }
+.te-account-avatar { width:60px;height:60px;background:#fff3ec;color:#ce3c0a;border:3px solid white;outline:2px solid #ff8a54;border-radius:50%;display:grid;place-items:center;flex:none; }
+.te-account-info,.te-account-club>div { flex:1;min-width:0;display:flex;flex-direction:column;gap:4px; }
+.te-account-info strong { font-size:19px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.te-account-info>span,.te-account-club>div>span { font-size:13px;color:#737373;line-height:1.4; }
+.te-account-club { box-shadow:none; }
+.te-account-club strong { font-size:16px;font-weight:700; }
+.te-account-icon { width:46px;height:46px;border-radius:14px;color:#ce3c0a;background:#ffe9df;display:grid;place-items:center;flex:none; }
+.te-account-group { margin-top:26px; }
+.te-account-group>h2 { font:800 20px/1.2 Roboto,Arial,sans-serif;letter-spacing:-.4px;margin:0 0 12px; }
+.te-account-link { width:100%;display:flex;align-items:center;gap:13px;text-align:left;padding:16px;background:#fff;border:1px solid #eae8e5;border-bottom:none;color:#171717;font-size:14px;font-weight:650;min-height:56px; }
+.te-account-link:first-of-type { border-radius:17px 17px 0 0; }
+.te-account-link:last-child { border-bottom:1px solid #eae8e5;border-radius:0 0 17px 17px; }
+.te-account-link:only-of-type { border-radius:17px;border-bottom:1px solid #eae8e5; }
+.te-account-link>svg:first-child { color:#ce3c0a;flex:none; }
+.te-account-link>span { flex:1; }
+.te-account-link>svg:last-child { color:#a29c97;flex:none; }
+.te-account-info-static { color:#737373; }
+.te-panel-muted { color:#737373;font-size:13px;line-height:1.5; }
+.te-account-logout { width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #eae8e5;border-radius:15px;color:#c6312a;font-size:14px;font-weight:700;padding:15px;margin-top:26px; }
+.te-account-confirm { background:#fff;border:1px solid #eae8e5;padding:19px;border-radius:18px;margin-top:22px; }
+.te-account-confirm>strong { font-size:18px;font-weight:800; }
+.te-account-confirm>p { font-size:13px;color:#737373; }
+.te-account-confirm>div { display:flex;gap:10px;justify-content:end; }
+.te-account-confirm button { border-radius:12px;border:1px solid #eae8e5;padding:11px 15px;background:#fff;color:#171717;font-weight:700; }
+.te-account-confirm button:last-child { background:#ff5a1f;color:white;border-color:#ff5a1f; }
+.te-motion-page { animation:te-enter-page 320ms cubic-bezier(.215,.61,.355,1) both; }
+.te-motion-reveal { animation:te-reveal 300ms cubic-bezier(.215,.61,.355,1) both; }
+.te-motion-reveal:nth-child(2) { animation-delay:45ms; }
+.te-motion-reveal:nth-child(3) { animation-delay:90ms; }
+@keyframes te-enter-page { from { opacity:0;transform:translateX(6%); } to { opacity:1;transform:translateX(0); } }
+@keyframes te-reveal { from { opacity:0;transform:translateY(14px); } to { opacity:1;transform:translateY(0); } }
+.te-order-card,.te-customer-store-link,.te-customer-favorite,.te-customer-dock-item,.te-account-link,.te-panel-cta { transition:transform 140ms cubic-bezier(.215,.61,.355,1),background-color 200ms ease,box-shadow 200ms ease; }
+.te-order-card:active,.te-customer-store-link:active,.te-customer-favorite:active,.te-account-link:active { transform:scale(.975); }
+.te-customer-favorite[aria-pressed="true"] svg { animation:te-heart-pop 220ms cubic-bezier(.34,1.56,.64,1); }
+@keyframes te-heart-pop { 0% { transform:scale(.82); } 100% { transform:scale(1); } }
+.te-order-card:focus-visible,.te-account-link:focus-visible,.te-account-logout:focus-visible,.te-panel-back:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+@media(max-width:360px) { .te-panel-inner { padding-left:16px;padding-right:16px; } .te-order-card {padding:12px;} .te-order-card-top {flex-wrap:wrap;} }
+@media(prefers-reduced-motion:reduce) {
+ .te-motion-page,.te-motion-reveal,.te-customer-favorite[aria-pressed="true"] svg { animation:none!important; }
+ .te-order-card,.te-customer-store-link,.te-customer-favorite,.te-customer-dock-item,.te-account-link,.te-panel-cta,.te-order-step { transition:none!important; }
+}
+
+/* Flutter RestaurantScreen: collapsed photo, rounded overlap, minimal metadata,
+   category selector and product rows; safely keeps backend price/stock gates. */
+.app.is-customer .te-customer-commerce { background:#fafaf9;max-width:600px;margin:0 auto;min-height:100dvh;padding-bottom:115px; }
+.te-commerce-header { position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;gap:10px; }
+.te-commerce-header>span { font-size:15px;font-weight:800;color:#171717;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.te-commerce-back,.te-commerce-fav { display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #eae8e5;background:#fff;color:#171717; }
+.te-commerce-fav { color:#171717; }
+.te-commerce-fav[aria-pressed="true"] { color:#ff5a1f; }
+.te-commerce-fav[aria-pressed="true"] svg { animation:te-heart-pop 220ms cubic-bezier(.34,1.56,.64,1) both; }
+.te-commerce-hero { position:relative;height:clamp(200px,42vw,286px);background:#f3efeb;overflow:hidden; }
+.te-commerce-hero img { display:block;width:100%;height:100%;object-fit:cover; }
+.te-commerce-hero-fallback { display:grid;place-items:center;width:100%;height:100%;color:#aaa19b;background:linear-gradient(140deg,#f3efeb,#eae8e5); }
+.te-commerce-content { position:relative;margin-top:-24px;border-radius:24px 24px 0 0;padding:19px 20px 24px;background:#fafaf9; }
+.te-commerce-info h1 { font-family:Roboto,Arial,sans-serif;font-size:28px;font-weight:800;letter-spacing:-.7px;line-height:1.12;margin:0 0 5px; }
+.te-commerce-category { font-size:15px;color:#737373;font-weight:500;margin:0 0 7px;line-height:1.4; }
+.te-commerce-desc { color:#3b3633;font-size:14px;margin:8px 0 0;line-height:1.45; }
+.te-commerce-facts { display:flex;flex-wrap:wrap;gap:14px;margin-top:15px;color:#3b3633;font-size:13px;font-weight:600; }
+.te-commerce-facts span { display:inline-flex;align-items:center;gap:5px; }
+.te-commerce-facts svg { color:#737373; }
+.te-commerce-facts span:first-child svg { color:#ffb000; }
+.te-commerce-menu { margin-top:28px; }
+.te-commerce-menu>h2 { margin:0 0 14px;font:800 20px/1.2 Roboto,Arial,sans-serif;letter-spacing:-.4px; }
+.te-commerce-categories { display:flex;overflow-x:auto;gap:8px;scrollbar-width:none;padding:4px 0 14px;position:sticky;top:0;background:#fafaf9;z-index:2; }
+.te-commerce-categories::-webkit-scrollbar { display:none; }
+.te-commerce-categories button { flex:none;border:1px solid #eae8e5;background:#fff;border-radius:99px;padding:9px 14px;color:#737373;font-size:13px;font-weight:700; }
+.te-commerce-categories button.selected { background:#ff5a1f;color:#fff;border-color:#ff5a1f; }
+.te-commerce-dishes { display:grid; }
+.te-commerce-dish { display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 0;border-bottom:1px solid #eae8e5;min-width:0; }
+.te-commerce-dish-copy { min-width:0;flex:1;display:flex;flex-direction:column;align-items:start;gap:5px; }
+.te-commerce-dish-copy h3 { color:#171717;font:750 15px/1.3 Roboto,Arial,sans-serif;letter-spacing:0;margin:0; }
+.te-commerce-dish-copy>p { margin:0;color:#737373;font:400 13px/1.45 Roboto,Arial,sans-serif;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden; }
+.te-commerce-dish-copy>strong { font-size:16px;font-weight:800;color:#171717;margin-top:6px; }
+.te-commerce-unavailable { font-size:12px;color:#c6312a; }
+.te-commerce-dish-side { position:relative;width:102px;flex:none;display:flex;justify-content:center;padding-bottom:16px; }
+.te-commerce-dish-media { width:100px;height:100px;border-radius:16px;background:#f3efeb;color:#aaa19b;display:grid;place-items:center;overflow:hidden; }
+.te-commerce-dish-media img { width:100%;height:100%;object-fit:cover; }
+.te-commerce-dish-add { position:absolute;bottom:0;width:35px;height:35px;background:white;border:1px solid #eae8e5;color:#ff5a1f;border-radius:12px;box-shadow:0 3px 10px rgba(37,33,30,.1);display:grid;place-items:center; }
+.te-commerce-dish-add:disabled { opacity:.4; }
+.te-commerce-dish-add:not(:disabled):active { transform:scale(.9); }
+.te-commerce-loading { padding:30px 20px; }
+@media(max-width:360px) {
+ .te-commerce-header { padding-left:16px;padding-right:16px; }
+ .te-commerce-content { padding-left:16px;padding-right:16px; }
+ .te-commerce-dish-side { width:88px; }
+ .te-commerce-dish-media { width:86px;height:86px; }
+}
+
+/* Flutter PremiumAuthScaffold with AuthBackdrop: static cream gradient,
+   radial orange glow, deliberate whitespace, mobile-first 460px content. */
+.te-customer-auth { position:relative;isolation:isolate;overflow:hidden;min-height:100dvh;
+ background:linear-gradient(180deg,#fff4ec 0%,#fffaf6 45%,#fafaf9 100%);color:#171717;
+ font-family:Roboto,Arial,system-ui,sans-serif; }
+.te-auth-glow { position:absolute;z-index:-1;top:-140px;right:-120px;width:320px;height:320px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,90,31,.12),rgba(255,90,31,0) 70%);pointer-events:none; }
+.te-auth-content { max-width:500px;margin:0 auto;padding:20px 20px 42px; }
+.te-auth-brand { height:48px;display:flex;gap:10px;align-items:center; }
+.te-auth-logo { width:36px;height:36px;color:#ff5a1f;background:#fff;display:grid;place-items:center;border-radius:12px; }
+.te-auth-brand strong { font-size:18px;letter-spacing:-.4px; }
+.te-auth-heading { margin-top:26px; }
+.te-auth-heading h1 { margin:0 0 8px;font:800 30px/1.08 Roboto,Arial,system-ui,sans-serif;letter-spacing:-1px; }
+.te-auth-heading p { font-size:15px;line-height:1.45;color:#737373;max-width:420px; }
+.te-auth-form { margin-top:24px;display:grid;gap:12px;animation-delay:90ms; }
+.te-auth-form label { font-size:13px;font-weight:700;color:#3b3633;display:block; }
+.te-auth-input { display:flex;align-items:center;gap:12px;margin-top:7px;border-radius:16px;border:1px solid #e2dbd5;
+  padding:0 12px;min-height:54px;background:rgba(255,255,255,.89);transition:border-color 200ms ease,box-shadow 200ms ease; }
+.te-auth-input svg { color:#737373;flex:none; }
+.te-auth-input input { width:100%;min-width:0;flex:1;border:0;background:transparent;color:#171717;outline:none;height:50px;font:500 15px Roboto,Arial,sans-serif; }
+.te-auth-input input::placeholder { color:#a29c97; }
+.te-auth-input:focus-within { border-color:#ff5a1f;box-shadow:0 0 0 3px rgba(255,90,31,.09); }
+.te-auth-toggle { border:0;background:transparent;color:#737373;display:grid;place-items:center;padding:8px;border-radius:12px; }
+.te-auth-submit { border:0;background:#ff5a1f;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
+ min-height:52px;border-radius:16px;font-weight:800;font-size:15px;margin-top:9px;box-shadow:0 7px 17px rgba(255,90,31,.14); }
+.te-auth-submit:disabled { opacity:.58;cursor:not-allowed; }
+.te-auth-error { padding:13px;background:#ffedea;border:1px solid #f7c8bf;color:#b42c1c;font-size:13px;border-radius:13px;animation:te-reveal 300ms cubic-bezier(.215,.61,.355,1) both; }
+.te-auth-switch { text-align:center;color:#737373;font-size:13px;font-weight:500;margin:20px 0 0; }
+.te-auth-switch button { border:0;background:none;color:#ce3c0a;font-size:13px;font-weight:750;padding:7px; }
+.te-auth-fineprint { margin:16px auto;text-align:center;color:#737373;font-size:12px;line-height:1.5;max-width:350px; }
+.te-auth-back { display:flex;align-items:center;justify-content:center;gap:8px;color:#737373;font-size:13px;font-weight:650;margin:16px auto; }
+.te-auth-submit:active,.te-auth-toggle:active { transform:scale(.975);transition:transform 140ms cubic-bezier(.215,.61,.355,1); }
+.te-auth-submit:focus-visible,.te-auth-toggle:focus-visible,.te-auth-switch button:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+
+/* Original Flutter CartScreen, CartLineCard and CheckoutSectionCard:
+   preserve quote and idempotent order logic; restyle only its existing markup. */
+.app.is-customer .container.page { font-family:Roboto,Arial,system-ui,sans-serif;background:#fafaf9; }
+.app.is-customer .back-link { color:#171717;margin-bottom:24px;font-size:14px; }
+.app.is-customer .section-title .eyebrow { display:none; }
+.app.is-customer .section-title h2 { font-family:Roboto,Arial,sans-serif;font-size:30px;letter-spacing:-1px;font-weight:800;color:#171717; }
+.app.is-customer .section-title p { font-size:14px;color:#737373; }
+.app.is-customer .cart-layout { display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px; }
+.app.is-customer .cart-items,.app.is-customer .summary-card {
+ background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:18px;
+ box-shadow:0 6px 20px rgba(37,33,30,.04);position:static; }
+.app.is-customer .cart-items h3,.app.is-customer .summary-card h3 {
+ font-family:Roboto,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.3px;margin:0 0 12px;color:#171717; }
+.app.is-customer .cart-line { display:flex;align-items:center;gap:12px;border-top:1px solid #f0edea;padding:14px 0; }
+.app.is-customer .cart-icon { flex:none;width:56px;height:56px;border-radius:14px;background:#f3efeb; }
+.app.is-customer .cart-line strong { color:#171717;font-size:15px; }
+.app.is-customer .cart-line small { color:#737373;font-size:12px; }
+.app.is-customer .qty { border-radius:13px;gap:8px; }
+.app.is-customer .qty button { background:#fff3ec;color:#ce3c0a;border-radius:9px; }
+.app.is-customer .summary-line { font-size:13px;color:#737373; }
+.app.is-customer .summary-total strong { color:#171717;font-family:Roboto,Arial,sans-serif; }
+.app.is-customer .choice-note { background:#fff3ec;color:#ce3c0a; }
+.app.is-customer .payment-choice { background:#fff;border:1px solid #e2dbd5;border-radius:16px; }
+.app.is-customer .btn.primary { background:#ff5a1f;color:#fff;border-radius:16px;box-shadow:none;min-height:52px;font-family:Roboto,Arial,sans-serif; }
+.app.is-customer .btn.primary:not(:disabled):active,.app.is-customer .qty button:not(:disabled):active { transform:scale(.975); }
+.app.is-customer .summary-card { margin-bottom:38px; }
+@media(max-width:360px) {
+ .app.is-customer .cart-line { flex-wrap:wrap; }
+ .app.is-customer .cart-line .qty { margin-left:auto; }
+ .te-auth-content { padding-left:16px;padding-right:16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .te-auth-error { animation:none; }
+ .te-auth-input,.te-auth-submit:active,.te-auth-toggle:active { transition:none;transform:none; }
+}
+
+/* Flutter sliver header behavior: name fades into sticky topbar at scroll. */
+.te-commerce-header { position:sticky;top:0;z-index:45;background:#fafaf9;
+  transition:background-color 200ms cubic-bezier(.215,.61,.355,1),box-shadow 200ms cubic-bezier(.215,.61,.355,1); }
+.te-commerce-header.compact { background:rgba(250,250,249,.98);box-shadow:0 4px 12px rgba(37,33,30,.06); }
+.te-commerce-header>span { transition:opacity 200ms cubic-bezier(.215,.61,.355,1); }
+@media(prefers-reduced-motion:reduce) {
+ .te-commerce-header,.te-commerce-header>span { transition:none!important; }
+}
