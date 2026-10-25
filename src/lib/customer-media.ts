@@ -19,6 +19,8 @@ export function resolveCustomerImage(input:string|null|undefined,frontendOrigin:
   if(input.startsWith('//'))return null;
   const image=new URL(input,origin);
   if(image.username||image.password)return null;
+  // Do not mistake an attacker-controlled lookalike for the pinned stage host.
+  if(image.hostname.toLowerCase().startsWith('api-stage-talaeats.alan-palacios-dev.com.'))return null;
   if(image.origin===STAGING_MEDIA_ORIGIN){
    if(image.search||image.hash||!CATALOG_FILE.test(image.pathname))return null;
    // Same-origin URL traverses the existing /api/v1/ LIVE Nginx proxy.
