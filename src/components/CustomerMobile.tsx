@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
-import { api, safeImage } from '../lib/api';
+import { api } from '../lib/api';
+import { CustomerPhoto } from './CustomerPhoto';
 import { useSession } from '../lib/session';
 import { foldSearch } from '../lib/mobile-parity';
 import { matchCustomerDishes, matchCustomerRestaurants } from '../lib/customer-search';
@@ -48,7 +49,7 @@ function useFavorites(){
 function MerchantCard({restaurant:r,index,favorite,ready,pending,toggle,user}:{restaurant:Restaurant;index:number;favorite:boolean;ready:boolean;pending:boolean;toggle:(id:number)=>void;user:boolean}){
  return <article className="mobile-merchant-card reveal-enter" style={{animationDelay:Math.min(index,7)*45+'ms'}}>
   <Link to={'/comercio/'+r.id} className="mobile-merchant-photo" aria-label={'Ver '+r.name}>
-   {safeImage(r.cover_image_url)?<img src={safeImage(r.cover_image_url)!} alt={r.name} loading="lazy" referrerPolicy="no-referrer"/>:<div className="mobile-merchant-fallback" role="img" aria-label={r.name}>{r.emoji||'🍲'}</div>}
+   <CustomerPhoto src={r.cover_image_url} alt={r.name} fallback={r.emoji||'🍲'}/>
    {!r.is_open&&<span className="mobile-closed">Cerrado</span>}
   </Link>
   {user?<button type="button" disabled={!ready||pending} className={'mobile-favorite '+(favorite?'active':'')} aria-pressed={favorite} aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'} title={ready?'Guardar favorito en tu cuenta':'Verificando favoritos'} onClick={()=>toggle(r.id)}>
@@ -154,7 +155,7 @@ export function CustomerSearch({market}:{market:MarketCode}){
      {menuError&&<div role="status" className="mobile-address-error">{menuError}</div>}
      {dishes.length>0?<div className="mobile-dish-search-results">{dishes.map(hit=><Link key={hit.restaurant.id+'-'+hit.item.id} to={'/comercio/'+hit.restaurant.id+'?platillo='+hit.item.id} className="mobile-dish-search-tile">
        <div><strong>{hit.item.name}</strong><span>{hit.restaurant.name} · {hit.item.category||'Comida local'}</span><b>{pesos(hit.item.price)}</b></div>
-       {safeImage(hit.item.image_url)?<img src={safeImage(hit.item.image_url)!} alt={hit.item.name} loading="lazy"/>:<div className="mobile-dish-search-fallback" aria-hidden="true">🍽️</div>}
+       <CustomerPhoto src={hit.item.image_url} alt={hit.item.name} fallback="🍔" className="mobile-dish-search-photo"/>
       </Link>)}</div>:!menuLoading&&!directory.length&&!error&&!menuError?<div className="mobile-status"><Search size={30}/><h3>Sin resultados</h3><p>No encontramos “{query.trim()}”. Prueba con otro nombre, comida o categoría.</p></div>:null}
     </>}
   </section>
