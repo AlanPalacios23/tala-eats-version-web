@@ -1,52 +1,51 @@
-# Tala Eats Splash — GitHub como fuente única
+# Tala Eats: splash exacto instalado solo desde GitHub
 
-Rama de desarrollo: `feat/mobile-parity-v1046-navigation`. Proyecto: `AlanPalacios23/tala-eats-version-web`.
-Dominio real: `https://web-talaeats.alan-palacios-dev.com/clientes` (sitio estático Kali, puerto 18195). No crear otro dominio/túnel.
+**Estado: LOS BINARIOS YA ESTÁN VERSIONADOS EN GITHUB.** El usuario ya NO debe descargar nada de ChatGPT ni ejecutar el antiguo importador manual. GitHub Actions `Publicar archivos originales del Splash en GitHub` creó y confirmó los tres archivos a partir de la foto original del usuario con SHA256 verificado.
 
-## Qué está listo en esta rama
-- `src/components/CustomerOnboarding.tsx`: splash interactivo con botón circular naranja de avance (sin cuenta regresiva), ruta `/iniciar`.
-- `src/components/CustomerLaunch.tsx`: mismo arte mientras restaura sesión.
-- `src/styles/main.css`: imagen completa y dimensiones adaptables; no simula barra superior de Android.
-- `deploy/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh`: instala SOLO desde GitHub una vez que se haya cargado el recurso binario.
-- `deploy/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh`: importación del original en la rama **una sola vez**.
+## Archivos disponibles en la rama
 
-## Importación inicial única (PENDIENTE)
-La API conectada de GitHub no admite transferir directamente bytes de los archivos binarios desde el entorno ChatGPT. **Los siguientes dos archivos NO están aún en el repositorio**, hasta ejecutar el importador:
-- `public/branding/splash-exacto-728x1536.webp`
-- `deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip`
+Rama: `feat/mobile-parity-v1046-navigation`
 
-Descarga una única vez en Kali el ZIP `TalaEats_Splash_Exacto_Instalacion_Kali.zip` de la conversación de ChatGPT. Debe estar en `~/Downloads`, `~/Descargas` o pasa su ruta como argumento. Como usuario `alan` (no sudo):
+- Foto original (fuente): `assets/splash/source-1000260473.png`, 728×1536.
+- Foto para la Web sin barra de teléfono: `public/branding/splash-exacto-728x1536.webp`, 728×1536.
+- ZIP reutilizable: `deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip`.
+- Instalador autónomo: `deploy/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh`.
+- Generador de arte (reproducible con SHA256): `tools/gh_generate_splash_assets.py`.
+- Workflow publicador: `.github/workflows/publish-splash-files.yml`.
+
+El primer commit con estos archivos es `b07c2321e908fd423358fc1c6d2ad0e090e3d0c9`.
+
+## Comando recomendado: instalación DIRECTAMENTE desde GitHub en Kali
+
+Ejecutar en Kali como `alan`:
 
 ```bash
-curl -fsSL \
-  'https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation/deploy/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh' \
-  -o /tmp/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh
-bash /tmp/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh "$HOME/Downloads/TalaEats_Splash_Exacto_Instalacion_Kali.zip"
-```
-
-El importador:
-- valida SHA-256 del WebP original `b48a972b1307ea9563f3d1167926d00299f7edc11569244baca5148ac69c3031` y sus 728×1536 píxeles,
-- clona **solo la rama** indicada (no `main`),
-- añade la imagen WebP y el ZIP al repositorio,
-- ejecuta `git push` con tus credenciales locales de GitHub (debes tener acceso de escritura),
-- verifica los dos URLs raw (HTTP 200),
-- **no toca** la instalación pública, el backend, PM2, Cloudflare, Stripe ni PostgreSQL.
-
-Si GitHub solicita autenticación, usa GitHub CLI (`gh auth login`) o credenciales SSH/PAT ya configuradas. No pongas tokens en comandos ni compartas contraseñas por chat.
-
-## Instalación posterior completamente desde GitHub
-Después de obtener `GITHUB_SPLASH_UPLOAD=PASS`, instalar con:
-```bash
-curl -fsSL \
+curl -fsSL --max-time 25 \
   'https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation/deploy/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh' \
-  -o /tmp/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh
-bash /tmp/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh
+  -o "$HOME/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh"
+bash "$HOME/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh"
 ```
 
-El instalador clona una release inmóvil por SHA, prueba `npm run check`, valida WebP en `dist`, llama al actualizador público con respaldo y confirma `/clientes` y el `image/webp`. **Jamás ejecutar el instalador antes de que GitHub tenga la imagen.**
+El script:
+1. Clona el HEAD de la rama de revisión al usuario `tala-node-stage`.
+2. Verifica el formato WebP y tamaño 728×1536 **dentro del repositorio clonado**; si falta, termina SIN desplegar.
+3. Ejecuta `npm install`, `npm run check`, `npm run build`, compara la foto en `public` y `dist`.
+4. Hace plan y apply con `deploy/kali-update-existing-public.sh`, conservando el respaldo y actualizando **solamente** el sitio público 18195.
+5. Verifica el JS de la versión pública y el HTTP `image/webp` del recurso.
 
-## Descargas directas futuras desde GitHub
-- Imagen: `https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation/public/branding/splash-exacto-728x1536.webp`
-- ZIP: `https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation/deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip`
+## URL esperada
 
-Estos enlaces a binarios solo serán válidos después del primer push. El último despliegue público verificado por el usuario antes de esta iteración es `a742238b5c08090ea6a903f8cef1ec26db10a61f`; ningún script se ejecuta automáticamente en Kali desde GitHub.
+- Web: `https://web-talaeats.alan-palacios-dev.com/clientes`
+- Arte: `https://web-talaeats.alan-palacios-dev.com/branding/splash-exacto-728x1536.webp`
+
+**No** crear otro dominio, no cambiar Stripe, pagos, PM2, Cloudflared, base de datos ni el backend.
+
+## ZIP directo de GitHub (opcional, no necesario para instalar)
+
+```
+https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation/deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip
+```
+
+Los archivos están en la **rama del PR DRAFT**, no fusionados con `main`. El despliegue público actual anterior a esta actualización era `a742238b5c08090ea6a903f8cef1ec26db10a61f`. Tener los archivos versionados no significa que Kali ya los instaló.
+
+El script anterior `deploy/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh` queda solo como recuperación histórica y no se necesita.
