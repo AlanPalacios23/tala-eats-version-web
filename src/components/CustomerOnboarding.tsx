@@ -42,7 +42,7 @@ export function CustomerStepAuth(){
  const initial=(loc.state as {create?:boolean;from?:string}|null);
  const [mode,setMode]=useState<AuthMode>(initial?.create?'signup':'signin');
  const [step,setStep]=useState(0);
- const [first,setFirst]=useState(''),[last,setLast]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
+ const [first,setFirst]=useState(''),[last,setLast]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[visible,setVisible]=useState(false),[consent,setConsent]=useState(false);
  const total=mode==='signin'?2:4,final=total-1;
  const from=safeDestination(initial?.from);
@@ -66,7 +66,7 @@ export function CustomerStepAuth(){
   if(mode==='signup'&&!consent){setError('Confirma la aceptación de los términos y del aviso de privacidad antes de continuar.');return;}
   setBusy(true);setError('');
   try{
-   if(mode==='signin')await login(email.trim(),password,otp);
+   if(mode==='signin')await login(email.trim(),password);
    else await register((first.trim()+' '+last.trim()).trim(),email.trim(),password);
    nav(from,{replace:true});
   }catch(e){setError(e instanceof Error?e.message:'No pudimos verificar tu cuenta.');}
@@ -93,7 +93,6 @@ export function CustomerStepAuth(){
      {isPassword&&<button type="button" onClick={()=>setVisible(x=>!x)} aria-label={visible?'Ocultar contraseña':'Mostrar contraseña'}>{visible?<EyeOff size={21}/>:<Eye size={21}/>}</button>}
     </label>
     {isPassword&&mode==='signup'&&<p className="customer-auth-hint">Mínimo 8 caracteres, mayúscula, minúscula y número. Usa una contraseña nueva de TALA EATS.</p>}
-    {isPassword&&mode==='signin'&&<label className="customer-auth-otp">Código 2FA (solo si tu cuenta lo requiere)<input inputMode="numeric" autoComplete="one-time-code" value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} placeholder="Código de 6 dígitos"/></label>}
     {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> He leído y acepto los <Link to="/terminos" target="_blank" rel="noopener noreferrer">Términos y condiciones</Link> y el <Link to="/aviso-privacidad" target="_blank" rel="noopener noreferrer">Aviso de privacidad</Link> de Tala Eats.</label>}
     {error&&<div className="customer-auth-error" role="alert">{error}</div>}
     {step===0&&<button type="button" className="customer-auth-switch" onClick={switchMode}>{mode==='signin'?'¿Aún no tienes cuenta? Crear cuenta en TALA EATS':'¿Ya tienes cuenta? Iniciar sesión'}</button>}
