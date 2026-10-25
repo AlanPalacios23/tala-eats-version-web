@@ -22,12 +22,12 @@ export function CustomerStartup() {
    return ()=>window.clearTimeout(timer);
  },[]);
  useEffect(()=>{
-   if(!minimumElapsed||loading||exiting||done)return;
+   if(!minimumElapsed||loading)return;
    setExiting(true);
    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
    const timer=window.setTimeout(()=>setDone(true),reduced?0:420);
    return ()=>window.clearTimeout(timer);
- },[minimumElapsed,loading,exiting,done]);
+ },[minimumElapsed,loading]);
 
  if(!done) return <div className={'te-launch'+(exiting?' te-launch-exit':'')} role="status" aria-label="Iniciando Tala Eats">
    <div className="te-launch-glow" aria-hidden="true"/>
@@ -40,7 +40,7 @@ export function CustomerStartup() {
    </div>
    <div className="te-launch-loader" aria-hidden="true"><span/></div>
  </div>;
- const isPublic=location.pathname==='/acceso'||location.pathname==='/terminos'||location.pathname==='/privacidad';
+ const isPublic=['/acceso','/restablecer','/terminos','/privacidad'].includes(location.pathname);
  if(!user&&!isPublic)return <Navigate to="/acceso" replace state={{from:location.pathname}}/>;
  if(user&&location.pathname==='/acceso')return <Navigate to="/clientes" replace/>;
  return <Outlet/>;
