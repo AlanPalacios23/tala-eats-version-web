@@ -1,0 +1,59 @@
+/* Flutter tala-eats-mobile Users v1.0.46 ui/step_auth_screens.dart.
+   2-step email sign-in and 4-step registration. One large field, no card. */
+.te-step-auth {position:relative;isolation:isolate;min-height:100dvh;background:#fff;color:#000;
+ font-family:Roboto,Arial,system-ui,sans-serif;}
+.te-step-form {min-height:100dvh;display:flex;flex-direction:column;margin:0 auto;max-width:600px;
+ padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+.te-step-backline {padding:12px 18px 0;}
+.te-step-backline button {border:none;background:none;color:#000;width:48px;height:48px;display:grid;place-items:center;border-radius:12px;}
+.te-step-indicator {padding:22px 25px 0;display:flex;flex-direction:column;gap:10px;}
+.te-step-indicator>span {font-size:11px;font-weight:700;color:#6b7280;letter-spacing:1.2px;line-height:1.4;}
+.te-step-progress {width:100%;height:3px;background:#ededed;overflow:hidden;border-radius:3px;}
+.te-step-progress span {height:100%;display:block;background:#ce3c0a;transition:width 200ms cubic-bezier(.215,.61,.355,1);}
+.te-step-main {padding:30px 25px 20px;flex:1;overflow-y:auto;animation:te-step-in 320ms cubic-bezier(.215,.61,.355,1) both;}
+.te-step-main h1 {white-space:pre-line;color:#000;margin:0 0 42px;letter-spacing:-.9px;line-height:1.13;font-size:34px;font-weight:800;font-family:Roboto,Arial,system-ui,sans-serif;}
+.te-step-field {display:flex;align-items:center;width:100%;gap:6px;}
+.te-step-field input {width:100%;flex:1;min-width:0;border:0;background:transparent;color:#000;outline:0;padding:12px 0;
+ font-size:30px;font-weight:700;line-height:1.2;font-family:Roboto,Arial,system-ui,sans-serif;}
+.te-step-field input::placeholder {color:#bec4cd;opacity:1;font-weight:600;}
+.te-step-visibility {flex:none;border:0;background:transparent;color:#737373;padding:10px;border-radius:10px;}
+.te-step-hint {font-size:13px;line-height:1.4;color:#666b74;margin:12px 0 0;}
+.te-step-error {display:flex;gap:9px;padding:15px;background:#fff4f0;border:1px solid #ffdcd0;color:#873013;border-radius:16px;font-size:13px;line-height:1.4;margin-top:20px;}
+.te-step-error>svg {flex:none;color:#b83b14;}
+.te-step-error button {display:flex;align-items:center;gap:6px;border:0;background:transparent;color:#ce3c0a;padding:7px 0;font-size:13px;font-weight:700;}
+.te-step-switch,.te-step-forgot {display:inline-flex;align-items:center;min-height:44px;border:0;background:none;text-align:left;
+ margin-top:18px;padding:7px 0;color:#ce3c0a;font:700 14px/1.4 Roboto,Arial,sans-serif;}
+.te-step-forgot {margin-top:16px;}
+.te-step-bottom {padding:10px 25px 18px 20px;display:flex;justify-content:flex-end;align-items:center;min-height:90px;}
+.te-step-next {width:62px;height:62px;min-height:62px;flex:none;border-radius:50%;border:none;color:#fff;background:#ce3c0a;
+ display:grid;place-items:center;box-shadow:none;}
+.te-step-next:disabled {background:#ffd1c2;cursor:not-allowed;}
+.te-step-next:not(:disabled):active {transform:scale(.94);}
+.te-step-busy {display:flex;gap:12px;align-items:center;padding:12px;font-size:14px;font-weight:700;color:#ce3c0a;}
+.te-step-busy span {width:23px;height:23px;border:2.5px solid #ffd1c2;border-top-color:#ce3c0a;border-radius:50%;animation:te-step-spin 800ms linear infinite;}
+@keyframes te-step-spin {to{transform:rotate(360deg);}}
+@keyframes te-step-in {from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:translateX(0);}}
+.te-step-modal-backdrop {position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:100;
+ display:flex;align-items:end;justify-content:center;}
+.te-step-modal {width:min(100%,600px);padding:12px 22px calc(26px + env(safe-area-inset-bottom,0px));background:#fff;
+ border-radius:28px 28px 0 0;box-shadow:0 -7px 28px rgba(0,0,0,.12);max-height:85dvh;overflow-y:auto;color:#000;}
+.te-step-drag {margin:0 auto 16px;width:36px;height:4px;border-radius:99px;background:#d0d0d0;}
+.te-step-modal h2 {font-size:27px;font-weight:800;color:#000;line-height:1.2;margin:0 0 17px;}
+.te-step-rule {height:1px;background:#eae8e5;margin-bottom:12px;}
+.te-step-modal label {display:flex;gap:12px;align-items:start;padding:12px 0;font-size:14px;line-height:1.4;color:#171717;}
+.te-step-modal input {width:21px;height:21px;flex:none;accent-color:#ce3c0a;}
+.te-step-modal label span {display:flex;flex-direction:column;gap:2px;}
+.te-step-modal label a {font-size:13px;color:#ce3c0a;font-weight:700;margin-top:4px;align-self:start;}
+.te-step-accept {width:100%;height:56px;border-radius:16px;background:#ce3c0a;color:#fff;border:0;font-size:16px;font-weight:700;margin-top:10px;}
+.te-step-accept:disabled {background:#f2d6cb;cursor:not-allowed;}
+.te-step-cancel {display:block;margin:9px auto 0;background:transparent;color:#737373;border:0;padding:10px;font-weight:700;}
+.te-step-auth :is(button,a,input):focus-visible {outline:2px solid #ff5a1f;outline-offset:3px;}
+@media(max-width:355px){
+ .te-step-main h1{font-size:29px;}
+ .te-step-field input{font-size:25px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .te-step-main,.te-step-busy span {animation:none;}
+ .te-step-progress span {transition:none;}
+ .te-step-next:active {transform:none!important;}
+}
