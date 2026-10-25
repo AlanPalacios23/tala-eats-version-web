@@ -60,9 +60,6 @@ for(const width of widths){
  await capture('account','/cuenta');
  await capture('orders','/pedidos');
  await capture('profile','/editar-perfil');
- await capture('terms','/terminos');
- await capture('privacy-notice','/aviso-privacidad');
- await capture('privacy-controls','/privacidad');
  await context.close();
 }
 // Regression: actual production URLs still mention staging, although the
@@ -145,12 +142,16 @@ await authPage.getByRole('link',{name:/Pedir comida/}).click();
 await authPage.waitForURL(ORIGIN+'/iniciar',{timeout:8000});
 await authPage.locator('[data-mobile-screen="splash"]').waitFor({state:'visible'});
 await authPage.locator('[data-mobile-screen="welcome"]').waitFor({state:'visible',timeout:12000});
+await authPage.locator('img[src="/branding/tala-script-gradient.svg"]').first().waitFor({state:'visible'});
+await authPage.screenshot({path:'artifacts/customer-visual/390-premium-welcome.png'});
 await authPage.getByRole('button',{name:'Continuar',exact:true}).click();
 await authPage.locator('[data-mobile-screen="methods"]').waitFor({state:'visible'});
+await authPage.screenshot({path:'artifacts/customer-visual/390-premium-methods.png'});
 await authPage.getByRole('link',{name:/Continuar con tu correo/}).click();
 await authPage.waitForURL(ORIGIN+'/acceso');
 await authPage.getByLabel('Correo electrónico').fill('qa@example.test');
 await authPage.getByRole('button',{name:'Continuar'}).click();
+if(await authPage.getByText(/Código 2FA|Código de 6 dígitos/i).count())throw new Error('Customer sign-in must never render optional 2FA');
 await authPage.getByLabel('Contraseña',{exact:true}).fill('synthetic_password_not_used');
 await authPage.getByRole('button',{name:'Iniciar sesión'}).click();
 await authPage.waitForURL(ORIGIN+'/clientes',{timeout:12000});
@@ -162,12 +163,15 @@ await authPage.locator('input[type="file"]').setInputFiles({name:'my-avatar.png'
 await authPage.getByText('Foto guardada en este dispositivo.').waitFor({state:'visible',timeout:12000});
 await authPage.goto(ORIGIN+'/cuenta',{waitUntil:'networkidle'});
 await authPage.locator('.mobile-account-avatar img').waitFor({state:'visible',timeout:12000});
-await authPage.getByRole('link',{name:/Privacidad y tus datos/}).click();
-await authPage.waitForURL(ORIGIN+'/privacidad');
-await authPage.getByRole('button',{name:/Eliminar mi cuenta/}).click();
-await authPage.getByRole('dialog').waitFor({state:'visible'});
-if(await authPage.getByRole('button',{name:'Enviar solicitud'}).isEnabled())throw new Error('Deletion action incorrectly enabled without typed verification');
-await authPage.getByRole('button',{name:'Cancelar'}).click();
+for(const [label,url] of [
+ ['Términos y condiciones','https://talaeats.alan-palacios-dev.com/terminos'],
+ ['Aviso de privacidad','https://talaeats.alan-palacios-dev.com/privacidad'],
+ ['Eliminar mi cuenta','https://talaeats.alan-palacios-dev.com/eliminar-cuenta']
+]){
+ const link=authPage.getByRole('link',{name:new RegExp(label,'i')});
+ if(await link.getAttribute('href')!==url||await link.getAttribute('target')!=='_blank')
+  throw new Error('Legal action must open official external Cloudflare link: '+label);
+}
 
 if(loginPostCount!==1||meAfterLogin<1)throw new Error('Login did not verify server session after authentication');
 // Flutter sign-out must exit the authenticated shell and show login.
