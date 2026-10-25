@@ -225,3 +225,61 @@
 @media(max-width:340px){.mobile-sheet-actions{display:flex;flex-direction:column;align-items:stretch}.mobile-stepper{justify-content:flex-start}.mobile-add-action{flex:none}}
 @media(max-width:700px){.mobile-commerce{min-height:100vh}.mobile-commerce-hero{aspect-ratio:16/9}.mobile-commerce-cartbar{left:16px;right:16px}}
 @media(prefers-reduced-motion:reduce){.mobile-sheet-scrim,.mobile-product-sheet,.mobile-sheet-photo img,.mobile-commerce-hero img,.mobile-commerce-cartbar{animation:none}.mobile-dish-photo button{transition:none}}
+
+
+/* Flutter OrdersScreen, ActiveOrderCard, PastOrderTile, OrderStatusTimeline */
+.mobile-orders,.mobile-order-detail{max-width:700px;color:#171717}
+.mobile-orders-heading,.mobile-detail-header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:0 0 22px}
+.mobile-orders-heading h1,.mobile-detail-header h1{font:800 30px/1.08 Roboto,Arial,sans-serif;letter-spacing:-1px;margin:0;flex:1}
+.mobile-orders-heading button,.mobile-detail-header button,.mobile-detail-header a{display:grid;place-items:center;width:44px;height:44px;border:1px solid #eae8e5;border-radius:13px;background:white;color:#3b3633}
+.mobile-orders-section{margin-bottom:28px}
+.mobile-orders-section h2{font:800 20px/1.2 Roboto,Arial,sans-serif;margin:0 0 13px}
+.mobile-orders-section-head{display:flex;align-items:center;gap:10px}
+.mobile-orders-section-head>span{display:grid;place-items:center;border-radius:99px;padding:4px 9px;background:#ffe9df;color:#ce3c0a;font:800 12px Roboto,Arial,sans-serif;margin-bottom:12px}
+.mobile-active-order,.mobile-past-order{display:block;color:#171717;border:1px solid #eae8e5;background:white;border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 6px 20px #25211e0b;transition:transform 140ms cubic-bezier(.215,.61,.355,1)}
+.mobile-active-order:active,.mobile-past-order:active{transform:scale(.992)}
+.mobile-order-card-header{display:flex;align-items:center;gap:12px}
+.mobile-order-image{flex:0 0 48px;width:48px;height:48px;background:#ffe9df;color:#ce3c0a;border-radius:14px;display:grid;place-items:center}
+.mobile-order-identity{flex:1;min-width:0}
+.mobile-order-identity strong,.mobile-past-copy strong{display:block;font:700 16px Roboto,Arial,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mobile-order-identity span,.mobile-past-copy span{display:block;margin-top:3px;font-size:12px;color:#737373;font-weight:600}
+.mobile-order-pill{padding:7px 10px;border-radius:99px;color:#ce3c0a;background:#ffe9df;font:700 11px Roboto,Arial,sans-serif;white-space:nowrap;max-width:45%;text-overflow:ellipsis;overflow:hidden}
+.mobile-order-steps{display:flex;align-items:center;gap:4px;margin:14px 0 12px}
+.mobile-order-steps span{height:5px;border-radius:99px;flex:1;background:#f3efeb;transition:background 420ms cubic-bezier(.215,.61,.355,1)}
+.mobile-order-steps span.filled{background:#ff5a1f}
+.mobile-order-footer{display:flex;gap:8px;align-items:center;justify-content:space-between;color:#737373;font-size:12px;font-weight:600}
+.mobile-order-footer strong{font-size:13px;color:#ce3c0a;display:inline-flex;align-items:center;white-space:nowrap;gap:3px}
+.mobile-past-order{display:flex;align-items:center;gap:12px;padding:12px;box-shadow:none}
+.mobile-past-copy{flex:1;min-width:0}
+.mobile-past-status{border-radius:99px;padding:7px 10px;font-size:11px;font-weight:800}
+.mobile-past-status.complete{background:#e7f7ee;color:#168a4a}
+.mobile-past-status.cancelled{background:#ffedea;color:#c6312a}
+.mobile-orders-offline{background:#fff0e8;border:1px solid #ffe0d1;border-radius:16px;padding:12px;display:flex;align-items:center;gap:9px;color:#8a4725;font-size:12px;margin:12px 0 20px;flex-wrap:wrap}
+.mobile-orders-offline span{flex:1;min-width:180px}
+.mobile-orders-offline button{border:0;background:transparent;color:#ce3c0a;font-weight:800;text-decoration:underline;padding:6px}
+.mobile-loading-order{display:flex;align-items:center;gap:8px;padding:30px 0;color:#737373;font-size:14px}
+.mobile-order-detail-hero{padding:20px;border:1px solid #eae8e5;background:white;border-radius:20px;margin:10px 0 14px}
+.mobile-order-mini{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:#ce3c0a}
+.mobile-order-detail-hero h2{font:800 28px Roboto,Arial,sans-serif;margin:9px 0 5px}
+.mobile-order-detail-hero p{font-size:14px;color:#737373;margin:0}
+.mobile-order-timeline,.mobile-order-products{border:1px solid #eae8e5;border-radius:20px;padding:18px;background:white;margin-bottom:14px}
+.mobile-order-timeline h3,.mobile-order-products h3{font:800 18px Roboto,Arial,sans-serif;margin:0 0 18px}
+.mobile-order-timeline-step{display:flex;align-items:center;gap:12px;padding:0 0 20px;position:relative;color:#a29c97;font-size:14px;font-weight:600;min-height:35px}
+.mobile-order-timeline-step:last-child{padding-bottom:0}
+.mobile-order-step-indicator{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border:1.2px solid #e2dbd5;background:#f3efeb;color:white;border-radius:50%}
+.mobile-order-timeline-step:not(:last-child):before{content:'';position:absolute;top:27px;bottom:3px;left:11px;width:2px;background:#eae8e5}
+.mobile-order-timeline-step.done .mobile-order-step-indicator{background:#ff5a1f;border-color:#ff5a1f}
+.mobile-order-timeline-step.done:before{background:#ff5a1f}
+.mobile-order-timeline-step.current{color:#171717;font-weight:800}
+.mobile-order-timeline-step.current .mobile-order-step-indicator{border:2px solid #ff5a1f;background:#fff}
+.mobile-order-timeline-step.current .mobile-order-step-indicator:after{content:'';width:8px;height:8px;background:#ff5a1f;border-radius:50%}
+.mobile-order-timeline-step b{font-size:11px;color:#ce3c0a;background:#ffe9df;border-radius:99px;padding:5px 8px}
+.mobile-order-products>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;font-size:14px;color:#3b3633}
+.mobile-order-products .mobile-detail-total{border-top:1px solid #eae8e5;margin-top:10px;padding-top:14px;font-size:17px;color:#171717}
+.mobile-order-pin{border-radius:18px;background:#ffe9df;padding:18px;margin-bottom:14px;display:flex;flex-direction:column;gap:5px;color:#ce3c0a}
+.mobile-order-pin span{font-size:12px;color:#3b3633}
+.mobile-order-payment,.mobile-order-disclaimer{font-size:13px;color:#737373;margin:12px 0;line-height:1.45}
+.mobile-order-cancelled{border-radius:14px;padding:14px;color:#c6312a;background:#ffedea;font-weight:700}
+.mobile-status-link{display:inline-flex;border-radius:14px;padding:12px 18px;background:#ce3c0a;color:#fff;font-weight:800;font-size:14px}
+@media(max-width:360px){.mobile-order-footer{flex-wrap:wrap}.mobile-order-pill{max-width:38%}.mobile-past-status{font-size:10px;padding:6px 8px}}
+@media(prefers-reduced-motion:reduce){.mobile-order-steps span,.mobile-active-order,.mobile-past-order{transition:none}}
