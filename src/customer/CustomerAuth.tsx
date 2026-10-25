@@ -17,11 +17,14 @@ function AuthInput({label,value,onChange,Icon,placeholder,type='text',autoComple
  label:string;value:string;onChange:(value:string)=>void;Icon:Icon;placeholder?:string;
  type?:string;autoComplete?:string;showToggle?:boolean;onToggle?:()=>void;required?:boolean;
 }) {
- return <label className="te-auth-field">{label}
-  <span className="te-auth-input">
+ return <label className="te-auth-field">
+  <span className={'te-auth-input'+(value?' has-value':'')}>
    <Icon size={19} aria-hidden="true"/>
-   <input value={value} type={type} onChange={event=>onChange(event.target.value)}
-    placeholder={placeholder} autoComplete={autoComplete} required={required} aria-label={label}/>
+   <span className="te-auth-control">
+    <span className="te-auth-floating-label">{label}</span>
+    <input value={value} type={type} onChange={event=>onChange(event.target.value)}
+     placeholder={placeholder||label} autoComplete={autoComplete} required={required} aria-label={label}/>
+   </span>
    {onToggle&&<button className="te-auth-toggle" type="button" onClick={onToggle}
      aria-label={showToggle?'Ocultar contraseña':'Mostrar contraseña'}>
      {showToggle?<EyeOff size={19}/>:<Eye size={19}/>}
