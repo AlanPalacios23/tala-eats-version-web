@@ -13,7 +13,7 @@ export function manifestForPath(path: string): string {
  if (path === '/restaurante' || path.startsWith('/restaurante/')) return '/manifest-restaurante.webmanifest';
  if (path === '/repartidor' || path.startsWith('/repartidor/')) return '/manifest-repartidor.webmanifest';
  if (path === '/clientes' || path.startsWith('/clientes/') ||
-     path === '/buscar' || path === '/acceso' || path === '/tala-club' || path === '/notificaciones' || path === '/soporte' || path === '/favoritos' || path === '/editar-perfil' || path === '/carrito' || path === '/checkout' || path === '/direcciones' || path === '/pedidos' || path.startsWith('/pedidos/') ||
+     path === '/buscar' || path === '/acceso' || path === '/tala-club' || path === '/notificaciones' || path === '/soporte' || path === '/favoritos' || path === '/editar-perfil' || path === '/carrito' || path === '/checkout' || path === '/direcciones' || path === '/pedidos' || path.startsWith('/pedidos/') || path.startsWith('/pago/') ||
      path === '/cuenta' || path.startsWith('/comercio/')) return '/manifest-clientes.webmanifest';
  return '/manifest.webmanifest';
 }
