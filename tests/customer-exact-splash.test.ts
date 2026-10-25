@@ -34,10 +34,23 @@ describe('User-supplied precise 728x1536 first splash',()=>{
   expect(source).not.toContain('<h1>Bienvenido<br/>a Tala Eats</h1>');
   expect(source).not.toContain('className="customer-onboarding-cta glass"');
  });
- it('uses precisely the same circular button class for both screens',()=>{
-  const arrowMarkup=(source.match(/className="customer-splash-next"/g)||[]).length;
-  expect(arrowMarkup).toBe(2);
+ it('keeps the real circular orange button consistent on all three screens',()=>{
+  const previousButtons=(source.match(/className="customer-splash-next"/g)||[]).length;
+  expect(previousButtons).toBe(2);
+  expect(source).toContain('className="customer-splash-next customer-bag-next"');
   expect(css).toContain('.customer-splash-next{');
+  expect(css).toContain('.customer-bag-screen .customer-bag-next{');
+ });
+ it('replaces crowded email-button screen with the exact customer bag photo, while keeping authentication live',()=>{
+  expect(source).toContain('src="/branding/onboarding-rapido-seguro-864x1536.jpg"');
+  expect(source).toContain('width="864" height="1536"');
+  expect(source).toContain('bagArtFailed');
+  expect(source).toContain('aria-label="Continuar con tu correo electrónico"');
+  expect(source).toContain('<Link className="customer-splash-next customer-bag-next" to="/acceso" state={{from}}');
+  expect(source).not.toContain('<h1>Un antojo,<br/>mil posibilidades.</h1>');
+  expect(source).not.toContain('className="customer-onboarding-cta orange"');
+  expect(source).toContain('setMode(m=>m===\'signin\'?\'signup\':\'signin\')');
+  expect(css).toContain('object-fit:fill');
  });
  it('never draws fake mobile status bars and respects phone viewport constraints',()=>{
   expect(css).toContain('object-fit:cover');
