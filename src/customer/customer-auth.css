@@ -63,3 +63,31 @@
 .te-auth-otp-toggle { border:0;background:transparent;text-align:left;color:#737373;font:650 12px/1.4 Roboto,Arial,sans-serif;padding:5px 0;margin-top:-3px; }
 .te-auth-otp-toggle[aria-expanded="true"] { color:#ce3c0a; }
 .te-auth-otp-toggle:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+
+/* Flutter InputDecorationTheme: labels float on focus/value, 16px radius,
+   #EAE8E5 stroke; this overrides the earlier stacked-label web layout. */
+.te-auth-body .te-auth-field { display:block;margin:0;font-size:0; }
+.te-auth-body .te-auth-input { margin-top:0;min-height:56px;background:#fff;border:1px solid #eae8e5; }
+.te-auth-body .te-auth-control { min-width:0;flex:1;position:relative;height:54px;display:block; }
+.te-auth-body .te-auth-control input {
+ font:500 15px Roboto,Arial,sans-serif;height:100%;width:100%;margin:0;padding:12px 0 0;
+ background:transparent;outline:0;border:0;color:#171717;
+}
+.te-auth-body .te-auth-floating-label {
+ display:block;position:absolute;left:0;top:18px;pointer-events:none;color:#737373;
+ font:600 14px/1.25 Roboto,Arial,sans-serif;transform-origin:left center;
+ transition:transform 180ms cubic-bezier(.215,.61,.355,1),top 180ms cubic-bezier(.215,.61,.355,1),
+  color 180ms cubic-bezier(.215,.61,.355,1);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+.te-auth-body .te-auth-control input::placeholder { opacity:0; }
+.te-auth-body .te-auth-input:focus-within .te-auth-control input::placeholder {opacity:.7;color:#a29c97;}
+.te-auth-body .te-auth-input:focus-within .te-auth-floating-label,
+.te-auth-body .te-auth-input.has-value .te-auth-floating-label {
+ top:5px;transform:scale(.82);color:#ce3c0a;font-weight:700;
+}
+.te-auth-body .te-auth-input:focus-within { border-color:#ff5a1f;box-shadow:0 0 0 1px #ff5a1f; }
+.te-auth-body .te-auth-submit { background:#ce3c0a;min-height:54px;font-size:16px;font-weight:700;box-shadow:none; }
+.te-auth-body .te-auth-submit:not(:disabled):hover { background:#b63308; }
+@media(prefers-reduced-motion:reduce){
+ .te-auth-body .te-auth-floating-label {transition:none;}
+}
