@@ -125,3 +125,19 @@
   bottom:96px;left:50%;right:auto;transform:translateX(-50%);
   width:min(460px,calc(100vw - 32px));z-index:64;border-radius:17px;
 }
+
+/* Flutter PremiumBottomDock animates a single 56px soft-orange indicator
+   between tabs over 280ms, while icon and label change over 200ms. */
+.te-customer-dock-slider {
+ position:absolute;left:4px;top:8px;width:calc((100% - 8px)/4);height:30px;pointer-events:none;
+ transform:translateX(calc(var(--te-tab-index,0) * 100%));
+ transition:transform 280ms cubic-bezier(.215,.61,.355,1);
+}
+.te-customer-dock-slider::before {
+ content:"";display:block;width:56px;max-width:90%;height:30px;border-radius:99px;background:#ffe9df;margin:0 auto;
+}
+.te-customer-dock-item { z-index:1;transition:color 200ms cubic-bezier(.215,.61,.355,1); }
+.te-customer-dock-item.active .te-customer-dock-icon { background:transparent; }
+@media(prefers-reduced-motion:reduce) {
+ .te-customer-dock-slider,.te-customer-dock-item { transition:none!important; }
+}
