@@ -477,3 +477,19 @@
 .mobile-profile-form input:focus{outline:2px solid #ff5a1f}
 .mobile-profile-saved{display:flex;gap:9px;align-items:center;padding:13px;border-radius:14px;color:#167d47;background:#e7f7ee;font-size:13px;font-weight:700}
 @media(prefers-reduced-motion:reduce){.mobile-dish-search-tile{animation:none}}
+
+
+/* PaymentStatusScreen in Flutter · Stripe TEST Payment Element Web */
+.mobile-stripe-status{text-align:center}
+.mobile-stripe-status .mobile-detail-header{text-align:left}
+.mobile-payment-orb{width:94px;height:94px;margin:30px auto 20px;display:grid;place-items:center;background:#ffe9df;color:#ce3c0a;border:4px solid white;border-radius:50%;box-shadow:0 0 0 8px #fff1e9;animation:mobile-pop 620ms cubic-bezier(.215,.61,.355,1) both}
+.mobile-stripe-status>h2{font:800 28px/1.2 Roboto,Arial,sans-serif;color:#171717;margin:22px 0 6px}
+.mobile-stripe-center{color:#737373;font-size:15px;margin:0 0 24px}
+.mobile-stripe-status .mobile-checkout-card{text-align:left}
+.mobile-stripe-head{display:flex;align-items:center;gap:12px;color:#ce3c0a;margin-bottom:15px}
+.mobile-stripe-head>div{display:grid;gap:3px}
+.mobile-stripe-head strong{font:800 16px Roboto,Arial,sans-serif;color:#171717}
+.mobile-stripe-head span{font:500 12px/1.4 Roboto,Arial,sans-serif;color:#737373}
+.mobile-stripe-element{min-height:145px;padding:10px 0;margin:8px 0}
+.mobile-stripe-status>.mobile-status-link{margin:12px auto 0}
+@media(prefers-reduced-motion:reduce){.mobile-payment-orb{animation:none}}
