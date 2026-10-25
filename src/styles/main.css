@@ -550,7 +550,7 @@
 /* Flutter mobile shell: ONE scroll container, no browser page bouncing,
    no smooth repositioning as screens are changed. */
 html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){height:100%;overflow:hidden;overscroll-behavior:none;scroll-behavior:auto}
-.customer-shell{height:100dvh;min-height:0;max-height:100dvh;overflow:hidden;overscroll-behavior:none}
+.customer-shell{height:100svh;min-height:0;max-height:100svh;overflow:hidden;overscroll-behavior:none}
 .customer-shell>main{display:block;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scroll-behavior:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .customer-shell>main::-webkit-scrollbar{display:none}
 .customer-shell .mobile-sheet-body,.customer-shell .mobile-market-sheet,.customer-shell .mobile-chat-messages{overscroll-behavior:contain}
