@@ -1,21 +1,29 @@
 import type { MenuItem } from './types';
-export interface CartEntry { item: MenuItem; quantity: number; }
+export interface CartEntry { item: MenuItem; quantity: number; note?: string; }
 export interface Cart { restaurantId: number|null; entries: CartEntry[]; }
 export const EMPTY_CART:Cart={restaurantId:null,entries:[]};
-export function addItem(cart:Cart,item:MenuItem):Cart {
- if(!item.is_available||item.stock<1)return cart;
- const same = cart.restaurantId===item.restaurant_id;
- const entries = same?cart.entries:[];
- const old=entries.find(x=>x.item.id===item.id);
- const quantity=Math.min(item.stock,Math.min(50,(old?.quantity??0)+1));
- return {restaurantId:item.restaurant_id,entries:old?
-  entries.map(x=>x.item.id===item.id?{item,quantity}:x):[...entries,{item,quantity}]};
+/** The mobile app keeps preferences per cart line and enforces stock limits. */
+export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''):Cart {
+ if(!item.is_available||item.stock<1||!Number.isSafeInteger(desiredQuantity)||desiredQuantity<1)return cart;
+ const normalizedNote=note.trim().slice(0,200);
+ const sameRestaurant=cart.restaurantId===item.restaurant_id;
+ const entries=sameRestaurant?cart.entries:[];
+ const old=entries.find(x=>x.item.id===item.id && (x.note??'')===normalizedNote);
+ const quantity=Math.min(item.stock,Math.min(50,(old?.quantity??0)+desiredQuantity));
+ if(quantity<1)return cart;
+ const changed=old?
+  entries.map(x=>x===old?{item,quantity,note:normalizedNote}:x):
+  [...entries,{item,quantity,note:normalizedNote}];
+ return {restaurantId:item.restaurant_id,entries:changed};
 }
-export function updateQuantity(cart:Cart,itemId:number,delta:number):Cart {
- const entries=cart.entries.map(e=>e.item.id!==itemId?e:{...e,quantity:Math.min(50,Math.min(e.item.stock,e.quantity+delta))}).filter(e=>e.quantity>0);
+export function addItem(cart:Cart,item:MenuItem):Cart {return addVariantItem(cart,item,1,'');}
+/** Option-aware quantity updates. Legacy IDs continue to work for unambiguous lines. */
+export function updateQuantity(cart:Cart,itemId:number,delta:number,note?:string):Cart {
+ const entries=cart.entries.map(e=>e.item.id!==itemId||(note!==undefined&&(e.note??'')!==note)?e:
+  {...e,quantity:Math.min(50,Math.min(e.item.stock,e.quantity+delta))}).filter(e=>e.quantity>0);
  return entries.length?{...cart,entries}:EMPTY_CART;
 }
 export function lineItems(cart:Cart) {
- return cart.entries.map(e=>({menu_item_id:e.item.id,quantity:e.quantity,options:'' as const}));
+ return cart.entries.map(e=>({menu_item_id:e.item.id,quantity:e.quantity,options:e.note??''}));
 }
-export function basketTotal(cart:Cart):number { return cart.entries.reduce((sum,e)=>sum+e.quantity*Number(e.item.price),0); }
+export function basketTotal(cart:Cart):number {return cart.entries.reduce((sum,e)=>sum+e.quantity*Number(e.item.price),0);}
