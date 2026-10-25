@@ -6,7 +6,7 @@
  background:#fff;border:1px solid #eae8e5; }
 .te-auth-brand .te-auth-logo { width:36px;height:36px;display:grid;place-items:center;border-radius:11px;
  background:linear-gradient(135deg,#ff7a3d,#ff5a1f,#ce3c0a);color:#fff;box-shadow:0 5px 12px rgba(255,90,31,.23); }
-.te-auth-logo .material-icons-round { color:#fff;font-size:20px;font-weight:normal;line-height:1;font-feature-settings:'liga'; }
+.te-auth-logo img { width:20px;height:20px;display:block;object-fit:contain; }
 .te-auth-body .te-auth-field { display:block;font:700 13px/1.35 Roboto,Arial,sans-serif;color:#3b3633; }
 .te-auth-body .te-auth-input { min-height:54px; }
 .te-auth-forgot { margin-left:auto;border:0;background:transparent;color:#ce3c0a;font-size:13px;font-weight:700;padding:8px 0;text-align:right; }
