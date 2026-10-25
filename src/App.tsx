@@ -6,7 +6,7 @@ import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from '.
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
-import type { MenuItem, Order, Restaurant } from './lib/types';
+import type { MenuItem, Order } from './lib/types';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -147,7 +147,7 @@ function Auth(){
  <p className="fineprint">Las cuentas nuevas son de cliente. Los permisos de comercio o repartidor requieren aprobación.</p></div></div></div>;
 }
 function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
- const {user}=useSession(),nav=useNavigate();
+ const {user}=useSession();
  const [notes,setNotes]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Order|null>(null);
  const [reference,setReference]=useState<string|null>(null);
  const items=useMemo(()=>lineItems(cart),[cart]);
