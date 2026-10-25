@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight, CreditCard, Info, MapPin, Minus,
 import { Link, useNavigate } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
 import { basketTotal, updateQuantity } from '../lib/cart';
+import { referenceBreakdown } from '../lib/checkout-preview';
 import type { Cart } from '../lib/cart';
 import { useSession } from '../lib/session';
 import { stripeTestAllowed } from '../lib/stripe-test';
@@ -11,20 +12,31 @@ import { buildCheckoutRequest, checkoutAllowed, assertServerQuote, fingerprint, 
 import type { CustomerAddress, FulfillmentMode, PaymentKind, VerifiedQuote } from '../lib/customer-checkout';
 import type { Order, PaymentOptions, Restaurant } from '../lib/types';
 
-function OrderAmount({label,value,primary=false}:{label:string;value:string|number|undefined;primary?:boolean}){
- return <div className={'mobile-checkout-amount'+(primary?' primary':'')}><span>{label}</span><strong>{value===undefined?'Por confirmar':pesos(value)}</strong></div>;
+function OrderAmount({label,value,primary=false,hint}:{label:string;value:string|number|null|undefined;primary?:boolean;hint?:string}){
+ return <div className={'mobile-checkout-amount'+(primary?' primary':'')}><span>{label}{hint&&<small className="mobile-checkout-amount-hint">{hint}</small>}</span><strong>{value==null?'Por confirmar':pesos(value)}</strong></div>;
 }
-function OrderSummary({quote,delivery,preview}:{quote:VerifiedQuote|null;delivery:boolean;preview:number}){
+function OrderSummary({quote,delivery,cart,options,tip,coupon}:{quote:VerifiedQuote|null;delivery:boolean;cart:Cart;options:PaymentOptions|null;tip:string;coupon:string}){
+ const reference=referenceBreakdown(basketTotal(cart),options,delivery,tip,Boolean(coupon.trim()));
+ const fee=quote?.service_fee??reference.serviceFee;
+ const shipping=quote?.delivery_fee??reference.deliveryBase;
+ const total=quote?.total??reference.total;
  return <section className="mobile-checkout-card"><h2>Resumen</h2>
-  <OrderAmount label="Subtotal" value={quote?.subtotal??preview}/>
-  <OrderAmount label="Tarifa de servicio" value={quote?.service_fee}/>
-  <OrderAmount label={delivery?'Envío según distancia':'Recoger en restaurante'} value={quote?.delivery_fee??(!delivery?0:undefined)}/>
-  {delivery&&quote?.tip!==undefined&&<OrderAmount label="Propina para repartidor" value={quote.tip as string|number}/>}
-  <OrderAmount label={quote?'Total calculado por el servidor':'Total de referencia'} value={quote?.total} primary/>
-  <p className="mobile-checkout-disclosure">El servidor recalcula los importes antes de registrar el pedido. Esta cotización no reserva inventario ni garantiza disponibilidad.</p>
+  <div className="mobile-checkout-products">{cart.entries.map(row=><div key={row.item.id+'-'+(row.note??'')}><b>{row.quantity}×</b><span>{row.item.name}</span><strong>{pesos(Number(row.item.price)*row.quantity)}</strong></div>)}</div>
+  <OrderAmount label="Subtotal" value={quote?.subtotal??reference.subtotal}/>
+  <OrderAmount label={reference.rateLabel} value={fee} hint="Aplica a efectivo y pago digital; no a envío ni propina."/>
+  <OrderAmount label={delivery?(quote?'Envío según distancia GPS':'Envío (referencia base)'):'Recoger en restaurante'} value={shipping} hint={delivery&&!quote?'La tarifa final depende de la distancia; este valor es solo la base.':undefined}/>
+  {delivery&&<OrderAmount label="Propina para repartidor" value={quote?.tip as string|number|undefined??reference.tip}/>}
+  <OrderAmount label={quote?'Total calculado por el servidor':'Total de referencia'} value={total} primary/>
+  <p className="mobile-checkout-disclosure">{quote?'Importes calculados por el servidor; se verifican otra vez al registrar el pedido. No se ha reservado inventario.':reference.note}</p>
  </section>;
 }
 export function CustomerCart({cart,setCart}:{cart:Cart;setCart:(value:Cart)=>void}){
+ const {user}=useSession();const [options,setOptions]=useState<PaymentOptions|null>(null);
+ useEffect(()=>{let active=true;setOptions(null);if(!user)return()=>{active=false;};
+  api.paymentOptions().then(v=>{if(active)setOptions(v)}).catch(()=>{if(active)setOptions(null)});
+  return()=>{active=false};
+ },[user?.id]);
+ const reference=referenceBreakdown(basketTotal(cart),options,false,'0',false);
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className="mobile-customer-page mobile-cart" data-mobile-screen="cart">
   <div className="mobile-detail-header"><Link to={cart.restaurantId?'/comercio/'+cart.restaurantId:'/clientes'} aria-label="Volver"><ArrowLeft size={22}/></Link><h1>Tu carrito</h1></div>
@@ -34,7 +46,7 @@ export function CustomerCart({cart,setCart}:{cart:Cart;setCart:(value:Cart)=>voi
     <div className="mobile-cart-entry-info"><strong>{entry.item.name}</strong>{entry.note&&<small>{entry.note}</small>}<span>{pesos(entry.item.price)}</span></div>
     <div className="mobile-stepper"><button aria-label={'Restar '+entry.item.name} onClick={()=>setCart(updateQuantity(cart,entry.item.id,-1,entry.note??''))}><Minus size={18}/></button><strong>{entry.quantity}</strong><button aria-label={'Sumar '+entry.item.name} onClick={()=>setCart(updateQuantity(cart,entry.item.id,1,entry.note??''))} disabled={entry.quantity>=entry.item.stock}><Plus size={18}/></button></div>
    </article>)}</div>
-   <section className="mobile-checkout-card"><h2>Resumen</h2><OrderAmount label="Productos" value={basketTotal(cart)}/><OrderAmount label="Total de referencia" value={undefined} primary/><p className="mobile-checkout-disclosure">El total definitivo lo calcula el servidor. La comisión del restaurante no se cobra aparte al cliente.</p></section>
+   <section className="mobile-checkout-card"><h2>Resumen</h2><OrderAmount label="Productos" value={basketTotal(cart)}/><OrderAmount label={reference.rateLabel} value={reference.serviceFee}/><OrderAmount label="Recoger en restaurante" value={0}/><OrderAmount label="Total de referencia para recoger" value={reference.total} primary/><p className="mobile-checkout-disclosure">{reference.note} La comisión del restaurante no se cobra aparte al cliente.</p></section>
    <Link className="mobile-checkout-fixed" to="/checkout">Continuar al pago <ChevronRight size={19}/></Link>
   </>}
  </div>;
@@ -160,7 +172,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <section className="mobile-checkout-card"><h2>Cupón</h2><input className="mobile-checkout-input" maxLength={50} value={coupon} disabled={submitting||Boolean(pending)} onChange={e=>{setCoupon(e.target.value);setError('');}} placeholder="Código de descuento (opcional)" aria-label="Código de descuento"/></section>
   <section className="mobile-checkout-card"><h2>Notas para restaurante</h2><textarea className="mobile-checkout-input" maxLength={1000} rows={2} value={notes} disabled={submitting||Boolean(pending)} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales (opcional)"/></section>
   {quoteBusy?<p className="mobile-loading-order"><RefreshCw size={18} className="spin"/> Solicitando importe al servidor…</p>:null}
-  <OrderSummary quote={displayed} delivery={mode==='delivery'} preview={basketTotal(cart)}/>
+  <OrderSummary quote={displayed} delivery={mode==='delivery'} cart={cart} options={options} tip={tip} coupon={coupon}/>
   {error&&<div className="mobile-address-error" role="alert"><Info size={16}/>{error}</div>}
   {pending&&<div className="mobile-checkout-pending"><strong>Pedido pendiente de confirmación</strong><p>No volveremos a enviarlo mientras no podamos comprobar qué sucedió.</p><button disabled={rechecking} onClick={()=>void recover()}>{rechecking?'Consultando…':'Consultar pedido pendiente'}</button></div>}
   <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':method==='stripe'?'Continuar a pago con Stripe TEST':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
