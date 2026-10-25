@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
@@ -194,6 +194,12 @@ function CustomerHashScroll(){
 export default function App(){
  const session=useSession();
  const [cart,setCart]=useState<Cart>(()=>{try{return restoreCustomerCart(JSON.parse(sessionStorage.getItem(CUSTOMER_CART_STORAGE_KEY)||'null'));}catch{return EMPTY_CART;}});
+ const lastUserId=useRef<number|null>(null);
+ useEffect(()=>{
+  const next=session.user?.id??null;
+  if(lastUserId.current!==null&&lastUserId.current!==next)setCart(EMPTY_CART);
+  lastUserId.current=next;
+ },[session.user?.id]);
  useEffect(()=>{try{
   if(cart.entries.length)sessionStorage.setItem(CUSTOMER_CART_STORAGE_KEY,JSON.stringify(cart));
   else sessionStorage.removeItem(CUSTOMER_CART_STORAGE_KEY);
