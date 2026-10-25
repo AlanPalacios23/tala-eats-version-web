@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { ArrowLeft, ArrowRight, Bell, Bike, ChevronRight, Heart, Headphones, LogOut, MapPin, Package, RefreshCw, ShieldCheck, Store, UserRound, Wallet, WifiOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, Bike, ChevronRight, Heart, Headphones, LogOut, MapPin, Package, RefreshCw, ShieldCheck, Store, FileText, UserRound, Wallet, WifiOff } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, isMerchantRole, isDriverRole, pesos } from '../lib/api';
 import { useSession } from '../lib/session';
 import { amountInCents } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
+import {CustomerAvatar} from './CustomerAvatar';
 
 function Heading({title,back='/cuenta',refresh}:{title:string;back?:string;refresh?:()=>void}){
  return <div className="mobile-detail-header"><Link to={back} aria-label="Regresar"><ArrowLeft size={22}/></Link><h1>{title}</h1>{refresh&&<button aria-label="Actualizar" onClick={refresh}><RefreshCw size={20}/></button>}</div>;
@@ -29,7 +30,7 @@ export function CustomerAccount(){
  return <div className="mobile-customer-page mobile-account" data-mobile-screen="account">
   <h1>Cuenta</h1>
   {logoutError&&<div role="alert" className="mobile-address-error">{logoutError}</div>}
-  <Link to="/editar-perfil" className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div><ChevronRight size={20}/></Link>
+  <Link to="/editar-perfil" className="mobile-account-profile"><span className="mobile-account-avatar"><CustomerAvatar userId={user?.id} url={user?.avatar_url}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div><ChevronRight size={20}/></Link>
   <Link to="/tala-club" className="mobile-account-club"><Wallet size={23}/><div><strong>Tala Club</strong><small>Consulta saldo, puntos y movimientos verificados</small></div><ChevronRight size={20}/></Link>
   <h2>Tu cuenta</h2><div className="mobile-account-group">
    <AccountLink to="/favoritos" label="Favoritos" icon={<Heart size={21}/>}/>
@@ -37,8 +38,14 @@ export function CustomerAccount(){
    <AccountLink to="/direcciones" label="Direcciones" icon={<MapPin size={21}/>}/>
    <AccountLink to="/notificaciones" label="Notificaciones" icon={<Bell size={21}/>}/>
   </div>
-  <h2>Seguridad y privacidad</h2><div className="mobile-account-group"><div className="mobile-account-info"><ShieldCheck size={20}/><span>Tu sesión se protege mediante autenticación del servidor. Otras preferencias de seguridad siguen en desarrollo web.</span></div></div>
-  <h2>Ayuda</h2><div className="mobile-account-group"><AccountLink to="/soporte" label="Ayuda y soporte" icon={<Headphones size={21}/>}/></div>
+  <h2>Seguridad y privacidad</h2><div className="mobile-account-group">
+   <AccountLink to="/privacidad" label="Privacidad y tus datos" subtitle="Preferencias, exportación y eliminación de cuenta" icon={<ShieldCheck size={21}/>}/>
+  </div>
+  <h2>Ayuda y documentos</h2><div className="mobile-account-group">
+   <AccountLink to="/soporte" label="Ayuda y soporte" icon={<Headphones size={21}/>}/>
+   <AccountLink to="/terminos" label="Términos y condiciones" icon={<FileText size={21}/>}/>
+   <AccountLink to="/aviso-privacidad" label="Aviso de privacidad" icon={<ShieldCheck size={21}/>}/>
+  </div>
   {(isMerchantRole(user?.role)||isDriverRole(user?.role))&&<div className="mobile-account-group">{isMerchantRole(user?.role)&&<AccountLink to="/restaurante" label="Panel restaurante" icon={<Store size={21}/>}/>} {isDriverRole(user?.role)&&<AccountLink to="/repartidor" label="Panel repartidor" icon={<Bike size={21}/>}/>} </div>}
   <button className="mobile-account-logout" disabled={busy} onClick={()=>void leave()}><LogOut size={20}/> {busy?'Cerrando sesión…':'Cerrar sesión'}</button>
  </div>;
