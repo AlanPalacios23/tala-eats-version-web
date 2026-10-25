@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import { resolveCustomerImage } from './customer-media';
 import { PREVIEW_READONLY, previewRequestAllowed } from './preview';
 import type { StripeTestConfig, StripeIntentReply } from './stripe-test';
 import { normalizeCustomerAddress } from './customer-checkout';
@@ -106,11 +107,7 @@ export function pesos(value: unknown): string {
   return Number.isFinite(n) ? new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n) : '—';
 }
 export function safeImage(url?: string|null): string | null {
-  if (!url) return null;
-  try {
-    const parsed = new URL(url, window.location.origin);
-    return parsed.protocol === 'https:' || (parsed.origin === window.location.origin && parsed.protocol === 'http:') ? parsed.href : null;
-  } catch { return null; }
+  return resolveCustomerImage(url, window.location.origin);
 }
 export function isMerchantRole(role?:string) { return role==='restaurant'||role==='admin'; }
 export function isDriverRole(role?:string) { return role==='driver'; }
