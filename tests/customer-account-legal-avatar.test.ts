@@ -22,14 +22,15 @@ describe('Flutter-style profile avatar and privacy P0 regression',()=>{
   expect(api).toContain('personalization_opt_in:boolean;analytics_opt_in:boolean;marketing_opt_in:boolean');
   expect(api).not.toContain("request('/auth/me',json('DELETE')");
  });
- it('shows authentic legal screens and safeguards account deletion with typed confirmation',()=>{
-  const legal=readFileSync(new URL('../src/components/CustomerLegal.tsx',import.meta.url),'utf8');
-  expect(legal).toContain('7 de octubre de 2026');
-  expect(legal).toContain('Términos y Condiciones de Uso');
-  expect(legal).toContain('Aviso de Privacidad');
-  expect(legal).toContain("typed!=='ELIMINAR'");
-  expect(legal).toContain("api.privacyRequest(kind)");
-  expect(legal).toContain("requestPrivacy('delete')");
+ it('links privacy and account deletion to already published Cloudflare Tunnel pages',()=>{
+  const account=readFileSync(new URL('../src/components/CustomerAccount.tsx',import.meta.url),'utf8');
+  const app=readFileSync(new URL('../src/App.tsx',import.meta.url),'utf8');
+  expect(account).toContain('LEGAL_LINKS.terms');
+  expect(account).toContain('LEGAL_LINKS.privacy');
+  expect(account).toContain('LEGAL_LINKS.deletion');
+  expect(account).toContain('target="_blank" rel="noopener noreferrer"');
+  expect(app).not.toContain('<CustomerLegal');
+  expect(app).not.toContain('<CustomerPrivacy');
  });
  it('removes orders toolbar refresh while retaining error recovery',()=>{
   const orders=readFileSync(new URL('../src/components/CustomerOrders.tsx',import.meta.url),'utf8');
