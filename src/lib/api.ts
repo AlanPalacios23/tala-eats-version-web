@@ -36,6 +36,8 @@ export const api = {
   me: () => request<User>('/auth/me'),
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
+  favorites: () => request<{id:number}[]>('/platform/favorites'),
+  toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
   quote: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:string}[]) => request<Quote>('/orders/quote',json('POST', {
