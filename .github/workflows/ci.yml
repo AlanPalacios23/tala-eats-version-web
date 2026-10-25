@@ -27,22 +27,20 @@ jobs:
           test -s dist/manifest-clientes.webmanifest
           test -s dist/manifest-restaurante.webmanifest
           test -s dist/manifest-repartidor.webmanifest
+          test -s dist/icons/icon-192.png
+          test -s dist/icons/icon-512.png
           bash -n deploy/kali-install-pwa.sh
           bash -n deploy/kali-install-pwa-isolated.sh
           bash -n deploy/kali-review-preview.sh
-          test -s dist/icons/icon-192.png
-          test -s dist/icons/icon-512.png
-      - name: Build isolated read-only review release
+      - name: Build isolated review release
         env:
           VITE_PREVIEW_READONLY: 'true'
         run: |
           npm run build -- --outDir dist-preview
-          grep -Fq '<meta name="tala-preview-mode" content="read-only" />' dist-preview/index.html
-          test -s dist-preview/assets/$(ls dist-preview/assets | grep '^index-.*\.js
-          path: dist/
-          retention-days: 7
- | head -n1)
+          grep -Fq 'tala-preview-mode' dist-preview/index.html
+          grep -Fq 'content="read-only"' dist-preview/index.html
           test -s dist-preview/manifest-clientes.webmanifest
+          test -n "$(find dist-preview/assets -maxdepth 1 -name '*.js' -print -quit)"
       - uses: actions/upload-artifact@v4
         with:
           name: tala-eats-readonly-preview-dist
