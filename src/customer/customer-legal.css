@@ -1,0 +1,11 @@
+.te-legal-page { min-height:100dvh; }
+.te-legal-inner { width:min(100%,600px);margin:0 auto;padding:14px 22px 52px; }
+.te-legal-back { display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:22px; }
+.te-legal-icon { display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#ffe9df;color:#ce3c0a;margin-bottom:14px; }
+.te-legal-inner>h1 { font:800 26px/1.12 Roboto,Arial,sans-serif;letter-spacing:-.7px;margin:0 0 6px; }
+.te-legal-date { font:600 12px/1.35 Roboto,Arial,sans-serif;color:#737373;margin:0 0 22px; }
+.te-legal-section { margin-bottom:20px; }
+.te-legal-section h2 { font:700 16px/1.25 Roboto,Arial,sans-serif;letter-spacing:0;margin:0 0 6px; }
+.te-legal-section p { font:400 14px/1.6 Roboto,Arial,sans-serif;color:#3b3633;margin:0; }
+.te-legal-back:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+@media(max-width:360px){.te-legal-inner{padding-left:16px;padding-right:16px;}}
