@@ -32,7 +32,7 @@ export function CustomerStartup() {
  if(!done) return <div className={'te-launch'+(exiting?' te-launch-exit':'')} role="status" aria-label="Iniciando Tala Eats">
    <div className="te-launch-glow" aria-hidden="true"/>
    <div className="te-launch-center">
-     <div className="te-launch-logo" aria-hidden="true"><span className="material-icons-round">delivery_dining</span></div>
+     <div className="te-launch-logo" aria-hidden="true"><img src="/icons/delivery_dining_rounded.svg" width="48" height="48" alt="" decoding="async"/></div>
      <div className="te-launch-copy">
        <strong>Tala Eats</strong>
        <span>Tu comida favorita, más cerca.</span>
