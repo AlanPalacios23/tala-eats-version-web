@@ -36,9 +36,14 @@ def sha256(data: bytes) -> str:
 
 
 def main() -> None:
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "TalaEatsSplashSource/1.0"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        source = response.read(1_000_000)
+    # Reuse the identical committed source to avoid reliance on remote CDN.
+    # Download only if the pinned original is not already in the checkout.
+    if RAW.is_file():
+        source = RAW.read_bytes()
+    else:
+        request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "TalaEatsSplashSource/1.0"})
+        with urllib.request.urlopen(request, timeout=30) as response:
+            source = response.read(1_000_000)
     assert sha256(source) == SOURCE_SHA256, "La fuente no coincide con la foto original"
     image = Image.open(io.BytesIO(source)).convert("RGB")
     assert image.size == (728, 1536), "La fotografía debe medir 728x1536"
@@ -52,6 +57,20 @@ def main() -> None:
     cv2.rectangle(mask, (25, 12), (158, 94), 255, -1)
     cv2.rectangle(mask, (518, 12), (710, 94), 255, -1)
     background = cv2.inpaint(pixels, mask, 18, cv2.INPAINT_TELEA)
+
+    # Exact user instruction: remove ONLY the three small pill-shaped page
+    # indicators at the bottom of the already approved splash. The logo,
+    # burger, fries, all copy, and the interactive orange arrow stay unchanged.
+    # Source/reference canvas is strictly 728 x 1536 pixels.
+    dots_mask = np.zeros(pixels.shape[:2], np.uint8)
+    for x0, x1 in ((225, 312), (321, 408), (417, 503)):
+        cv2.rectangle(dots_mask, (x0, 1434), (x1, 1457), 255, -1)
+    background = cv2.inpaint(background, dots_mask, 4, cv2.INPAINT_TELEA)
+    # All color/text/image content outside this narrow bottom region is not
+    # retouched; the native arrow remains rendered separately by React.
+    assert not np.any(cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)[1441:1449, 230:500] > 65), (
+        "Los tres indicadores inferiores siguen visibles"
+    )
     clean = Image.fromarray(cv2.cvtColor(background, cv2.COLOR_BGR2RGB))
     WEBP.parent.mkdir(parents=True, exist_ok=True)
     clean.save(WEBP, "WEBP", quality=90, method=6)
@@ -77,6 +96,7 @@ def main() -> None:
         )
     print("ORIGINAL_SOURCE_SHA256=PASS")
     print("SPLASH_WEBP_DIMENSIONS=728x1536 PASS")
+    print("SPLASH_THREE_BOTTOM_INDICATORS_REMOVED=PASS")
     print(f"SPLASH_WEBP_SHA256={sha256(content)}")
     print(f"SPLASH_ZIP_SHA256={sha256(ZIP.read_bytes())}")
     print("GITHUB_BINARY_FILES_GENERATED=PASS")
