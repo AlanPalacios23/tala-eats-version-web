@@ -128,24 +128,27 @@ export function CustomerAccount() {
        <div className="te-account-info"><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email||''}</span></div>
        <ChevronRight size={19} aria-hidden="true"/>
     </div>
-    <div className="te-account-club te-motion-reveal">
+    <Link className="te-account-club te-motion-reveal" to="/wallet">
       <span className="te-account-icon"><Wallet size={23}/></span>
-      <div><strong>Tala Club</strong><span>Consulta de saldo y puntos: no disponible en la PWA todavía</span></div>
-    </div>
+      <div><strong>Tala Club</strong><span>Consultar saldo, puntos y movimientos con el servidor</span></div>
+      <ChevronRight size={19}/>
+    </Link>
     <section className="te-account-group">
       <h2>Tu cuenta</h2>
       <button className="te-account-link" onClick={()=>setShowFavorites(true)}><Heart size={20}/><span>Favoritos</span><ChevronRight size={19}/></button>
       <Link className="te-account-link" to="/pedidos"><Package size={20}/><span>Mis pedidos</span><ChevronRight size={19}/></Link>
+      <Link className="te-account-link" to="/notificaciones"><Package size={20}/><span>Notificaciones</span><ChevronRight size={19}/></Link>
       {(user?.role==='restaurant'||user?.role==='admin')&&<Link className="te-account-link" to="/restaurante"><Store size={20}/><span>Panel restaurante</span><ChevronRight size={19}/></Link>}
       {user?.role==='driver'&&<Link className="te-account-link" to="/repartidor"><Package size={20}/><span>Panel repartidor</span><ChevronRight size={19}/></Link>}
     </section>
     <section className="te-account-group">
       <h2>Seguridad y privacidad</h2>
-      <div className="te-account-link te-account-info-static"><ShieldCheck size={20}/><span>Sesión protegida por el servidor</span></div>
+      <Link className="te-account-link" to="/privacidad"><ShieldCheck size={20}/><span>Aviso de privacidad</span><ChevronRight size={19}/></Link>
     </section>
     <section className="te-account-group">
       <h2>Ayuda</h2>
-      <p className="te-panel-muted">Para asistencia utiliza los canales oficiales de TALA EATS.</p>
+      <Link className="te-account-link" to="/soporte"><Package size={20}/><span>Ayuda y soporte</span><ChevronRight size={19}/></Link>
+      <Link className="te-account-link" to="/terminos"><ShieldCheck size={20}/><span>Términos y condiciones</span><ChevronRight size={19}/></Link>
     </section>
     {confirm?<div className="te-account-confirm" role="alertdialog" aria-label="Confirmar cierre de sesión">
       <strong>¿Cerrar sesión?</strong><p>Podrás volver a entrar con tu correo y contraseña.</p>
