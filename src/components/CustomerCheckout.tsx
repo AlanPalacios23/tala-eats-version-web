@@ -5,8 +5,10 @@ import { api, pesos } from '../lib/api';
 import { basketTotal, updateQuantity } from '../lib/cart';
 import type { Cart } from '../lib/cart';
 import { useSession } from '../lib/session';
+import { stripeTestAllowed } from '../lib/stripe-test';
+import type { StripeTestConfig } from '../lib/stripe-test';
 import { buildCheckoutRequest, checkoutAllowed, assertServerQuote, fingerprint, quoteMateriallyChanged, validAddress, validateCartAgainstRestaurant } from '../lib/customer-checkout';
-import type { CustomerAddress, FulfillmentMode, VerifiedQuote } from '../lib/customer-checkout';
+import type { CustomerAddress, FulfillmentMode, PaymentKind, VerifiedQuote } from '../lib/customer-checkout';
 import type { Order, PaymentOptions, Restaurant } from '../lib/types';
 
 function OrderAmount({label,value,primary=false}:{label:string;value:string|number|undefined;primary?:boolean}){
@@ -51,6 +53,7 @@ function readPending(userId:number):PendingReference|null{
 export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=>void}){
  const {user}=useSession(),navigate=useNavigate();
  const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[options,setOptions]=useState<PaymentOptions|null>(null),[addresses,setAddresses]=useState<CustomerAddress[]>([]);
+ const [stripeConfig,setStripeConfig]=useState<StripeTestConfig|null>(null),[method,setMethod]=useState<PaymentKind>('cash');
  const [loading,setLoading]=useState(true),[serverError,setServerError]=useState('');
  const [refresh,setRefresh]=useState(0),[mode,setMode]=useState<FulfillmentMode>('pickup'),[coupon,setCoupon]=useState(''),[notes,setNotes]=useState('');
  const [tip,setTip]=useState('0'),[error,setError]=useState(''),[quote,setQuote]=useState<{fingerprint:string;value:VerifiedQuote}|null>(null),[quoteBusy,setQuoteBusy]=useState(false);
@@ -61,17 +64,20 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  useEffect(()=>{
   let active=true;setLoading(true);setOptions(null);setServerError('');setRestaurant(null);
   if(!restaurantId||!userId){setLoading(false);return ()=>{active=false};}
+  void api.stripeTestConfig().then(value=>{if(active)setStripeConfig(value);}).catch(()=>{if(active)setStripeConfig(null);});
   Promise.all([api.restaurant(restaurantId),api.paymentOptions(),api.customerAddresses()]).then(([r,p,a])=>{
    if(active){setRestaurant(r);setOptions(p);setAddresses(a);}
   }).catch(e=>{if(active)setServerError(e instanceof Error?e.message:'Error verificando tu pedido.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[restaurantId,userId,refresh]);
  const address=addresses.find(a=>a.is_default)??addresses[0];
- const canUse=checkoutAllowed(options,mode,'cash');
+ const cashEnabled=checkoutAllowed(options,mode,'cash');
+ const stripeEnabled=stripeTestAllowed(options,stripeConfig,mode);
+ const canUse=method==='cash'?cashEnabled:stripeEnabled;
  const selectedRequest=useMemo(()=>{
   if(!restaurantId||!cart.entries.length||!canUse||mode==='delivery'&&!validAddress(address))return null;
-  try{return buildCheckoutRequest(cart,mode,coupon,tip,address);}catch{return null;}
- },[cart,mode,coupon,tip,address,canUse,restaurantId]);
+  try{return buildCheckoutRequest(cart,mode,coupon,tip,address,method);}catch{return null;}
+ },[cart,mode,coupon,tip,address,canUse,restaurantId,method]);
  const key=selectedRequest?fingerprint(selectedRequest):'';
  useEffect(()=>{
   let active=true;
@@ -94,7 +100,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   try{
    const order=await api.byReference(pending.reference);
    sessionStorage.removeItem(pendingStorageKey(userId));setPending(null);setCart({restaurantId:null,entries:[]});
-   navigate('/pedidos/'+order.id,{replace:true});
+   navigate(order.payment_method==='stripe'?'/pago/'+order.id:'/pedidos/'+order.id,{replace:true});
   }catch{setError('El resultado del pedido sigue sin confirmarse. No se enviará un segundo pedido. Consulta Pedidos o soporte.');}
   finally{setRechecking(false);}
  };
@@ -104,7 +110,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   try{
    if(!canUse)throw new Error('El servidor no autoriza el método seleccionado.');
    const freshOptions=await api.paymentOptions();
-   if(!checkoutAllowed(freshOptions,mode,'cash'))throw new Error('El método de pago dejó de estar disponible. Revisa el pago.');
+   if(method==='cash'?!checkoutAllowed(freshOptions,mode,'cash'):
+     !stripeTestAllowed(freshOptions,await api.stripeTestConfig(),mode))throw new Error('El método de pago dejó de estar disponible. Revisa el pago.');
    const freshMerchant=await api.restaurant(restaurantId);
    validateCartAgainstRestaurant(cart,freshMerchant);
    if(mode==='pickup'&&!freshMerchant.pickup_enabled)throw new Error('Recoger en tienda ya no está disponible.');
@@ -122,7 +129,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    // After entering the pending journal, never auto-post twice on unknown outcomes.
    const result:Order=await api.createCheckoutOrder(selectedRequest,reference,notes,mode==='pickup'?'Recoger en '+freshMerchant.name:address!.address);
    sessionStorage.removeItem(pendingStorageKey(userId));setPending(null);setCart({restaurantId:null,entries:[]});
-   navigate('/pedidos/'+result.id,{replace:true});
+   navigate(method==='stripe'?'/pago/'+result.id:'/pedidos/'+result.id,{replace:true});
   }catch(e){setError(e instanceof Error?e.message:'No se pudo verificar el pedido.');}
   finally{lock.current=false;setSubmitting(false);}
  };
@@ -137,15 +144,17 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   {mode==='delivery'?<div className="mobile-checkout-address">
    <h3>Dirección de entrega</h3>{validAddress(address)?<p><MapPin size={18}/>{address.label}: {address.address}</p>:<p>No hay una dirección con coordenadas verificadas.</p>}
    <Link to="/direcciones" state={{returnTo:'/checkout'}}>Administrar direcciones <ChevronRight size={17}/></Link>
-   {!checkoutAllowed(options,'delivery','cash')&&<div className="mobile-checkout-note">La entrega a domicilio todavía no está autorizada para este método por el backend. No se podrá confirmar un pedido.</div>}
+   {!cashEnabled&&!stripeEnabled&&<div className="mobile-checkout-note">La entrega a domicilio todavía no está autorizada para este método por el backend. No se podrá confirmar un pedido.</div>}
   </div>:<p className="mobile-checkout-note"><Store size={17}/> Recoge tu pedido en el establecimiento.</p>}
   </section>
   {mode==='delivery'&&<section className="mobile-checkout-card"><h2>Propina para repartidor</h2><div className="mobile-tip-options">{['0','10','20','30'].map(value=><button key={value} className={tip===value?'selected':''} disabled={submitting||Boolean(pending)} onClick={()=>{setTip(value);setError('');}}>{value==='0'?'Sin propina':pesos(value)}</button>)}</div><p className="mobile-checkout-disclosure">La propina se transfiere sin comisión de la plataforma.</p></section>}
   <section className="mobile-checkout-card"><h2>Pago</h2>
-   <button className={'mobile-payment-method'+(canUse?' selected':'')} disabled={!canUse||loading||submitting} aria-pressed={canUse}>
-    <Wallet size={22}/><span><strong>Efectivo</strong><small>{canUse?(mode==='delivery'?'Paga al recibir tu pedido':'Paga al recoger tu pedido'):'Pendiente de activación del servidor'}</small></span><CheckCircle2 size={20}/>
+   <button className={'mobile-payment-method'+(method==='cash'&&cashEnabled?' selected':'')} disabled={!cashEnabled||loading||submitting||Boolean(pending)} aria-pressed={method==='cash'&&cashEnabled} onClick={()=>{setMethod('cash');setError('');}}>
+    <Wallet size={22}/><span><strong>Efectivo</strong><small>{cashEnabled?(mode==='delivery'?'Paga al recibir tu pedido':'Paga al recoger tu pedido'):'Pendiente de activación del servidor'}</small></span>{method==='cash'&&cashEnabled&&<CheckCircle2 size={20}/>}
    </button>
-   <button className="mobile-payment-method" disabled aria-disabled="true"><CreditCard size={22}/><span><strong>Tarjeta con Stripe</strong><small>Integración Stripe Web pendiente; no se aceptan cobros desde esta pantalla.</small></span></button>
+   <button className={'mobile-payment-method'+(method==='stripe'&&stripeEnabled?' selected':'')} disabled={!stripeEnabled||loading||submitting||Boolean(pending)} aria-pressed={method==='stripe'&&stripeEnabled} onClick={()=>{setMethod('stripe');setError('');}}>
+    <CreditCard size={22}/><span><strong>Tarjeta con Stripe</strong><small>{stripeEnabled?'Stripe TEST · método de prueba seguro':'Disponible únicamente cuando el backend active Stripe TEST'}</small></span>{method==='stripe'&&stripeEnabled&&<CheckCircle2 size={20}/>}
+   </button>
    <p className="mobile-checkout-disclosure">Los métodos disponibles y el cobro los confirma el servidor.</p>
   </section>
   <section className="mobile-checkout-card"><h2>Cupón</h2><input className="mobile-checkout-input" maxLength={50} value={coupon} disabled={submitting||Boolean(pending)} onChange={e=>{setCoupon(e.target.value);setError('');}} placeholder="Código de descuento (opcional)" aria-label="Código de descuento"/></section>
@@ -154,6 +163,6 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <OrderSummary quote={displayed} delivery={mode==='delivery'} preview={basketTotal(cart)}/>
   {error&&<div className="mobile-address-error" role="alert"><Info size={16}/>{error}</div>}
   {pending&&<div className="mobile-checkout-pending"><strong>Pedido pendiente de confirmación</strong><p>No volveremos a enviarlo mientras no podamos comprobar qué sucedió.</p><button disabled={rechecking} onClick={()=>void recover()}>{rechecking?'Consultando…':'Consultar pedido pendiente'}</button></div>}
-  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
+  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':method==='stripe'?'Continuar a pago con Stripe TEST':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
  </div>;
 }
