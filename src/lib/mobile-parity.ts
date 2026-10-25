@@ -59,7 +59,7 @@ export const ORDER_LABELS:Record<string,string>={
  picked_up:'Recogido por repartidor',on_the_way:'En camino',delivered:'Entregado',cancelled:'Cancelado',awaiting_payment:'Esperando pago'
 };
 export function isCompletedOrder(status:string):boolean {
- return status==='delivered'||status==='cancelled'||status==='refunded';
+ return status==='delivered'||status==='cancelled';
 }
 export function orderProgress(status:string,mode:string){
  const steps=mode==='delivery'?ORDER_STEPS_DELIVERY:ORDER_STEPS_PICKUP;
