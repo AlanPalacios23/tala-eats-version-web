@@ -32,6 +32,8 @@ describe('premium Flutter Users branding / legal public links and no user 2FA',(
   const account=text('../src/components/CustomerAccount.tsx');
   const main=text('../src/App.tsx');
   const signup=text('../src/components/CustomerOnboarding.tsx');
+  expect(LEGAL_LINKS.terms).toBe('https://web-talaeats.alan-palacios-dev.com/legal/terminos.html');
+  expect(text('../public/legal/terminos.html')).toContain('Términos y condiciones');
   expect(LEGAL_LINKS.privacy).toBe('https://talaeats.alan-palacios-dev.com/privacidad');
   expect(LEGAL_LINKS.deletion).toBe('https://talaeats.alan-palacios-dev.com/eliminar-cuenta');
   expect(account).toContain('LEGAL_LINKS.deletion');
