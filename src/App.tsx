@@ -18,6 +18,7 @@ import { CustomerAddresses } from './components/CustomerAddresses';
 import { CustomerProfile } from './components/CustomerProfile';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
+import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -116,7 +117,7 @@ function Auth(){
  const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{
   if(create)await register(name,email,password);else await login(email,password,otp);
   const from=(loc.state as {from?:string}|null)?.from;
-  nav(from?.startsWith('/')&&!from.startsWith('//')?from:'/cuenta',{replace:true});
+  nav(from?.startsWith('/')&&!from.startsWith('//')&&from!=='/acceso'?from:'/clientes',{replace:true});
  }catch(e){setError(e instanceof Error?e.message:'Error al iniciar sesión');}finally{setBusy(false);}};
  if(user)return <div className="container page"><EmptyState icon={<CheckCircle2 size={32}/>} title="Ya tienes una sesión activa" description={'Has iniciado sesión como '+user.name} action={<Link to="/cuenta" className="btn primary">Ir a mi cuenta</Link>}/></div>;
  return <div className="auth-page"><div className="auth-side"><span className="eyebrow">BIENVENIDO A TALA EATS</span><h1>Lo mejor de tu ciudad está aquí.</h1><p>Una sola cuenta para disfrutar los sabores de nuestra comunidad.</p><div className="auth-illustration">🥑 <span>🌮</span> 🍊</div></div><div className="auth-box"><div className="auth-card"><div className="auth-head"><span className="brand-mark"><ChefHat size={24}/></span><h2>{create?'Crea tu cuenta':'Bienvenido de vuelta'}</h2><p>{create?'Únete a Tala Eats.':'Pide lo que se te antoje y sigue tu pedido en tiempo real.'}</p></div>
@@ -191,12 +192,14 @@ function CustomerHashScroll(){
  return null;
 }
 export default function App(){
+ const session=useSession();
  const [cart,setCart]=useState<Cart>(EMPTY_CART);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
  const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
+ if(session.loading && (location.pathname!=='/' && location.pathname!=='/restaurante' && location.pathname!=='/repartidor'))return <CustomerLaunch/>;
  return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{PREVIEW_READONLY&&<div className="tala-review-banner" role="status"><strong>VISTA PREVIA</strong><span>Modo de revisión: pedidos, pagos y cambios de datos bloqueados. La información consultada puede proceder del backend existente.</span></div>}{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}/><Route path="/buscar" element={<CustomerSearch market={market}/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add} market={market}/>}/>
