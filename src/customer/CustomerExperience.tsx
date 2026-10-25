@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, Home, MapPin, Package, Search, Star, Store, UserRound, X, Clock3, RefreshCcw, ShoppingBag } from 'lucide-react';
+import { Bell, ChevronDown, Heart, Home, MapPin, Package, Search, Star, Store, UserRound, X, Clock3, RefreshCcw, ShoppingBag } from 'lucide-react';
 import { api, safeImage } from '../lib/api';
 import type { Restaurant } from '../lib/types';
 import { useSession } from '../lib/session';
@@ -64,24 +64,45 @@ function CommercePhoto({shop}:{shop:Restaurant}) {
 
 function CommerceCard({shop,compact=false}:{shop:Restaurant;compact?:boolean}) {
   const rating=numberRating(shop.rating);
-  return <Link className={'te-customer-store'+(compact?' te-customer-store-compact':'')} to={'/comercio/'+shop.id}
-    aria-label={shop.name+(shop.is_open?', abierto':', cerrado')}>
-    <div className="te-customer-media">
-      <CommercePhoto shop={shop}/>
-      {!shop.is_open&&<span className="te-customer-closed">Cerrado</span>}
-    </div>
-    <div className="te-customer-store-details">
-      <div className="te-customer-store-title">
-        <h3>{shop.name}</h3>
-        {rating!==null&&<span className="te-customer-rating"><Star size={14} fill="currentColor"/>{rating.toFixed(1)}</span>}
+  const key='tala-eats-favorite-'+shop.id;
+  // Flutter has a favorite control. Web uses per-device local preference only
+  // until the authenticated server-side favorites contract is available.
+  const [favorite,setFavorite]=useState(()=>{
+    try { return window.localStorage.getItem(key)==='1'; } catch { return false; }
+  });
+  const toggle=()=>{
+    const next=!favorite;
+    setFavorite(next);
+    try {
+      if(next) window.localStorage.setItem(key,'1');
+      else window.localStorage.removeItem(key);
+    } catch { /* private mode may disallow browser storage */ }
+  };
+  return <article className={'te-customer-store'+(compact?' te-customer-store-compact':'')}>
+    <Link className="te-customer-store-link" to={'/comercio/'+shop.id}
+      aria-label={shop.name+(shop.is_open?', abierto':', cerrado')}>
+      <div className="te-customer-media">
+        <CommercePhoto shop={shop}/>
+        {!shop.is_open&&<span className="te-customer-closed">Cerrado</span>}
       </div>
-      {(shop.cuisine||shop.description)&&<p className="te-customer-category">{shop.cuisine||shop.description}</p>}
-      <div className="te-customer-meta">
-        {typeof shop.eta_min==='number'&&shop.eta_min>0&&<span><Clock3 size={15}/>{shop.eta_min} min</span>}
-        {shop.pickup_enabled===true&&<span><ShoppingBag size={15}/>Recoger en tienda</span>}
+      <div className="te-customer-store-details">
+        <div className="te-customer-store-title">
+          <h3>{shop.name}</h3>
+          {rating!==null&&<span className="te-customer-rating"><Star size={14} fill="currentColor"/>{rating.toFixed(1)}</span>}
+        </div>
+        {(shop.cuisine||shop.description)&&<p className="te-customer-category">{shop.cuisine||shop.description}</p>}
+        <div className="te-customer-meta">
+          {typeof shop.eta_min==='number'&&shop.eta_min>0&&<span><Clock3 size={15}/>{shop.eta_min} min</span>}
+          {shop.pickup_enabled===true&&<span><ShoppingBag size={15}/>Recoger en tienda</span>}
+        </div>
       </div>
-    </div>
-  </Link>;
+    </Link>
+    {!compact&&<button type="button" className="te-customer-favorite"
+      aria-pressed={favorite} aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'}
+      title="Favoritos guardados solo en este navegador" onClick={toggle}>
+      <Heart size={21} fill={favorite?'currentColor':'none'}/>
+    </button>}
+  </article>;
 }
 
 function CommerceLoading() {
