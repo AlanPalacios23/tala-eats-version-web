@@ -39,7 +39,7 @@ describe('Usuarios Flutter visual parity / web PWA',()=>{
  });
  it('preserves role isolation, PWA identity and responsive typography',()=>{
    expect(app).toContain('!isGateway&&!isCustomer&&<AppHeader');
-   expect(app).toContain('isCustomer&&<CustomerDock/>');
+   expect(app).toContain('isCustomerTab&&<CustomerDock/>');
    expect(app).toContain('Protected role="restaurant"');
    expect(app).toContain('Protected role="driver"');
    expect(main).toContain("path === '/buscar'");
