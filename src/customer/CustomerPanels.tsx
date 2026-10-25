@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Clock3, Heart, LogOut, Package, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag, Store, UserRound, Wallet } from 'lucide-react';
+import { ChevronRight, Heart, LogOut, Package, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag, Store, UserRound, Wallet } from 'lucide-react';
 import { api, pesos } from '../lib/api';
 import type { Order } from '../lib/types';
 import { useSession } from '../lib/session';
