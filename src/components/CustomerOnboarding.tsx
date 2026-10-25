@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/session';
+import {LEGAL_LINKS} from '../lib/legal-links';
 
 type AuthMode='signin'|'signup';
 const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -93,10 +94,9 @@ export function CustomerStepAuth(){
      {isPassword&&<button type="button" onClick={()=>setVisible(x=>!x)} aria-label={visible?'Ocultar contraseña':'Mostrar contraseña'}>{visible?<EyeOff size={21}/>:<Eye size={21}/>}</button>}
     </label>
     {isPassword&&mode==='signup'&&<p className="customer-auth-hint">Mínimo 8 caracteres, mayúscula, minúscula y número. Usa una contraseña nueva de TALA EATS.</p>}
-    {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> He leído y acepto los <Link to="/terminos" target="_blank" rel="noopener noreferrer">Términos y condiciones</Link> y el <Link to="/aviso-privacidad" target="_blank" rel="noopener noreferrer">Aviso de privacidad</Link> de Tala Eats.</label>}
+    {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> He leído y acepto los <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer">Términos y condiciones</a> y el <a href={LEGAL_LINKS.privacy} target="_blank" rel="noopener noreferrer">Aviso de privacidad</a> de Tala Eats.</label>}
     {error&&<div className="customer-auth-error" role="alert">{error}</div>}
     {step===0&&<button type="button" className="customer-auth-switch" onClick={switchMode}>{mode==='signin'?'¿Aún no tienes cuenta? Crear cuenta en TALA EATS':'¿Ya tienes cuenta? Iniciar sesión'}</button>}
-    {isPassword&&mode==='signin'&&<p className="customer-auth-hint">¿Olvidaste tu contraseña? Usa la recuperación de cuenta de la app móvil hasta completar su implementación segura en Web.</p>}
     <button className="customer-auth-next" type="submit" disabled={!valid||busy||(mode==='signup'&&isPassword&&!consent)}>{busy?'Verificando…':isPassword?mode==='signin'?'Iniciar sesión':'Crear cuenta':'Continuar'} <ArrowRight size={21}/></button>
    </form>
  </div>;
