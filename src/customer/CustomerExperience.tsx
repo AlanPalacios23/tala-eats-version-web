@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import type { CSSProperties, ReactNode } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, Heart, Home, MapPin, Package, Search, Star, Store, UserRound, X, Clock3, RefreshCcw, ShoppingBag } from 'lucide-react';
 import { api, safeImage } from '../lib/api';
 import type { Restaurant } from '../lib/types';
@@ -115,13 +115,16 @@ function CommerceLoading() {
 
 /** Four tabs and orange active pill match Flutter PremiumBottomDock. */
 export function CustomerDock() {
+ const location=useLocation();
  const tabs=[
    {to:'/clientes',name:'Inicio',Icon:Home},
    {to:'/buscar',name:'Buscar',Icon:Search},
    {to:'/pedidos',name:'Pedidos',Icon:Package},
    {to:'/cuenta',name:'Cuenta',Icon:UserRound},
  ];
+ const selected=Math.max(0,tabs.findIndex(tab=>tab.to===location.pathname));
  return <nav className="te-customer-dock" aria-label="Navegación de clientes">
+   <span className="te-customer-dock-slider" style={{'--te-tab-index':selected} as CSSProperties} aria-hidden="true"/>
    {tabs.map(({to,name,Icon})=><NavLink key={to} to={to} end className={({isActive})=>'te-customer-dock-item'+(isActive?' active':'')}>
      <span className="te-customer-dock-icon"><Icon size={22} strokeWidth={2.2}/></span>
      <span>{name}</span>
