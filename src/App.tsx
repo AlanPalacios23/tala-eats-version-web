@@ -4,7 +4,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-ro
 import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
 import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { PREVIEW_READONLY } from './lib/preview';
-import { EMPTY_CART, addVariantItem, basketTotal } from './lib/cart';
+import { EMPTY_CART, CUSTOMER_CART_STORAGE_KEY, restoreCustomerCart, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem } from './lib/types';
@@ -193,7 +193,11 @@ function CustomerHashScroll(){
 }
 export default function App(){
  const session=useSession();
- const [cart,setCart]=useState<Cart>(EMPTY_CART);
+ const [cart,setCart]=useState<Cart>(()=>{try{return restoreCustomerCart(JSON.parse(sessionStorage.getItem(CUSTOMER_CART_STORAGE_KEY)||'null'));}catch{return EMPTY_CART;}});
+ useEffect(()=>{try{
+  if(cart.entries.length)sessionStorage.setItem(CUSTOMER_CART_STORAGE_KEY,JSON.stringify(cart));
+  else sessionStorage.removeItem(CUSTOMER_CART_STORAGE_KEY);
+ }catch{/* Private browsing or storage full: in-memory cart remains functional. */}},[cart]);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
  const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
