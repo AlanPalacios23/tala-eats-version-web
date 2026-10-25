@@ -37,3 +37,32 @@ export function pickupCashAllowed(methods:PaymentOptions|null|undefined):boolean
 export function foldSearch(value:string):string {
   return value.normalize('NFD').split('').filter(char=>char.charCodeAt(0)<768 || char.charCodeAt(0)>879).join('').toLowerCase().trim();
 }
+
+/** Identical status labels and step buckets to Flutter ui/order_screens.dart. */
+export const ORDER_STEPS_PICKUP=[
+ {label:'Recibido',codes:['received']},
+ {label:'Confirmado',codes:['confirmed']},
+ {label:'Preparando',codes:['preparing']},
+ {label:'Listo para recoger',codes:['ready','assigned','picked_up','on_the_way']},
+ {label:'Recogido',codes:['delivered']}
+] as const;
+export const ORDER_STEPS_DELIVERY=[
+ {label:'Recibido',codes:['received']},
+ {label:'Confirmado',codes:['confirmed']},
+ {label:'Preparando',codes:['preparing']},
+ {label:'Listo',codes:['ready','assigned']},
+ {label:'En camino',codes:['picked_up','on_the_way']},
+ {label:'Entregado',codes:['delivered']}
+] as const;
+export const ORDER_LABELS:Record<string,string>={
+ received:'Recibido',confirmed:'Confirmado',preparing:'Preparando',ready:'Listo',assigned:'Asignado',
+ picked_up:'Recogido por repartidor',on_the_way:'En camino',delivered:'Entregado',cancelled:'Cancelado',awaiting_payment:'Esperando pago'
+};
+export function isCompletedOrder(status:string):boolean {
+ return status==='delivered'||status==='cancelled'||status==='refunded';
+}
+export function orderProgress(status:string,mode:string){
+ const steps=mode==='delivery'?ORDER_STEPS_DELIVERY:ORDER_STEPS_PICKUP;
+ const index=steps.findIndex(step=>(step.codes as readonly string[]).includes(status));
+ return {steps,index:Math.max(0,index)};
+}
