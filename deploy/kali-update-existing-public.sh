@@ -70,6 +70,17 @@ if x.get("status") != "ok" or x.get("production") is not True:
  raise SystemExit("PUBLIC_PWA_ABORT=BACKEND_LIVE_HEALTH_MISMATCH")
 print("PUBLIC_PWA_BACKEND_LIVE=PASS")
 '
+# Flutter 1.0.46 requires market_code on EVERY catalog row and a real
+# market_code query. Refuse the frontend replacement when that contract fails.
+curl -fsS --max-time 8 -H "Host: $HOST" \
+ "$ORIGIN/api/v1/restaurants?market_code=TALA-JAL&limit=1&offset=0" | python3 -c '
+import json,sys
+rows=json.load(sys.stdin)
+if not isinstance(rows,list):raise SystemExit("PUBLIC_PWA_ABORT=MARKET_CATALOG_NOT_AN_ARRAY")
+if rows and (not isinstance(rows[0],dict) or rows[0].get("market_code")!="TALA-JAL"):
+ raise SystemExit("PUBLIC_PWA_ABORT=BACKEND_MARKET_FILTER_INCOMPATIBLE")
+print("PUBLIC_PWA_MARKET_API=PASS")
+'
 if [[ "$MODE" == --rollback ]];then
  [[ -L "$PREVIOUS" ]] || { echo "PUBLIC_PWA_ABORT=NO_PREVIOUS_PUBLIC_RELEASE";exit 1; }
  BACK="$(readlink -f "$PREVIOUS")"
