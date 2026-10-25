@@ -40,6 +40,9 @@ for(const width of widths){
  page.on('pageerror',error=>{console.error('PAGE:',error.message);process.exitCode=1;});
  async function capture(name,path,action){
   await page.goto(ORIGIN+path,{waitUntil:'networkidle'});
+  await page.locator('[data-mobile-screen="launch"]').waitFor({state:'hidden',timeout:15000});
+  // A screenshot of ONLY the splash is not a valid screen screenshot.
+  if(await page.locator('h1').count()===0)throw new Error('Real screen missing after launch: '+path);
   if(action)await action(page);
   await page.screenshot({path:`artifacts/customer-visual/${width}-${name}.png`,fullPage:true});
  }
@@ -58,5 +61,41 @@ for(const width of widths){
  await capture('profile','/editar-perfil');
  await context.close();
 }
+// Simulated login -> verified /auth/me -> customer home; no real credentials.
+const authContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+let authenticated=false;
+let loginPostCount=0;
+let meAfterLogin=0;
+await authContext.route('**/api/v1/**',async route=>{
+ const req=route.request(),u=new URL(req.url());
+ const name=u.pathname;
+ if(name==='/api/v1/auth/login'&&req.method()==='POST'){
+  authenticated=true;loginPostCount++;
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user,access_token:'synthetic_not_a_real_token'})});return;
+ }
+ if(name==='/api/v1/auth/me'){
+  if(authenticated){meAfterLogin++;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(user)});}
+  else await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({detail:'Sin sesión de QA'})});
+  return;
+ }
+ if(name==='/api/v1/restaurants'){
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([merchant])});return;
+ }
+ if(name==='/api/v1/platform/addresses'||name==='/api/v1/platform/favorites'){
+  await route.fulfill({status:200,contentType:'application/json',body:'[]'});return;
+ }
+ await route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({detail:'Read-only synthetic QA'})});
+});
+await authContext.route('https://static.example.test/**',route=>route.fulfill({status:404,body:'not found'}));
+const authPage=await authContext.newPage();
+authPage.on('pageerror',error=>{console.error('AUTH_PAGE:',error.message);process.exitCode=1;});
+await authPage.goto(ORIGIN+'/acceso',{waitUntil:'networkidle'});
+await authPage.getByLabel('Correo electrónico').fill('qa@example.test');
+await authPage.getByLabel('Contraseña').fill('synthetic_password_not_used');
+await authPage.getByRole('button',{name:/Entrar a Tala Eats/}).click();
+await authPage.waitForURL(ORIGIN+'/clientes',{timeout:12000});
+await authPage.getByText('Hola, Cliente',{exact:false}).first().waitFor({state:'visible',timeout:10000});
+if(loginPostCount!==1||meAfterLogin<1)throw new Error('Login did not verify server session after authentication');
+await authContext.close();
 await browser.close();
-console.log('QA screenshots:',widths.join(', '),'px; synthetic backend only, never production data.');
+console.log('QA screenshots:',widths.join(', '),'px; real screen after splash + simulated auth and 404 image recovery PASS. No production writes.');
