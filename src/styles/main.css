@@ -452,3 +452,28 @@
 .mobile-home-top .mobile-address>div{min-width:0}
 .mobile-home-top .mobile-address strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:340px){.mobile-home-actions{gap:4px}.mobile-home-actions .mobile-round-action{width:40px;height:40px}.mobile-home-top .mobile-address-icon{width:40px;height:40px}}
+
+
+/* Flutter Usuarios 1.0.46 — búsqueda de platillos y edición de perfil */
+.mobile-dish-search-results{display:grid;gap:11px;margin:12px 0 24px}
+.mobile-dish-search-tile{display:flex;align-items:center;gap:14px;border:1px solid #eae8e5;background:white;border-radius:18px;padding:13px;color:#171717;min-height:106px;animation:mobile-reveal 300ms cubic-bezier(.215,.61,.355,1) both}
+.mobile-dish-search-tile>div:first-child{flex:1;min-width:0}
+.mobile-dish-search-tile strong{display:block;font-size:16px;font-weight:800;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.mobile-dish-search-tile span{display:block;font-size:12px;color:#737373;margin:5px 0}
+.mobile-dish-search-tile b{display:block;font-size:15px;color:#ce3c0a}
+.mobile-dish-search-tile img,.mobile-dish-search-fallback{width:88px;height:88px;flex:0 0 88px;border-radius:15px;object-fit:cover;background:#ffe9df}
+.mobile-dish-search-fallback{display:grid;place-items:center;font-size:34px}
+.mobile-search-results>h2:not(:first-child){margin-top:22px}
+.mobile-profile-card,.mobile-profile-form{background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:18px;margin-bottom:14px}
+.mobile-profile-card{text-align:center}
+.mobile-profile-avatar{height:88px;width:88px;border-radius:50%;border:3px solid #ff8a54;background:#fff3ec;color:#ce3c0a;display:grid;place-items:center;margin:0 auto 12px;overflow:hidden}
+.mobile-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.mobile-profile-card p{font-weight:800;margin:0 0 5px}
+.mobile-profile-card small{color:#737373;font-size:12px;line-height:1.4}
+.mobile-profile-form{display:grid;gap:16px}
+.mobile-profile-form label{font-weight:700;font-size:13px;color:#3b3633;display:grid;gap:7px}
+.mobile-profile-form input{height:54px;padding:12px 14px;border:1px solid #eae8e5;border-radius:15px;font:500 15px Roboto,Arial,sans-serif;color:#171717;background:#fff}
+.mobile-profile-form input[readonly]{background:#f4f1ef;color:#737373}
+.mobile-profile-form input:focus{outline:2px solid #ff5a1f}
+.mobile-profile-saved{display:flex;gap:9px;align-items:center;padding:13px;border-radius:14px;color:#167d47;background:#e7f7ee;font-size:13px;font-weight:700}
+@media(prefers-reduced-motion:reduce){.mobile-dish-search-tile{animation:none}}
