@@ -58,6 +58,8 @@ export const api = {
   stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
   stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
   liveOrder: (orderId:number) => request<{order:Order}>(`/v11/orders/${orderId}/live`),
+  customerOrderChat: (id:number) => request<{id?:number;sender_id:number;message:string;created_at?:string}[]>(`/platform/orders/${id}/chat`),
+  sendCustomerOrderChat: (id:number,message:string) => request<{id?:number;sender_id:number;message:string;created_at?:string}>(`/platform/orders/${id}/chat`,json('POST',{message,message_type:'text',media_url:''})),
   customerAddresses: async ():Promise<CustomerAddress[]> => {const raw=await request<unknown>('/platform/addresses');if(!Array.isArray(raw))throw new ApiError(502,'El servidor no devolvió direcciones válidas.');return raw.map(normalizeCustomerAddress);},
   wallet: () => request<{balance:string|number;points:number;plus_member?:boolean;referral_code?:string;tier?:string;transactions?:{id?:number;kind?:string;description?:string;amount?:number|string;created_at?:string}[]}>('/platform/wallet'),
   redeemReward: () => request<Record<string,unknown>>('/platform/rewards/redeem?points=500',json('POST')),
