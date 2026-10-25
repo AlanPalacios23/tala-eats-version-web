@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, MapPin, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X, Heart, Star } from 'lucide-react';
 import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
@@ -98,15 +98,62 @@ function Commerce({add}:{add:(item:MenuItem)=>void}){
  const {id}=useParams();const parsed=Number(id);const good=Number.isSafeInteger(parsed)&&parsed>0;
  const {value:r,loading,error,refresh}=useLoad(()=>good?api.restaurant(parsed):Promise.reject(Error('Comercio inválido')),[parsed]);
  const [filter,setFilter]=useState('Todos');
+ const [favorite,setFavorite]=useState(false);
+ useEffect(()=>{try{setFavorite(window.localStorage.getItem('tala-eats-favorite-'+parsed)==='1');}catch{setFavorite(false);}},[parsed]);
+ const toggleFavorite=()=>{const next=!favorite;setFavorite(next);try{if(next)localStorage.setItem('tala-eats-favorite-'+parsed,'1');else localStorage.removeItem('tala-eats-favorite-'+parsed);}catch{/* Browser may disable storage */}};
  const categories=['Todos',...new Set((r?.menu_items??[]).map(i=>i.category||'General'))];
  const products=(r?.menu_items??[]).filter(i=>filter==='Todos'||(i.category||'General')===filter);
- return <div className="container page"><Link to="/clientes" className="back-link"><ArrowLeft size={18}/> Volver a comercios</Link>
- {loading?<Spinner/>:error?<Alert>{error} <button onClick={refresh}>Reintentar</button></Alert>:r&&<><div className="commerce-intro"><div className="commerce-pic"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍽️'} alt={r.name}/></div><div><span className="eyebrow">COMERCIO LOCAL</span><h1>{r.name}</h1><p>{r.description||r.cuisine||'De Tala para ti'}</p><div className="commerce-info"><span><Clock3 size={18}/>{r.eta_min??'—'} min</span><span><MapPin size={18}/>{r.address||'Tala, Jalisco'}</span><span className={r.is_open?'text-green':'text-grey'}>{r.is_open?'● Abierto':'● Cerrado'}</span></div>{!r.pickup_enabled&&<Alert kind="info">Este comercio no tiene habilitada la recogida de pedidos.</Alert>}</div></div>
- <div className="section-title-row smaller"><SectionTitle eyebrow="EL MENÚ" title="Elige algo rico"/><span className="muted">{products.length} productos</span></div><div className="chips">{categories.map(c=><button key={c} className={'chip '+(c===filter?'active':'')} onClick={()=>setFilter(c)}>{c}</button>)}</div>
- {products.length===0?<EmptyState icon={<Coffee size={32}/>} title="Menú en preparación" description="Este comercio aún no publica productos en esta categoría."/>:<div className="product-grid">{products.map(p=><article className="product-card" key={p.id}><div className="product-pic"><FoodPicture src={p.image_url} emoji="🍴" alt={p.name}/></div><div className="product-content"><small>{p.category||'Especialidad'}</small><h3>{p.name}</h3><p>{p.description||'Hecho para disfrutar.'}</p><div className="product-bottom"><strong>{pesos(p.price)}</strong><button className="add-product" disabled={!r.is_open||!r.pickup_enabled||!p.is_available||p.stock<=0} onClick={()=>add(p)} title="Agregar al carrito"><Plus size={19}/></button></div>{(!p.is_available||p.stock<=0)&&<small className="text-grey">Agotado</small>}</div></article>)}</div>}
- </>}
+ const rating=r?.rating?Number(r.rating):0;
+ return <div className="te-customer-commerce te-motion-page">
+  <div className="te-commerce-header">
+   <Link to="/clientes" className="te-commerce-back" aria-label="Regresar a Inicio"><ArrowLeft size={21}/></Link>
+   <span>Restaurante y comercio</span>
+   <button type="button" className="te-commerce-fav" aria-label={favorite?'Quitar de favoritos':'Agregar a favoritos'} aria-pressed={favorite} onClick={toggleFavorite}><Heart size={20} fill={favorite?'currentColor':'none'}/></button>
+  </div>
+  {loading?<div className="te-commerce-loading" role="status"><Spinner/></div>:
+   error?<div className="te-commerce-loading"><Alert>{error} <button onClick={refresh}>Reintentar</button></Alert></div>:
+   r&&<>
+    <div className="te-commerce-hero">
+      {safeImage(r.cover_image_url)?<img src={safeImage(r.cover_image_url)!} alt={r.name} loading="eager"/>:<div className="te-commerce-hero-fallback"><Coffee size={64}/></div>}
+    </div>
+    <div className="te-commerce-content">
+      <div className="te-commerce-info te-motion-reveal">
+       <h1>{r.name}</h1>
+       {(r.cuisine||r.description)&&<p className="te-commerce-category">{r.cuisine||r.description}</p>}
+       {r.description&&r.cuisine&&<p className="te-commerce-desc">{r.description}</p>}
+       <div className="te-commerce-facts">
+         {Number.isFinite(rating)&&rating>0&&rating<=5&&<span><Star size={16} fill="currentColor"/>{rating.toFixed(1)}</span>}
+         {typeof r.eta_min==='number'&&r.eta_min>0&&<span><Clock3 size={16}/>{r.eta_min} min</span>}
+         {r.pickup_enabled&&<span><ShoppingBag size={16}/>Para recoger</span>}
+       </div>
+       {!r.is_open&&<Alert kind="info">Este comercio está cerrado por ahora. Puedes revisar el menú y pedir cuando vuelva a abrir.</Alert>}
+       {!r.pickup_enabled&&<Alert kind="info">Este comercio no tiene habilitada la recogida de pedidos.</Alert>}
+      </div>
+      <div className="te-commerce-menu">
+       <h2>Menú</h2>
+       {categories.length>1&&<div className="te-commerce-categories" aria-label="Categorías del menú">
+        {categories.map(c=><button key={c} type="button" className={filter===c?'selected':''} aria-pressed={filter===c} onClick={()=>setFilter(c)}>{c}</button>)}
+       </div>}
+       {products.length===0?
+        <EmptyState icon={<Coffee size={30}/>} title="Menú no disponible por ahora" description="Este comercio todavía no tiene productos disponibles en esta categoría."/>:
+        <div className="te-commerce-dishes">{products.map((product,index)=><article className="te-commerce-dish te-motion-reveal" key={product.id} style={{animationDelay:Math.min(index,7)*45+'ms'}}>
+          <div className="te-commerce-dish-copy">
+           <h3>{product.name}</h3>
+           {product.description&&<p>{product.description}</p>}
+           <strong>{pesos(product.price)}</strong>
+           {(!product.is_available||product.stock<=0)&&<span className="te-commerce-unavailable">Agotado</span>}
+          </div>
+          <div className="te-commerce-dish-side">
+           <div className="te-commerce-dish-media">{safeImage(product.image_url)?<img src={safeImage(product.image_url)!} loading="lazy" alt={product.name}/>:<Coffee size={24}/>}</div>
+           <button type="button" className="te-commerce-dish-add" disabled={!r.is_open||!r.pickup_enabled||!product.is_available||product.stock<=0} onClick={()=>add(product)} aria-label={'Agregar '+product.name+' al carrito'}><Plus size={19}/></button>
+          </div>
+        </article>)}</div>}
+      </div>
+    </div>
+   </>}
  </div>;
 }
+
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
  if(loading)return <div className="container page"><Spinner/></div>;
@@ -204,7 +251,7 @@ function Driver(){
  </>}</div>;
 }
 export default function App(){
- const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomer=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);
+ const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerTab=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);const isCustomer=isCustomerTab||location.pathname.startsWith('/comercio/')||['/carrito','/acceso'].includes(location.pathname);
  const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomer?" is-customer":"")}>{!isGateway&&!isCustomer&&<AppHeader count={count}/>}<main><Routes>
@@ -217,5 +264,5 @@ export default function App(){
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main>{isCustomer&&<CustomerDock/>}{!isGateway&&!isCustomer&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main>{isCustomerTab&&<CustomerDock/>}{!isGateway&&!isCustomer&&<AppFooter/>}{!isGateway&&count>0&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
