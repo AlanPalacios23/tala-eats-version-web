@@ -25,7 +25,7 @@ jobs:
           sudo cp deploy/nginx-preview-server.conf /etc/talaeats-web-preview/server.conf
           sudo cp deploy/nginx-preview-main.conf /etc/talaeats-web-preview/nginx.conf
           sudo chown www-data:www-data /run/talaeats-web-preview
-          sudo nginx -t -c /etc/talaeats-web-preview/nginx.conf
+          sudo -u www-data nginx -t -c /etc/talaeats-web-preview/nginx.conf
           bash -n deploy/kali-review-preview.sh
       - name: Probe local-only read-only firewall (no real API)
         run: |
