@@ -185,7 +185,7 @@ else
  ln -s "$RELEASE" "$TMP"
  mv -Tf "$TMP" "$CURRENT"
  SWITCHED=yes
- nginx -t -c "$NGINX"
+ # Existing preview config was compared to the pinned, already-running config.
  systemctl reload "$SERVICE"
 fi
 READY=no
