@@ -108,7 +108,7 @@ function PortalLanding(){
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
  if(loading)return <div className="container page"><Spinner/></div>;
- if(!user)return <div className="container page"><EmptyState icon={<LogIn size={32}/>} title="Inicia sesión para continuar" description="Tu sesión es necesaria para ver información privada." action={<Link className="btn primary" to="/acceso" state={{from:location.pathname}}>Entrar a mi cuenta</Link>}/></div>;
+ if(!user)return <Navigate to={role==='restaurant'||role==='driver'?'/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role)))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
