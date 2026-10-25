@@ -9,6 +9,7 @@ import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
 import { CustomerCommerce } from './components/CustomerCommerce';
+import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders';
 import { amountInCents, pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -175,7 +176,6 @@ function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  </aside></div>}
  </div>;
 }
-function Orders(){const {value,loading,error,refresh}=useLoad(()=>api.myOrders(),[]);return <div className="container page"><div className="section-title-row"><SectionTitle eyebrow="TU HISTORIAL" title="Mis pedidos" description="Consulta el estado real de tus compras."/><button className="btn outline small" onClick={refresh}><RefreshCw size={17}/> Actualizar</button></div>{loading?<Spinner/>:error?<Alert>{error}</Alert>:!value?.length?<EmptyState icon={<Package size={32}/>} title="Sin pedidos todavía" description="Cuando hagas tu primer pedido, aparecerá aquí." action={<Link to="/clientes" className="btn primary">Explorar</Link>}/>:<div className="order-list">{value.map(o=><article className="order-card" key={o.id}><div className="order-top"><div><span className="eyebrow">PEDIDO #{o.id}</span><h3>{pesos(o.total)}</h3><small>{new Date(o.created_at).toLocaleString('es-MX')}</small></div><StateTag state={o.status}/></div><p>{o.items?.map(i=>i.quantity+' × '+i.name_snapshot).join(', ')||'Productos del pedido'}</p><div className="order-bottom"><span><ShoppingBag size={16}/> {o.order_type==='pickup'?'Recoger en tienda':'Entrega'}</span><span>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status}</span></div>{o.delivery_pin&&<p className="pin-hint">PIN de confirmación: <strong>{o.delivery_pin}</strong>. Compártelo solo al recibir tu pedido.</p>}</article>)}</div>}</div>;}
 function Account(){const s=useSession(),nav=useNavigate();return <div className="container page narrow"><SectionTitle eyebrow="MI CUENTA" title="Tu perfil"/><div className="card padded"><div className="profile-row"><span className="profile-avatar"><UserRound size={27}/></span><div><h3>{s.user?.name}</h3><p>{s.user?.email}</p><small>Rol: {s.user?.role}</small></div></div><div className="account-links"><Link to="/pedidos"><Package size={20}/> Mis pedidos <ArrowRight size={17}/></Link>{isMerchantRole(s.user?.role)&&<Link to="/restaurante"><Store size={20}/> Panel restaurante <ArrowRight size={17}/></Link>}{isDriverRole(s.user?.role)&&<Link to="/repartidor"><Bike size={20}/> Panel repartidor <ArrowRight size={17}/></Link>}</div><button className="btn outline full" onClick={()=>void s.logout().then(()=>nav('/'))}><LogOut size={18}/> Cerrar sesión</button></div></div>;}
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -225,10 +225,10 @@ function CustomerBottomDock(){
   {to:'/pedidos',label:'Pedidos',Icon:ClipboardList},
   {to:'/cuenta',label:'Cuenta',Icon:UserRound}
  ];
- const onCustomerRoute=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);
+ const onCustomerRoute=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname)||location.pathname.startsWith('/pedidos/');
  if(!onCustomerRoute)return null;
  return <nav className="customer-bottom-dock" aria-label="Navegación de clientes">
-  {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Inicio'?location.pathname==='/clientes':location.pathname===to)?'selected':'')} aria-label={label}>
+  {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Inicio'?location.pathname==='/clientes':(label==='Pedidos'&&location.pathname.startsWith('/pedidos/'))||location.pathname===to)?'selected':'')} aria-label={label}>
    <Icon size={22}/><span>{label}</span>
   </Link>)}
  </nav>;
@@ -239,14 +239,14 @@ function CustomerHashScroll(){
  return null;
 }
 export default function App(){
- const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/');
+ const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add}/>}/>
    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
-   <Route path="/pedidos" element={<Protected role="customer"><Orders/></Protected>}/>
+   <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><Account/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
