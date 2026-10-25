@@ -14,6 +14,7 @@ import type { MarketCode } from './lib/markets';
 import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders';
 import { CustomerCart, CustomerCheckout } from './components/CustomerCheckout';
 import { CustomerAddresses } from './components/CustomerAddresses';
+import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -124,7 +125,6 @@ function Auth(){
  <p className="switch-auth">{create?'¿Ya tienes una cuenta?':'¿Todavía no tienes cuenta?'} <button className="link-inline" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear una cuenta'}</button></p>
  <p className="fineprint">Las cuentas nuevas son de cliente. Los permisos de comercio o repartidor requieren aprobación.</p></div></div></div>;
 }
-function Account(){const s=useSession(),nav=useNavigate();return <div className="container page narrow"><SectionTitle eyebrow="MI CUENTA" title="Tu perfil"/><div className="card padded"><div className="profile-row"><span className="profile-avatar"><UserRound size={27}/></span><div><h3>{s.user?.name}</h3><p>{s.user?.email}</p><small>Rol: {s.user?.role}</small></div></div><div className="account-links"><Link to="/pedidos"><Package size={20}/> Mis pedidos <ArrowRight size={17}/></Link><Link to="/direcciones"><MapPin size={20}/> Mis direcciones <ArrowRight size={17}/></Link>{isMerchantRole(s.user?.role)&&<Link to="/restaurante"><Store size={20}/> Panel restaurante <ArrowRight size={17}/></Link>}{isDriverRole(s.user?.role)&&<Link to="/repartidor"><Bike size={20}/> Panel repartidor <ArrowRight size={17}/></Link>}</div><button className="btn outline full" onClick={()=>void s.logout().then(()=>nav('/'))}><LogOut size={18}/> Cerrar sesión</button></div></div>;}
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
@@ -189,7 +189,7 @@ function CustomerHashScroll(){
 export default function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
@@ -199,7 +199,7 @@ export default function App(){
    <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
-   <Route path="/cuenta" element={<Protected role="any"><Account/></Protected>}/>
+   <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
