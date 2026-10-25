@@ -10,7 +10,7 @@ const FIELDS=['total','subtotal','service_fee','delivery_fee','tip'] as const;
 export function amountInCents(amount:unknown):number|null {
   if (typeof amount!=='number' && typeof amount!=='string') return null;
   const value=String(amount);
-  if (!/^\\d{1,10}(?:\\.\\d{1,2})?$/.test(value)) return null;
+  if (!(new RegExp('^[0-9]{1,10}([.][0-9]{1,2})?$')).test(value)) return null;
   const [whole,decimal='']=value.split('.');
   const cents=Number(whole)*100+Number(decimal.padEnd(2,'0'));
   return Number.isSafeInteger(cents)?cents:null;
@@ -35,5 +35,5 @@ export function pickupCashAllowed(methods:PaymentOptions|null|undefined):boolean
     methods.pickup_checkout_supported!==false && methods.pickup_quote_supported!==false);
 }
 export function foldSearch(value:string):string {
-  return value.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+  return value.normalize('NFD').split('').filter(char=>char.charCodeAt(0)<768 || char.charCodeAt(0)>879).join('').toLowerCase().trim();
 }
