@@ -218,7 +218,7 @@ function Driver(){
  {dashboard.error&&<p className="muted">Resumen del repartidor no disponible.</p>}
  </>}</div>;
 }
-export default function CustomerBottomDock({cartCount}:{cartCount:number}){
+function CustomerBottomDock({cartCount}:{cartCount:number}){
  const location=useLocation();
  const tabs=[
   {to:'/clientes',label:'Inicio',Icon:HomeIcon},
@@ -239,7 +239,7 @@ function CustomerHashScroll(){
  useEffect(()=>{if(location.pathname==='/clientes'&&location.hash==='#comercios'){document.getElementById('comercios')?.scrollIntoView({behavior:'smooth',block:'start'});}},[location.pathname,location.hash]);
  return null;
 }
-function App(){
+export default function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';
  const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
