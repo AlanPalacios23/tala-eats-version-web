@@ -83,7 +83,7 @@ export function CustomerStepAuth(){
    <form onSubmit={e=>void next(e)} className="customer-auth-form">
     <h1>{heading}</h1>
     <label className="customer-auth-large-input">
-     <span className="sr-only">{isEmail?'Correo electrónico':isPassword?'Contraseña':step===0?'Nombre':'Apellido'}</span>
+     <span className="customer-auth-field-caption">{isEmail?'Correo electrónico':isPassword?'Contraseña':step===0?'Nombre':'Apellido'}</span>
      <input key={mode+step} type={isPassword&&!visible?'password':isEmail?'email':'text'}
        aria-label={isEmail?'Correo electrónico':isPassword?'Contraseña':step===0?'Nombre':'Apellido'}
        autoComplete={isEmail?'email':isPassword?mode==='signin'?'current-password':'new-password':step===0?'given-name':'family-name'}
@@ -94,7 +94,7 @@ export function CustomerStepAuth(){
     </label>
     {isPassword&&mode==='signup'&&<p className="customer-auth-hint">Mínimo 8 caracteres, mayúscula, minúscula y número. Usa una contraseña nueva de TALA EATS.</p>}
     {isPassword&&mode==='signin'&&<label className="customer-auth-otp">Código 2FA (solo si tu cuenta lo requiere)<input inputMode="numeric" autoComplete="one-time-code" value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} placeholder="Código de 6 dígitos"/></label>}
-    {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> Confirmo que acepto los términos y el aviso de privacidad de TALA EATS.</label>}
+    {isPassword&&mode==='signup'&&<label className="customer-auth-consent"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> He leído y acepto los <Link to="/terminos" target="_blank" rel="noopener noreferrer">Términos y condiciones</Link> y el <Link to="/aviso-privacidad" target="_blank" rel="noopener noreferrer">Aviso de privacidad</Link> de Tala Eats.</label>}
     {error&&<div className="customer-auth-error" role="alert">{error}</div>}
     {step===0&&<button type="button" className="customer-auth-switch" onClick={switchMode}>{mode==='signin'?'¿Aún no tienes cuenta? Crear cuenta en TALA EATS':'¿Ya tienes cuenta? Iniciar sesión'}</button>}
     {isPassword&&mode==='signin'&&<p className="customer-auth-hint">¿Olvidaste tu contraseña? Usa la recuperación de cuenta de la app móvil hasta completar su implementación segura en Web.</p>}
