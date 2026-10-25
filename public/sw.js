@@ -1,6 +1,6 @@
 // RC Web 0.1: cache only public static assets, NEVER API/order/auth/Stripe data.
-const CACHE = 'tala-eats-shell-v2';
-const SHELL = ['/offline.html', '/icons/icon-192.png', '/icons/icon-512.png'];
+const CACHE = 'tala-eats-shell-v3';
+const SHELL = ['/offline.html', '/icons/icon-192.png', '/icons/icon-512.png', '/branding/tala-script-gradient.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
   self.skipWaiting();
@@ -19,7 +19,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(req).catch(() => caches.match('/offline.html')));
     return;
   }
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/')) {
+  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/branding/')) {
     event.respondWith(caches.match(req).then(hit => hit || fetch(req).then(response => {
       if (response.ok && response.type === 'basic') {
         const clone = response.clone();
