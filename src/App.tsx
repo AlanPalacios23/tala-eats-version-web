@@ -198,7 +198,7 @@ export default function App(){
  return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}/><Route path="/buscar" element={<CustomerSearch market={market}/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add} market={market}/>}/>
-   <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
+   <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/pago/:id" element={<Protected role="customer"><CustomerStripeTest/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/editar-perfil" element={<Protected role="customer"><CustomerProfile/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
