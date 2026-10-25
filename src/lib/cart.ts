@@ -32,3 +32,32 @@ export function lineItems(cart:Cart) {
  return cart.entries.map(e=>({menu_item_id:e.item.id,quantity:e.quantity,options:e.note??''}));
 }
 export function basketTotal(cart:Cart):number {return cart.entries.reduce((sum,e)=>sum+e.quantity*Number(e.item.price),0);}
+
+
+/** Public catalog-only cart snapshot; no payment credentials, tokens or PII.
+ * Server stock and price are ALWAYS re-quoted at checkout after restoration.
+ */
+export function restoreCustomerCart(raw:unknown):Cart{
+ if(!raw||typeof raw!=='object')return EMPTY_CART;
+ const value=raw as Record<string,unknown>;
+ const id=value.restaurantId;
+ if(typeof id!=='number'||!Number.isSafeInteger(id)||id<=0||!Array.isArray(value.entries)||value.entries.length>50)return EMPTY_CART;
+ const entries:CartEntry[]=[];
+ let total=0;
+ for(const entry of value.entries){
+  if(!entry||typeof entry!=='object')return EMPTY_CART;
+  const e=entry as Record<string,unknown>,item=e.item as MenuItem|undefined;
+  if(!item||typeof item!=='object'||!Number.isSafeInteger(item.id)||item.id<=0||item.restaurant_id!==id||
+   typeof item.name!=='string'||item.name.length>240||!Number.isFinite(Number(item.price))||Number(item.price)<0||
+   Number(item.price)>1000000||!Number.isSafeInteger(item.stock)||item.stock<0||
+   typeof item.is_available!=='boolean'||!Number.isSafeInteger(e.quantity)||Number(e.quantity)<1||Number(e.quantity)>50||
+   (e.note!==undefined&&(typeof e.note!=='string'||e.note.length>200)))return EMPTY_CART;
+  const quantity=Math.min(e.quantity as number,item.stock);
+  if(quantity<1||!item.is_available)return EMPTY_CART;
+  total+=quantity;
+  if(total>50)return EMPTY_CART;
+  entries.push({item,quantity,note:typeof e.note==='string'?e.note:''});
+ }
+ return entries.length?{restaurantId:id,entries}:EMPTY_CART;
+}
+export const CUSTOMER_CART_STORAGE_KEY='talaeats-customer-cart-v1';
