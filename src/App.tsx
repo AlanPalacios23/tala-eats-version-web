@@ -14,6 +14,7 @@ import type { MarketCode } from './lib/markets';
 import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders';
 import { CustomerCart, CustomerCheckout } from './components/CustomerCheckout';
 import { CustomerAddresses } from './components/CustomerAddresses';
+import { CustomerProfile } from './components/CustomerProfile';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
