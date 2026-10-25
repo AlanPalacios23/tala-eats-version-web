@@ -76,13 +76,14 @@ export function CustomerAuth() {
  const [confirm,setConfirm]=useState(''),[otp,setOtp]=useState('');
  const [showPassword,setShowPassword]=useState(false),[showConfirm,setShowConfirm]=useState(false);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [showOtp,setShowOtp]=useState(false);
  const from=(location.state as {from?:string}|null)?.from;
  const afterLogin=from?.startsWith('/')&&!from.startsWith('//')&&!['/acceso','/restablecer'].includes(from)?from:'/clientes';
  const switchStage=(next:Stage)=>{if(busy)return;setError('');setStage(next);};
  async function doLogin(event:FormEvent) {
   event.preventDefault();if(busy)return;setBusy(true);setError('');
   try{await session.login(email.trim(),password,otp);navigate(afterLogin,{replace:true});}
-  catch(e){setError(e instanceof Error?e.message:'Revisa tu correo y contraseña e inténtalo de nuevo.');}
+  catch(e){const message=e instanceof Error?e.message:'Revisa tu correo y contraseña e inténtalo de nuevo.';setError(message);if(/otp|2fa|autenticaci|c[oó]digo/i.test(message))setShowOtp(true);}
   finally{setBusy(false);}
  }
  function validateSignup(event:FormEvent) {
@@ -187,10 +188,11 @@ export function CustomerAuth() {
      <AuthInput Icon={LockKeyhole} label="Contraseña" type={showPassword?'text':'password'}
       autoComplete="current-password" value={password} onChange={setPassword} onToggle={()=>setShowPassword(v=>!v)} showToggle={showPassword}/>
      <button type="button" className="te-auth-forgot" onClick={()=>switchStage('forgot')}>¿Olvidaste tu contraseña?</button>
-     <div className="te-auth-optional-otp">
-      <label htmlFor="te-login-otp">Código de autenticación (solo si tienes 2FA)</label>
+     <button type="button" className="te-auth-otp-toggle" aria-expanded={showOtp} onClick={()=>setShowOtp(v=>!v)}>¿Tienes código de autenticación 2FA?</button>
+     {showOtp&&<div className="te-auth-optional-otp">
+      <label htmlFor="te-login-otp">Código de autenticación</label>
       <input id="te-login-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={12} value={otp} onChange={event=>setOtp(event.target.value)} placeholder="Código de 6 dígitos"/>
-     </div>
+     </div>}
      {errorBox}<button className="te-auth-submit" disabled={busy}>{busy?'Iniciando sesión…':'Iniciar sesión'}<ArrowRight size={19}/></button>
    </form>
    <p className="te-auth-switch">¿Aún no tienes cuenta? <button type="button" onClick={()=>switchStage('signup')}>Crear cuenta</button></p>
