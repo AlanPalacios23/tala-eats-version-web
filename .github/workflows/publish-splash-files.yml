@@ -1,0 +1,63 @@
+name: Publicar archivos originales del Splash en GitHub
+
+on:
+  push:
+    branches:
+      - feat/mobile-parity-v1046-navigation
+    paths:
+      - tools/gh_generate_splash_assets.py
+      - .github/workflows/publish-splash-files.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-splash-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-splash:
+    if: github.repository == 'AlanPalacios23/tala-eats-version-web'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mobile-parity-v1046-navigation
+          persist-credentials: true
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Dependencias para convertir la fotografía original
+        run: python -m pip install --disable-pip-version-check 'numpy<3' 'opencv-python-headless==4.11.0.86' 'Pillow>=11,<13'
+
+      - name: Verificar fuente y construir WebP 728x1536 y ZIP
+        run: python tools/gh_generate_splash_assets.py
+
+      - name: Validar instalador, imagen y paquete
+        run: |
+          set -euo pipefail
+          test -s public/branding/splash-exacto-728x1536.webp
+          test -s deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip
+          test -s assets/splash/source-1000260473.png
+          unzip -tq deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip
+          bash -n deploy/INSTALAR_SPLASH_TALA_EATS_DESDE_GITHUB.sh
+          bash -n deploy/IMPORTAR_SPLASH_A_GITHUB_DESDE_KALI.sh
+
+      - name: Versionar los binarios en el repositorio
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/splash/source-1000260473.png public/branding/splash-exacto-728x1536.webp deploy/releases/TalaEats_Splash_Exacto_Instalacion_Kali.zip
+          if git diff --cached --quiet; then
+            echo 'SPLASH_ALREADY_IN_GITHUB=PASS'
+          else
+            git commit -m 'assets(splash): include user photograph, clean WebP and reusable Kali ZIP'
+            git push origin HEAD:feat/mobile-parity-v1046-navigation
+          fi
+          echo "SPLASH_BINARY_UPLOAD=PASS"
