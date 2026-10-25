@@ -195,3 +195,12 @@
  .te-auth-error { animation:none; }
  .te-auth-input,.te-auth-submit:active,.te-auth-toggle:active { transition:none;transform:none; }
 }
+
+/* Flutter sliver header behavior: name fades into sticky topbar at scroll. */
+.te-commerce-header { position:sticky;top:0;z-index:45;background:#fafaf9;
+  transition:background-color 200ms cubic-bezier(.215,.61,.355,1),box-shadow 200ms cubic-bezier(.215,.61,.355,1); }
+.te-commerce-header.compact { background:rgba(250,250,249,.98);box-shadow:0 4px 12px rgba(37,33,30,.06); }
+.te-commerce-header>span { transition:opacity 200ms cubic-bezier(.215,.61,.355,1); }
+@media(prefers-reduced-motion:reduce) {
+ .te-commerce-header,.te-commerce-header>span { transition:none!important; }
+}
