@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, AtSign, Check, ChefHat, Circle, Eye, EyeOff, Info, LockKeyhole, MailCheck, ShieldCheck, UserRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AtSign, Check, Circle, Eye, EyeOff, Info, LockKeyhole, MailCheck, ShieldCheck, UserRound } from 'lucide-react';
 import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import './customer-auth.css';
@@ -77,7 +77,7 @@ export function CustomerAuth() {
  const [showPassword,setShowPassword]=useState(false),[showConfirm,setShowConfirm]=useState(false);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const from=(location.state as {from?:string}|null)?.from;
- const afterLogin=from?.startsWith('/')&&!from.startsWith('//')&&!['/restaurante','/repartidor','/acceso'].includes(from)?from:'/clientes';
+ const afterLogin=from?.startsWith('/')&&!from.startsWith('//')&&!['/acceso','/restablecer'].includes(from)?from:'/clientes';
  const switchStage=(next:Stage)=>{if(busy)return;setError('');setStage(next);};
  async function doLogin(event:FormEvent) {
   event.preventDefault();if(busy)return;setBusy(true);setError('');
@@ -117,7 +117,7 @@ export function CustomerAuth() {
   finally{setBusy(false);}
  }
  const errorBox=error&&<div className="te-auth-error" role="alert">{error}</div>;
- if(session.user)return <Navigate to="/clientes" replace/>;
+ if(session.user&&stage!=='reset'&&stage!=='updated')return <Navigate to="/clientes" replace/>;
  if(stage==='confirm')return <AuthScaffold title="Confirma tus datos"
   subtitle="Revisa que tu correo sea correcto. Lo usarás para entrar y recuperar tu cuenta."
   showBack onBack={()=>switchStage('signup')}>
