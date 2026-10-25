@@ -64,6 +64,7 @@ export function CustomerOrderDetail(){
     <div className="mobile-detail-total"><span>Total</span><strong>{pesos(order.total)}</strong></div></section>
     {order.delivery_pin&&order.status!=='cancelled'&&<div className="mobile-order-pin"><strong>PIN de entrega: {order.delivery_pin}</strong><span>Compártelo únicamente cuando recibas tu pedido.</span></div>}
     <div className="mobile-order-payment">Pago: {order.payment_method==='cash'?'Efectivo':'Tarjeta'} · {order.payment_status}</div>
+    <Link className="mobile-order-support" to={'/soporte?pedido='+order.id}>Ayuda con este pedido <ChevronRight size={18}/></Link>
     <p className="mobile-order-disclaimer">El estado y el pago se muestran tal como los informa el servidor. Actualiza para verificar los cambios.</p>
    </>}
  </div>;
