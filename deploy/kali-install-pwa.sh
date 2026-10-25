@@ -17,7 +17,7 @@ fi
 if [[ "$MODE" == --apply && "$(id -u)" != 0 ]];then
  echo 'PWA_INSTALL_ABORT=ROOT_REQUIRED_FOR_STATIC_SITE_INSTALL';exit 1
 fi
-SRC="/home/alan/tala-eats-web-releases/$SHA"
+SRC="/home/tala-node-stage/tala-eats-web-releases/$SHA"
 DIST="$SRC/dist"
 CONF="$SRC/deploy/nginx-web-talaeats.conf"
 DEST="/srv/talaeats-pwa"
