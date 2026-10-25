@@ -24,6 +24,10 @@ jobs:
           test -s dist/index.html
           test -s dist/sw.js
           test -s dist/manifest.webmanifest
+          test -s dist/manifest-clientes.webmanifest
+          test -s dist/manifest-restaurante.webmanifest
+          test -s dist/manifest-repartidor.webmanifest
+          bash -n deploy/kali-install-pwa.sh
           test -s dist/icons/icon-192.png
           test -s dist/icons/icon-512.png
       - uses: actions/upload-artifact@v4
