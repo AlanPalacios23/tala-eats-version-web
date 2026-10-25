@@ -82,7 +82,10 @@ export function CustomerAuth() {
  const switchStage=(next:Stage)=>{if(busy)return;setError('');setStage(next);};
  async function doLogin(event:FormEvent) {
   event.preventDefault();if(busy)return;setBusy(true);setError('');
-  try{await session.login(email.trim(),password,otp);navigate(afterLogin,{replace:true});}
+  try{const authenticated=await session.login(email.trim(),password,otp);
+   const route=authenticated.role==='driver'?'/repartidor':
+    (authenticated.role==='restaurant'||authenticated.role==='admin')?'/restaurante':afterLogin;
+   navigate(route,{replace:true});}
   catch(e){const message=e instanceof Error?e.message:'Revisa tu correo y contraseña e inténtalo de nuevo.';setError(message);if(/otp|2fa|autenticaci|c[oó]digo/i.test(message))setShowOtp(true);}
   finally{setBusy(false);}
  }
