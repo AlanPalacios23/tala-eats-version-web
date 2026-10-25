@@ -32,6 +32,7 @@ jobs:
           bash -n deploy/kali-install-pwa.sh
           bash -n deploy/kali-install-pwa-isolated.sh
           bash -n deploy/kali-review-preview.sh
+          bash -n deploy/kali-update-existing-public.sh
       - name: Build isolated review release
         env:
           VITE_PREVIEW_READONLY: 'true'
