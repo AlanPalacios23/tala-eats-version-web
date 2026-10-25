@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import { normalizeCustomerAddress } from './customer-checkout';
 import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
 import type { MarketCode } from './markets';
 import type { AuthResponse, DriverProfile, MenuItem, Order, PaymentOptions, Quote, Restaurant, User } from './types';
@@ -52,7 +53,7 @@ export const api = {
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
-  customerAddresses: () => request<CustomerAddress[]>('/platform/addresses'),
+  customerAddresses: async ():Promise<CustomerAddress[]> => {const raw=await request<unknown>('/platform/addresses');if(!Array.isArray(raw))throw new ApiError(502,'El servidor no devolvió direcciones válidas.');return raw.map(normalizeCustomerAddress);},
   wallet: () => request<{balance:string|number;points:number;plus_member?:boolean;referral_code?:string;tier?:string;transactions?:{id?:number;kind?:string;description?:string;amount?:number|string;created_at?:string}[]}>('/platform/wallet'),
   redeemReward: () => request<Record<string,unknown>>('/platform/rewards/redeem?points=500',json('POST')),
   customerNotifications: () => request<{id:number;kind:string;title:string;message:string;is_read:boolean;created_at:string}[]>('/platform/notifications'),
@@ -60,7 +61,7 @@ export const api = {
   notificationsReadAll: () => request<Record<string,unknown>>('/platform/notifications/read-all',json('POST')),
   supportTickets: () => request<{id:number;user_id?:number;order_id?:number|null;category?:string;message:string;status?:string;created_at?:string}[]>('/platform/support'),
   createSupportTicket: (category:string,message:string,orderId:number|null) => request<{id:number;message:string;category?:string;status?:string}>('/platform/support',json('POST',{category,message,order_id:orderId})),
-  addCustomerAddress: (body:{label:string;address:string;lat:number;lng:number;is_default:boolean}) => request<CustomerAddress>('/platform/addresses',json('POST',body)),
+  addCustomerAddress: async (body:{label:string;address:string;lat:number;lng:number;is_default:boolean}):Promise<CustomerAddress> => normalizeCustomerAddress(await request<unknown>('/platform/addresses',json('POST',body))),
   updateCustomerAddress: (id:number,body:{is_default:boolean}) => request<CustomerAddress>(`/platform/addresses/${id}`,json('PATCH',body)),
   deleteCustomerAddress: (id:number) => request<void>(`/platform/addresses/${id}`,json('DELETE')),
   geocode: (address:string) => request<{results:{lat:number;lng:number}[]}>('/v11/maps/geocode',json('POST',{query:address+', Jalisco, México',limit:1})),
