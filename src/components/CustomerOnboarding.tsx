@@ -17,6 +17,7 @@ export function CustomerEntry(){
  const {user}=useSession(),navigate=useNavigate(),location=useLocation();
  const [stage,setStage]=useState<'splash'|'welcome'|'methods'>('splash');
  const [splashArtFailed,setSplashArtFailed]=useState(false);
+ const [tacosArtFailed,setTacosArtFailed]=useState(false);
  const from=safeDestination((location.state as {from?:string}|null)?.from);
  useEffect(()=>{
   if(user?.role==='customer')navigate(from,{replace:true});
@@ -31,9 +32,13 @@ export function CustomerEntry(){
     <div className="customer-splash-fallback" aria-hidden="true"><img src="/branding/tala-script-gradient.svg" alt="" width="340" height="104"/><span>COMERCIO LOCAL</span><p>Pide, disfruta y repite.</p></div>
     <button type="button" className="customer-splash-next" onClick={()=>setStage('welcome')} aria-label="Siguiente pantalla" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
   </div>:
-   stage==='welcome'?<div className="customer-onboarding-photo welcome">
-     <div className="customer-onboarding-content"><div className="customer-brand-plaque"><img className="customer-brand-script" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="290" height="88"/></div><h1>Bienvenido<br/>a Tala Eats</h1><p>Tus platillos favoritos,<br/>más cerca de ti.</p></div>
-     <button className="customer-onboarding-cta glass" onClick={()=>setStage('methods')}><span className="customer-cta-label">Continuar</span><ArrowRight size={22} aria-hidden="true"/></button>
+   stage==='welcome'?<div className="customer-onboarding-splash customer-splash-exact customer-welcome-tacos">
+     <picture className="customer-splash-art" aria-hidden="true" style={{display:tacosArtFailed?'none':undefined}}>
+       <source srcSet="/branding/onboarding-comida-tu-ciudad-729x1536.webp" type="image/webp"/>
+       <img src="/branding/onboarding-comida-tu-ciudad-729x1536.webp" width="729" height="1536" alt="" draggable={false} onError={()=>setTacosArtFailed(true)}/>
+     </picture>
+     <div className="customer-splash-fallback customer-welcome-tacos-fallback" aria-hidden="true"><h1>Comida de<br/>tu ciudad</h1><p>Tus restaurantes y comercios favoritos, más cerca de ti.</p></div>
+     <button type="button" className="customer-splash-next" onClick={()=>setStage('methods')} aria-label="Avanzar desde Comida de tu ciudad" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
     </div>:
     <div className="customer-onboarding-photo methods">
      <button className="customer-onboarding-back" aria-label="Volver a bienvenida" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
