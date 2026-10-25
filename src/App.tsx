@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, LogOut, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, LogOut, MapPin, Menu, Package, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
-import { EMPTY_CART, addVariantItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
+import { EMPTY_CART, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
@@ -14,7 +14,6 @@ import type { MarketCode } from './lib/markets';
 import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders';
 import { CustomerCart, CustomerCheckout } from './components/CustomerCheckout';
 import { CustomerAddresses } from './components/CustomerAddresses';
-import { amountInCents, pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
