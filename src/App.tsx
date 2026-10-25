@@ -7,6 +7,8 @@ import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './l
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
+import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
+import { pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -91,21 +93,6 @@ function PortalLanding(){
   </main>
   <footer className="gateway-footer"><div><span className="gateway-footer-brand">Tala Eats</span><p>Hecho para Tala y nuestra región.</p></div><div><Link to="/clientes">Explorar comercios</Link><Link to="/acceso">Mi cuenta</Link><InstallPWA/></div><span className="gateway-copyright">© 2026 TALA EATS</span></footer>
  </div>;
-}
-function Home(){
- const {value:restaurants,loading,error,refresh}=useLoad(()=>api.restaurants(),[]);
- const [search,setSearch]=useState('');
- const filtered=useMemo(()=>restaurants?.filter(r=>(r.name+' '+(r.cuisine??'')+' '+(r.description??'')).toLowerCase().includes(search.trim().toLowerCase()))??[],[restaurants,search]);
- return <><section className="customer-welcome container" aria-label="Explorar Tala Eats">
-  <span className="customer-location"><MapPin size={16}/> Tala y región</span>
-  <h1>¿Qué se te antoja hoy?</h1>
-  <p>Explora restaurantes y comercios locales con información real del catálogo.</p>
-  <a className="customer-search-shortcut" href="#comercios"><Search size={20}/> Buscar restaurantes y productos <ArrowRight size={18}/></a>
- </section>
- <section id="comercios" className="container section"><div className="section-title-row"><SectionTitle eyebrow="DESCUBRE" title="¿Qué se te antoja hoy?" description="Encuentra comercios verificados y revisa su menú."/><span className="muted">{filtered.length} comercios</span></div>
- <label className="search-wrap"><Search size={21}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca comida, tiendas o tu restaurante favorito" aria-label="Buscar comercios"/></label>
- {loading?<Spinner/>:error?<Alert><span>{error}</span> <button onClick={refresh}>Reintentar</button></Alert>:filtered.length===0?<EmptyState icon={<Store size={32}/>} title="Todavía no hay resultados" description={search?'Prueba con otra búsqueda.':'Aún no hay comercios verificados publicados. Vuelve pronto.'}/>:<div className="merchant-grid">{filtered.map(r=><Link to={'/comercio/'+r.id} className="merchant-card" key={r.id}><div className="merchant-cover"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍲'} alt={r.name}/><span className={'open-label '+(r.is_open?'open':'closed')}>{r.is_open?'Abierto':'Cerrado'}</span></div><div className="merchant-body"><h3>{r.name}</h3><p>{r.cuisine||r.description||'Un sabor local'}</p><div className="merchant-meta"><span><Clock3 size={15}/>{r.eta_min??'—'} min</span><span><MapPin size={15}/> Tala y región</span></div></div></Link>)}</div>}
- </section></>;
 }
 function Commerce({add}:{add:(item:MenuItem)=>void}){
  const {id}=useParams();const parsed=Number(id);const good=Number.isSafeInteger(parsed)&&parsed>0;
@@ -222,14 +209,14 @@ function CustomerBottomDock({cartCount}:{cartCount:number}){
  const location=useLocation();
  const tabs=[
   {to:'/clientes',label:'Inicio',Icon:HomeIcon},
-  {to:'/clientes#comercios',label:'Buscar',Icon:Search},
+  {to:'/buscar',label:'Buscar',Icon:Search},
   {to:'/pedidos',label:'Pedidos',Icon:ClipboardList},
   {to:'/cuenta',label:'Cuenta',Icon:UserRound}
  ];
- const onCustomerRoute=['/clientes','/pedidos','/cuenta'].includes(location.pathname);
+ const onCustomerRoute=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);
  if(!onCustomerRoute)return null;
  return <nav className="customer-bottom-dock" aria-label="Navegación de clientes">
-  {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Buscar'?location.hash==='#comercios'&&location.pathname==='/clientes':label==='Inicio'?location.pathname==='/clientes'&&location.hash!=='#comercios':location.pathname===to)?'selected':'')} aria-label={label}>
+  {tabs.map(({to,label,Icon})=><Link key={label} to={to} className={'customer-dock-item '+((label==='Inicio'?location.pathname==='/clientes':location.pathname===to)?'selected':'')} aria-label={label}>
    <Icon size={22}/><span>{label}</span>{label==='Pedidos'&&cartCount>0?<span className="customer-dock-dot" aria-hidden="true"/>:null}
   </Link>)}
  </nav>;
@@ -240,12 +227,12 @@ function CustomerHashScroll(){
  return null;
 }
 export default function App(){
- const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';
- const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
+ const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/');
+ const add=(item:MenuItem)=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return;}setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
- return <div className="app">{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
+ return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
-   <Route path="/clientes" element={<Home/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
+   <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
    <Route path="/pedidos" element={<Protected role="customer"><Orders/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
