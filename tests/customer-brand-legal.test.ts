@@ -25,7 +25,7 @@ describe('premium Flutter Users branding / legal public links and no user 2FA',(
   const css=text('../src/styles/main.css');
   expect(css).toContain('/api/v1/uploads/catalog/r1-4YiKcP7oVyQdLwDAWJP8y3yiE1O-wA6h.jpg');
   expect(css).toContain('/api/v1/uploads/catalog/r1-p1-fp-ow0ULDj24aM6vkfKWfZAwElFJyXDq.jpg');
-  expect(css).toContain('.customer-cta-label{text-align:center');
+  expect(css).toContain('.customer-cta-label{width:100%;display:block;padding:0 30px;text-align:center');
   expect(css).toContain('.customer-auth-next>svg{position:absolute');
  });
  it('uses original public Cloudflare pages without rendering legacy legal panels',()=>{
