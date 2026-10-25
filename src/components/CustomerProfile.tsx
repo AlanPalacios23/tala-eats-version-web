@@ -1,8 +1,10 @@
 import {useEffect,useState} from 'react';import type {FormEvent} from 'react';
-import {ArrowLeft,Check,RefreshCw,UserRound} from 'lucide-react';import {Link} from 'react-router-dom';import {useSession} from '../lib/session';import {api,safeImage} from '../lib/api';
+import {ArrowLeft,Camera,Check,RefreshCw,Trash2} from 'lucide-react';import {Link} from 'react-router-dom';import {useSession} from '../lib/session';import {api} from '../lib/api';
+import {CustomerAvatar} from './CustomerAvatar';
+import {removeLocalAvatar,saveLocalAvatar} from '../lib/customer-avatar';
 export function CustomerProfile(){
  const {user,refresh}=useSession();const [name,setName]=useState(user?.name??''),[phone,setPhone]=useState(user?.phone??'');
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false);
+ const [busy,setBusy]=useState(false),[photoBusy,setPhotoBusy]=useState(false),[photoMessage,setPhotoMessage]=useState(''),[error,setError]=useState(''),[saved,setSaved]=useState(false);
  useEffect(()=>{setName(user?.name??'');setPhone(user?.phone??'');setSaved(false);},[user?.id,user?.name,user?.phone]);
  async function submit(e:FormEvent){
   e.preventDefault();if(busy)return;
@@ -20,8 +22,23 @@ export function CustomerProfile(){
  return <div className="mobile-customer-page mobile-profile" data-mobile-screen="profile">
   <div className="mobile-detail-header"><Link to="/cuenta" aria-label="Regresar a Cuenta"><ArrowLeft size={22}/></Link><h1>Editar perfil</h1></div>
   <section className="mobile-profile-card">
-   <div className="mobile-profile-avatar">{safeImage(user?.avatar_url)?<img src={safeImage(user?.avatar_url)!} alt="Foto de perfil"/>:<UserRound size={38}/>}</div>
-   <p>Foto de perfil</p><small>La carga de fotografías desde navegador estará disponible cuando el backend confirme un método compatible.</small>
+   <div className="mobile-profile-avatar"><CustomerAvatar userId={user?.id} url={user?.avatar_url} size="large"/></div>
+   <p>Foto de perfil</p>
+   <label className="customer-photo-picker"><Camera size={19}/> {photoBusy?'Guardando foto…':'Elegir foto de perfil'}
+    <input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy||!user} aria-label="Elegir foto de perfil" onChange={async e=>{
+     const file=e.currentTarget.files?.[0];e.currentTarget.value='';if(!file||!user)return;
+     setPhotoBusy(true);setPhotoMessage('');setError('');
+     try{await saveLocalAvatar(user.id,file);setPhotoMessage('Foto guardada en este dispositivo.');}
+     catch(err){setError(err instanceof Error?err.message:'No pudimos guardar la fotografía.');}
+     finally{setPhotoBusy(false);}
+    }}/>
+   </label>
+   <button type="button" className="customer-photo-remove" disabled={photoBusy||!user} onClick={async()=>{
+    if(!user)return;setPhotoBusy(true);setPhotoMessage('');setError('');
+    try{await removeLocalAvatar(user.id);setPhotoMessage('Foto local eliminada.');}catch(err){setError(err instanceof Error?err.message:'No se pudo quitar la foto.');}finally{setPhotoBusy(false);}
+   }}><Trash2 size={16}/> Quitar foto local</button>
+   {photoMessage&&<small role="status" className="customer-photo-confirm">{photoMessage}</small>}
+   <small>La fotografía se guarda únicamente en este navegador, igual que el avatar local de Flutter. No se sincroniza con otros dispositivos.</small>
   </section>
   <form className="mobile-profile-form" onSubmit={e=>void submit(e)}>
    <label>Nombre completo<input required minLength={2} maxLength={100} autoComplete="name" value={name} onChange={e=>{setName(e.target.value);setSaved(false);}}/></label>
