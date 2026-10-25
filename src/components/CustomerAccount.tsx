@@ -14,14 +14,21 @@ function AccountLink({to,label,icon,subtitle}:{to:string;label:string;icon:React
  return <Link className="mobile-account-link" to={to}><span className="mobile-account-icon">{icon}</span><span className="mobile-account-link-copy"><strong>{label}</strong>{subtitle&&<small>{subtitle}</small>}</span><ChevronRight size={19}/></Link>;
 }
 export function CustomerAccount(){
- const {user,logout}=useSession(),nav=useNavigate();const [busy,setBusy]=useState(false);
+ const {user,logout}=useSession(),nav=useNavigate();const [busy,setBusy]=useState(false),[logoutError,setLogoutError]=useState('');
  async function leave(){
   if(busy||!window.confirm('¿Cerrar sesión? Podrás volver a entrar con tu correo y contraseña.'))return;
-  setBusy(true);
-  try{await logout();nav('/clientes',{replace:true});}finally{setBusy(false);}
+  setBusy(true);setLogoutError('');
+  try{
+   await logout();
+   // Flutter returns to the login/welcome flow after signing out; NEVER
+   // leave the previous authenticated customer's storefront/account visible.
+   nav('/acceso',{replace:true,state:{from:'/clientes'}});
+  }catch(e){setLogoutError(e instanceof Error?e.message:'No se pudo cerrar sesión. Inténtalo de nuevo.');}
+  finally{setBusy(false);}
  }
  return <div className="mobile-customer-page mobile-account" data-mobile-screen="account">
   <h1>Cuenta</h1>
+  {logoutError&&<div role="alert" className="mobile-address-error">{logoutError}</div>}
   <Link to="/editar-perfil" className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div><ChevronRight size={20}/></Link>
   <Link to="/tala-club" className="mobile-account-club"><Wallet size={23}/><div><strong>Tala Club</strong><small>Consulta saldo, puntos y movimientos verificados</small></div><ChevronRight size={20}/></Link>
   <h2>Tu cuenta</h2><div className="mobile-account-group">
