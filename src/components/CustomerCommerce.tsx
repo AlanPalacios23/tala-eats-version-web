@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, MapPin, Minus, Plus, Store, X } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { api, pesos, safeImage } from '../lib/api';
+import { api, pesos } from '../lib/api';
+import { CustomerPhoto } from './CustomerPhoto';
 import type { MenuItem, Restaurant } from '../lib/types';
 import { basketTotal } from '../lib/cart';
 import type { Cart } from '../lib/cart';
@@ -9,8 +10,7 @@ import type { MarketCode } from '../lib/markets';
 
 const CHOICES=['Sin cambios','Sin cebolla','Extra salsa','Bien cocido'] as const;
 function ProductPhoto({url,label}:{url?:string|null;label:string}){
- const safe=safeImage(url);
- return safe?<img src={safe} loading="lazy" referrerPolicy="no-referrer" alt={label}/>:<span className="mobile-commerce-fallback" role="img" aria-label={label}>🍽️</span>;
+ return <CustomerPhoto src={url} alt={label} fallback="🍔"/>;
 }
 function ProductSheet({item,merchant,onClose,onAdd}:{item:MenuItem;merchant:Restaurant;onClose:()=>void;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean}){
  const [quantity,setQuantity]=useState(1),[choice,setChoice]=useState('Sin cambios');
