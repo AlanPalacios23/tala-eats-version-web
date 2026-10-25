@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock3, Heart, MapPin, RefreshCw, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api, safeImage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { foldSearch } from '../lib/mobile-parity';
