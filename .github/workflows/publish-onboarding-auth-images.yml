@@ -1,0 +1,62 @@
+name: Publicar tres imágenes originales de onboarding y acceso
+
+on:
+  push:
+    branches: [feat/mobile-parity-v1046-navigation]
+    paths: [.github/workflows/publish-onboarding-auth-images.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tala-auth-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-approved-photos:
+    if: github.repository == 'AlanPalacios23/tala-eats-version-web'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mobile-parity-v1046-navigation
+          fetch-depth: 1
+      - name: Descargar fotos suministradas y verificar bytes originales
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p public/branding
+          curl -fLsS --retry 3 --max-time 45 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JRVgcDQUmpH7yGXahR2Kecqub1/31827407-f420-4e46-bc15-f0a362b4475e.jpg' -o 'public/branding/onboarding-un-antojo-864x1536.jpg'
+          echo '105f48692d4a6f8d7f97539a4cf3a70cd0d1359ea3fd74117ef8bb8a5d6dc467  public/branding/onboarding-un-antojo-864x1536.jpg' | sha256sum --check
+          curl -fLsS --retry 3 --max-time 45 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JRVgcDQUmpH7yGXahR2Kecqub1/2bec2e0b-9d1f-4bc2-827a-4bd523d17da1.jpg' -o 'public/branding/auth-continua-correo-864x1536.jpg'
+          echo 'cda451a040e39149cae1180bba396db08995dce2b8b65879e9d9a97dd8d12c05  public/branding/auth-continua-correo-864x1536.jpg' | sha256sum --check
+          curl -fLsS --retry 3 --max-time 45 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JRVgcDQUmpH7yGXahR2Kecqub1/121d192f-9891-4062-a75a-e81a5d864d5c.jpg' -o 'public/branding/auth-contrasena-729x1536.jpg'
+          echo 'f188855e75afa63973e78317d6198ac14b0e5a310be99e2c242f351d4d2570ed  public/branding/auth-contrasena-729x1536.jpg' | sha256sum --check
+          python3 - <<'PY'
+          import hashlib,struct
+          from pathlib import Path
+          expected={
+           'onboarding-un-antojo-864x1536.jpg':(350870,'105f48692d4a6f8d7f97539a4cf3a70cd0d1359ea3fd74117ef8bb8a5d6dc467'),
+           'auth-continua-correo-864x1536.jpg':(216742,'cda451a040e39149cae1180bba396db08995dce2b8b65879e9d9a97dd8d12c05'),
+           'auth-contrasena-729x1536.jpg':(135780,'f188855e75afa63973e78317d6198ac14b0e5a310be99e2c242f351d4d2570ed'),
+          }
+          for name,(size,sha) in expected.items():
+           b=(Path('public/branding')/name).read_bytes()
+           assert len(b)==size and hashlib.sha256(b).hexdigest()==sha
+           assert b[:3]==b'\xff\xd8\xff' and b[-2:]==b'\xff\xd9'
+           print(f'ORIGINAL_IMAGE_VERIFIED={name}')
+          PY
+      - name: Versionar los tres JPEG sin recomprimir
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/branding/onboarding-un-antojo-864x1536.jpg public/branding/auth-continua-correo-864x1536.jpg public/branding/auth-contrasena-729x1536.jpg
+          if git diff --cached --quiet; then echo AUTH_IMAGES_ALREADY_PRESENT=PASS; else
+            git commit -m 'assets(web): version three original onboarding and auth photos'
+            git push origin HEAD:feat/mobile-parity-v1046-navigation
+          fi
+          echo AUTH_IMAGE_THREE_GITHUB=PASS
