@@ -26,7 +26,6 @@ function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{r
 function Alert({children,kind='error'}:{children:ReactNode;kind?:'error'|'info'|'success'}) {return <div role="status" className={'alert '+kind}>{children}</div>;}
 function Spinner(){return <div className="loading"><RefreshCw className="spin" size={20}/> Cargando información del servidor...</div>;}
 function SectionTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){return <div className="section-title"><span className="eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;}
-function FoodPicture({src,emoji,alt}:{src?:string|null;emoji?:string;alt:string}){const u=safeImage(src);return u?<img src={u} alt={alt} className="food-photo" loading="lazy" referrerPolicy="no-referrer"/>:<div className="food-placeholder" role="img" aria-label={alt}>{emoji||'🍽️'}</div>;}
 function EmptyState({icon,title,description,action}:{icon:ReactNode;title:string;description:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{description}</p>{action}</div>;}
 function StateTag({state}:{state:string}){const tags:Record<string,string>={received:'Recibido',confirmed:'Confirmado',preparing:'Preparando',ready:'Listo',assigned:'Asignado',picked_up:'Recogido',on_the_way:'En camino',delivered:'Entregado',cancelled:'Cancelado',awaiting_payment:'Esperando pago'};return <span className={'status status-'+state}>{tags[state]??state}</span>;}
 function InstallPWA(){
