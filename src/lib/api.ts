@@ -36,6 +36,13 @@ export const api = {
   forgotPassword: (email:string) => request<void>('/auth/password/forgot',json('POST',{email})),
   resetPassword: (token:string,password:string) => request<void>('/auth/password/reset',json('POST',{token,password})),
   me: () => request<User>('/auth/me'),
+  wallet: () => request<{balance:string|number;points:number;transactions:Array<{id?:number;kind?:string;description?:string;amount:string|number;created_at?:string}>}>('/platform/wallet'),
+  notifications: () => request<Array<{id:number;kind:string;title:string;message:string;is_read:boolean;created_at:string}>>('/platform/notifications'),
+  markNotificationRead: (id:number) => request<void>(`/platform/notifications/${id}/read`,json('PATCH')),
+  markAllNotificationsRead: () => request<void>('/platform/notifications/read-all',json('POST')),
+  supportTicket: (message:string,category:string='general') =>
+    request<{id:number}>('/platform/support',json('POST',{order_id:null,category,message})),
+
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
