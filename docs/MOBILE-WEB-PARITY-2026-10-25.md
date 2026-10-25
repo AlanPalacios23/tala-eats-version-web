@@ -1,35 +1,32 @@
-# Tala Eats Usuarios · Paridad Mobile → Web
-Actualizado: 25 octubre 2026
+# Tala Eats Usuarios — Paridad Mobile → Web
+Corte: 25 octubre 2026. PR web #3 (DRAFT, NO DEPLOY).
 
-## Referencia precisa
-- Mobile Usuarios PR #67 (DRAFT): `feat/usuarios-v1046-rc810-stripe-test-delivery-20261024`, commit `f247bf3996a41b1af2e0384c787e6fd2f4fe9d5d`, version `1.0.46+57`.
-- Fuente visual/UX: `ui/design_system.dart`, `ui/discovery_screens.dart`, `ui/auth_screens.dart` y `ui/purchase_screens.dart`.
-- Mobile `main` sigue en `1.0.30+41`; PR #67 aún no está fusionado ni equivale a una release LIVE.
-- Desarrollo Web en PR #3 (draft). NO se ha hecho merge ni despliegue a Kali.
+## Fuente de verdad
+- [Mobile Usuarios PR #67](https://github.com/AlanPalacios23/tala-eats-mobile/pull/67) es DRAFT y apunta a `f247bf3996a41b1af2e0384c787e6fd2f4fe9d5d`, `1.0.46+57`.
+- Mobile `main` tiene `1.0.30+41`, por lo que usar main **no es suficiente** para copiar v1.0.46.
+- Referencias Flutter: `ui/discovery_screens.dart`, `ui/purchase_screens.dart`, `ui/order_screens.dart`, `ui/auth_screens.dart`, `ui/market_selector.dart`, `local_markets.dart`, `production_api.dart` y `ui/design_system.dart`.
 
-## Implementado en Web (código real)
-- Inicio Mobile Usuarios: encabezado de zona (Tala), saludo, título, búsqueda y listado sin banners ajenos.
-- Pantalla Buscar separada con filtrado tolerante a acentos, estado vacío, error y reintento.
-- Tarjetas comercio 16:9, fotografía real, cerrado, metadatos y favorito **temporal** (no se finge sincronía persistente).
-- Navegación inferior Inicio/Buscar/Pedidos/Cuenta, pastilla seleccionada 280ms, sin aviso falso de pedido activo.
-- Tokens reales Flutter: `#FF5A1F`, `#CE3C0A`, `#FAFAF9`, `#171717`, Roboto, radios, sombras y movimiento 140/200/300/320ms con reducción de movimiento.
-- Login/registro con fondos claros y paneles liquid-glass, sin cambiar contrato de sesión.
-- Carrito entre restaurantes: confirmación explícita antes de reemplazarlo.
-- Pedido pickup/efectivo: feature gate, cotización del servidor, recarga de catálogo y medios de pago, validación monetaria en centavos, recotización **antes del POST**, rechazo si cambian importes y búsqueda por referencia tras resultado de red desconocido.
-- Suite de regresión de tokens, búsqueda y cotizaciones; CI `npm run check`.
+## Implementado en PR web
+- Home separado de Buscar; saludo, encabezado, tarjetas de restaurante 16:9, búsqueda por nombre y categoría, loaders, offline.
+- Paleta, tipografía Roboto, esquinas/sombras y tiempos de animaciones 140/200/280/300/320/420 ms; reduce-motion.
+- Login/registro con reflejos estáticos blancos y efecto Liquid Glass.
+- Detalle restaurante: hero con gradiente, menú, categorías, estado cerrado, tarjetas de alimentos, ficha modal con preferencia/cantidad; floating "Ver carrito".
+- Carrito: variante independiente por preferencia, cantidades y stock total del SKU, confirmación antes de reemplazar carrito de otro comercio, mensaje de nota.
+- Checkout pickup/efectivo preexistente reforzado: quote, flags y recotización del backend antes de POST, comparación en centavos, referencia anti-duplicado y recuperación tras resultado incierto. El usuario no puede deducir de esto que Stripe Web ya funciona.
+- Pedidos: agrupación En curso/Anteriores; timeline de 5 pasos (pickup) y 6 (delivery); detalle de estado y pago reales, error/reintento, conservación del historial anterior si GET falla.
+- Favoritos: GET `/platform/favorites` y POST `/platform/favorites/{id}` autenticados, con rollback cuando el backend falla. Ya no se hacen pasar likes temporales por guardados.
+- Mercados: Tala, Cuisillos, Ameca, Ahualulco, Tequila, Amatitán. Filtro paginado `market_code`, validación de identidad, IDs y región por cada fila; rechazar respuestas legacy sin filtro, tal como Flutter. Cambio de zona confirma descarte de carrito; nunca mezcla localidades.
+- Pruebas automáticas para importes y recotización, variantes/stock, timeline y aislamiento de mercados.
 
-## No equivale todavía a la aplicación completa
-- Dirección real y selector de mercado, notificaciones y avatar real de cuenta.
-- Búsqueda de platillos en todos los menús (ahora filtra comercios y categorías disponibles).
-- Persistencia sincronizada de favoritos, soporte, wallet y gestión de direcciones.
-- Checkout delivery con ubicación GPS, confirmación de distancia y tarifa de backend RC8.7/RC8.10, Stripe TEST WEB con SDK y antifraude, pago LIVE.
-- Estado de entrega, seguimiento detallado y efectos específicos de detalle/carrito/órdenes.
-- Paridad pixel-a-pixel comprobada contra capturas Android 320/360/390/430dp + escalado 1.3.
-- Pruebas reales de pago/entrega integradas con backend desplegado.
+## Brechas críticas que persisten antes de declarar "idéntica"
+1. Flutter Search incluye resultados por platillo desde menú global: Web aún filtra solo comercios/categorías.
+2. Dirección completa, GPS, selector de dirección, push, avisos y perfiles/avatar faltan.
+3. Wallet, cupones, soporte, chat y cuenta/favoritos como subpantallas todavía no son equivalentes.
+4. Checkout de domicilio efectivo/Stripe TEST, PaymentSheet web y todas sus feature gates requieren integración verificada del backend, no asumir Stripe LIVE.
+5. Cart/Checkout aún comparten pantalla Web y requieren réplica de pantalla Checkout/Payment Status de Flutter.
+6. Flujo completo de cancelaciones, seguimiento en vivo, chat, driver y notificaciones faltan.
+7. Validación visual pixel-a-pixel contra capturas Android (320/360/390/430dp), teclado, lector de pantalla, PWA y pruebas E2E con datos del backend todavía pendiente.
+8. Falta verificar release candidata junto a backend RC8.x y reconciliación antes de producción.
 
-## Gates de salida (no saltar)
-1. CI verde del último commit; QA visual en móvil/tablet/desktop, accesibilidad y PWA.
-2. Contrato backend para cada método, guard de idempotencia, autorización y validación de total del servidor.
-3. Stripe en TEST únicamente hasta comprobar webhooks, reconciliación, estados y Connect LIVE.
-4. Prueba end-to-end cliente -> restaurante -> repartidor -> entrega -> ledger antes de declarar paridad funcional total.
-5. Despliegue Kali controlado, backup y rollback, sólo con revisión explícita; el trabajo en draft no sustituye producción.
+## Seguridad de despliegue
+No hay merge a `main`, no AAB/Play, no pagos LIVE ni publicación a Kali en este PR. CI verde es necesario pero no demuestra paridad total, pruebas físicas ni equivalencia financiera. Desplegar sólo con backup, revisión, rollback y pruebas end-to-end de cadena cliente→restaurante→repartidor→entrega→ledger.
