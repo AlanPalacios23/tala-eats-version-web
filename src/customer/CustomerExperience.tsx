@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, Heart, Home, MapPin, Package, Search, Star, Store, UserRound, X, Clock3, RefreshCcw, ShoppingBag } from 'lucide-react';
+import { Bell, ChevronDown, Home, MapPin, Package, Search, Star, Store, UserRound, X, Clock3, RefreshCcw, ShoppingBag } from 'lucide-react';
 import { api, safeImage } from '../lib/api';
 import type { Restaurant } from '../lib/types';
 import { useSession } from '../lib/session';
