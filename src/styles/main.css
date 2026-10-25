@@ -283,3 +283,27 @@
 .mobile-status-link{display:inline-flex;border-radius:14px;padding:12px 18px;background:#ce3c0a;color:#fff;font-weight:800;font-size:14px}
 @media(max-width:360px){.mobile-order-footer{flex-wrap:wrap}.mobile-order-pill{max-width:38%}.mobile-past-status{font-size:10px;padding:6px 8px}}
 @media(prefers-reduced-motion:reduce){.mobile-order-steps span,.mobile-active-order,.mobile-past-order{transition:none}}
+
+
+/* Locality selector from Flutter ui/market_selector.dart */
+.mobile-market-select{background:#fff3ec;color:#ce3c0a;border:0;border-radius:12px;padding:10px 12px;min-height:42px;display:inline-flex;align-items:center;gap:8px;max-width:100%;font:700 13px Roboto,Arial,sans-serif;margin:-5px 0 16px;text-align:left}
+.mobile-market-select span:nth-child(2){white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.mobile-market-scrim{position:fixed;z-index:120;inset:0;background:#1c140f59;display:flex;justify-content:center;align-items:flex-end;animation:mobile-scrim 200ms ease-out both}
+.mobile-market-sheet{width:min(520px,100%);max-height:88dvh;overflow-y:auto;padding:10px 20px max(20px,env(safe-area-inset-bottom));background:#fff;border-radius:28px 28px 0 0;animation:mobile-sheet-up 320ms cubic-bezier(.215,.61,.355,1) both}
+.mobile-market-sheet h2{font:800 20px Roboto,Arial,sans-serif;margin:16px 0 4px;color:#171717}
+.mobile-market-sheet>p{font:500 13px/1.4 Roboto,Arial,sans-serif;color:#737373;margin:0 0 14px}
+.mobile-market-sheet>div:not(.mobile-sheet-handle){display:grid}
+.mobile-market-sheet>div>button{display:flex;align-items:center;gap:12px;min-height:62px;padding:9px 0;border:0;border-bottom:1px solid #eae8e5;background:transparent;text-align:left;color:#3b3633}
+.mobile-market-sheet>div>button>svg{color:#737373}
+.mobile-market-sheet>div>button[aria-pressed="true"]>svg{color:#ff5a1f}
+.mobile-market-sheet>div>button>span:nth-child(2){flex:1;min-width:0}
+.mobile-market-sheet>div>button strong{display:block;font:700 15px Roboto,Arial,sans-serif}
+.mobile-market-sheet>div>button small{display:block;color:#737373;margin-top:3px;font:500 12px Roboto,Arial,sans-serif}
+.mobile-market-sheet>div>button[aria-pressed="true"] strong{color:#ff5a1f;font-weight:800}
+.mobile-market-sheet>div>button>span:last-child{font-size:20px;color:#ff5a1f;font-weight:800}
+.mobile-market-close{display:block;width:100%;border:1px solid #eae8e5;background:white;padding:12px;border-radius:14px;font-weight:700;margin-top:12px}
+.mobile-search-locality{font:600 13px Roboto,Arial,sans-serif;color:#ce3c0a;margin:-4px 0 13px}
+.mobile-favorites-error:empty{display:none}
+.mobile-favorites-error:not(:empty){background:#fff0e8;color:#8e3723;border:1px solid #ffdfce;border-radius:12px;padding:9px 12px;margin-bottom:14px;font:600 12px Roboto,Arial,sans-serif}
+.mobile-favorite:disabled{opacity:.5;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){.mobile-market-scrim,.mobile-market-sheet{animation:none}}
