@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSession } from '../lib/session';
 
