@@ -66,7 +66,7 @@ function MerchantList({items,loading,error,refresh,searching=false}:{items:Resta
  if(!items.length)return <div className="mobile-status"><Store size={30}/><h3>{searching?'Sin resultados':'Aún no hay comercios disponibles'}</h3><p>{searching?'Prueba con otro nombre o categoría.':'Cuando haya negocios activos en esta zona podrás encontrarlos aquí.'}</p></div>;
  return <><div role="status" className="mobile-favorites-error">{favorite.error}</div><div className="mobile-customer-list">{items.map((item,index)=><MerchantCard restaurant={item} index={index} key={item.id} favorite={favorite.ids.has(item.id)} ready={favorite.ready} pending={favorite.pending===item.id} toggle={favorite.toggle} user={Boolean(favorite.user)}/>)}</div></>;
 }
-function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:MarketCode)=>void}){
+function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:MarketCode)=>boolean}){
  const [open,setOpen]=useState(false);
  useEffect(()=>{if(!open)return;const key=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false);};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);},[open]);
  return <>
@@ -77,7 +77,7 @@ function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:Mark
    <section className="mobile-market-sheet" role="dialog" aria-modal="true" aria-label="Seleccionar localidad">
     <span className="mobile-sheet-handle"/><h2>¿Dónde quieres comprar?</h2>
     <p>Selecciona tu localidad. Tala es el mercado piloto; las demás zonas mostrarán negocios solo cuando estén disponibles.</p>
-    <div>{MARKETS.map(m=><button key={m.code} onClick={()=>{if(market!==m.code)onChange(m.code);setOpen(false);}} aria-pressed={market===m.code}>
+    <div>{MARKETS.map(m=><button key={m.code} onClick={()=>{if(market===m.code||onChange(m.code))setOpen(false);}} aria-pressed={market===m.code}>
      <MapPin size={19}/><span><strong>{m.label}</strong><small>{m.code==='TALA-JAL'?'Mercado piloto':'Sujeto a disponibilidad de comercios'}</small></span>{market===m.code?<span>✓</span>:<span>›</span>}
     </button>)}</div>
     <button className="mobile-market-close" onClick={()=>setOpen(false)}>Cerrar</button>
@@ -85,7 +85,7 @@ function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:Mark
   </div>}
  </>;
 }
-export function CustomerHome({market,onSelectMarket}:{market:MarketCode;onSelectMarket:(next:MarketCode)=>void}){
+export function CustomerHome({market,onSelectMarket}:{market:MarketCode;onSelectMarket:(next:MarketCode)=>boolean}){
  const {user}=useSession();const {restaurants,loading,error,refresh}=useRestaurants(market);
  const first=(user?.name||'').trim().split(/\s+/)[0];
  return <div className="mobile-customer-page mobile-home" data-mobile-screen="home">
