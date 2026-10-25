@@ -6,7 +6,7 @@ export default defineConfig({
     name:'tala-review-build-marker',
     transformIndexHtml(html:string){
       return process.env.VITE_PREVIEW_READONLY === 'true'
-       ? html.replace('</head>','<meta name="tala-preview-mode" content="read-only" />\\n</head>')
+       ? html.replace('</head>','<meta name="tala-preview-mode" content="read-only" /></head>')
        : html;
     }
   }],
