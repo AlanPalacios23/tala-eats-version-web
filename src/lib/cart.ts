@@ -9,7 +9,9 @@ export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''
  const sameRestaurant=cart.restaurantId===item.restaurant_id;
  const entries=sameRestaurant?cart.entries:[];
  const old=entries.find(x=>x.item.id===item.id && (x.note??'')===normalizedNote);
- const quantity=Math.min(item.stock,Math.min(50,(old?.quantity??0)+desiredQuantity));
+ const allocatedToOtherVariants=entries.filter(e=>e.item.id===item.id&&e!==old).reduce((total,e)=>total+e.quantity,0);
+ const freeForThisLine=Math.max(0,item.stock-allocatedToOtherVariants);
+ const quantity=Math.min(freeForThisLine,Math.min(50,(old?.quantity??0)+desiredQuantity));
  if(quantity<1)return cart;
  const changed=old?
   entries.map(x=>x===old?{item,quantity,note:normalizedNote}:x):
@@ -19,8 +21,11 @@ export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''
 export function addItem(cart:Cart,item:MenuItem):Cart {return addVariantItem(cart,item,1,'');}
 /** Option-aware quantity updates. Legacy IDs continue to work for unambiguous lines. */
 export function updateQuantity(cart:Cart,itemId:number,delta:number,note?:string):Cart {
- const entries=cart.entries.map(e=>e.item.id!==itemId||(note!==undefined&&(e.note??'')!==note)?e:
-  {...e,quantity:Math.min(50,Math.min(e.item.stock,e.quantity+delta))}).filter(e=>e.quantity>0);
+ const entries=cart.entries.map(e=>{
+  if(e.item.id!==itemId||(note!==undefined&&(e.note??'')!==note))return e;
+  const others=cart.entries.filter(v=>v.item.id===itemId&&v!==e).reduce((n,v)=>n+v.quantity,0);
+  return {...e,quantity:Math.min(50,Math.min(Math.max(0,e.item.stock-others),e.quantity+delta))};
+ }).filter(e=>e.quantity>0);
  return entries.length?{...cart,entries}:EMPTY_CART;
 }
 export function lineItems(cart:Cart) {
