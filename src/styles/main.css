@@ -146,3 +146,14 @@
 .customer-shell .auth-card>.fineprint{margin:0;text-align:center}
 @media(max-width:700px){.customer-shell .auth-page,.customer-shell .auth-box{min-height:100vh}.customer-shell .auth-box{padding-top:28px;padding-bottom:110px}}
 @media(prefers-reduced-motion:reduce){.customer-shell .auth-head,.customer-shell .form-stack{animation:none}}
+
+
+/* Flutter AnimatedPositioned selected-pill parity (280ms) */
+@media(max-width:700px){
+ .customer-shell .customer-bottom-dock::before{content:"";position:absolute;z-index:0;top:10px;left:calc(12.5% - 28px);height:30px;width:56px;background:#ffe9df;border-radius:99px;transition:left 280ms cubic-bezier(.215,.61,.355,1)}
+ .customer-shell .customer-bottom-dock:has(.customer-dock-item:nth-child(2).selected)::before{left:calc(37.5% - 28px)}
+ .customer-shell .customer-bottom-dock:has(.customer-dock-item:nth-child(3).selected)::before{left:calc(62.5% - 28px)}
+ .customer-shell .customer-bottom-dock:has(.customer-dock-item:nth-child(4).selected)::before{left:calc(87.5% - 28px)}
+ .customer-shell .customer-dock-item.selected:before{display:none}
+}
+@media(prefers-reduced-motion:reduce){.customer-shell .customer-bottom-dock::before{transition:none}}
