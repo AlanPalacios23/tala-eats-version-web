@@ -1,0 +1,44 @@
+{
+  "id": "/",
+  "name": "Tala Eats — Versión Web",
+  "short_name": "Tala Eats",
+  "description": "Comida y comercios locales de Tala. Cliente, restaurante y repartidor.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pedir comida",
+      "url": "/clientes"
+    },
+    {
+      "name": "Mis pedidos",
+      "url": "/pedidos"
+    },
+    {
+      "name": "Restaurante",
+      "url": "/restaurante"
+    },
+    {
+      "name": "Repartidor",
+      "url": "/repartidor"
+    }
+  ]
+}

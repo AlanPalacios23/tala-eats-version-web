@@ -1,0 +1,33 @@
+name: Tala Eats PWA CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Tests
+        run: npm test
+      - name: Build PWA
+        run: npm run build
+      - name: Verify static PWA assets
+        run: |
+          test -s dist/index.html
+          test -s dist/sw.js
+          test -s dist/manifest.webmanifest
+          test -s dist/icons/icon-192.png
+          test -s dist/icons/icon-512.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tala-eats-version-web-dist
+          path: dist/
+          retention-days: 7
