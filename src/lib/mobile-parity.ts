@@ -16,7 +16,7 @@ export function amountInCents(amount:unknown):number|null {
   return Number.isSafeInteger(cents)?cents:null;
 }
 export function quoteIsUsable(quote:Quote|null|undefined):quote is Quote {
-  return Boolean(quote && amountInCents(quote.total)!==null && amountInCents(quote.total)!>0 &&
+  return Boolean(quote && amountInCents(quote.total)!==null && (amountInCents(quote.total) ?? 0)>0 &&
     (quote.currency===undefined || quote.currency==='MXN') &&
     (quote.order_type===undefined || quote.order_type==='pickup') &&
     (quote.payment_method===undefined || quote.payment_method==='cash') &&
