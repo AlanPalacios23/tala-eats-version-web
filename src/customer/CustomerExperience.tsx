@@ -62,7 +62,7 @@ function CommercePhoto({shop}:{shop:Restaurant}) {
   </div>;
 }
 
-function CommerceCard({shop,compact=false}:{shop:Restaurant;compact?:boolean}) {
+function CommerceCard({shop,compact=false,index=0}:{shop:Restaurant;compact?:boolean;index?:number}) {
   const rating=numberRating(shop.rating);
   const key='tala-eats-favorite-'+shop.id;
   // Flutter has a favorite control. Web uses per-device local preference only
@@ -78,7 +78,7 @@ function CommerceCard({shop,compact=false}:{shop:Restaurant;compact?:boolean}) {
       else window.localStorage.removeItem(key);
     } catch { /* private mode may disallow browser storage */ }
   };
-  return <article className={'te-customer-store'+(compact?' te-customer-store-compact':'')}>
+  return <article style={{animationDelay:Math.min(index,7)*45+'ms'}} className={'te-customer-store te-motion-reveal'+(compact?' te-customer-store-compact':'')}>
     <Link className="te-customer-store-link" to={'/comercio/'+shop.id}
       aria-label={shop.name+(shop.is_open?', abierto':', cerrado')}>
       <div className="te-customer-media">
@@ -133,7 +133,7 @@ export function CustomerHome() {
  const {user}=useSession();
  const {items,loading,error,refresh}=useCommerceList();
  const name=user?.name?.trim().split(/\s+/)[0]||'';
- return <div className="te-customer te-customer-home">
+ return <div className="te-customer te-customer-home te-motion-page">
   <div className="te-customer-frame">
    <div className="te-customer-top">
     <div className="te-customer-place">
@@ -164,7 +164,7 @@ export function CustomerHome() {
       <CustomerState icon={<Store size={29}/>} title="No pudimos cargar los comercios" description="Revisa tu conexión e inténtalo de nuevo." action={<button onClick={refresh}>Reintentar</button>}/>:
       items.length===0?
        <CustomerState icon={<Store size={29}/>} title="Aún no hay comercios disponibles" description="Cuando haya negocios activos en Tala podrás encontrarlos aquí."/>:
-       <div className="te-customer-store-list">{items.map(shop=><CommerceCard key={shop.id} shop={shop}/>)}</div>}
+       <div className="te-customer-store-list">{items.map((shop,i)=><CommerceCard key={shop.id} shop={shop} index={i}/>)}</div>}
    </section>
   </div>
  </div>;
@@ -178,7 +178,7 @@ export function CustomerSearch() {
   const q=fold(query);
   return q?items.filter(shop=>fold([shop.name,shop.cuisine,shop.description].filter(Boolean).join(' ')).includes(q)):items.filter(shop=>shop.is_open);
  },[items,query]);
- return <div className="te-customer te-customer-search-page">
+ return <div className="te-customer te-customer-search-page te-motion-page">
    <div className="te-customer-frame">
      <header className="te-customer-search-title"><h1>Buscar</h1></header>
      <label className="te-customer-search-field">
@@ -193,7 +193,7 @@ export function CustomerSearch() {
          found.length===0?
            <CustomerState icon={<Search size={30}/>} title={query?'Sin resultados':'Aún no hay comercios para explorar'} description={query?'Prueba con otro restaurante o categoría.':'Cuando haya negocios disponibles en Tala los encontrarás aquí.'}/>:
            <><h2>{query?'Restaurantes':'Comercios disponibles'}</h2>
-             <div className="te-customer-search-list">{found.map(shop=><CommerceCard compact key={shop.id} shop={shop}/>)}</div>
+             <div className="te-customer-search-list">{found.map((shop,i)=><CommerceCard compact key={shop.id} shop={shop} index={i}/>)}</div>
            </>}
      </section>
      <button className="te-customer-back" onClick={()=>navigate('/clientes')}>Volver a Inicio</button>
