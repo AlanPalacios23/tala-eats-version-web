@@ -61,6 +61,49 @@ for(const width of widths){
  await capture('profile','/editar-perfil');
  await context.close();
 }
+// Regression: actual production URLs still mention staging, although the
+// immutable catalog files exist on the LIVE same-origin API proxy. The browser
+// must request ONLY same-origin images, never staging/Cloudflare Access.
+{
+ const STAGE='https://api-stage-talaeats.alan-palacios-dev.com';
+ const PREFIX='/api/v1/uploads/catalog/';
+ const cover='r1-4YiKcP7oVyQdLwDAWJP8y3yiE1O-wA6h.jpg';
+ const menu='r1-p1-fp-ow0ULDj24aM6vkfKWfZAwElFJyXDq.jpg';
+ const version={...merchant,
+  cover_image_url:STAGE+PREFIX+cover,
+  menu_items:[{...merchant.menu_items[0],image_url:STAGE+PREFIX+menu}]};
+ // Tiny PNG fixture (never an external or real account image).
+ const image=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aW0cAAAAASUVORK5CYII=','base64');
+ const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+ let stageRequested=false,liveImageRequests=0;
+ await context.route(STAGE+'/**',async route=>{stageRequested=true;await route.abort();});
+ await context.route('**/api/v1/**',async route=>{
+  const pathname=new URL(route.request().url()).pathname;
+  if(pathname===PREFIX+cover||pathname===PREFIX+menu){
+   liveImageRequests++;
+   await route.fulfill({status:200,contentType:'image/png',body:image});return;
+  }
+  if(pathname==='/api/v1/restaurants'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([version])});return;}
+  if(pathname==='/api/v1/restaurants/11'){await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(version)});return;}
+  await fulfill(route);
+ });
+ const page=await context.newPage();
+ page.on('pageerror',err=>{throw err;});
+ for(const [path,selector] of [
+  ['/clientes','.mobile-merchant-photo img'],
+  ['/comercio/11','.mobile-commerce-hero img'],
+  ['/comercio/11','.mobile-dish-photo img']
+ ]){
+  if(page.url()!==ORIGIN+path)await page.goto(ORIGIN+path,{waitUntil:'networkidle'});
+  const pic=page.locator(selector).first();
+  await pic.waitFor({state:'visible',timeout:12000});
+  const info=await pic.evaluate(img=>({src:img.getAttribute('src'),ok:img.complete&&img.naturalWidth>0}));
+  if(!info.ok||!info.src?.startsWith(PREFIX))throw Error('Original catalog media failed LIVE resolution: '+path+' '+selector+' '+JSON.stringify(info));
+ }
+ if(stageRequested||liveImageRequests<2)throw Error('Unexpected staged image traffic or missing same-origin LIVE image request');
+ await context.close();
+ console.log('Original LIVE catalog media remap: 200 image from same-origin API, staging not requested.');
+}
 // Simulated login -> verified /auth/me -> customer home; no real credentials.
 const authContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
 let authenticated=false;
