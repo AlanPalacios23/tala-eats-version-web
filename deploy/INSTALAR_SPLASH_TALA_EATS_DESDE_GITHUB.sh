@@ -61,12 +61,32 @@ test "$(sha256sum "$BAG" | cut -d' ' -f1)" = "f6e5db7fcf4430961d5b9f2eb55720b307
   echo 'BAG_ORIGINAL_SHA256_MISMATCH'; exit 1;
 }
 echo 'BAG_GITHUB_APPROVED_ORIGINAL=PASS'
+# Verify all three user-approved images EXACTLY, without recompression.
+test -s "public/branding/onboarding-un-antojo-864x1536.jpg" || { echo "FOOD_PHOTO_MISSING_FROM_GITHUB"; exit 1; }
+test "$(sha256sum "public/branding/onboarding-un-antojo-864x1536.jpg" | cut -d' ' -f1)" = "105f48692d4a6f8d7f97539a4cf3a70cd0d1359ea3fd74117ef8bb8a5d6dc467" || {
+  echo "FOOD_PHOTO_SHA256_MISMATCH"; exit 1;
+}
+echo "FOOD_PHOTO_ORIGINAL_GITHUB=PASS"
+test -s "public/branding/auth-continua-correo-864x1536.jpg" || { echo "EMAIL_PHOTO_MISSING_FROM_GITHUB"; exit 1; }
+test "$(sha256sum "public/branding/auth-continua-correo-864x1536.jpg" | cut -d' ' -f1)" = "cda451a040e39149cae1180bba396db08995dce2b8b65879e9d9a97dd8d12c05" || {
+  echo "EMAIL_PHOTO_SHA256_MISMATCH"; exit 1;
+}
+echo "EMAIL_PHOTO_ORIGINAL_GITHUB=PASS"
+test -s "public/branding/auth-contrasena-729x1536.jpg" || { echo "PASSWORD_PHOTO_MISSING_FROM_GITHUB"; exit 1; }
+test "$(sha256sum "public/branding/auth-contrasena-729x1536.jpg" | cut -d' ' -f1)" = "f188855e75afa63973e78317d6198ac14b0e5a310be99e2c242f351d4d2570ed" || {
+  echo "PASSWORD_PHOTO_SHA256_MISMATCH"; exit 1;
+}
+echo "PASSWORD_PHOTO_ORIGINAL_GITHUB=PASS"
 npm install --no-audit --no-fund
 npm run check
 env -u VITE_PREVIEW_READONLY npm run build
 cmp -s "$IMG" "dist/branding/splash-exacto-728x1536.webp"
 cmp -s "$TACOS" "dist/branding/onboarding-comida-tu-ciudad-729x1536.webp"
 cmp -s "$BAG" "dist/branding/onboarding-rapido-seguro-864x1536.jpg"
+cmp -s "public/branding/onboarding-un-antojo-864x1536.jpg" "dist/branding/onboarding-un-antojo-864x1536.jpg" || { echo "FOOD_DIST_MISMATCH"; exit 1; }
+cmp -s "public/branding/auth-continua-correo-864x1536.jpg" "dist/branding/auth-continua-correo-864x1536.jpg" || { echo "EMAIL_DIST_MISMATCH"; exit 1; }
+cmp -s "public/branding/auth-contrasena-729x1536.jpg" "dist/branding/auth-contrasena-729x1536.jpg" || { echo "PASSWORD_DIST_MISMATCH"; exit 1; }
+echo 'SIX_ORIGINAL_ARTWORKS_IN_BUILD=PASS'
 echo 'THREE_ONBOARDING_IMAGES_IN_BUILD=PASS'
 printf '%s\n' "$SHA" > "$HOME/tala-eats-web-releases/.last-splash-ready-sha"
 echo "BUILD_AND_IMAGE=PASS"
@@ -93,6 +113,22 @@ test "$BAG_LIVE_HASH" = "f6e5db7fcf4430961d5b9f2eb55720b307b7fe9a81102c02d01515a
  echo 'BAG_PUBLIC_BYTES_DIFFER'; exit 1;
 }
 echo 'BAG_THIRD_SCREEN_PUBLIC=PASS'
+LIVE_FOOD="$(curl -fsSL --max-time 25 "$DOMAIN/branding/onboarding-un-antojo-864x1536.jpg" | sha256sum | cut -d' ' -f1)"
+test "$LIVE_FOOD" = "105f48692d4a6f8d7f97539a4cf3a70cd0d1359ea3fd74117ef8bb8a5d6dc467" || {
+ echo 'FOOD_PUBLIC_SHA256_MISMATCH'; exit 1;
+}
+echo 'FOOD_PUBLIC_ORIGINAL=PASS'
+LIVE_EMAIL="$(curl -fsSL --max-time 25 "$DOMAIN/branding/auth-continua-correo-864x1536.jpg" | sha256sum | cut -d' ' -f1)"
+test "$LIVE_EMAIL" = "cda451a040e39149cae1180bba396db08995dce2b8b65879e9d9a97dd8d12c05" || {
+ echo 'EMAIL_PUBLIC_SHA256_MISMATCH'; exit 1;
+}
+echo 'EMAIL_PUBLIC_ORIGINAL=PASS'
+LIVE_PASSWORD="$(curl -fsSL --max-time 25 "$DOMAIN/branding/auth-contrasena-729x1536.jpg" | sha256sum | cut -d' ' -f1)"
+test "$LIVE_PASSWORD" = "f188855e75afa63973e78317d6198ac14b0e5a310be99e2c242f351d4d2570ed" || {
+ echo 'PASSWORD_PUBLIC_SHA256_MISMATCH'; exit 1;
+}
+echo 'PASSWORD_PUBLIC_ORIGINAL=PASS'
+echo 'THREE_NEW_PHOTOS_PUBLIC=PASS'
 
 echo "SPLASH_DEPLOY_SHA=$SHA"
 echo "PUBLIC_VERSION_VERIFIED=PASS"
