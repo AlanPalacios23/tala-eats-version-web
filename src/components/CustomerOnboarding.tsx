@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Mail } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -16,17 +16,20 @@ function safeDestination(value:unknown):string{
 export function CustomerEntry(){
  const {user}=useSession(),navigate=useNavigate(),location=useLocation();
  const [stage,setStage]=useState<'splash'|'welcome'|'methods'>('splash');
- const starting=useRef(Date.now());
  const from=safeDestination((location.state as {from?:string}|null)?.from);
  useEffect(()=>{
-  if(user?.role==='customer'){navigate(from,{replace:true});return;}
-  const elapsed=Date.now()-starting.current;
-  const timer=setTimeout(()=>setStage('welcome'),Math.max(0,5000-elapsed));
-  return()=>clearTimeout(timer);
+  if(user?.role==='customer')navigate(from,{replace:true});
  },[user?.role,navigate,from]);
  if(user?.role==='customer')return null;
  return <div className={'customer-entry-screen stage-'+stage} data-mobile-screen={stage} aria-label="Bienvenida a Tala Eats">
-  {stage==='splash'?<div className="customer-onboarding-splash"><img className="customer-brand-script splash" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="340" height="104"/><p>Pide, disfruta y repite.</p></div>:
+  {stage==='splash'?<div className="customer-onboarding-splash customer-splash-exact">
+    <picture className="customer-splash-art" aria-hidden="true">
+      <source srcSet="/branding/splash-exacto-728x1536.webp" type="image/webp"/>
+      <img src="/branding/splash-exacto-728x1536.webp" width="728" height="1536" alt="" draggable={false}/>
+    </picture>
+    <div className="customer-splash-fallback" aria-hidden="true"><img src="/branding/tala-script-gradient.svg" alt="" width="340" height="104"/><span>COMERCIO LOCAL</span><p>Pide, disfruta y repite.</p></div>
+    <button type="button" className="customer-splash-next" onClick={()=>setStage('welcome')} aria-label="Siguiente pantalla" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
+  </div>:
    stage==='welcome'?<div className="customer-onboarding-photo welcome">
      <div className="customer-onboarding-content"><div className="customer-brand-plaque"><img className="customer-brand-script" src="/branding/tala-script-gradient.svg" alt="Tala Eats" width="290" height="88"/></div><h1>Bienvenido<br/>a Tala Eats</h1><p>Tus platillos favoritos,<br/>más cerca de ti.</p></div>
      <button className="customer-onboarding-cta glass" onClick={()=>setStage('methods')}><span className="customer-cta-label">Continuar</span><ArrowRight size={22} aria-hidden="true"/></button>
