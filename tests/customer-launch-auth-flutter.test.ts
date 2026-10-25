@@ -5,6 +5,7 @@ const startup=read('../src/customer/CustomerStartup.tsx');
 const splash=read('../src/customer/customer-startup.css');
 const auth=read('../src/customer/CustomerAuth.tsx');
 const authCss=read('../src/customer/customer-auth.css');
+const brandIcon=read('../public/icons/delivery_dining_rounded.svg');
 const app=read('../src/App.tsx');
 const api=read('../src/lib/api.ts');
 const main=read('../src/main.tsx');
@@ -23,7 +24,11 @@ describe('Flutter Usuarios PWA original startup & auth parity',()=>{
   expect(app).toContain('path="/acceso" element={<CustomerAuth/>}');
  });
  it('splash copies Flutter original texts, white warm backdrop, tile and interval sequencing',()=>{
-  expect(startup).toContain('delivery_dining');
+  expect(startup).toContain('delivery_dining_rounded.svg');
+  expect(auth).toContain('delivery_dining_rounded.svg');
+  expect(brandIcon).toContain('viewBox="0 0 24 24"');
+  expect(brandIcon).toContain('fill="#ffffff"');
+  expect(splash).not.toContain('fonts.googleapis.com/icon?family=Material');
   expect(startup).toContain('Tu comida favorita, más cerca.');
   expect(splash).toContain('width:88px;height:88px');
   expect(splash).toContain('background:linear-gradient(180deg,#fff4ec');
