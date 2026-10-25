@@ -1,51 +1,71 @@
 #!/usr/bin/env bash
-# SAFE PUBLIC PHOTO DIAGNOSTICS: GET only, no DB, Stripe, PM2 or merchant writes.
+# READ-ONLY: compare public catalog photo URLs with the exact allowed stage and
+# LIVE catalog-image endpoints. No secrets, DB writes, downloads or file edits.
 set -euo pipefail
+set +x
 export PATH="/usr/sbin:/sbin:$PATH"
-command -v curl >/dev/null;command -v python3 >/dev/null
-HOST="https://web-talaeats.alan-palacios-dev.com"
-# Uses the LIVE public frontend same-origin API; never reads private media paths.
-export TALA_PHOTO_PUBLIC_HOST="$HOST"
+for cmd in curl python3; do command -v "$cmd" >/dev/null; done
 python3 - <<'PY'
-import json,os,subprocess,sys
-from urllib.parse import urljoin,urlsplit
-host=os.environ["TALA_PHOTO_PUBLIC_HOST"]
-def getjson(url):
- result=subprocess.run(["curl","-fsS","--max-time","12",url],capture_output=True,text=True,timeout=16)
- if result.returncode:raise RuntimeError("Catalog API read failed (no writes)")
- return json.loads(result.stdout)
-def status(url):
- cmd=["curl","-sS","-L","--max-time","10","--max-filesize","10485760","--range","0-0","-o","/dev/null","-w","%{http_code} %{content_type}",url]
- try:
-  res=subprocess.run(cmd,capture_output=True,text=True,timeout=14)
-  return (res.stdout.strip() if res.returncode==0 else "GET_FAILED")
- except subprocess.TimeoutExpired:return "TIMEOUT"
+import json,re,subprocess,sys
+from urllib.parse import urlsplit,urlunsplit,quote
+LIVE="https://web-talaeats.alan-palacios-dev.com"
+STAGE="https://api-stage-talaeats.alan-palacios-dev.com"
+PREFIX="/api/v1/uploads/catalog/"
+# Catalog image filenames are not secret and are restricted to common image
+# extensions. Reject URL query strings/fragments to avoid leaking signed URLs.
+NAME=re.compile(r"^[A-Za-z0-9_-]{3,110}\.(?:jpg|jpeg|png|webp)$",re.I)
+def curl(*args,timeout=16):
+ return subprocess.run(["curl","--silent","--show-error","--max-time","12","--max-redirs","0",*args],capture_output=True,text=True,timeout=timeout)
+def get_json(path):
+ v=curl("--fail",LIVE+path)
+ if v.returncode:raise RuntimeError("PUBLIC_CATALOG_UNAVAILABLE: "+str(v.returncode))
+ return json.loads(v.stdout)
+def identify(original):
+ if not isinstance(original,str) or not original.strip():return "NONE",None
+ uri=urlsplit(original.strip())
+ if uri.query or uri.fragment or uri.username or uri.password:return "UNSAFE_OR_SIGNED_URL",None
+ if original.startswith("/"):
+  uri=urlsplit(LIVE+original)
+ if uri.scheme!="https" or uri.netloc not in {urlsplit(LIVE).netloc,urlsplit(STAGE).netloc}:
+  return "UNKNOWN_ORIGIN",None
+ if not uri.path.startswith(PREFIX) or not NAME.fullmatch(uri.path[len(PREFIX):]):
+  return "NOT_A_PUBLIC_CATALOG_IMAGE",None
+ return ("STAGE" if uri.netloc==urlsplit(STAGE).netloc else "LIVE"),uri.path
+def head(url):
+ # HEAD only: no photo bytes or local temp files. Some servers return 405;
+ # the real on-disk presence is still unknown when this happens.
+ v=curl("--head","--output","/dev/null","--write-out","%{http_code}|%{content_type}|%{redirect_url}",url)
+ if v.returncode:return "CURL_ERROR_"+str(v.returncode)
+ h=(v.stdout or "").strip().split("|",2)
+ if len(h)<3:return "UNREADABLE_RESPONSE"
+ code,mime,redir=h
+ if redir:return code+"_REDIRECT_NOT_FOLLOWED"
+ if code=="200":
+  return "HTTP_200_"+("IMAGE_OK" if mime.lower().split(";")[0] in {"image/jpeg","image/png","image/webp"} else "NOT_IMAGE_"+mime[:48])
+ return "HTTP_"+code
 try:
- entries=getjson(host+"/api/v1/restaurants?market_code=TALA-JAL&limit=20&offset=0")
- if not isinstance(entries,list):raise RuntimeError("The server did not return a public catalog list")
- print("PUBLIC_IMAGE_DIAGNOSTIC=READ_ONLY")
- print("RESTAURANTS_FOUND=",len(entries))
- for r in entries[:5]:
-  if not isinstance(r,dict) or not isinstance(r.get("id"),int):continue
-  detail=getjson(host+"/api/v1/restaurants/"+str(r["id"]))
+ records=get_json("/api/v1/restaurants?market_code=TALA-JAL&limit=20&offset=0")
+ if not isinstance(records,list):raise RuntimeError("PUBLIC_CATALOG_NOT_LIST")
+ print("MEDIA_DIAGNOSTIC=READ_ONLY_HEAD_ONLY")
+ print("PUBLIC_RESTAURANTS="+str(len(records)))
+ for record in records[:5]:
+  ident=record.get("id") if isinstance(record,dict) else None
+  if not isinstance(ident,int) or ident<1:continue
+  detail=get_json("/api/v1/restaurants/"+str(ident))
   if not isinstance(detail,dict):continue
-  photos=[("COMMERCE_COVER",detail.get("cover_image_url"))]
-  for dish in (detail.get("menu_items") or [])[:4]:
-   if isinstance(dish,dict):photos.append(("PRODUCT_"+str(dish.get("id")),dish.get("image_url")))
-  print("COMMERCE_ID=",r["id"])
-  for label,uri in photos:
-   if not uri or not isinstance(uri,str):
-    print(" ",label,"NO_IMAGE_UPLOADED");continue
-   target=urljoin(host+"/",uri)
-   parts=urlsplit(target)
-   if parts.scheme!="https" or parts.netloc!="web-talaeats.alan-palacios-dev.com":
-    # No outbound requests to attacker-supplied addresses.
-    print(" ",label,"CROSS_ORIGIN_OR_UNSAFE_URL",parts.scheme+"://"+parts.netloc);continue
-   if not parts.path.startswith("/api/v1/uploads/catalog/"):
-    print(" ",label,"UNEXPECTED_PUBLIC_MEDIA_PATH",parts.path[:100]);continue
-   print(" ",label,"HTTP",status(target),"PATH",parts.path[:100])
- print("DIAGNOSTIC_DONE=PASS_NO_WRITES")
+  photos=[("COVER",detail.get("cover_image_url"))]
+  for n,item in enumerate((detail.get("menu_items") or [])[:6]):
+   if isinstance(item,dict):photos.append(("MENU_"+str(item.get("id",n)),item.get("image_url")))
+  print("RESTAURANT_ID="+str(ident))
+  for name,raw in photos:
+   origin,path=identify(raw)
+   print(" "+name+" SOURCE="+origin)
+   if path is None:continue
+   print(" "+name+" PATH="+path)
+   print(" "+name+" LIVE_MEDIA="+head(LIVE+path))
+   if origin=="STAGE":print(" "+name+" STAGE_MEDIA="+head(STAGE+path))
+ print("MEDIA_DIAGNOSTIC_COMPLETE=PASS_NO_WRITES")
 except Exception as e:
- print("DIAGNOSTIC_ABORT="+str(e),file=sys.stderr)
+ print("MEDIA_DIAGNOSTIC_ABORT="+str(e),file=sys.stderr)
  sys.exit(1)
 PY
