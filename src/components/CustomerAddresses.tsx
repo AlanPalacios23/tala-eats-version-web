@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { ArrowLeft, CheckCircle2, ChevronRight, MapPin, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
-import { validAddress } from '../lib/customer-checkout';
+import { parseCoordinate, validAddress } from '../lib/customer-checkout';
 import type { CustomerAddress } from '../lib/customer-checkout';
 
 function AddAddressSheet({onClose,onSaved,makeDefault}:{onClose:()=>void;onSaved:()=>void;makeDefault:boolean}){
@@ -16,9 +16,9 @@ function AddAddressSheet({onClose,onSaved,makeDefault}:{onClose:()=>void;onSaved
    if(!label.trim()||address.trim().length<5)throw new Error('Indica una etiqueta y una dirección completa.');
    const geo=await api.geocode(address.trim());
    const first=geo.results?.[0];
-   if(!first||!Number.isFinite(first.lat)||!Number.isFinite(first.lng)||first.lat< -90||first.lat>90||first.lng< -180||first.lng>180)
-    throw new Error('El servidor no pudo validar las coordenadas. Revisa tu dirección.');
-   const saved=await api.addCustomerAddress({label:label.trim(),address:address.trim(),lat:first.lat,lng:first.lng,is_default:makeDefault});
+   const lat=parseCoordinate(first?.lat,'lat'),lng=parseCoordinate(first?.lng,'lng');
+   if(lat===null||lng===null)throw new Error('El servidor no pudo validar las coordenadas. Revisa tu dirección.');
+   const saved=await api.addCustomerAddress({label:label.trim(),address:address.trim(),lat,lng,is_default:makeDefault});
    if(!validAddress(saved))throw new Error('La dirección se registró, pero el servidor no confirmó sus coordenadas. Actualiza tu lista.');
    onSaved();
   }catch(err){setError(err instanceof Error?err.message:'No logramos guardar la dirección.');}finally{setBusy(false);}
