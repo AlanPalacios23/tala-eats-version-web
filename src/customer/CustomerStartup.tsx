@@ -42,7 +42,7 @@ export function CustomerStartup() {
  </div>;
  const isPublic=['/acceso','/restablecer','/terminos','/privacidad'].includes(location.pathname);
  if(!user&&!isPublic)return <Navigate to="/acceso" replace state={{from:location.pathname}}/>;
- if(user&&location.pathname==='/acceso')return <Navigate to="/clientes" replace/>;
+ if(user&&location.pathname==='/acceso')return <Navigate to={user.role==='driver'?'/repartidor':(user.role==='restaurant'||user.role==='admin')?'/restaurante':'/clientes'} replace/>;
  return <Outlet/>;
 }
 
