@@ -86,7 +86,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  const displayed=quote?.fingerprint===key?quote.value:null;
  const ready=Boolean(user?.role==='customer'&&restaurant?.is_open&&
   (mode==='delivery'||restaurant?.pickup_enabled)&&selectedRequest&&displayed&&!loading&&!submitting&&!pending);
- const choose=(next:FulfillmentMode)=>{setMode(next);setError('');};
+ const choose=(next:FulfillmentMode)=>{if(submitting||pending)return;setMode(next);setError('');};
  const reload=()=>{setQuote(null);setError('');setRefresh(v=>v+1);setQuoteEpoch(v=>v+1);};
  const recover=async()=>{
   if(!userId||!pending||rechecking)return;
@@ -131,8 +131,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <div className="mobile-detail-header"><Link to="/carrito" aria-label="Volver a carrito"><ArrowLeft size={22}/></Link><h1>Finalizar pedido</h1><button onClick={reload} disabled={loading||submitting} aria-label="Actualizar cotización"><RefreshCw size={19}/></button></div>
   {serverError&&<div className="mobile-address-error" role="alert">No logramos verificar tu pedido: {serverError}<button onClick={reload}>Reintentar</button></div>}
   <section className="mobile-checkout-card"><h2>Entrega</h2><div className="mobile-checkout-modes">
-   <button className={mode==='delivery'?'selected':''} aria-pressed={mode==='delivery'} onClick={()=>choose('delivery')}><Truck size={24}/><span>A domicilio<small>{options?.delivery_checkout_supported===true?'Según disponibilidad':'Sujeto a activación'}</small></span></button>
-   <button className={mode==='pickup'?'selected':''} aria-pressed={mode==='pickup'} onClick={()=>choose('pickup')}><Store size={24}/><span>Recoger<small>Sin costo de envío</small></span></button>
+   <button className={mode==='delivery'?'selected':''} aria-pressed={mode==='delivery'} disabled={submitting||Boolean(pending)} onClick={()=>choose('delivery')}><Truck size={24}/><span>A domicilio<small>{options?.delivery_checkout_supported===true?'Según disponibilidad':'Sujeto a activación'}</small></span></button>
+   <button className={mode==='pickup'?'selected':''} aria-pressed={mode==='pickup'} disabled={submitting||Boolean(pending)} onClick={()=>choose('pickup')}><Store size={24}/><span>Recoger<small>Sin costo de envío</small></span></button>
   </div>
   {mode==='delivery'?<div className="mobile-checkout-address">
    <h3>Dirección de entrega</h3>{validAddress(address)?<p><MapPin size={18}/>{address.label}: {address.address}</p>:<p>No hay una dirección con coordenadas verificadas.</p>}
@@ -140,7 +140,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    {!checkoutAllowed(options,'delivery','cash')&&<div className="mobile-checkout-note">La entrega a domicilio todavía no está autorizada para este método por el backend. No se podrá confirmar un pedido.</div>}
   </div>:<p className="mobile-checkout-note"><Store size={17}/> Recoge tu pedido en el establecimiento.</p>}
   </section>
-  {mode==='delivery'&&<section className="mobile-checkout-card"><h2>Propina para repartidor</h2><div className="mobile-tip-options">{['0','10','20','30'].map(value=><button key={value} className={tip===value?'selected':''} onClick={()=>{setTip(value);setError('');}}>{value==='0'?'Sin propina':pesos(value)}</button>)}</div><p className="mobile-checkout-disclosure">La propina se transfiere sin comisión de la plataforma.</p></section>}
+  {mode==='delivery'&&<section className="mobile-checkout-card"><h2>Propina para repartidor</h2><div className="mobile-tip-options">{['0','10','20','30'].map(value=><button key={value} className={tip===value?'selected':''} disabled={submitting||Boolean(pending)} onClick={()=>{setTip(value);setError('');}}>{value==='0'?'Sin propina':pesos(value)}</button>)}</div><p className="mobile-checkout-disclosure">La propina se transfiere sin comisión de la plataforma.</p></section>}
   <section className="mobile-checkout-card"><h2>Pago</h2>
    <button className={'mobile-payment-method'+(canUse?' selected':'')} disabled={!canUse||loading||submitting} aria-pressed={canUse}>
     <Wallet size={22}/><span><strong>Efectivo</strong><small>{canUse?(mode==='delivery'?'Paga al recibir tu pedido':'Paga al recoger tu pedido'):'Pendiente de activación del servidor'}</small></span><CheckCircle2 size={20}/>
@@ -148,8 +148,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    <button className="mobile-payment-method" disabled aria-disabled="true"><CreditCard size={22}/><span><strong>Tarjeta con Stripe</strong><small>Integración Stripe Web pendiente; no se aceptan cobros desde esta pantalla.</small></span></button>
    <p className="mobile-checkout-disclosure">Los métodos disponibles y el cobro los confirma el servidor.</p>
   </section>
-  <section className="mobile-checkout-card"><h2>Cupón</h2><input className="mobile-checkout-input" maxLength={50} value={coupon} onChange={e=>{setCoupon(e.target.value);setError('');}} placeholder="Código de descuento (opcional)" aria-label="Código de descuento"/></section>
-  <section className="mobile-checkout-card"><h2>Notas para restaurante</h2><textarea className="mobile-checkout-input" maxLength={1000} rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales (opcional)"/></section>
+  <section className="mobile-checkout-card"><h2>Cupón</h2><input className="mobile-checkout-input" maxLength={50} value={coupon} disabled={submitting||Boolean(pending)} onChange={e=>{setCoupon(e.target.value);setError('');}} placeholder="Código de descuento (opcional)" aria-label="Código de descuento"/></section>
+  <section className="mobile-checkout-card"><h2>Notas para restaurante</h2><textarea className="mobile-checkout-input" maxLength={1000} rows={2} value={notes} disabled={submitting||Boolean(pending)} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales (opcional)"/></section>
   {quoteBusy?<p className="mobile-loading-order"><RefreshCw size={18} className="spin"/> Solicitando importe al servidor…</p>:null}
   <OrderSummary quote={displayed} delivery={mode==='delivery'} preview={basketTotal(cart)}/>
   {error&&<div className="mobile-address-error" role="alert"><Info size={16}/>{error}</div>}
