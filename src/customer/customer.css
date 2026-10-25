@@ -112,3 +112,11 @@
 @media(prefers-reduced-motion:reduce) {
  .te-customer-skeleton-cover,.te-customer-skeleton-line { animation:none; }
 }
+
+/* Existing order/account pages keep their real API behaviors as we port visual UI. */
+.app.is-customer main { background:#fafaf9; }
+.app.is-customer .container.page { max-width:600px;padding:28px 20px 146px; }
+.app.is-customer .mobile-cart-bar {
+  bottom:96px;left:50%;right:auto;transform:translateX(-50%);
+  width:min(460px,calc(100vw - 32px));z-index:64;border-radius:17px;
+}
