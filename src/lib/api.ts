@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import { PREVIEW_READONLY, previewRequestAllowed } from './preview';
 import type { StripeTestConfig, StripeIntentReply } from './stripe-test';
 import { normalizeCustomerAddress } from './customer-checkout';
 import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
@@ -11,6 +12,7 @@ export class ApiError extends Error {
 const BASE = '/api/v1';
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Ruta API inválida');
+  if(!previewRequestAllowed(path,init.method??'GET',PREVIEW_READONLY))throw new ApiError(403,'Vista previa: las operaciones de escritura están bloqueadas.');
   const response = await fetch(BASE + path, {
     ...init,
     credentials: 'include',
