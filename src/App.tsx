@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, MapPin, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
 import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch, CustomerDock } from './customer/CustomerExperience';
+import { CustomerOrders, CustomerAccount } from './customer/CustomerPanels';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -162,8 +163,6 @@ function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  </aside></div>}
  </div>;
 }
-function Orders(){const {value,loading,error,refresh}=useLoad(()=>api.myOrders(),[]);return <div className="container page"><div className="section-title-row"><SectionTitle eyebrow="TU HISTORIAL" title="Mis pedidos" description="Consulta el estado real de tus compras."/><button className="btn outline small" onClick={refresh}><RefreshCw size={17}/> Actualizar</button></div>{loading?<Spinner/>:error?<Alert>{error}</Alert>:!value?.length?<EmptyState icon={<Package size={32}/>} title="Sin pedidos todavía" description="Cuando hagas tu primer pedido, aparecerá aquí." action={<Link to="/clientes" className="btn primary">Explorar</Link>}/>:<div className="order-list">{value.map(o=><article className="order-card" key={o.id}><div className="order-top"><div><span className="eyebrow">PEDIDO #{o.id}</span><h3>{pesos(o.total)}</h3><small>{new Date(o.created_at).toLocaleString('es-MX')}</small></div><StateTag state={o.status}/></div><p>{o.items?.map(i=>i.quantity+' × '+i.name_snapshot).join(', ')||'Productos del pedido'}</p><div className="order-bottom"><span><ShoppingBag size={16}/> {o.order_type==='pickup'?'Recoger en tienda':'Entrega'}</span><span>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status}</span></div>{o.delivery_pin&&<p className="pin-hint">PIN de confirmación: <strong>{o.delivery_pin}</strong>. Compártelo solo al recibir tu pedido.</p>}</article>)}</div>}</div>;}
-function Account(){const s=useSession(),nav=useNavigate();return <div className="container page narrow"><SectionTitle eyebrow="MI CUENTA" title="Tu perfil"/><div className="card padded"><div className="profile-row"><span className="profile-avatar"><UserRound size={27}/></span><div><h3>{s.user?.name}</h3><p>{s.user?.email}</p><small>Rol: {s.user?.role}</small></div></div><div className="account-links"><Link to="/pedidos"><Package size={20}/> Mis pedidos <ArrowRight size={17}/></Link>{isMerchantRole(s.user?.role)&&<Link to="/restaurante"><Store size={20}/> Panel restaurante <ArrowRight size={17}/></Link>}{isDriverRole(s.user?.role)&&<Link to="/repartidor"><Bike size={20}/> Panel repartidor <ArrowRight size={17}/></Link>}</div><button className="btn outline full" onClick={()=>void s.logout().then(()=>nav('/'))}><LogOut size={18}/> Cerrar sesión</button></div></div>;}
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
@@ -212,9 +211,9 @@ export default function App(){
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
-   <Route path="/pedidos" element={<Protected role="customer"><Orders/></Protected>}/>
+   <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
-   <Route path="/cuenta" element={<Protected role="any"><Account/></Protected>}/>
+   <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
