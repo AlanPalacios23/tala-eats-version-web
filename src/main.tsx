@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import { SessionProvider } from './lib/session';
+import { PREVIEW_READONLY } from './lib/preview';
 import App from './App';
 import './styles/main.css';
 
@@ -33,7 +34,7 @@ function PortalInstallIdentity() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
  <React.StrictMode><BrowserRouter><PortalInstallIdentity/><SessionProvider><App/></SessionProvider></BrowserRouter></React.StrictMode>
 );
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && !PREVIEW_READONLY) {
  window.addEventListener('load', () => {
    navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(() => {});
  });
