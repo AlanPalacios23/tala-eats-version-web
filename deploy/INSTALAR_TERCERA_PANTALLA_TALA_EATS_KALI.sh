@@ -42,7 +42,7 @@ trap 'rm -rf -- "$TEMP"' EXIT
 git clone --depth 1 --branch "$BRANCH" "$REPO" "$TEMP"
 SHA="$(git -C "$TEMP" rev-parse HEAD)"
 if [[ -n "$EXPECTED_HEAD" && "$SHA" != "$EXPECTED_HEAD" ]];then
- echo "BAG_ABORT=BRANCH_CHANGED_EXPECTED:$EXPECTED_HEAD_ACTUAL:$SHA"
+ echo "BAG_ABORT=BRANCH_CHANGED_EXPECTED:${EXPECTED_HEAD}_ACTUAL:${SHA}"
  exit 1
 fi
 TARGET="$BASE/$SHA"
