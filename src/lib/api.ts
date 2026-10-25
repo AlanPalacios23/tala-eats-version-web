@@ -38,10 +38,10 @@ export const api = {
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
-  quote: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:''}[]) => request<Quote>('/orders/quote',json('POST', {
+  quote: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:string}[]) => request<Quote>('/orders/quote',json('POST', {
     restaurant_id:restaurantId,order_type:'pickup',payment_method:'cash',items,tip:'0',coupon_code:'',delivery_lat:null,delivery_lng:null
   })),
-  placeCashPickup: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:''}[],reference:string,notes:string) => request<Order>('/orders',json('POST',{
+  placeCashPickup: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:string}[],reference:string,notes:string) => request<Order>('/orders',json('POST',{
     restaurant_id:restaurantId,address:'Recoger en el establecimiento',notes,order_type:'pickup',payment_method:'cash',client_reference:reference,items,tip:'0',coupon_code:'',delivery_lat:null,delivery_lng:null,
   })),
   byReference: (ref: string) => request<Order>(`/orders/by-reference/${encodeURIComponent(ref)}`),
