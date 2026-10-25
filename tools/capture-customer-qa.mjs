@@ -164,7 +164,7 @@ await authPage.getByText('Foto guardada en este dispositivo.').waitFor({state:'v
 await authPage.goto(ORIGIN+'/cuenta',{waitUntil:'networkidle'});
 await authPage.locator('.mobile-account-avatar img').waitFor({state:'visible',timeout:12000});
 for(const [label,url] of [
- ['Términos y condiciones','https://talaeats.alan-palacios-dev.com/terminos'],
+ ['Términos y condiciones','https://web-talaeats.alan-palacios-dev.com/legal/terminos.html'],
  ['Aviso de privacidad','https://talaeats.alan-palacios-dev.com/privacidad'],
  ['Eliminar mi cuenta','https://talaeats.alan-palacios-dev.com/eliminar-cuenta']
 ]){
