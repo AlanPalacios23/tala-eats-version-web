@@ -5,7 +5,7 @@ set -Eeuo pipefail
 set +x
 umask 022
 export PATH="/usr/sbin:/sbin:$PATH"
-MODE="\${1:-}"; SHA="\${2:-}"; APPROVAL="\${3:-}"
+MODE="${1:-}"; SHA="${2:-}"; APPROVAL="${3:-}"
 if [[ ! "$MODE" =~ ^--(plan|apply)$ || ! "$SHA" =~ ^[a-f0-9]{40}$ ||
     ( "$MODE" == --plan && "$#" != 2 ) ||
     ( "$MODE" == --apply && "$#" != 3 ) ]];then
