@@ -769,3 +769,40 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
  .customer-brand-plaque .customer-brand-script{width:min(60vw,200px)}
 }
 @media(prefers-reduced-motion:reduce){.customer-onboarding-cta:active{transform:none}}
+
+
+/* Reference-locked first-run splash — user-supplied 728×1536 vertical artwork.
+   The bundled WebP source omits the simulated Android status bar.
+   All lettering/pagination/food photography are baked in for exact fidelity.
+   The orange next button is a REAL control placed at bottom-right. */
+.customer-entry-screen.stage-splash{background:#110903}
+.customer-splash-exact{
+ position:absolute;inset:0;isolation:isolate;overflow:hidden;background:#120901;
+ display:block;padding:0;color:#fff;overscroll-behavior:none;
+}
+.customer-splash-exact::before{content:none!important;display:none!important}
+.customer-splash-art{position:absolute;inset:0;z-index:1;display:block;overflow:hidden;background:#110904}
+.customer-splash-art>img{width:100%;height:100%;display:block;object-fit:cover;object-position:50% 50%;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.customer-splash-fallback{position:absolute;inset:0;z-index:0;display:flex;align-items:center;flex-direction:column;justify-content:center;gap:14px;padding:20px;background:radial-gradient(circle at 70% 67%,#67310a,#150700 70%)}
+.customer-splash-fallback img{width:min(78%,350px);max-height:130px;object-fit:contain}
+.customer-splash-fallback>span{font-size:10px;letter-spacing:5px;font-weight:800;color:#fa752f}
+.customer-splash-fallback>p{font-size:clamp(16px,4.2vw,22px);text-align:center;margin:6px 0}
+.customer-splash-next{
+ position:absolute;z-index:3;right:clamp(16px,4vw,36px);
+ bottom:max(38px,calc(env(safe-area-inset-bottom) + 28px));
+ display:grid;place-items:center;width:clamp(56px,14vw,70px);
+ height:clamp(56px,14vw,70px);border-radius:50%;border:1px solid #ff945a;
+ background:linear-gradient(150deg,#ff710d,#f84b03);color:white;
+ box-shadow:0 8px 32px #120200b0,0 2px 4px #1e070089;cursor:pointer;
+ -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+ transition:filter .18s ease,transform .18s ease;
+}
+.customer-splash-next:active{transform:scale(.96);filter:brightness(1.07)}
+.customer-splash-next:focus-visible{outline:3px solid #fff;outline-offset:4px}
+@media(min-width:650px){
+ .customer-entry-screen.stage-splash{max-width:550px;margin:0 auto;box-shadow:0 10px 42px #08040038}
+}
+@media(max-height:560px){
+ .customer-splash-next{right:16px;bottom:max(16px,env(safe-area-inset-bottom));width:50px;height:50px}
+}
+@media(prefers-reduced-motion:reduce){.customer-splash-next{transition:none}}
