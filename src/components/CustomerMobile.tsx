@@ -4,6 +4,8 @@ import { Bell, Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } fro
 import { api, safeImage } from '../lib/api';
 import { useSession } from '../lib/session';
 import { foldSearch } from '../lib/mobile-parity';
+import { matchCustomerDishes, matchCustomerRestaurants } from '../lib/customer-search';
+import { pesos } from '../lib/api';
 import { MARKETS, marketLabel } from '../lib/markets';
 import type { MarketCode } from '../lib/markets';
 import type { Restaurant } from '../lib/types';
@@ -111,14 +113,50 @@ export function CustomerHome({market,onSelectMarket}:{market:MarketCode;onSelect
 }
 export function CustomerSearch({market}:{market:MarketCode}){
  const {restaurants,loading,error,refresh}=useRestaurants(market);const [query,setQuery]=useState('');
+ const [details,setDetails]=useState<Restaurant[]>([]),[menuLoading,setMenuLoading]=useState(false),[menuError,setMenuError]=useState('');
  const normalized=foldSearch(query);
- const items=useMemo(()=>normalized?(restaurants??[]).filter(r=>foldSearch([r.name,r.cuisine??'',r.description??''].join(' ')).includes(normalized)):(restaurants??[]).filter(r=>r.is_open),[restaurants,normalized]);
+ const directory=useMemo(()=>matchCustomerRestaurants(restaurants??[],query),[restaurants,query]);
+ const dishes=useMemo(()=>matchCustomerDishes(details,query),[details,query]);
+ useEffect(()=>{
+  let active=true;setDetails([]);setMenuError('');setMenuLoading(false);
+  if(!normalized||!restaurants?.length)return ()=>{active=false;};
+  if(restaurants.length>100){setMenuError('La búsqueda de platillos requiere un índice completo del servidor para esta cantidad de comercios.');return ()=>{active=false;};}
+  const check=async()=>{
+   setMenuLoading(true);
+   const collected:Restaurant[]=[];
+   const failed:string[]=[];
+   // Concurrency bound: never blast one request per merchant all at once.
+   for(let i=0;i<restaurants.length;i+=5){
+    const group=restaurants.slice(i,i+5);
+    const results=await Promise.allSettled(group.map(r=>r.menu_items?Promise.resolve(r):api.restaurant(r.id)));
+    if(!active)return;
+    results.forEach((result,j)=>{
+     if(result.status==='rejected'){failed.push(group[j].name);return;}
+     if(result.value.market_code?.trim().toUpperCase()!==market){failed.push(group[j].name);return;}
+     collected.push(result.value);
+    });
+   }
+   if(active){setDetails(collected);setMenuError(failed.length?'No se pudieron consultar todos los menús; los resultados de platillos pueden estar incompletos.':'');setMenuLoading(false);}
+  };
+  void check();
+  return ()=>{active=false;};
+ },[normalized?market:'',restaurants,Boolean(normalized)]);
  return <div className="mobile-customer-page mobile-search-page" data-mobile-screen="search">
   <h1>Buscar</h1><p className="mobile-search-locality">Comprar en {marketLabel(market)}</p>
   <label className="mobile-search-input"><Search size={22}/><input aria-label="Buscar restaurante, comercio o platillo" type="search" placeholder="Restaurante, comercio o platillo…" value={query} onChange={event=>setQuery(event.target.value)}/>{query&&<button aria-label="Borrar búsqueda" type="button" onClick={()=>setQuery('')}><X size={19}/></button>}</label>
   <section className="mobile-search-results" key={normalized?'results':'idle'}>
-   <h2>{normalized?'Resultados':'Comercios disponibles'}</h2>
-   <MerchantList items={items} loading={loading} error={error} refresh={refresh} searching={!!normalized}/>
+   {!normalized?<><h2>Comercios disponibles</h2><MerchantList items={directory} loading={loading} error={error} refresh={refresh}/></>:
+    <>
+     {loading?<div className="mobile-loading-order">Cargando comercios…</div>:error?<div role="alert" className="mobile-address-error">{error}<button onClick={refresh}>Reintentar</button></div>:null}
+     {directory.length>0&&<><h2>Restaurantes</h2><MerchantList items={directory} loading={false} error="" refresh={refresh} searching/></>}
+     <h2>Platillos</h2>
+     {menuLoading&&<p className="mobile-loading-order">Buscando platillos en menús reales…</p>}
+     {menuError&&<div role="status" className="mobile-address-error">{menuError}</div>}
+     {dishes.length>0?<div className="mobile-dish-search-results">{dishes.map(hit=><Link key={hit.restaurant.id+'-'+hit.item.id} to={'/comercio/'+hit.restaurant.id+'?platillo='+hit.item.id} className="mobile-dish-search-tile">
+       <div><strong>{hit.item.name}</strong><span>{hit.restaurant.name} · {hit.item.category||'Comida local'}</span><b>{pesos(hit.item.price)}</b></div>
+       {safeImage(hit.item.image_url)?<img src={safeImage(hit.item.image_url)!} alt={hit.item.name} loading="lazy"/>:<div className="mobile-dish-search-fallback" aria-hidden="true">🍽️</div>}
+      </Link>)}</div>:!menuLoading&&!directory.length&&!error&&!menuError?<div className="mobile-status"><Search size={30}/><h3>Sin resultados</h3><p>No encontramos “{query.trim()}”. Prueba con otro nombre, comida o categoría.</p></div>:null}
+    </>}
   </section>
  </div>;
 }
