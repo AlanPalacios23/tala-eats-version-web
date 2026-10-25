@@ -20,6 +20,12 @@ describe('User-supplied precise 728x1536 first splash',()=>{
   expect(source).not.toContain('starting.current');
   expect(source).not.toContain('setTimeout(()=>setStage(\'welcome\')');
  });
+ it('uses the SAME source in the transient loading screen and interactive splash',()=>{
+  const boot=readFileSync(new URL('../src/components/CustomerLaunch.tsx',import.meta.url),'utf8');
+  expect(boot).toContain('/branding/splash-exacto-728x1536.webp');
+  expect(boot).not.toContain('/branding/tala-script-gradient.svg');
+  expect(css).toContain('.customer-launch-exact-art');
+ });
  it('never draws fake mobile status bars and respects phone viewport constraints',()=>{
   expect(css).toContain('object-fit:cover');
   expect(css).toContain('env(safe-area-inset-bottom)');
