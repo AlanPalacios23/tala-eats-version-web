@@ -73,6 +73,10 @@ await authContext.route('**/api/v1/**',async route=>{
   authenticated=true;loginPostCount++;
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({user,access_token:'synthetic_not_a_real_token'})});return;
  }
+ if(name==='/api/v1/auth/logout'&&req.method()==='POST'){
+  authenticated=false;
+  await route.fulfill({status:204,body:''});return;
+ }
  if(name==='/api/v1/auth/me'){
   if(authenticated){meAfterLogin++;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(user)});}
   else await route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({detail:'Sin sesión de QA'})});
@@ -96,6 +100,12 @@ await authPage.getByRole('button',{name:/Entrar a Tala Eats/}).click();
 await authPage.waitForURL(ORIGIN+'/clientes',{timeout:12000});
 await authPage.getByText('Hola, Cliente',{exact:false}).first().waitFor({state:'visible',timeout:10000});
 if(loginPostCount!==1||meAfterLogin<1)throw new Error('Login did not verify server session after authentication');
+// Flutter sign-out must exit the authenticated shell and show login.
+await authPage.goto(ORIGIN+'/cuenta',{waitUntil:'networkidle'});
+authPage.on('dialog',dialog=>dialog.accept());
+await authPage.getByRole('button',{name:'Cerrar sesión'}).click();
+await authPage.waitForURL(ORIGIN+'/acceso',{timeout:12000});
+await authPage.getByRole('button',{name:/Entrar a Tala Eats/}).waitFor({state:'visible',timeout:10000});
 await authContext.close();
 await browser.close();
 console.log('QA screenshots:',widths.join(', '),'px; real screen after splash + simulated auth and 404 image recovery PASS. No production writes.');
