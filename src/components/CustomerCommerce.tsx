@@ -5,6 +5,7 @@ import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Restaurant } from '../lib/types';
 import { basketTotal } from '../lib/cart';
 import type { Cart } from '../lib/cart';
+import type { MarketCode } from '../lib/markets';
 
 const CHOICES=['Sin cambios','Sin cebolla','Extra salsa','Bien cocido'] as const;
 function ProductPhoto({url,label}:{url?:string|null;label:string}){
@@ -39,15 +40,15 @@ function ProductSheet({item,merchant,onClose,onAdd}:{item:MenuItem;merchant:Rest
   </section>
  </div>;
 }
-export function CustomerCommerce({cart,onAdd}:{cart:Cart;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean}){
+export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean;market:MarketCode}){
  const {id}=useParams(),restaurantId=Number(id);
  const [merchant,setMerchant]=useState<Restaurant|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [retry,setRetry]=useState(0),[category,setCategory]=useState('Todos'),[selected,setSelected]=useState<MenuItem|null>(null);
- useEffect(()=>{let active=true;setLoading(true);setError('');
+ useEffect(()=>{let active=true;setLoading(true);setError('');setMerchant(null);
   if(!Number.isSafeInteger(restaurantId)||restaurantId<=0){setError('Comercio no válido');setLoading(false);return;}
-  api.restaurant(restaurantId).then(value=>{if(active)setMerchant(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos cargar el menú');}).finally(()=>{if(active)setLoading(false);});
+  api.restaurant(restaurantId).then(value=>{if(value.market_code?.trim().toUpperCase()!==market)throw new Error('Este comercio no pertenece a la localidad seleccionada o el servidor no confirma su zona.');if(active)setMerchant(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos cargar el menú');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
- },[restaurantId,retry]);
+ },[restaurantId,retry,market]);
  const cats=useMemo(()=>['Todos',...new Set((merchant?.menu_items||[]).map(item=>item.category||'General'))],[merchant]);
  const dishes=(merchant?.menu_items||[]).filter(item=>category==='Todos'||(item.category||'General')===category);
  const canOrder=Boolean(merchant?.is_open&&merchant?.pickup_enabled);
