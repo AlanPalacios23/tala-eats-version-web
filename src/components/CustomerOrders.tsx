@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, Clock3, Package, RefreshCw, ShoppingBag, WifiOff } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, Package, RefreshCw, ShoppingBag, WifiOff } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
 import { ORDER_LABELS, isCompletedOrder, orderProgress } from '../lib/mobile-parity';
