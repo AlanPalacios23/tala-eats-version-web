@@ -5,7 +5,9 @@ const css = readFileSync(new URL('../src/styles/main.css', import.meta.url), 'ut
 describe('landing TALA EATS', () => {
  it('separa portada y catálogo sin perder las rutas originales', () => {
   expect(source).toContain('path="/" element={<PortalLanding/>}');
-  expect(source).toContain('path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}');
+  expect(source).toContain('path="/iniciar" element={<CustomerEntry/>}');
+  expect(source).toContain('path="/clientes" element={<CustomerGate><CustomerHome market={market} onSelectMarket={selectMarket}/></CustomerGate>}');
+  expect(source).toContain("path:'/iniciar',number:'01'");
   expect(source).toContain('path="/restaurante" element={<Protected role="restaurant">');
   expect(source).toContain('path="/repartidor" element={<Protected role="driver">');
  });
