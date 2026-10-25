@@ -12,6 +12,8 @@ import { CustomerCommerce } from './components/CustomerCommerce';
 import { isMarketCode, PILOT_MARKET } from './lib/markets';
 import type { MarketCode } from './lib/markets';
 import { CustomerOrders, CustomerOrderDetail } from './components/CustomerOrders';
+import { CustomerCart, CustomerCheckout } from './components/CustomerCheckout';
+import { CustomerAddresses } from './components/CustomerAddresses';
 import { amountInCents, pickupCashAllowed, quoteChanged, quoteIsUsable } from './lib/mobile-parity';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -123,62 +125,7 @@ function Auth(){
  <p className="switch-auth">{create?'¿Ya tienes una cuenta?':'¿Todavía no tienes cuenta?'} <button className="link-inline" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear una cuenta'}</button></p>
  <p className="fineprint">Las cuentas nuevas son de cliente. Los permisos de comercio o repartidor requieren aprobación.</p></div></div></div>;
 }
-function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
- const {user}=useSession();
- const [notes,setNotes]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Order|null>(null);
- const [reference,setReference]=useState<string|null>(null);const pendingOrder=useRef(false);
- const items=useMemo(()=>lineItems(cart),[cart]);
- const detail=useLoad(()=>cart.restaurantId?api.restaurant(cart.restaurantId):Promise.reject(Error('Carrito vacío')),[cart.restaurantId]);
- const quote=useLoad(()=>cart.restaurantId&&items.length&&user?api.quote(cart.restaurantId,items):Promise.reject(Error('Inicia sesión y agrega productos para obtener una cotización real.')),[cart.restaurantId,JSON.stringify(items),user?.id]);
- const methods=useLoad(()=>user?api.paymentOptions():Promise.reject(Error('Inicia sesión para ver medios de pago.')),[user?.id]);
- const cash=pickupCashAllowed(methods.value);
- const canCheckout=Boolean(cart.restaurantId&&items.length&&user?.role==='customer'&&quoteIsUsable(quote.value)&&cash&&detail.value?.is_open&&detail.value?.pickup_enabled);
- async function submit(){
-  if(pendingOrder.current||!canCheckout||!cart.restaurantId||!quote.value)return;
-  pendingOrder.current=true;setBusy(true);setError('');
-  const restaurantId=cart.restaurantId;
-  const visibleQuote=quote.value;
-  let posted=false;
-  const ref=reference??crypto.randomUUID().replace(/-/g,'');
-  try {
-   // Same invariants as Flutter v1.0.46: product availability, backend flags
-   // and server amounts may change between displaying a quote and POST /orders.
-   const fresh=await api.restaurant(restaurantId);
-   if(!fresh.is_open||!fresh.pickup_enabled)throw new Error('El restaurante dejó de aceptar pedidos para recoger. Revisa tu carrito.');
-   for(const entry of cart.entries){
-    const current=fresh.menu_items?.find(p=>p.id===entry.item.id);
-    if(!current||!current.is_available||current.stock<entry.quantity||
-       amountInCents(current.price)!==amountInCents(entry.item.price))throw new Error('El menú o sus precios cambiaron. Revisa el pedido antes de continuar.');
-   }
-   if(!pickupCashAllowed(await api.paymentOptions()))throw new Error('El servidor ya no autoriza este método de pago.');
-   const latest=await api.quote(restaurantId,items);
-   if(!quoteIsUsable(latest)||quoteChanged(visibleQuote,latest)){
-    quote.refresh();
-    throw new Error('El total cambió. Revisa la nueva cotización antes de confirmar otra vez.');
-   }
-   setReference(ref);posted=true;
-   const order=await api.placeCashPickup(restaurantId,items,ref,notes);
-   setResult(order);setCart(EMPTY_CART);setReference(null);
-  }catch(err){
-   if(posted){
-    // Never repeat a financial POST after an unknown network outcome.
-    try{const existing=await api.byReference(ref);setResult(existing);setCart(EMPTY_CART);setReference(null);}
-    catch{setError('No se pudo confirmar si el pedido fue recibido. Consulta Mis pedidos antes de reintentar; se conserva la misma referencia.');}
-   }else setError(err instanceof Error?err.message:'No se pudo verificar el pedido. Intenta otra vez.');
-  }finally{pendingOrder.current=false;setBusy(false);}
- }
- if(result)return <div className="container page"><EmptyState icon={<CheckCircle2 size={34}/>} title={'Pedido #'+result.id+' recibido'} description="Tu solicitud se guardó en el servidor. Consulta el estado antes de pasar a recogerlo." action={<Link className="btn primary" to="/pedidos">Ver mis pedidos</Link>}/></div>;
- return <div className="container page"><Link to="/clientes" className="back-link"><ArrowLeft size={18}/> Seguir explorando</Link><SectionTitle eyebrow="TU ELECCIÓN" title="Tu carrito" description="Confirma los productos antes de realizar el pedido."/>
- {!cart.entries.length?<EmptyState icon={<ShoppingCart size={32}/>} title="Tu carrito está vacío" description="Descubre algo delicioso y agrégalo aquí." action={<Link to="/clientes" className="btn primary">Ver comercios</Link>}/>:<div className="cart-layout"><div className="cart-items"><h3>{detail.value?.name||'Productos elegidos'}</h3>{cart.entries.map(e=><div key={e.item.id+'-'+(e.note??'')} className="cart-line"><div className="cart-icon">🍽️</div><div><strong>{e.item.name}</strong><small>{pesos(e.item.price)} por unidad{e.note?' · '+e.note:''}</small></div><div className="qty"><button onClick={()=>setCart(updateQuantity(cart,e.item.id,-1,e.note??''))} aria-label="Quitar uno"><Minus size={15}/></button><b>{e.quantity}</b><button onClick={()=>setCart(updateQuantity(cart,e.item.id,1,e.note??''))} aria-label="Agregar uno"><Plus size={15}/></button></div></div>)}<label className="note-field">Notas para el restaurante<textarea maxLength={1000} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Ej. Sin cebolla..." rows={3}/></label></div><aside className="summary-card"><h3>Resumen de pedido</h3><p className="summary-line">Productos <strong>{pesos(basketTotal(cart))}</strong></p><p className="summary-line">Servicio y total <span>Calculados por el servidor</span></p><hr/>
- {quote.loading?<p className="muted">Consultando el precio real…</p>:quote.error?<Alert>{quote.error}</Alert>:quote.value?<div className="summary-total"><span>Total confirmado</span><strong>{pesos(quote.value.total)}</strong></div>:null}
- <div className="choice-note"><ShoppingBag size={19}/><div><strong>Recoger en el negocio</strong><span>Sin servicio de repartidor en esta versión LIVE.</span></div></div>
- {!user?<Link to="/acceso" state={{from:'/carrito'}} className="btn primary full">Entrar para pedir</Link>:user.role!=='customer'?<Alert kind="info">El pedido debe realizarse con una cuenta de cliente.</Alert>:<><div className="payment-choice">{methods.loading?'Cargando medios de pago…':<><span className="payment-radio">●</span><div><strong>Efectivo al recoger</strong><small>{cash?'Disponible según validación del restaurante':'No disponible por ahora'}</small></div></>}</div><p className="fineprint">La tarjeta requiere un flujo web Stripe verificado; no está habilitada en este MVP.</p><button className="btn primary full" disabled={busy||!canCheckout} onClick={()=>void submit()}>{busy?'Confirmando...':'Confirmar pedido'} <ArrowRight size={18}/></button></>}
- {error&&<Alert>{error}</Alert>}
- {!cash&&user&&<Alert kind="info">Los medios de pago dependen del backend y de la aprobación del restaurante. No se aceptarán pedidos sin autorización.</Alert>}
- </aside></div>}
- </div>;
-}
-function Account(){const s=useSession(),nav=useNavigate();return <div className="container page narrow"><SectionTitle eyebrow="MI CUENTA" title="Tu perfil"/><div className="card padded"><div className="profile-row"><span className="profile-avatar"><UserRound size={27}/></span><div><h3>{s.user?.name}</h3><p>{s.user?.email}</p><small>Rol: {s.user?.role}</small></div></div><div className="account-links"><Link to="/pedidos"><Package size={20}/> Mis pedidos <ArrowRight size={17}/></Link>{isMerchantRole(s.user?.role)&&<Link to="/restaurante"><Store size={20}/> Panel restaurante <ArrowRight size={17}/></Link>}{isDriverRole(s.user?.role)&&<Link to="/repartidor"><Bike size={20}/> Panel repartidor <ArrowRight size={17}/></Link>}</div><button className="btn outline full" onClick={()=>void s.logout().then(()=>nav('/'))}><LogOut size={18}/> Cerrar sesión</button></div></div>;}
+function Account(){const s=useSession(),nav=useNavigate();return <div className="container page narrow"><SectionTitle eyebrow="MI CUENTA" title="Tu perfil"/><div className="card padded"><div className="profile-row"><span className="profile-avatar"><UserRound size={27}/></span><div><h3>{s.user?.name}</h3><p>{s.user?.email}</p><small>Rol: {s.user?.role}</small></div></div><div className="account-links"><Link to="/pedidos"><Package size={20}/> Mis pedidos <ArrowRight size={17}/></Link><Link to="/direcciones"><MapPin size={20}/> Mis direcciones <ArrowRight size={17}/></Link>{isMerchantRole(s.user?.role)&&<Link to="/restaurante"><Store size={20}/> Panel restaurante <ArrowRight size={17}/></Link>}{isDriverRole(s.user?.role)&&<Link to="/repartidor"><Bike size={20}/> Panel repartidor <ArrowRight size={17}/></Link>}</div><button className="btn outline full" onClick={()=>void s.logout().then(()=>nav('/'))}><LogOut size={18}/> Cerrar sesión</button></div></div>;}
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
  const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
@@ -243,19 +190,19 @@ function CustomerHashScroll(){
 export default function App(){
  const [cart,setCart]=useState<Cart>(EMPTY_CART);
  const [market,setMarket]=useState<MarketCode>(()=>{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerShell=['/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);localStorage.setItem('talaeats-market-code',code);return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}setCart(v=>addVariantItem(v,item,quantity,note));return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{!isGateway&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}/><Route path="/buscar" element={<CustomerSearch market={market}/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add} market={market}/>}/>
-   <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
+   <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><Account/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&!location.pathname.startsWith('/comercio/')&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main><CustomerBottomDock/>{!isGateway&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
