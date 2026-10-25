@@ -1,40 +1,22 @@
-# Tala Eats · Mobile Usuarios 1.0.46+57 → Web
-Corte del trabajo: 25 octubre 2026.
+# Tala Eats Usuarios Web · Paridad Flutter v1.0.46+57
+**Fecha:** 25 octubre 2026. **Origen Mobile** PR #67 (borrador), commit `f247bf3996a41b1af2e0384c787e6fd2f4fe9d5d`. **Web** PR #3 (borrador) rama `feat/mobile-parity-v1046-navigation`. Todo sigue fuera de producción.
 
-## Origen inmutable
-Mobile PR #67 DRAFT, SHA `f247bf3996a41b1af2e0384c787e6fd2f4fe9d5d`, versión Usuarios `1.0.46+57`. Mobile `main` está en `1.0.30+41`. Web PR #3 DRAFT y su rama `feat/mobile-parity-v1046-navigation`; aún no se ha fusionado ni desplegado a Kali.
+## Implementación realizada en la web
+1. **Home, restaurantes y búsqueda:** estilos y transiciones Flutter, dirección de la cuenta, acciones Cuenta/Notificaciones, selector de seis localidades y filtrado validado, fichas de comida, tarjetas y favoritos persistentes. Búsqueda global por nombre/categoría de platillos en menús de comercios del mercado, con concurrencia limitada (cinco) y aviso explícito de cobertura incompleta si falla algún menú.
+2. **Carrito, Checkout y direcciones:** pantallas independientes, variantes/preferencias, categorías, stock por SKU, nota al restaurante, GPS validado por geocodificación del servidor y predeterminado, pickup y delivery en efectivo condicionales a flags, cotización y recotización.
+3. **Stripe TEST Web:** carga remota de Stripe.js desde js.stripe.com/v3 (nunca autohospedado), Payment Element, config GET `/payments/stripe/config`, POST `/payments/stripe/orders/:id/payment-intent`. Solo cuando la configuración del servidor `enabled === true` devuelve `pk_test_...`, el método Stripe está habilitado y la modalidad está autorizada. **Nunca acepta `pk_live_`**. Checkout conserva método Stripe en el body/cotización, crea pedido con client_reference y redirige a `/pago/:id`. Se verifica siempre desde `GET /v11/orders/:id/live`; Stripe.js jamás es fuente de confirmación de pago. Falta validación Stripe TEST E2E contra backend real, hooks de cancelación/restauración y políticas de CSP.
+4. **Pedidos y chat:** estados En curso/Anteriores, pendiente Stripe separado (no hace pasar una reserva por pedido activo), timeline pickup/delivery, seguimiento desde `/v11/orders/:id/live` cada 12 segundos sólo cuando visible, chat desde `/platform/orders/:id/chat` cada 5 segundos sólo cuando visible, confirmación de envío desde servidor, soporte por ID de pedido.
+5. **Cuenta:** editar nombre y teléfono mediante PATCH `/auth/me`, estado visible sólo después de respuesta del servidor y actualización de sesión; Tala Club, puntos, favoritos, notificaciones in-app y soporte existentes.
+6. **Seguridad:** quote estricta con MXN, cantidades en centavos, modalidad/método/client_reference y desglose; cambio de totales exige confirmar de nuevo; journal de referencia persistido antes del POST para evitar reenvío si la conexión falla, check de localidad/stock y protección de sesiones.
+7. **Pruebas:** Vitest de carrito/stock, cotizaciones/mercados/búsqueda y Stripe TEST contra LIVE. GitHub Actions `Tala Eats PWA CI` compila y prueba. **Nuevo workflow visual** `Usuarios Web — Capturas 320–1024 px` genera screenshots de Home/Buscar/Restaurante/Cuenta/Pedidos/Perfil a 320, 360, 390, 430, 768 y 1024 px mediante un backend 100 % simulado; no realiza cobros ni consulta clientes reales. Se suben a artefactos de Actions para compararlos manualmente con Flutter.
 
-## Pantallas/funciones ya trasladadas
-- Inicio, Buscar, hero de restaurante, FoodCard, modal de producto, navegación inferior animada.
-- Colores/tipografía/espaciados/animaciones según Flutter (140/200/280/300/320/420 ms) y reducción de movimiento.
-- Inicio muestra dirección predeterminada (validada desde `/platform/addresses`), acceso a notificaciones y cuenta.
-- Mercados (los seis códigos exactos), con paginación y validación fail-closed de localidad; cambio de zona exige descartar el carrito.
-- Favoritos persistentes vía GET/POST `/platform/favorites`, rollback de error.
-- Carrito separado de checkout, opciones/variantes, cantidades y stock total por SKU.
-- Checkout separado con tarjetas de Entrega/Pago/Resumen, cupón, propina y dirección GPS del servidor.
-- Direcciones: GET, geocodificación server-side, alta, selección predeterminada, eliminación. Sin fingir coordenadas.
-- Cotizaciones de pickup y delivery vía rutas Mobile (`/orders/quote`, `/orders/delivery-quote`). Efectivo en delivery sólo cuando **todas** las flags correspondientes están habilitadas. Stripe Web visible pero INHABILITADO hasta completar SDK/Web Payment Element verificado.
-- Pre-POST financiero: refresh de opciones, revalidación de menú/stock/precios por SKU, cotización estricta de servidor (MXN, comercio, modalidad, pago, tarifas, inventario sin reservar), comparación de importes y distancia.
-- Referencia cliente persistida en sessionStorage **antes** del POST; resultado incierto bloquea otros envíos y habilita sólo consulta read-only `/orders/by-reference`.
-- Pedidos activos/anteriores, detalle, timeline y estatus reales del servidor.
-- Cuenta, Tala Club (balance/puntos/movimientos fail-closed), canje 500 puntos sin doble intento ante resultado incierto, notificaciones y marcar leído, favoritos listados, ayuda/soporte con hilo y solicitud por ID de pedido.
-- PWA cliente con manifest correcto en todas las rutas nuevas; roles de restaurante y repartidor permanecen separados.
+## No es todavía 100 % idéntica ni un release LIVE validado
+- **Push Web:** Flutter usa FCM nativo Android; backend actual en Mobile sólo documenta `/mobile-push/devices` para `platform:android`. Requiere contrato Web Push/VAPID y consentimiento en navegador antes de afirmar paridad. Los avisos dentro de la app funcionan, pero no sustituyen push.
+- Stripe TEST: pendiente prueba completa con test keys/server real, webhook, reconciliación, cancelación de pedidos online con restauración de carrito; configuración CSP Nginx/Stripe Elements y QA de redirecciones.
+- Perfil: foto local Android no se puede simplemente copiar a web; hace falta endpoint de media seguro.
+- Visual QA: no hay capturas golden Flutter dentro del commit Mobile; el workflow genera sólo imágenes Web con datos sintéticos. Comparación pixel a pixel, teclado/zoom texto 1.3, lector de pantalla y gestos requiere originales Flutter y navegador.
+- Operación: backend staging Node RC8.x, APIs de soporte, localidad, chat, saldo y pagos no han sido probados E2E desde esta rama contra Kali. Sin prueba cliente→restaurante→repartidor→entrega→ledger ni liquidación Stripe Connect LIVE. No declarar producción habilitada.
+- Buscador global: para más de 100 comercios no utiliza todavía búsqueda paginada server-side; avisa expresamente que requiere índice escalable.
 
-## Pruebas automatizadas
-- `tests/customer-checkout.test.ts`: flags, Stripe Web bloqueado, dirección precisa, fingerprint, quote estricta, recotización y stock.
-- `tests/customer-mobile-parity.test.ts`: notas, cantidades, variantes, timeline.
-- `tests/mobile-parity.test.ts`: centavos, política de pickup, búsquedas.
-- `tests/markets.test.ts`: códigos y fail-closed del catálogo.
-- CI `npm run check` y build PWA en GitHub Actions. CI verde **no prueba equivalencia pixel a pixel ni el pago real**.
-
-## Pendiente para afirmar paridad real completa
-1. Stripe Payment Element **TEST** para navegador, confirmación con webhook real, reconciliación, retorno, intent state; posteriormente habilitación LIVE separada.
-2. Búsqueda global de platillos, no sólo nombre/categoría de restaurante.
-3. Avatar editable, perfil y privacidad/seguridad completos; promociones y cupones con validaciones UX propias, chat de pedido y soporte en tiempo real.
-4. Push Web/FCM con permiso explícito y opt-out; seguimiento en vivo y ETA reales.
-5. Dirección con entrada GPS opt-in desde el dispositivo cuando geocoder no logra ubicar, edición de direcciones y comprobación de cobertura.
-6. QA visual contra screenshots Flutter a 320/360/390/430 px, escala de texto 1.3, teclado, accesibilidad y gestos; e2e con backend LIVE/STAGING que demuestre pedido completo hasta ledger y payout.
-7. Verificar todos los contratos RC8.x y flags financieros directamente contra backend desplegado. No asumir que un endpoint existe solo por figurar en la app Flutter.
-
-## Política de release
-No fusionar a main ni publicar en Kali hasta pruebas integradas, backend compatible, webhooks y proceso de rollback. No se habilitan cobros Stripe LIVE por esta rama. Los datos financieros únicamente son válidos cuando responde el backend; nunca inventar «éxito» o saldo cero si falló una petición.
+## Seguridad / despliegue
+PR borrador sin merge, sin deploy a Kali, sin habilitar cobros LIVE. Nunca reemplazar la PWA publicada sin pipeline de aprobación, backup, health-check, QA financiero e instrucción de rollback.
