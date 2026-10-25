@@ -44,6 +44,9 @@ export const api = {
   me: () => request<User>('/auth/me'),
   updateProfile: (name:string,phone:string) => request<User>('/auth/me',json('PATCH',{name,phone})),
   logout: () => request<void>('/auth/logout',json('POST')),
+  privacyPreferences: () => request<Record<string,unknown>>('/v11/privacy/preferences'),
+  updatePrivacyPreferences: (body:{personalized_experience:boolean;analytics:boolean;marketing:boolean}) => request<Record<string,unknown>>('/v11/privacy/preferences',json('PUT',body)),
+  privacyRequest: (requestType:'export'|'delete') => request<Record<string,unknown>>('/v9/privacy',json('POST',{request_type:requestType})),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
   restaurantsForMarket: async (code:MarketCode):Promise<Restaurant[]> => {
     const found:Restaurant[]=[];const seen=new Set<number>();
