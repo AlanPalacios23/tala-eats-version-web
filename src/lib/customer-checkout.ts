@@ -76,3 +76,20 @@ export function validateCartAgainstRestaurant(cart:Cart,restaurant:Restaurant):v
    throw new Error('El precio o inventario cambió. Vuelve al menú y revisa tu pedido.');
  }
 }
+
+/** Mobile _asNullableDouble parity: JSON coordinates may arrive as decimal strings. */
+export function parseCoordinate(value:unknown,axis:'lat'|'lng'):number|null{
+ if(typeof value!=='string'&&typeof value!=='number')return null;
+ if(typeof value==='string'&&!value.trim())return null;
+ const n=Number(value);
+ const max=axis==='lat'?90:180;
+ return Number.isFinite(n)&&n>=-max&&n<=max?n:null;
+}
+export function normalizeCustomerAddress(raw:unknown):CustomerAddress{
+ if(!raw||typeof raw!=='object')throw new Error('El servidor devolvió una dirección inválida.');
+ const value=raw as Record<string,unknown>;
+ const id=Number(value.id);
+ if(!Number.isSafeInteger(id)||id<=0)throw new Error('Identificador de dirección inválido.');
+ return {id,label:String(value.label??''),address:String(value.address??''),
+  lat:parseCoordinate(value.lat,'lat'),lng:parseCoordinate(value.lng,'lng'),is_default:value.is_default===true};
+}
