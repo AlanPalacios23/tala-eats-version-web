@@ -445,3 +445,10 @@
 .mobile-support-compose .mobile-checkout-fixed{margin:0}
 @media(max-width:700px){.mobile-account,.mobile-wallet,.mobile-support,.mobile-notifications,.mobile-favorites{padding-bottom:130px}}
 @media(prefers-reduced-motion:reduce){.mobile-wallet-progress span{transition:none}}
+
+/* Exact Flutter Home top action layout: address, notifications, profile */
+.mobile-home-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mobile-home-top .mobile-address{min-width:0;flex:1;color:#171717}
+.mobile-home-top .mobile-address>div{min-width:0}
+.mobile-home-top .mobile-address strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:340px){.mobile-home-actions{gap:4px}.mobile-home-actions .mobile-round-action{width:40px;height:40px}.mobile-home-top .mobile-address-icon{width:40px;height:40px}}
