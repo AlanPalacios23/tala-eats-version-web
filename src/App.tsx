@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, LogOut, MapPin, Menu, Package, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
+import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
 import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { EMPTY_CART, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
