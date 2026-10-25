@@ -41,7 +41,7 @@ export function CustomerOrders(){
  const past=(orders??[]).filter(o=>isCompletedOrder(o.status));
  const unpaid=(orders??[]).filter(o=>o.payment_method==='stripe'&&o.payment_status!=='paid'&&!isCompletedOrder(o.status));
  return <div className="mobile-customer-page mobile-orders" data-mobile-screen="orders">
-  <div className="mobile-orders-heading"><h1>Pedidos</h1><button onClick={refresh} disabled={loading} aria-label="Actualizar pedidos"><RefreshCw size={20}/></button></div>
+  <div className="mobile-orders-heading"><h1>Pedidos</h1></div>
   {error&&<div className="mobile-orders-offline" role="status"><WifiOff size={18}/><span>No pudimos actualizar tus pedidos. {orders?'Se muestra el último estado consultado.':'Revisa tu conexión.'}</span><button onClick={refresh}>Reintentar</button></div>}
   {loading&&!orders?<div className="mobile-loading-order"><RefreshCw size={20} className="spin"/>Cargando tus pedidos…</div>:
    !orders?.length?<div className="mobile-status"><Package size={33}/><h2>{error?'No pudimos cargar tus pedidos':'Aún no tienes pedidos'}</h2><p>{error?'Puedes intentar actualizar el historial.':'Cuando hagas tu primer pedido podrás seguirlo aquí en tiempo real.'}</p><Link className="mobile-status-link" to="/clientes">Explorar restaurantes</Link></div>:
