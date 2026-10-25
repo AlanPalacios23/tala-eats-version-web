@@ -384,3 +384,64 @@
 @media(max-width:340px){.mobile-checkout-modes{grid-template-columns:1fr}.mobile-checkout-modes button{min-height:75px}.mobile-cart-entry{flex-wrap:wrap}.mobile-cart-entry .mobile-stepper{margin-left:auto}}
 @media(max-width:700px){.mobile-checkout-actions{position:sticky;bottom:0;z-index:8;background:linear-gradient(0deg,#fafaf9 80%,transparent);padding:8px 0 max(10px,env(safe-area-inset-bottom))}.mobile-cart>.mobile-checkout-fixed{position:sticky;bottom:0;z-index:8}.mobile-cart,.mobile-checkout,.mobile-addresses{padding-bottom:110px}}
 @media(prefers-reduced-motion:reduce){.mobile-checkout-card,.mobile-address-sheet{animation:none}.mobile-checkout-modes button,.mobile-address-card{transition:none}}
+
+
+/* Mobile Usuarios 1.0.46: AccountScreen, WalletScreen, Notifications, Support */
+.mobile-account,.mobile-wallet,.mobile-notifications,.mobile-support,.mobile-favorites{max-width:650px}
+.mobile-account>h1{font:800 30px/1.12 Roboto,Arial,sans-serif;letter-spacing:-.8px;margin:0 0 18px}
+.mobile-account>h2,.mobile-wallet>h2{font:800 19px/1.3 Roboto,Arial,sans-serif;color:#171717;margin:25px 0 12px}
+.mobile-account-profile{display:flex;align-items:center;gap:14px;border:1px solid #eae8e5;background:#fff;border-radius:20px;padding:16px;margin:0 0 12px}
+.mobile-account-avatar{width:58px;height:58px;border:2px solid #ff8a54;background:#fff0e8;border-radius:50%;color:#ce3c0a;display:grid;place-items:center;flex-shrink:0}
+.mobile-account-profile>div{flex:1;min-width:0}
+.mobile-account-profile strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#171717;font:800 19px Roboto,Arial,sans-serif}
+.mobile-account-profile>div>span{display:block;overflow:hidden;text-overflow:ellipsis;color:#737373;font-size:13px;margin-top:4px}
+.mobile-account-profile>svg{color:#a29c97}
+.mobile-account-club{display:flex;align-items:center;gap:12px;padding:18px;border:1px solid #eae8e5;background:white;border-radius:20px;color:#171717}
+.mobile-account-club>svg:first-child{color:#ce3c0a;flex-shrink:0}
+.mobile-account-club>div{flex:1;min-width:0}
+.mobile-account-club strong{display:block;font:800 16px Roboto,Arial,sans-serif}
+.mobile-account-club small{display:block;color:#737373;font-size:12px;margin-top:5px}
+.mobile-account-club>svg:last-child{color:#737373}
+.mobile-account-group{border:1px solid #eae8e5;border-radius:20px;background:white;overflow:hidden}
+.mobile-account-link{display:flex;align-items:center;gap:12px;padding:13px 15px;color:#171717;min-height:58px}
+.mobile-account-link:not(:last-child){border-bottom:1px solid #eae8e5}
+.mobile-account-icon{color:#ce3c0a;display:grid;place-items:center}
+.mobile-account-link-copy{min-width:0;flex:1}
+.mobile-account-link-copy strong{display:block;font:700 14px Roboto,Arial,sans-serif}
+.mobile-account-link-copy small{display:block;color:#737373;font-size:12px;margin-top:4px}
+.mobile-account-link>svg:last-child{color:#737373}
+.mobile-account-info{display:flex;align-items:center;gap:10px;padding:16px;color:#737373;font-size:13px;line-height:1.5}
+.mobile-account-logout{display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;width:100%;background:white;border:1px solid #eae8e5;border-radius:16px;color:#bd3933;font-weight:800;margin-top:25px}
+.mobile-wallet-hero{border:1px solid #eae8e5;background:#fff;border-radius:20px;padding:20px;margin-bottom:14px}
+.mobile-wallet-hero>small{display:block;font:800 11px Roboto,Arial,sans-serif;letter-spacing:1px;color:#ce3c0a;margin-bottom:18px}
+.mobile-wallet-hero>span{display:block;font-size:14px;color:#737373}
+.mobile-wallet-hero>strong{display:block;margin:5px 0 14px;font:800 34px/1.1 Roboto,Arial,sans-serif;color:#171717}
+.mobile-wallet-hero>p{font-size:13px;color:#737373}
+.mobile-wallet-progress{height:7px;border-radius:99px;background:#f3efeb;overflow:hidden;margin:12px 0}
+.mobile-wallet-progress span{display:block;height:100%;border-radius:99px;background:#ff5a1f;transition:width 300ms ease-out}
+.mobile-wallet-transaction{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px}
+.mobile-wallet-transaction:not(:last-child){border-bottom:1px solid #eae8e5}
+.mobile-wallet-transaction strong{display:block;font-size:14px;color:#171717}
+.mobile-wallet-transaction small{display:block;font-size:12px;color:#737373;margin-top:5px}
+.mobile-wallet-transaction>b{font-size:14px;white-space:nowrap}
+.mobile-notice-all{background:transparent;border:0;padding:8px 0 14px;color:#ce3c0a;font-weight:800;font-size:13px}
+.mobile-notice{display:flex;align-items:flex-start;gap:12px;width:100%;padding:16px;text-align:left;background:white;border:0}
+.mobile-notice:not(:last-child){border-bottom:1px solid #eae8e5}
+.mobile-notice.unread{background:#fff9f5}
+.mobile-notice>svg{color:#ce3c0a;flex-shrink:0}
+.mobile-notice>span:nth-child(2){flex:1;min-width:0}
+.mobile-notice strong{display:block;color:#171717;font-size:14px}
+.mobile-notice small{display:block;color:#737373;font-size:12px;line-height:1.45;margin-top:5px}
+.mobile-notice .mobile-unread-dot{width:8px;height:8px;background:#ff5a1f;border-radius:50%;flex:0 0 8px}
+.mobile-support-thread{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.mobile-support-ticket{border:1px solid #eae8e5;border-radius:19px;padding:14px 16px;background:#fff}
+.mobile-support-ticket strong{font:700 13px Roboto,Arial,sans-serif;color:#ce3c0a}
+.mobile-support-ticket p{color:#171717;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.mobile-support-ticket small{color:#737373;font-size:12px}
+.mobile-support-compose{border:1px solid #eae8e5;background:white;border-radius:20px;padding:16px;display:grid;gap:14px}
+.mobile-support-compose label{display:grid;gap:7px;font:700 13px Roboto,Arial,sans-serif;color:#3b3633}
+.mobile-support-compose select,.mobile-support-compose textarea{border:1px solid #eae8e5;border-radius:15px;padding:13px;font:500 14px Roboto,Arial,sans-serif;color:#171717;background:#fff;min-width:0}
+.mobile-support-compose textarea{resize:vertical}
+.mobile-support-compose .mobile-checkout-fixed{margin:0}
+@media(max-width:700px){.mobile-account,.mobile-wallet,.mobile-support,.mobile-notifications,.mobile-favorites{padding-bottom:130px}}
+@media(prefers-reduced-motion:reduce){.mobile-wallet-progress span{transition:none}}
