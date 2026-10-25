@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Bike, Home as HomeIcon, ClipboardList, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
-import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
+import { api, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
