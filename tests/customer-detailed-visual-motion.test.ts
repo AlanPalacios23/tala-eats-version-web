@@ -5,6 +5,8 @@ const ui=read('../src/customer/CustomerExperience.tsx');
 const panels=read('../src/customer/CustomerPanels.tsx');
 const css=read('../src/customer/customer-more.css');
 const app=read('../src/App.tsx');
+const auth=read('../src/customer/CustomerAuth.tsx');
+const startup=read('../src/customer/CustomerStartup.tsx');
 describe('Flutter Usuarios detailed visual and motion parity',()=>{
  it('brings Flutter 140/200/300/320/420ms motion and honors reduce motion',()=>{
    expect(css).toContain('140ms cubic-bezier');
@@ -26,9 +28,10 @@ describe('Flutter Usuarios detailed visual and motion parity',()=>{
    expect(css).toContain('border-radius:24px 24px 0 0');
  });
  it('ports auth scaffold while keeping login and signup API untouched',()=>{
-   expect(app).toContain('te-customer-auth te-motion-page');
-   expect(app).toContain("if(create)await register(name,email,password);else await login(email,password,otp)");
-   expect(app).toContain('type={showPassword?');
+   expect(auth).toContain('te-customer-auth te-motion-page');
+   expect(auth).toContain('await session.register(name.trim(),email.trim(),password)');
+   expect(auth).toContain('await session.login(email.trim(),password,otp)');
+   expect(auth).toContain("type={showPassword?'text':'password'}");
    expect(css).toContain('background:linear-gradient(180deg,#fff4ec');
    expect(css).toContain('.te-auth-glow');
  });
