@@ -22,6 +22,11 @@ function PortalInstallIdentity() {
  const location = useLocation();
  useEffect(() => {
    const href = manifestForPath(location.pathname);
+   // Match Flutter's light launch/system bar only in the customer PWA.
+   // Public portal and the other two PWA identities retain their original theme.
+   const color=href==='/manifest-clientes.webmanifest'?'#FFFAF6':'#080808';
+   const theme=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+   if(theme&&theme.content!==color)theme.content=color;
    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
    if (link && link.getAttribute('href') !== href) link.setAttribute('href', href);
    const label = href.includes('restaurante') ? 'Restaurantes' :
