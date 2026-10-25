@@ -7,12 +7,14 @@ import { useSession } from '../lib/session';
 import { amountInCents } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
 import {CustomerAvatar} from './CustomerAvatar';
+import {LEGAL_LINKS} from '../lib/legal-links';
 
 function Heading({title,back='/cuenta',refresh}:{title:string;back?:string;refresh?:()=>void}){
  return <div className="mobile-detail-header"><Link to={back} aria-label="Regresar"><ArrowLeft size={22}/></Link><h1>{title}</h1>{refresh&&<button aria-label="Actualizar" onClick={refresh}><RefreshCw size={20}/></button>}</div>;
 }
 function AccountLink({to,label,icon,subtitle}:{to:string;label:string;icon:ReactNode;subtitle?:string}){
- return <Link className="mobile-account-link" to={to}><span className="mobile-account-icon">{icon}</span><span className="mobile-account-link-copy"><strong>{label}</strong>{subtitle&&<small>{subtitle}</small>}</span><ChevronRight size={19}/></Link>;
+ const content=<><span className="mobile-account-icon">{icon}</span><span className="mobile-account-link-copy"><strong>{label}</strong>{subtitle&&<small>{subtitle}</small>}</span><ChevronRight size={19}/></>;
+ return to.startsWith('https://')?<a className="mobile-account-link" href={to} target="_blank" rel="noopener noreferrer">{content}</a>:<Link className="mobile-account-link" to={to}>{content}</Link>;
 }
 export function CustomerAccount(){
  const {user,logout}=useSession(),nav=useNavigate();const [busy,setBusy]=useState(false),[logoutError,setLogoutError]=useState('');
@@ -38,13 +40,13 @@ export function CustomerAccount(){
    <AccountLink to="/direcciones" label="Direcciones" icon={<MapPin size={21}/>}/>
    <AccountLink to="/notificaciones" label="Notificaciones" icon={<Bell size={21}/>}/>
   </div>
-  <h2>Seguridad y privacidad</h2><div className="mobile-account-group">
-   <AccountLink to="/privacidad" label="Privacidad y tus datos" subtitle="Preferencias, exportación y eliminación de cuenta" icon={<ShieldCheck size={21}/>}/>
+  <h2>Privacidad y documentos</h2><div className="mobile-account-group">
+   <AccountLink to={LEGAL_LINKS.terms} label="Términos y condiciones" subtitle="Documento público de Tala Eats" icon={<FileText size={21}/>}/>
+   <AccountLink to={LEGAL_LINKS.privacy} label="Aviso de privacidad" subtitle="Documento oficial de Tala Eats" icon={<ShieldCheck size={21}/>}/>
+   <AccountLink to={LEGAL_LINKS.deletion} label="Eliminar mi cuenta" subtitle="Consultar el procedimiento oficial" icon={<ShieldCheck size={21}/>}/>
   </div>
-  <h2>Ayuda y documentos</h2><div className="mobile-account-group">
+  <h2>Ayuda</h2><div className="mobile-account-group">
    <AccountLink to="/soporte" label="Ayuda y soporte" icon={<Headphones size={21}/>}/>
-   <AccountLink to="/terminos" label="Términos y condiciones" icon={<FileText size={21}/>}/>
-   <AccountLink to="/aviso-privacidad" label="Aviso de privacidad" icon={<ShieldCheck size={21}/>}/>
   </div>
   {(isMerchantRole(user?.role)||isDriverRole(user?.role))&&<div className="mobile-account-group">{isMerchantRole(user?.role)&&<AccountLink to="/restaurante" label="Panel restaurante" icon={<Store size={21}/>}/>} {isDriverRole(user?.role)&&<AccountLink to="/repartidor" label="Panel repartidor" icon={<Bike size={21}/>}/>} </div>}
   <button className="mobile-account-logout" disabled={busy} onClick={()=>void leave()}><LogOut size={20}/> {busy?'Cerrando sesión…':'Cerrar sesión'}</button>
