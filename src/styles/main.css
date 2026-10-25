@@ -813,3 +813,20 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 .customer-launch-exact{height:100svh;width:100%;overflow:hidden;background:#110904;display:block;position:relative;padding:0}
 .customer-launch-exact-art{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none}
 .customer-launch-accessible{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+
+/* Exact customer-provided 729×1536 taco onboarding composition. The copy is
+   already in the original photograph: do not overlay the crowded old welcome.
+   The baked photo arrow was erased in the build; the same real splash CTA is
+   positioned to match the source layout, but its size stays IDENTICAL. */
+.customer-welcome-tacos{background:#1f0903}
+.customer-welcome-tacos .customer-splash-next{
+ right:clamp(28px,7.7vw,65px);
+ bottom:clamp(54px,8.2svh,128px);
+}
+.customer-welcome-tacos-fallback{
+ justify-content:flex-end;align-items:flex-start;
+ padding:0 10% 26%;background:linear-gradient(160deg,#321608,#140703)
+}
+.customer-welcome-tacos-fallback h1{font:800 clamp(30px,8vw,44px)/1.1 Roboto,Arial,sans-serif;letter-spacing:-.5px;color:#fff;margin:0}
+.customer-welcome-tacos-fallback p{color:#fff;font-size:clamp(16px,4vw,19px);line-height:1.55;max-width:370px;text-align:left;margin:16px 0 0}
