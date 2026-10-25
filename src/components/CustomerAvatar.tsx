@@ -4,6 +4,7 @@ import {safeImage} from '../lib/api';
 import {onAvatarChange,readLocalAvatar} from '../lib/customer-avatar';
 export function CustomerAvatar({userId,url,size='normal'}:{userId?:number;url?:string|null;size?:'normal'|'large'}){
  const [local,setLocal]=useState<string|null>(null);
+ const [failed,setFailed]=useState(false);
  useEffect(()=>{
   if(!userId||userId<=0){setLocal(null);return;}
   let alive=true,resource:string|null=null;
@@ -20,7 +21,8 @@ export function CustomerAvatar({userId,url,size='normal'}:{userId?:number;url?:s
   return()=>{alive=false;off();if(resource)URL.revokeObjectURL(resource);};
  },[userId]);
  const src=local||safeImage(url);
+ useEffect(()=>setFailed(false),[src]);
  return <span className={'customer-avatar-image'+(size==='large'?' customer-avatar-image-large':'')}>
-  {src?<img src={src} alt="Foto de perfil" onError={event=>{event.currentTarget.style.display='none';}}/>:<UserRound size={size==='large'?44:29}/>}
+  {src&&!failed?<img src={src} alt="Foto de perfil" onError={()=>setFailed(true)}/>:<UserRound size={size==='large'?44:29}/>}
  </span>;
 }
