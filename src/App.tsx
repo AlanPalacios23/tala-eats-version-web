@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X, Heart, Star, AtSign, LockKeyhole, EyeOff, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, Menu, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X, Heart, Star } from 'lucide-react';
 import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from './lib/api';
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
@@ -9,6 +9,9 @@ import { useSession } from './lib/session';
 import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch, CustomerDock } from './customer/CustomerExperience';
 import { CustomerOrders, CustomerAccount } from './customer/CustomerPanels';
+import { CustomerStartup } from './customer/CustomerStartup';
+import { CustomerAuth } from './customer/CustomerAuth';
+import { CustomerLegal } from './customer/CustomerLegal';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
 function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
@@ -168,43 +171,6 @@ function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role)))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
-function Auth(){
- const {user,login,register}=useSession();const nav=useNavigate();const loc=useLocation();
- const [create,setCreate]=useState(Boolean((loc.state as {create?:boolean}|null)?.create));
- const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
- const [showPassword,setShowPassword]=useState(false);
- const [busy,setBusy]=useState(false),[error,setError]=useState('');
- const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{
-  if(create)await register(name,email,password);else await login(email,password,otp);
-  const from=(loc.state as {from?:string}|null)?.from;
-  nav(from?.startsWith('/')&&!from.startsWith('//')?from:'/cuenta',{replace:true});
- }catch(e){setError(e instanceof Error?e.message:'Error al iniciar sesión');}finally{setBusy(false);}};
- if(user)return <div className="te-customer te-panel-page"><div className="te-panel-inner">
-  <EmptyState icon={<CheckCircle2 size={32}/>} title="Ya tienes una sesión activa" description={'Has iniciado sesión como '+user.name}
-   action={<Link to="/cuenta" className="btn primary">Ir a mi cuenta</Link>}/></div></div>;
- return <div className="te-customer-auth te-motion-page">
-   <div className="te-auth-glow" aria-hidden="true"/>
-   <div className="te-auth-content">
-     <div className="te-auth-brand"><span className="te-auth-logo"><ChefHat size={24}/></span><strong>Tala Eats</strong></div>
-     <div className="te-auth-heading te-motion-reveal">
-       <h1>{create?'Crea tu cuenta':'Bienvenido de vuelta'}</h1>
-       <p>{create?'Únete a Tala Eats y disfruta lo mejor de tu ciudad.':'Pide lo que se te antoje y sigue tu pedido en tiempo real.'}</p>
-     </div>
-     <form className="te-auth-form te-motion-reveal" onSubmit={submit} aria-label={create?'Crear cuenta':'Iniciar sesión'}>
-       {create&&<label>Nombre completo<div className="te-auth-input"><UserRound size={19}/><input autoComplete="name" value={name} required minLength={2} maxLength={120} onChange={e=>setName(e.target.value)} placeholder="Tu nombre"/></div></label>}
-       <label>Correo electrónico<div className="te-auth-input"><AtSign size={19}/><input type="email" autoComplete="email" value={email} required onChange={e=>setEmail(e.target.value)} placeholder="correo@ejemplo.com"/></div></label>
-       <label>Contraseña<div className="te-auth-input"><LockKeyhole size={19}/><input type={showPassword?'text':'password'} autoComplete={create?'new-password':'current-password'} value={password} required minLength={create?8:1} onChange={e=>setPassword(e.target.value)} placeholder="Tu contraseña"/><button type="button" className="te-auth-toggle" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?'Ocultar contraseña':'Mostrar contraseña'}>{showPassword?<EyeOff size={19}/>:<Eye size={19}/>}</button></div></label>
-       {!create&&<label>Código de autenticación (solo si tienes 2FA)<div className="te-auth-input"><ShieldCheck size={19}/><input value={otp} maxLength={12} onChange={e=>setOtp(e.target.value)} inputMode="numeric" autoComplete="one-time-code" placeholder="Código de 6 dígitos"/></div></label>}
-       {error&&<div className="te-auth-error" role="alert">{error}</div>}
-       <button className="te-auth-submit" disabled={busy}>{busy?'Un momento…':create?'Crear cuenta':'Iniciar sesión'}<ArrowRight size={19}/></button>
-     </form>
-     <p className="te-auth-switch">{create?'¿Ya tienes una cuenta?':'¿Aún no tienes cuenta?'} <button type="button" onClick={()=>{setCreate(!create);setError('');}}>{create?'Iniciar sesión':'Crear cuenta'}</button></p>
-     <p className="te-auth-fineprint">Tu cuenta nueva será de cliente. Restaurantes y repartidores requieren autorización independiente.</p>
-     <Link className="te-auth-back" to="/clientes"><ArrowLeft size={16}/>Volver a Inicio</Link>
-   </div>
- </div>;
-}
-
 function CartPage({cart,setCart}:{cart:Cart;setCart:(v:Cart)=>void}){
  const {user}=useSession();
  const [notes,setNotes]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState<Order|null>(null);
@@ -276,16 +242,23 @@ function Driver(){
  </>}</div>;
 }
 export default function App(){
- const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerTab=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);const isCustomer=isCustomerTab||location.pathname.startsWith('/comercio/')||['/carrito','/acceso'].includes(location.pathname);
+ const [cart,setCart]=useState<Cart>(EMPTY_CART);const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isCustomerTab=['/clientes','/buscar','/pedidos','/cuenta'].includes(location.pathname);const isCustomer=isCustomerTab||location.pathname.startsWith('/comercio/')||['/carrito','/acceso','/restablecer','/terminos','/privacidad'].includes(location.pathname);
  const add=(item:MenuItem)=>{setCart(v=>addItem(v,item));};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
  return <div className={"app"+(isCustomer?" is-customer":"")}>{!isGateway&&!isCustomer&&<AppHeader count={count}/>}<main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
-   <Route path="/clientes" element={<CustomerHome/>}/><Route path="/buscar" element={<CustomerSearch/>}/><Route path="/comercio/:id" element={<Commerce add={add}/>}/>
-   <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
-   <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/>
-   <Route path="/acceso" element={<Auth/>}/>
-   <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/>
+   <Route element={<CustomerStartup/>}>
+    <Route path="/clientes" element={<CustomerHome/>}/>
+    <Route path="/buscar" element={<CustomerSearch/>}/>
+    <Route path="/comercio/:id" element={<Commerce add={add}/>}/>
+    <Route path="/carrito" element={<CartPage cart={cart} setCart={setCart}/>}/>
+    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/>
+    <Route path="/acceso" element={<CustomerAuth/>}/>
+    <Route path="/restablecer" element={<CustomerAuth/>}/>
+    <Route path="/terminos" element={<CustomerLegal/>}/>
+    <Route path="/privacidad" element={<CustomerLegal/>}/>
+    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/>
+   </Route>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
