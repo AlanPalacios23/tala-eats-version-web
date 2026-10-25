@@ -11,8 +11,18 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Tala Eats — Comida local, más cerca</title>
+    <style id="tala-first-paint-style">
+      #tala-first-paint{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:white;color:#ce3c0a;font-family:Arial,sans-serif}
+      #tala-first-paint .mark{text-align:center;letter-spacing:-1px;animation:tala-brand-appear .75s ease both}
+      #tala-first-paint .mark strong{font:italic 800 60px/1 Georgia,serif}
+      #tala-first-paint .mark small{display:block;margin:8px 0 0;font:800 14px Arial,sans-serif;letter-spacing:7px}
+      #tala-first-paint .slogan{position:absolute;bottom:54px;left:12px;right:12px;text-align:center;color:#777;font:400 17px Arial,sans-serif}
+      @keyframes tala-brand-appear{from{opacity:.15;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+      @media(prefers-reduced-motion:reduce){#tala-first-paint .mark{animation:none}}
+    </style>
   </head>
   <body>
+    <div id="tala-first-paint" role="status" aria-label="Cargando Tala Eats"><div class="mark"><strong>Tala</strong><small>EATS</small></div><div class="slogan">Pide, disfruta y repite.</div></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
