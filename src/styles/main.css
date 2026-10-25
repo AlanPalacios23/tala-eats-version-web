@@ -605,3 +605,15 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 .customer-auth-next:disabled{opacity:.42}
 @media(max-width:700px){.customer-shell .footer{display:none}.customer-step-auth{height:100%}}
 @media(prefers-reduced-motion:reduce){.customer-auth-progress>div span{transition:none}}
+
+
+/* Flutter CheckoutScreen uses a bottom primary action independent of long
+   scrolling content. Keep only the body scrolling and CTA anchored. */
+.customer-shell:has(.mobile-checkout) .mobile-checkout{padding-bottom:145px}
+.customer-shell:has(.mobile-checkout) .mobile-checkout-actions{
+ position:fixed;z-index:35;left:50%;bottom:0;transform:translateX(-50%);
+ width:min(700px,100%);padding:11px 20px max(16px,env(safe-area-inset-bottom));
+ background:linear-gradient(180deg,#fafaf900 0%,#fafaf9 24%,#fafaf9 100%)
+}
+.customer-shell:has(.mobile-checkout) .mobile-checkout-fixed{margin:0 auto}
+@media(prefers-reduced-motion:reduce){.customer-shell:has(.mobile-checkout) .mobile-checkout-fixed{transition:none}}
