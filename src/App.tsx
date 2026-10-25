@@ -199,6 +199,7 @@ export default function App(){
    <Route path="/clientes" element={<CustomerHome market={market} onSelectMarket={selectMarket}/>}/><Route path="/buscar" element={<CustomerSearch market={market}/>}/><Route path="/comercio/:id" element={<CustomerCommerce cart={cart} onAdd={add} market={market}/>}/>
    <Route path="/carrito" element={<CustomerCart cart={cart} setCart={setCart}/>}/><Route path="/checkout" element={<Protected role="customer"><CustomerCheckout cart={cart} setCart={setCart}/></Protected>}/><Route path="/direcciones" element={<Protected role="customer"><CustomerAddresses/></Protected>}/>
    <Route path="/pedidos" element={<Protected role="customer"><CustomerOrders/></Protected>}/><Route path="/pedidos/:id" element={<Protected role="customer"><CustomerOrderDetail/></Protected>}/>
+   <Route path="/editar-perfil" element={<Protected role="customer"><CustomerProfile/></Protected>}/>
    <Route path="/acceso" element={<Auth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
