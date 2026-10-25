@@ -16,4 +16,17 @@ check eliminar-cuenta
 check terminos
 check terminos-y-condiciones
 check terminos-condiciones
+check terminos-de-servicio
+check legal/terminos
+check legal/terminos-y-condiciones
+check terms
+check terminos-de-uso
+# Look for any source-advertised link containing term/condic/tos, never
+# assume an inferred URL exists without a real HTTP 200.
+for path in "" privacidad eliminar-cuenta; do
+ curl -fsS --location --max-time 12 "$BASE/${path}" 2>/dev/null |
+  grep -oiE 'href=["\x27][^"\x27<>]+' |
+  grep -Ei 'termin|condici|legal|terms' |
+  sort -u | head -12 | sed 's/^/LEGAL_DISCOVERY=/' || true
+done
 printf 'LEGAL_AUDIT=PASS_READ_ONLY_NO_WRITES\n'
