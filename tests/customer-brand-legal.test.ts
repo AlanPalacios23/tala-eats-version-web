@@ -18,7 +18,7 @@ describe('premium Flutter Users branding / legal public links and no user 2FA',(
   expect(svg).toContain('aria-label="Tala Eats"');
   expect(svg).toContain('<linearGradient');
   expect(ui).toContain('/branding/tala-script-gradient.svg');
-  expect(launch).toContain('/branding/tala-script-gradient.svg');
+  expect(launch).toContain('/branding/splash-exacto-728x1536.webp');
   expect(html).toContain('/branding/tala-script-gradient.svg');
  });
  it('premium welcome/methods use already verified SAME-ORIGIN public restaurant imagery',()=>{
