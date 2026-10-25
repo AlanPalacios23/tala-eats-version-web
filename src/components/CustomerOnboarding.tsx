@@ -18,7 +18,7 @@ export function CustomerEntry(){
  const [stage,setStage]=useState<'splash'|'welcome'|'methods'>('splash');
  const [splashArtFailed,setSplashArtFailed]=useState(false);
  const [tacosArtFailed,setTacosArtFailed]=useState(false);
- const [bagArtFailed,setBagArtFailed]=useState(false);
+ const [foodArtFailed,setFoodArtFailed]=useState(false);
  const from=safeDestination((location.state as {from?:string}|null)?.from);
  useEffect(()=>{
   if(user?.role==='customer')navigate(from,{replace:true});
@@ -41,13 +41,13 @@ export function CustomerEntry(){
      <div className="customer-splash-fallback customer-welcome-tacos-fallback" aria-hidden="true"><h1>Comida de<br/>tu ciudad</h1><p>Tus restaurantes y comercios favoritos, más cerca de ti.</p></div>
      <button type="button" className="customer-splash-next" onClick={()=>setStage('methods')} aria-label="Avanzar desde Comida de tu ciudad" title="Siguiente"><ArrowRight size={28} strokeWidth={2.4}/></button>
     </div>:
-    <div className="customer-onboarding-splash customer-splash-exact customer-bag-screen">
-     <picture className="customer-splash-art customer-bag-art" aria-hidden="true" style={{display:bagArtFailed?'none':undefined}}>
-       <img src="/branding/onboarding-rapido-seguro-864x1536.jpg" width="864" height="1536" alt="" draggable={false} onError={()=>setBagArtFailed(true)}/>
+    <div className="customer-onboarding-splash customer-splash-exact customer-food-screen">
+     <picture className="customer-splash-art customer-food-art" aria-hidden="true" style={{display:foodArtFailed?'none':undefined}}>
+       <img src="/branding/onboarding-un-antojo-864x1536.jpg" width="864" height="1536" alt="" draggable={false} onError={()=>setFoodArtFailed(true)}/>
      </picture>
-     <div className="customer-splash-fallback customer-bag-fallback" aria-hidden="true"><h1>Rápido y seguro</h1><p>Haz tu pedido en minutos y sigue cada paso en tiempo real.</p></div>
-     <button type="button" className="customer-onboarding-back" aria-label="Volver a Comida de tu ciudad" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
-     <Link className="customer-splash-next customer-bag-next" to="/acceso" state={{from}} aria-label="Continuar con tu correo electrónico" title="Continuar con tu correo"><ArrowRight size={28} strokeWidth={2.4}/></Link>
+     <div className="customer-splash-fallback customer-food-fallback" aria-hidden="true"><h1>Un antojo,<br/>mil posibilidades.</h1><p>Desde tacos hasta lo que necesites, todo en un solo lugar.</p></div>
+     <button type="button" className="customer-food-back" aria-label="Volver a Comida de tu ciudad" onClick={()=>setStage('welcome')}><ArrowLeft size={26}/></button>
+     <Link className="customer-photo-hotspot customer-food-hotspot" to="/acceso" state={{from}} aria-label="Continuar con tu correo electrónico" title="Continuar con tu correo"><span className="customer-visual-sr-only">Continuar con correo</span></Link>
     </div>}
  </div>;
 }
@@ -57,7 +57,7 @@ export function CustomerStepAuth(){
  const [mode,setMode]=useState<AuthMode>(initial?.create?'signup':'signin');
  const [step,setStep]=useState(0);
  const [first,setFirst]=useState(''),[last,setLast]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState('');
- const [busy,setBusy]=useState(false),[error,setError]=useState(''),[visible,setVisible]=useState(false),[consent,setConsent]=useState(false);
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[visible,setVisible]=useState(false),[consent,setConsent]=useState(false),[authArtFailed,setAuthArtFailed]=useState(false);
  const total=mode==='signin'?2:4,final=total-1;
  const from=safeDestination(initial?.from);
  const value=mode==='signin'?(step===0?email:password):[first,last,email,password][step];
@@ -88,6 +88,37 @@ export function CustomerStepAuth(){
  };
  useEffect(()=>{if(user?.role==='customer')nav(from,{replace:true});},[user?.role,nav,from]);
  if(user?.role==='customer')return null;
+ // The two signin reference photographs are the exact originals, not static
+ // form screenshots: real inputs and clickable CTA hotspots overlay them.
+ // Sign-up remains the full existing interactive four-step React form below.
+ if(mode==='signin'&&!authArtFailed)return <div className={'customer-photo-auth stage-'+(step===0?'email':'password')} data-mobile-screen="photo-auth">
+   <img className="customer-photo-auth-art" src={step===0?'/branding/auth-continua-correo-864x1536.jpg':'/branding/auth-contrasena-729x1536.jpg'}
+     width={step===0?864:729} height={1536} alt="" aria-hidden="true" draggable={false} onError={()=>setAuthArtFailed(true)}/>
+   <button type="button" className="customer-photo-hit customer-photo-back" aria-label="Regresar" disabled={busy} onClick={back}><span className="customer-visual-sr-only">Regresar</span></button>
+   <form className="customer-photo-auth-form" onSubmit={e=>void next(e)}>
+     <h1 className="customer-visual-sr-only">{step===0?'Continúa con tu correo':'Ingresa tu contraseña'}</h1>
+     <label className="customer-photo-field">
+       <span className="customer-visual-sr-only">{step===0?'Tu correo electrónico':'Contraseña'}</span>
+       <input key={step} type={step===0?'email':visible?'text':'password'}
+         autoComplete={step===0?'email':'current-password'}
+         name={step===0?'email':'password'}
+         value={step===0?email:password} onChange={e=>change(e.target.value)}
+         maxLength={step===0?254:256}
+         placeholder={step===0?'Tu correo electrónico':'Contraseña'} required/>
+     </label>
+     {step===1&&<button type="button" className="customer-photo-hit customer-photo-eye" onClick={()=>setVisible(x=>!x)}
+       aria-label={visible?'Ocultar contraseña':'Mostrar contraseña'}><span className="customer-visual-sr-only">{visible?'Ocultar':'Mostrar'}</span></button>}
+     {step===1&&<button type="button" className="customer-photo-hit customer-photo-forgot" onClick={()=>setError('La recuperación de contraseña todavía no está disponible desde esta pantalla.')}
+       aria-label="¿Olvidaste tu contraseña?"><span className="customer-visual-sr-only">¿Olvidaste tu contraseña?</span></button>}
+     {error&&<p className="customer-photo-error" role="alert">{error}</p>}
+     <button className="customer-photo-hit customer-photo-submit" type="submit" disabled={!valid||busy}
+       aria-label={step===0?'Continuar al paso de contraseña':'Iniciar sesión'}>
+       <span className="customer-visual-sr-only">{busy?'Verificando…':step===0?'Continuar':'Iniciar sesión'}</span>
+     </button>
+     {step===0&&<button type="button" className="customer-photo-hit customer-photo-create" onClick={switchMode}
+       aria-label="Crear cuenta"><span className="customer-visual-sr-only">Crear cuenta</span></button>}
+   </form>
+  </div>;
  return <div className="customer-step-auth" data-mobile-screen="step-auth">
    <button className="customer-auth-back" onClick={back} aria-label="Regresar" disabled={busy}><ArrowLeft size={29}/></button>
    <div className="customer-auth-progress">
