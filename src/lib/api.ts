@@ -33,6 +33,8 @@ const json = (method: string, body?: unknown): RequestInit => ({ method, body: b
 export const api = {
   login: (email: string, password: string, otp?: string) => request<AuthResponse>('/auth/login',json('POST',{email,password,...(otp?{otp}:{})})),
   register: (name: string, email: string, password: string) => request<AuthResponse>('/auth/register',json('POST',{name,email,password})),
+  forgotPassword: (email:string) => request<void>('/auth/password/forgot',json('POST',{email})),
+  resetPassword: (token:string,password:string) => request<void>('/auth/password/reset',json('POST',{token,password})),
   me: () => request<User>('/auth/me'),
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
