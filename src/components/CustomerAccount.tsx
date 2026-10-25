@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Bell, Bike, ChevronRight, Heart, Headphones, Log
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, isMerchantRole, isDriverRole, pesos } from '../lib/api';
 import { useSession } from '../lib/session';
+import { amountInCents } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
 
 function Heading({title,back='/cuenta',refresh}:{title:string;back?:string;refresh?:()=>void}){
@@ -40,7 +41,7 @@ export function CustomerWallet(){
  const [snapshot,setSnapshot]=useState<WalletSnapshot|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[tick,setTick]=useState(0),[busy,setBusy]=useState(false),[redemptionUncertain,setRedemptionUncertain]=useState(false);
  const refresh=()=>setTick(n=>n+1);
  useEffect(()=>{let active=true;setLoading(true);setError('');setSnapshot(null);
-  api.wallet().then(value=>{if(active){setSnapshot(value);setRedemptionUncertain(false);}}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos verificar tu saldo.');}).finally(()=>{if(active)setLoading(false);});
+  api.wallet().then(value=>{if(amountInCents(value.balance)===null||!Number.isSafeInteger(value.points)||value.points<0|| (value.transactions!==undefined&&!Array.isArray(value.transactions)))throw new Error('El servidor devolvió un saldo o puntos inválidos.');if(active){setSnapshot(value);setRedemptionUncertain(false);}}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos verificar tu saldo.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false};
  },[tick]);
  async function redeem(){
