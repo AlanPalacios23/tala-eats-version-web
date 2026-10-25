@@ -1,88 +1,128 @@
-# TALA EATS WEB — Despliegue aislado en Kali
+# TALA EATS — Kali / portada + 3 PWAs con UNA API RC8.13
 
-Este repositorio es **frontend PWA solamente**. No contiene API, PostgreSQL, Stripe
-secreto, Redis ni backend alternativo. Depende del backend Node RC8.13 LIVE en
-`127.0.0.1:18190` de Kali. **No exponer 18190 directamente a Internet.**
+El portal de entrada **/** y las tres apps instalables **/clientes**, **/restaurante**, **/repartidor** tienen **manifiestos distintos** y un código React compartido. No hay 4 backends ni 4 bases de datos.
 
-## Requisitos
+- Sitio PWA local: Nginx nuevo exclusivamente en `127.0.0.1:18195`.
+- API existente: `127.0.0.1:18190/api/v1` (RC8.13 LIVE, PM2/Stripe sin reiniciar).
+- Dominio público deseado: `https://web-talaeats.alan-palacios-dev.com`.
+- Portada web: `/`; apps: `/clientes`, `/restaurante` y `/repartidor`.
+- El reparto real sigue BLOQUEADO por el backend en LIVE; crear esta PWA
+  **no habilita** driver GPS/aceptación/entrega ni liquidaciones.
+- La última auditoría financiera informó 0 comercios aprobados en Stripe
+  Connect: no fingir que el checkout comercial está listo.
 
-- DNS y Cloudflared ya disponibles.
-- Nginx o un equivalente que permita SPA fallback + proxy same-origin `/api/v1/`.
-- Node 22+ para compilar. HTTPS obligatorio al entrar desde dispositivos.
-- Rol de administración separado para habilitar restaurantes, vendedores y repartidores.
+## 1. Preparar frontend SIN tocar el servicio LIVE
 
-## Entorno recomendado
-
-- Frontend web nuevo: `https://web-talaeats.alan-palacios-dev.com`.
-- Nginx PWA local: `127.0.0.1:18195`, solo frontend estático.
-- API LIVE **existente**: `127.0.0.1:18190`, conservando Stripe LIVE y su DB.
-- Páginas legales existentes (`/privacidad` y `/eliminar-cuenta`): no tocar.
-- No abrir el puerto 18192 temporal, ya retirado.
-
-## Publicación manual
-
-Desde un checkout de la PWA (NO dentro del backend de producción):
+Con el usuario existente **tala-node-stage** (ya tiene Node 24), usar
+**SHA exacto** del último commit de `main` que haya pasado GitHub Actions.
 
 ```bash
-npm install
+(
+set -euo pipefail
+export PATH="$HOME/.local/node24/bin:$HOME/.local/bin:$PATH"
+SHA="<SHA_DE_LA_VERSION_WEB_40_HEX>"
+ROOT="$HOME/tala-eats-web-releases/$SHA"
+
+test "$(id -un)" = "tala-node-stage"
+mkdir -p "$HOME/tala-eats-web-releases"
+test ! -e "$ROOT"
+
+git clone --depth 1 --branch main \
+  https://github.com/AlanPalacios23/tala-eats-version-web.git "$ROOT"
+test "$(git -C "$ROOT" rev-parse HEAD)" = "$SHA"
+cd "$ROOT"
+
+node --version
+npm install --no-audit --no-fund
 npm run check
+
+bash deploy/kali-install-pwa.sh --plan "$SHA"
+)
 ```
 
-Para la primera publicación, como administrador responsable de Nginx:
+Al ser una primera versión sin `package-lock.json` confirmado en `main`,
+`npm install` fija las dependencias y luego `npm run check` ejecuta
+pruebas + compilación. **Versionar el lockfile después de validarlo** y
+pasar a `npm ci` para despliegues posteriores. El instalador prohíbe
+archivos de secretos dentro de `dist/`.
+
+**PASS esperado:** `PWA_INSTALL_PLAN=PASS_READ_ONLY`. Si retorna HOLD,
+revisar el motivo y no usar --apply.
+
+## 2. Primera publicación local (requiere sudo de alan)
+
+**Desde la cuenta `alan` con sudo**, ejecuta el script del mismo SHA
+creado bajo `/home/tala-node-stage`:
 
 ```bash
-sudo mkdir -p /srv/talaeats-pwa/releases/v0.1.0
-sudo cp -a dist/. /srv/talaeats-pwa/releases/v0.1.0/
-sudo ln -sfn /srv/talaeats-pwa/releases/v0.1.0 /srv/talaeats-pwa/current
+SHA="<SHA_DE_LA_VERSION_WEB_40_HEX>"
+sudo bash "/home/tala-node-stage/tala-eats-web-releases/$SHA/deploy/kali-install-pwa.sh" \
+ --apply "$SHA" I_APPROVE_NEW_PWA_NGINX_SITE_ONLY
 ```
 
-Esto solo prepara estáticos; la configuración del servidor y de Cloudflared
-**requiere revisión y cambio independiente**. Probar `nginx -t` antes de recargar.
-Copia el archivo `nginx-web-talaeats.conf` como un nuevo sitio de Nginx,
-NO en la configuración de Tala Eats LIVE de la API. Si ya existe otro proxy
-para el puerto 18195, no sobrescribirlo.
+Crea **solo** `/srv/talaeats-pwa/releases/$SHA`, su symlink
+`/srv/talaeats-pwa/current` y el nuevo sitio Nginx
+`/etc/nginx/sites-available/tala-eats-web-pwa.conf`. Aborta si esas rutas
+ya existen, si el puerto 18195 está ocupado, si no encuentra Nginx, si el
+backend no dice RC8.13 LIVE o si `nginx -t` falla; intenta revertir el nuevo
+sitio ante un error. No modifica procesos PM2 ni Cloudflared, DB, Redis,
+Stripe o sitios Nginx existentes.
 
-Una vez que Nginx valide, agregar la ruta de Cloudflared de forma que las rutas
-específicas públicas existentes no cambien:
+**PASS esperado:** `PWA_KALI_NGINX_LOCAL_DEPLOY=PASS`.
 
-```yaml
-# SOLO ejemplo de ingreso nuevo, no reemplazar configuración actual:
-- hostname: web-talaeats.alan-palacios-dev.com
-  service: http://127.0.0.1:18195
-```
+## 3. Exponer el portal por HTTPS, sin tocar el dominio API
 
-Después, probar desde navegador:
+El hostname **nuevo** debe apuntar al mismo túnel Cloudflare (panel de
+Cloudflare Zero Trust, Public Hostnames / Routes o archivo cloudflared
+existente, según cómo se instaló). El origen esperado es:
 
 ```text
-https://web-talaeats.alan-palacios-dev.com/
-https://web-talaeats.alan-palacios-dev.com/api/v1/health
-https://web-talaeats.alan-palacios-dev.com/api/v1/payments/config
+web-talaeats.alan-palacios-dev.com -> http://127.0.0.1:18195
 ```
 
-`/api/v1/health` debe seguir reportando `rc8.13-unified-live`; NO 0.1 stage.
-No imprimir ni registrar credenciales. Requiere verificar `Set-Cookie`
-HttpOnly Secure a través del nuevo dominio; el cliente usa exclusivamente
-cookies secure same-origin, sin guardar token en localStorage.
+**No sustituir** el hostname ya operativo
+`talaeats.alan-palacios-dev.com -> 127.0.0.1:18190`.
+No hacer `cloudflared service uninstall`, `tunnel delete`, ni
+sobrescribir `/etc/cloudflared/config.yml` con un ejemplo genérico.
 
-## Notas operativas
+Si cloudflared usa YAML local, editar de forma aditiva previa copia
+verificada (apuntando a su configuración concreta), mantener el catch-all
+al final, validar sintaxis/rutas y recargar únicamente cloudflared.
+Si usa túnel de administración remota, agregar Public Hostname desde
+Cloudflare Dashboard sin modificar archivos locales.
 
-- Usuarios: registro/login/catalogación/carrito/quote/checkout **en efectivo
-  para recoger**, si está habilitado en `orders/payment-methods` y el vendedor
-  está verificado y aprobado. El servidor puede devolver 409 si faltan mapeos
-  Stripe Connect del vendedor: no forzar la aprobación ni capturar pedidos fuera
-  del backend.
-- Stripe LIVE con tarjeta: no disponible en la interfaz inicial. Crear un
-  PaymentIntent requiere Bearer explícito; integrar Stripe.js + webhook firmado,
-  reconciliación, confirmación y pruebas con cuentas autorizadas ANTES de
-  habilitarlo. No usar pago ficticio, iframe improvisado ni pedir datos de
-  tarjeta en formularios propios.
-- Repartidores: modo consulta. `VITE_DRIVER_ACTIONS_ENABLED=false`; el LIVE
-  no autoriza despacho de repartidor. Para activación: validar primero flujo
-  comercial completo, ledger, GPS y entrega con PIN con backend certificado.
-- PWAs instalables mediante Chrome Android o menú de Safari iOS; las
-  notificaciones push no están desarrolladas todavía.
-- El SW no cachea `/api/` ni órdenes, perfiles, tokens o pagos. Sin conexión
-  solamente se muestra un aviso; **no se crean pedidos offline**.
-- No habilitar Cache-Control público ni Service Worker sobre el proxy `/api/v1`.
-- Desplegar versiones de la PWA con rollback mediante symlink sin tocar PM2
-  ni Nginx de la API LIVE.
+## 4. Verificaciones sin generar compras ni cuentas de prueba
+
+```bash
+BASE="https://web-talaeats.alan-palacios-dev.com"
+for path in / /clientes /restaurante /repartidor \
+ /manifest.webmanifest /manifest-clientes.webmanifest \
+ /manifest-restaurante.webmanifest /manifest-repartidor.webmanifest \
+ /sw.js /api/v1/health;do
+  curl -s -o /dev/null -w '%{http_code} %{url_effective}\n' \
+   --max-time 12 "$BASE$path"
+done
+curl -fsS --max-time 10 "$BASE/api/v1/health"
+```
+
+Expected: HTTP 200 en todas las rutas, y health informa
+`rc8.13-unified-live`, `production:true`. Luego abrir manualmente la
+portada desde teléfono Android/iPhone, instalar las áreas desde cada
+`start_url` y probar login por HTTPS. La compatibilidad con múltiples
+instalaciones separadas por manifiestos del mismo origen depende del
+navegador/SO; la navegación por los cuatro accesos siempre funciona.
+
+Verificar respuestas con `Set-Cookie` HttpOnly, Secure y SameSite=Lax
+sin imprimir tokens. El JS no almacena credenciales en localStorage; el
+service worker no cachea respuestas API ni pedidos.
+
+## Prioridad funcional después de publicar
+
+1. Ingresar como Cliente (catálogo y consulta real).
+2. Ingresar como Restaurante autorizado (menú, pedidos y cocina).
+3. Ingresar como Repartidor (perfil e historial; **despacho LIVE bloqueado**).
+4. Habilitar primer comercio real con autorización Stripe Connect, y
+   después validar checkout de efectivo/Stripe e2e y reparto en entorno
+   aislado antes de habilitar operaciones comerciales.
+
+Nunca publicar credenciales en GitHub, logs o chat.
