@@ -38,6 +38,7 @@ export const api = {
   login: (email: string, password: string, otp?: string) => request<AuthResponse>('/auth/login',json('POST',{email,password,...(otp?{otp}:{})})),
   register: (name: string, email: string, password: string) => request<AuthResponse>('/auth/register',json('POST',{name,email,password})),
   me: () => request<User>('/auth/me'),
+  updateProfile: (name:string,phone:string) => request<User>('/auth/me',json('PATCH',{name,phone})),
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
   restaurantsForMarket: async (code:MarketCode):Promise<Restaurant[]> => {
