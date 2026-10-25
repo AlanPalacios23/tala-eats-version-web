@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, Bell, CheckCircle2, ChevronRight, Heart, Headphones, LogOut, MapPin, Package, RefreshCw, ShieldCheck, Store, UserRound, Wallet, WifiOff } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
+import { ArrowLeft, ArrowRight, Bell, Bike, ChevronRight, Heart, Headphones, LogOut, MapPin, Package, RefreshCw, ShieldCheck, Store, UserRound, Wallet, WifiOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, isMerchantRole, isDriverRole, pesos } from '../lib/api';
 import { useSession } from '../lib/session';
@@ -9,7 +9,7 @@ import type { Restaurant } from '../lib/types';
 function Heading({title,back='/cuenta',refresh}:{title:string;back?:string;refresh?:()=>void}){
  return <div className="mobile-detail-header"><Link to={back} aria-label="Regresar"><ArrowLeft size={22}/></Link><h1>{title}</h1>{refresh&&<button aria-label="Actualizar" onClick={refresh}><RefreshCw size={20}/></button>}</div>;
 }
-function AccountLink({to,label,icon,subtitle}:{to:string;label:string;icon:React.ReactNode;subtitle?:string}){
+function AccountLink({to,label,icon,subtitle}:{to:string;label:string;icon:ReactNode;subtitle?:string}){
  return <Link className="mobile-account-link" to={to}><span className="mobile-account-icon">{icon}</span><span className="mobile-account-link-copy"><strong>{label}</strong>{subtitle&&<small>{subtitle}</small>}</span><ChevronRight size={19}/></Link>;
 }
 export function CustomerAccount(){
@@ -31,7 +31,7 @@ export function CustomerAccount(){
   </div>
   <h2>Seguridad y privacidad</h2><div className="mobile-account-group"><div className="mobile-account-info"><ShieldCheck size={20}/><span>Tu sesión se protege mediante autenticación del servidor. Otras preferencias de seguridad siguen en desarrollo web.</span></div></div>
   <h2>Ayuda</h2><div className="mobile-account-group"><AccountLink to="/soporte" label="Ayuda y soporte" icon={<Headphones size={21}/>}/></div>
-  {(isMerchantRole(user?.role)||isDriverRole(user?.role))&&<div className="mobile-account-group">{isMerchantRole(user?.role)&&<AccountLink to="/restaurante" label="Panel restaurante" icon={<Store size={21}/>}/>}</div>}
+  {(isMerchantRole(user?.role)||isDriverRole(user?.role))&&<div className="mobile-account-group">{isMerchantRole(user?.role)&&<AccountLink to="/restaurante" label="Panel restaurante" icon={<Store size={21}/>}/>} {isDriverRole(user?.role)&&<AccountLink to="/repartidor" label="Panel repartidor" icon={<Bike size={21}/>}/>} </div>}
   <button className="mobile-account-logout" disabled={busy} onClick={()=>void leave()}><LogOut size={20}/> {busy?'Cerrando sesión…':'Cerrar sesión'}</button>
  </div>;
 }
