@@ -16,6 +16,7 @@ const fulfill=async(route)=>{
   if(path==='/api/v1/restaurants/11')return merchant;
   if(path==='/api/v1/platform/favorites')return [];
   if(path==='/api/v1/platform/addresses')return [{id:33,label:'Casa',address:'Centro, Tala, Jalisco',lat:20.652,lng:-103.703,is_default:true}];
+  if(path==='/api/v1/v11/privacy/preferences')return {marketing_opt_in:true,analytics_opt_in:false,personalization_opt_in:true};
   if(path==='/api/v1/orders/payment-methods')return {methods:[{id:'cash',enabled:true},{id:'stripe',enabled:false}],pickup_checkout_supported:true,pickup_quote_supported:true,delivery_checkout_supported:false,delivery_cash_supported:false,delivery_quote_supported:false};
   if(path==='/api/v1/payments/stripe/config')return {enabled:false,publishable_key:null};
   if(path==='/api/v1/orders/quote'){const body=req.postDataJSON();return {restaurant_id:body.restaurant_id,order_type:body.order_type,payment_method:body.payment_method,currency:'MXN',inventory_reserved:false,quote_is_binding:false,total:'103.15',subtotal:'90.00',service_fee:'13.15',delivery_fee:'0.00',tip:'0.00'};}
@@ -59,6 +60,9 @@ for(const width of widths){
  await capture('account','/cuenta');
  await capture('orders','/pedidos');
  await capture('profile','/editar-perfil');
+ await capture('terms','/terminos');
+ await capture('privacy-notice','/aviso-privacidad');
+ await capture('privacy-controls','/privacidad');
  await context.close();
 }
 // Regression: actual production URLs still mention staging, although the
@@ -151,6 +155,20 @@ await authPage.getByLabel('Contraseña',{exact:true}).fill('synthetic_password_n
 await authPage.getByRole('button',{name:'Iniciar sesión'}).click();
 await authPage.waitForURL(ORIGIN+'/clientes',{timeout:12000});
 await authPage.getByText('Hola, Cliente',{exact:false}).first().waitFor({state:'visible',timeout:10000});
+// A customer's photo is local only. Verify device-local saving is shown on
+// both Edit Profile and Account, without any remote photo POST.
+await authPage.goto(ORIGIN+'/editar-perfil',{waitUntil:'networkidle'});
+await authPage.locator('input[type="file"]').setInputFiles({name:'my-avatar.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aW0cAAAAASUVORK5CYII=','base64')});
+await authPage.getByText('Foto guardada en este dispositivo.').waitFor({state:'visible',timeout:12000});
+await authPage.goto(ORIGIN+'/cuenta',{waitUntil:'networkidle'});
+await authPage.locator('.mobile-account-avatar img').waitFor({state:'visible',timeout:12000});
+await authPage.getByRole('link',{name:/Privacidad y tus datos/}).click();
+await authPage.waitForURL(ORIGIN+'/privacidad');
+await authPage.getByRole('button',{name:/Eliminar mi cuenta/}).click();
+await authPage.getByRole('dialog').waitFor({state:'visible'});
+if(await authPage.getByRole('button',{name:'Enviar solicitud'}).isEnabled())throw new Error('Deletion action incorrectly enabled without typed verification');
+await authPage.getByRole('button',{name:'Cancelar'}).click();
+
 if(loginPostCount!==1||meAfterLogin<1)throw new Error('Login did not verify server session after authentication');
 // Flutter sign-out must exit the authenticated shell and show login.
 await authPage.goto(ORIGIN+'/cuenta',{waitUntil:'networkidle'});
