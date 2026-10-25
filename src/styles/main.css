@@ -707,3 +707,65 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 @media(max-height:690px){.customer-onboarding-photo .customer-onboarding-content{margin-bottom:16vh}.customer-onboarding-content h1{margin-top:15px}.customer-auth-form{padding-top:22px}.customer-auth-form h1{margin-bottom:22px}.customer-auth-next{margin-top:25px}.customer-onboarding-photo.methods .customer-onboarding-content{margin-bottom:9vh}}
 @media(max-width:359px){.customer-onboarding-content h1{font-size:29px}.customer-onboarding-cta{font-size:14px}.customer-auth-form h1{font-size:27px}.customer-auth-back{margin-bottom:10px}}
 @media(prefers-reduced-motion:reduce){.customer-onboarding-splash .customer-onboarding-wordmark{animation:none}}
+
+
+/* 2026-10-25 BRAND REFRESH
+ * User supplied brand lettering ("Tala Eats", warm orange → pink, not the
+ * old italic Georgia placeholder). Images are REAL existing public catalog
+ * photos from the verified SAME-ORIGIN live media proxy.
+ */
+.customer-brand-script{display:block;width:min(76vw,310px);height:auto;aspect-ratio:560/170;object-fit:contain}
+.customer-brand-script.splash{width:min(78vw,340px);position:relative;z-index:2;transform:translateY(-4vh)}
+.customer-launch-screen{background:#fff}
+.customer-launch-logo{width:min(77vw,320px)}
+.customer-launch-bottom{gap:24px}
+.customer-onboarding-splash{background:radial-gradient(ellipse at 50% 49%,#fff2eb 0,#fff 52%,#fff 100%);}
+.customer-onboarding-splash>p{bottom:clamp(75px,11svh,128px);font-size:16px;color:#8a8581;letter-spacing:.08px}
+.customer-onboarding-photo.welcome{
+ background-image:linear-gradient(180deg,rgba(15,12,13,.60) 0%,rgba(19,13,12,.31) 36%,rgba(15,12,11,.50) 57%,rgba(10,9,9,.91) 100%),url('/api/v1/uploads/catalog/r1-4YiKcP7oVyQdLwDAWJP8y3yiE1O-wA6h.jpg');
+ background-color:#211915;background-position:center center;background-size:cover;background-repeat:no-repeat
+}
+.customer-onboarding-photo.methods{
+ background-image:linear-gradient(180deg,rgba(24,10,14,.73) 0%,rgba(25,10,14,.43) 29%,rgba(29,10,13,.48) 56%,rgba(13,11,13,.94) 100%),url('/api/v1/uploads/catalog/r1-p1-fp-ow0ULDj24aM6vkfKWfZAwElFJyXDq.jpg');
+ background-color:#2e1c20;background-position:center center;background-size:cover;background-repeat:no-repeat
+}
+.customer-onboarding-photo:before{background:linear-gradient(180deg,#0002,transparent 24%,#0000 52%,#0009)}
+.customer-onboarding-photo:after{display:none}
+.customer-brand-plaque{position:relative;display:grid;place-items:center;width:min(83vw,310px);min-height:88px;padding:0 14px;background:#fffefa;border:1px solid #fff9;box-shadow:0 10px 38px #0005;border-radius:20px}
+.customer-brand-plaque .customer-brand-script{width:min(68vw,255px)}
+.customer-brand-plaque.subtle{width:min(72vw,255px);min-height:71px;background:#fffefaed;border-radius:18px}
+.customer-brand-plaque.subtle .customer-brand-script{width:min(61vw,221px)}
+.customer-onboarding-photo .customer-onboarding-content{gap:0;margin-bottom:clamp(20px,5svh,52px);max-width:390px}
+.customer-onboarding-content h1{margin:clamp(22px,3.2svh,32px) 0 12px;font-size:clamp(31px,8.4vw,42px);text-shadow:0 3px 22px #0009}
+.customer-onboarding-content p{max-width:315px;color:#fffdfc;font-size:clamp(16px,3.9vw,18px);line-height:1.5}
+.customer-onboarding-photo.methods .customer-onboarding-content{margin-bottom:clamp(37px,9svh,96px)}
+.customer-onboarding-photo.methods h1{max-width:370px}
+.customer-onboarding-photo .customer-onboarding-cta,.customer-onboarding-actions{bottom:max(41px,calc(env(safe-area-inset-bottom) + 27px))}
+.customer-onboarding-actions{gap:13px}
+.customer-onboarding-cta{position:relative;display:flex;align-items:center;justify-content:center;min-height:63px;text-align:center;font-size:clamp(14px,3.8vw,16px);font-weight:800;letter-spacing:.05px;border-radius:20px;padding:0 16px}
+.customer-cta-label{width:100%;display:block;padding:0 30px;text-align:center;line-height:1.35;white-space:normal}
+.customer-onboarding-cta svg{position:absolute;flex-shrink:0}
+.customer-onboarding-cta svg:first-child:not(:last-child){left:17px}
+.customer-onboarding-cta svg:last-child{right:18px}
+.customer-onboarding-cta.glass{background:#fffbf6f0;color:#241d1a;border-color:#fff;box-shadow:0 14px 40px #0005}
+.customer-onboarding-cta.orange{background:#dd3b08;border:1px solid #f46a36;box-shadow:0 16px 40px #0007;color:white}
+.customer-onboarding-cta.orange:active,.customer-onboarding-cta.glass:active{transform:translateY(1px)}
+.customer-onboarding-register{padding:13px 5px;text-align:center;line-height:1.5;font-size:13px;color:white}
+.customer-onboarding-register strong{color:#ffe1d0}
+.customer-auth-next{position:relative;min-height:60px;display:flex;align-items:center;justify-content:center;gap:0;text-align:center;padding:0 16px}
+.customer-auth-next .customer-cta-label{padding:0 34px;text-align:center}
+.customer-auth-next>svg{position:absolute;right:19px}
+.customer-auth-form h1{margin-bottom:clamp(36px,6svh,64px)}
+@media(min-width:710px){
+ .customer-onboarding-photo.welcome,.customer-onboarding-photo.methods{background-position:center 54%}
+ .customer-brand-plaque{min-height:98px}
+ .customer-onboarding-content h1{font-size:42px}
+}
+@media(max-height:650px){
+ .customer-onboarding-photo .customer-onboarding-content{margin-bottom:3svh}
+ .customer-onboarding-content h1{margin-top:14px}
+ .customer-onboarding-photo.methods .customer-onboarding-content{margin-bottom:7svh}
+ .customer-brand-plaque{min-height:67px}
+ .customer-brand-plaque .customer-brand-script{width:min(60vw,200px)}
+}
+@media(prefers-reduced-motion:reduce){.customer-onboarding-cta:active{transform:none}}
