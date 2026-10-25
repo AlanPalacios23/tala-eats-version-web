@@ -125,3 +125,73 @@
  .te-commerce-dish-side { width:88px; }
  .te-commerce-dish-media { width:86px;height:86px; }
 }
+
+/* Flutter PremiumAuthScaffold with AuthBackdrop: static cream gradient,
+   radial orange glow, deliberate whitespace, mobile-first 460px content. */
+.te-customer-auth { position:relative;isolation:isolate;overflow:hidden;min-height:100dvh;
+ background:linear-gradient(180deg,#fff4ec 0%,#fffaf6 45%,#fafaf9 100%);color:#171717;
+ font-family:Roboto,Arial,system-ui,sans-serif; }
+.te-auth-glow { position:absolute;z-index:-1;top:-140px;right:-120px;width:320px;height:320px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,90,31,.12),rgba(255,90,31,0) 70%);pointer-events:none; }
+.te-auth-content { max-width:500px;margin:0 auto;padding:20px 20px 42px; }
+.te-auth-brand { height:48px;display:flex;gap:10px;align-items:center; }
+.te-auth-logo { width:36px;height:36px;color:#ff5a1f;background:#fff;display:grid;place-items:center;border-radius:12px; }
+.te-auth-brand strong { font-size:18px;letter-spacing:-.4px; }
+.te-auth-heading { margin-top:26px; }
+.te-auth-heading h1 { margin:0 0 8px;font:800 30px/1.08 Roboto,Arial,system-ui,sans-serif;letter-spacing:-1px; }
+.te-auth-heading p { font-size:15px;line-height:1.45;color:#737373;max-width:420px; }
+.te-auth-form { margin-top:24px;display:grid;gap:12px;animation-delay:90ms; }
+.te-auth-form label { font-size:13px;font-weight:700;color:#3b3633;display:block; }
+.te-auth-input { display:flex;align-items:center;gap:12px;margin-top:7px;border-radius:16px;border:1px solid #e2dbd5;
+  padding:0 12px;min-height:54px;background:rgba(255,255,255,.89);transition:border-color 200ms ease,box-shadow 200ms ease; }
+.te-auth-input svg { color:#737373;flex:none; }
+.te-auth-input input { width:100%;min-width:0;flex:1;border:0;background:transparent;color:#171717;outline:none;height:50px;font:500 15px Roboto,Arial,sans-serif; }
+.te-auth-input input::placeholder { color:#a29c97; }
+.te-auth-input:focus-within { border-color:#ff5a1f;box-shadow:0 0 0 3px rgba(255,90,31,.09); }
+.te-auth-toggle { border:0;background:transparent;color:#737373;display:grid;place-items:center;padding:8px;border-radius:12px; }
+.te-auth-submit { border:0;background:#ff5a1f;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
+ min-height:52px;border-radius:16px;font-weight:800;font-size:15px;margin-top:9px;box-shadow:0 7px 17px rgba(255,90,31,.14); }
+.te-auth-submit:disabled { opacity:.58;cursor:not-allowed; }
+.te-auth-error { padding:13px;background:#ffedea;border:1px solid #f7c8bf;color:#b42c1c;font-size:13px;border-radius:13px;animation:te-reveal 300ms cubic-bezier(.215,.61,.355,1) both; }
+.te-auth-switch { text-align:center;color:#737373;font-size:13px;font-weight:500;margin:20px 0 0; }
+.te-auth-switch button { border:0;background:none;color:#ce3c0a;font-size:13px;font-weight:750;padding:7px; }
+.te-auth-fineprint { margin:16px auto;text-align:center;color:#737373;font-size:12px;line-height:1.5;max-width:350px; }
+.te-auth-back { display:flex;align-items:center;justify-content:center;gap:8px;color:#737373;font-size:13px;font-weight:650;margin:16px auto; }
+.te-auth-submit:active,.te-auth-toggle:active { transform:scale(.975);transition:transform 140ms cubic-bezier(.215,.61,.355,1); }
+.te-auth-submit:focus-visible,.te-auth-toggle:focus-visible,.te-auth-switch button:focus-visible { outline:2px solid #ff5a1f;outline-offset:3px; }
+
+/* Original Flutter CartScreen, CartLineCard and CheckoutSectionCard:
+   preserve quote and idempotent order logic; restyle only its existing markup. */
+.app.is-customer .container.page { font-family:Roboto,Arial,system-ui,sans-serif;background:#fafaf9; }
+.app.is-customer .back-link { color:#171717;margin-bottom:24px;font-size:14px; }
+.app.is-customer .section-title .eyebrow { display:none; }
+.app.is-customer .section-title h2 { font-family:Roboto,Arial,sans-serif;font-size:30px;letter-spacing:-1px;font-weight:800;color:#171717; }
+.app.is-customer .section-title p { font-size:14px;color:#737373; }
+.app.is-customer .cart-layout { display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px; }
+.app.is-customer .cart-items,.app.is-customer .summary-card {
+ background:#fff;border:1px solid #eae8e5;border-radius:20px;padding:18px;
+ box-shadow:0 6px 20px rgba(37,33,30,.04);position:static; }
+.app.is-customer .cart-items h3,.app.is-customer .summary-card h3 {
+ font-family:Roboto,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-.3px;margin:0 0 12px;color:#171717; }
+.app.is-customer .cart-line { display:flex;align-items:center;gap:12px;border-top:1px solid #f0edea;padding:14px 0; }
+.app.is-customer .cart-icon { flex:none;width:56px;height:56px;border-radius:14px;background:#f3efeb; }
+.app.is-customer .cart-line strong { color:#171717;font-size:15px; }
+.app.is-customer .cart-line small { color:#737373;font-size:12px; }
+.app.is-customer .qty { border-radius:13px;gap:8px; }
+.app.is-customer .qty button { background:#fff3ec;color:#ce3c0a;border-radius:9px; }
+.app.is-customer .summary-line { font-size:13px;color:#737373; }
+.app.is-customer .summary-total strong { color:#171717;font-family:Roboto,Arial,sans-serif; }
+.app.is-customer .choice-note { background:#fff3ec;color:#ce3c0a; }
+.app.is-customer .payment-choice { background:#fff;border:1px solid #e2dbd5;border-radius:16px; }
+.app.is-customer .btn.primary { background:#ff5a1f;color:#fff;border-radius:16px;box-shadow:none;min-height:52px;font-family:Roboto,Arial,sans-serif; }
+.app.is-customer .btn.primary:not(:disabled):active,.app.is-customer .qty button:not(:disabled):active { transform:scale(.975); }
+.app.is-customer .summary-card { margin-bottom:38px; }
+@media(max-width:360px) {
+ .app.is-customer .cart-line { flex-wrap:wrap; }
+ .app.is-customer .cart-line .qty { margin-left:auto; }
+ .te-auth-content { padding-left:16px;padding-right:16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .te-auth-error { animation:none; }
+ .te-auth-input,.te-auth-submit:active,.te-auth-toggle:active { transition:none;transform:none; }
+}
