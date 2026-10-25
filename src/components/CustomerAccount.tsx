@@ -21,7 +21,7 @@ export function CustomerAccount(){
  }
  return <div className="mobile-customer-page mobile-account" data-mobile-screen="account">
   <h1>Cuenta</h1>
-  <section className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div><ChevronRight size={20}/></section>
+  <section className="mobile-account-profile"><span className="mobile-account-avatar"><UserRound size={30}/></span><div><strong>{user?.name||'Tu perfil'}</strong><span>{user?.email}</span></div></section>
   <Link to="/tala-club" className="mobile-account-club"><Wallet size={23}/><div><strong>Tala Club</strong><small>Consulta saldo, puntos y movimientos verificados</small></div><ChevronRight size={20}/></Link>
   <h2>Tu cuenta</h2><div className="mobile-account-group">
    <AccountLink to="/favoritos" label="Favoritos" icon={<Heart size={21}/>}/>
@@ -37,24 +37,24 @@ export function CustomerAccount(){
 }
 interface WalletSnapshot{balance:string|number;points:number;plus_member?:boolean;referral_code?:string;tier?:string;transactions?:{id?:number;kind?:string;description?:string;amount?:number|string;created_at?:string}[]}
 export function CustomerWallet(){
- const [snapshot,setSnapshot]=useState<WalletSnapshot|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[tick,setTick]=useState(0),[busy,setBusy]=useState(false);
+ const [snapshot,setSnapshot]=useState<WalletSnapshot|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[tick,setTick]=useState(0),[busy,setBusy]=useState(false),[redemptionUncertain,setRedemptionUncertain]=useState(false);
  const refresh=()=>setTick(n=>n+1);
  useEffect(()=>{let active=true;setLoading(true);setError('');setSnapshot(null);
-  api.wallet().then(value=>{if(active)setSnapshot(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos verificar tu saldo.');}).finally(()=>{if(active)setLoading(false);});
+  api.wallet().then(value=>{if(active){setSnapshot(value);setRedemptionUncertain(false);}}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos verificar tu saldo.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false};
  },[tick]);
  async function redeem(){
-  if(!snapshot||busy||snapshot.points<500)return;
+  if(!snapshot||busy||redemptionUncertain||snapshot.points<500)return;
   if(!window.confirm('¿Canjear 500 puntos? El servidor confirmará si tu recompensa está disponible.'))return;
   setBusy(true);setError('');
   try{await api.redeemReward();refresh();}
-  catch(err){setError(err instanceof Error?err.message:'No se pudo confirmar la recompensa.');}finally{setBusy(false);}
+  catch(err){setRedemptionUncertain(true);setError((err instanceof Error?err.message:'No se pudo confirmar la recompensa.')+' Actualiza el saldo antes de volver a canjear.');}finally{setBusy(false);}
  }
  return <div className="mobile-customer-page mobile-wallet" data-mobile-screen="wallet">
   <Heading title="Tala Club" refresh={refresh}/>
   {error&&<div className="mobile-address-error" role="alert"><WifiOff size={18}/>{error} Los datos no se consideran verificados.</div>}
   <section className="mobile-wallet-hero"><small>TALA CLUB</small><span>Saldo disponible</span><strong>{loading?'Verificando…':snapshot?pesos(snapshot.balance):'Sin verificar'}</strong><p>{snapshot? `${snapshot.points} puntos · Nivel ${snapshot.tier||'Por confirmar'}`:'Los importes requieren respuesta del servidor.'}</p>{snapshot?.plus_member&&<span>Membresía activa</span>}</section>
-  <section className="mobile-checkout-card"><h2>Recompensas</h2><p>Canjea 500 puntos cuando estén disponibles y confirmados por el servidor.</p><div className="mobile-wallet-progress"><span style={{width:`${Math.min(100,Math.max(0,(snapshot?.points??0)/500*100))}%`}}/></div><button className="mobile-checkout-fixed" disabled={busy||!snapshot||snapshot.points<500} onClick={()=>void redeem()}>{busy?'Verificando canje…':'Canjear 500 puntos'}</button></section>
+  <section className="mobile-checkout-card"><h2>Recompensas</h2><p>Canjea 500 puntos cuando estén disponibles y confirmados por el servidor.</p><div className="mobile-wallet-progress"><span style={{width:`${Math.min(100,Math.max(0,(snapshot?.points??0)/500*100))}%`}}/></div><button className="mobile-checkout-fixed" disabled={busy||redemptionUncertain||!snapshot||snapshot.points<500} onClick={()=>void redeem()}>{busy?'Verificando canje…':'Canjear 500 puntos'}</button></section>
   <h2>Movimientos</h2>
   {!snapshot?<div className="mobile-status"><WifiOff size={30}/><h3>Movimientos no disponibles</h3><p>No pudimos consultar el historial. No significa que no tengas movimientos.</p></div>:!snapshot.transactions?.length?<div className="mobile-status"><Wallet size={29}/><h3>Sin movimientos</h3><p>Tus movimientos de saldo y puntos aparecerán aquí.</p></div>:<div className="mobile-account-group">{snapshot.transactions.map((txn,i)=><div className="mobile-wallet-transaction" key={txn.id??i}><div><strong>{txn.description||'Movimiento'}</strong><small>{txn.created_at?new Date(txn.created_at).toLocaleDateString('es-MX'):''}</small></div><b>{txn.amount!==undefined?pesos(txn.amount):'—'}</b></div>)}</div>}
  </div>;
@@ -99,7 +99,7 @@ export function CustomerSupport(){
   setBusy(true);setSendError('');
   try{
    const ticket=await api.createSupportTicket(category,trimmed,null);
-   if(!Number.isSafeInteger(ticket.id)||ticket.id<=0)throw new Error('El servidor no confirmó el número de solicitud. Consulta el historial.');
+   if(!Number.isSafeInteger(Number(ticket.id))||Number(ticket.id)<=0)throw new Error('El servidor no confirmó el número de solicitud. Consulta el historial.');
    setTickets(prev=>[...(prev??[]),ticket]);setMessage('');
   }catch(e){setUncertain(true);setSendError(e instanceof Error?e.message:'No pudimos confirmar el envío. Consulta tu historial antes de reintentar.');}
   finally{setBusy(false);}
