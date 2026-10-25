@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, Clock3, MapPin, Minus, Plus, ShoppingBag, Store, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, Clock3, MapPin, Minus, Plus, Store, X } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Restaurant } from '../lib/types';
