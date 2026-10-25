@@ -47,6 +47,9 @@ describe('Flutter Usuarios PWA original startup & auth parity',()=>{
   expect(auth).toContain("!accepted");
   expect(authCss).toContain('.te-auth-password-rules');
   expect(authCss).toContain('240ms');
+  expect(auth).toContain('te-auth-floating-label');
+  expect(authCss).toContain('.te-auth-input.has-value .te-auth-floating-label');
+  expect(authCss).toContain('background:#ce3c0a;min-height:54px');
  });
  it('Forgot and reset call real network endpoints only after explicit actions',()=>{
   expect(auth).toContain('await api.forgotPassword(email.trim())');
