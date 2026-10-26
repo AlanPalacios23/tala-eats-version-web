@@ -10,8 +10,11 @@ BASE='https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/fea
 MODE="${1:---require-push-ready}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-for cmd in curl python3 bash git;do
- command -v "$cmd" >/dev/null||{echo "WEB_PUSH_ABORT=MISSING_$cmd";exit 1;}
+for cmd in curl python3 bash git grep; do
+ if ! command -v "$cmd" >/dev/null 2>&1; then
+  echo "WEB_PUSH_ABORT=MISSING_$cmd"
+  exit 1
+ fi
 done
 case "$MODE" in
  --require-push-ready|--frontend-only|--check) ;;
@@ -51,12 +54,21 @@ if [[ "$MODE" == '--require-push-ready' && "$push_ready" != 1 ]];then
 fi
 curl -fsSL --retry 2 --max-time 25 "$BASE/deploy/INSTALAR_PWA_CLIENTES_PRODUCCION_KALI.sh" -o "$TMP/installer.sh"
 bash -n "$TMP/installer.sh"
-grep -Fq 'TALA_EXPECTED_WEB_SHA' "$TMP/installer.sh" || { echo 'WEB_PUSH_ABORT=UNPINNED_INSTALLER';exit 1;}
+if ! grep -Fq 'TALA_EXPECTED_WEB_SHA' "$TMP/installer.sh"; then
+ echo 'WEB_PUSH_ABORT=UNPINNED_INSTALLER'
+ exit 1
+fi
 echo 'WEB_PUSH_FRONTEND_DEPLOY=START'
 bash "$TMP/installer.sh"
 curl -fsSL --max-time 25 "$SITE/sw.js" -o "$TMP/sw-live.js"
-grep -Fq "self.addEventListener('push'" "$TMP/sw-live.js"||{ echo 'WEB_PUSH_ABORT=PUBLIC_WORKER_MISSING_PUSH_HANDLER';exit 1;}
-grep -Fq "self.addEventListener('notificationclick'" "$TMP/sw-live.js"||{ echo 'WEB_PUSH_ABORT=PUBLIC_WORKER_MISSING_CLICK_HANDLER';exit 1;}
+if ! grep -Fq "self.addEventListener('push'" "$TMP/sw-live.js"; then
+ echo 'WEB_PUSH_ABORT=PUBLIC_WORKER_MISSING_PUSH_HANDLER'
+ exit 1
+fi
+if ! grep -Fq "self.addEventListener('notificationclick'" "$TMP/sw-live.js"; then
+ echo 'WEB_PUSH_ABORT=PUBLIC_WORKER_MISSING_CLICK_HANDLER'
+ exit 1
+fi
 echo 'WEB_PUSH_FRONTEND_PUBLIC=PASS'
 if [[ "$push_ready" == 1 ]];then
  echo 'WEB_PUSH_BACKEND_CONFIG=PASS_WORKER_DELIVERY_REQUIRES_E2E_DEVICE_TEST'
