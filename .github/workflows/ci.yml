@@ -2,6 +2,9 @@ name: Tala Eats PWA CI
 on:
   push:
   pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -27,10 +30,26 @@ jobs:
           test -s dist/manifest-clientes.webmanifest
           test -s dist/manifest-restaurante.webmanifest
           test -s dist/manifest-repartidor.webmanifest
-          bash -n deploy/kali-install-pwa.sh
-          bash -n deploy/kali-install-pwa-isolated.sh
           test -s dist/icons/icon-192.png
           test -s dist/icons/icon-512.png
+          bash -n deploy/kali-install-pwa.sh
+          bash -n deploy/kali-install-pwa-isolated.sh
+          bash -n deploy/kali-review-preview.sh
+          bash -n deploy/kali-update-existing-public.sh
+      - name: Build isolated review release
+        env:
+          VITE_PREVIEW_READONLY: 'true'
+        run: |
+          npm run build -- --outDir dist-preview
+          grep -Fq 'tala-preview-mode' dist-preview/index.html
+          grep -Fq 'content="read-only"' dist-preview/index.html
+          test -s dist-preview/manifest-clientes.webmanifest
+          test -n "$(find dist-preview/assets -maxdepth 1 -name '*.js' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tala-eats-readonly-preview-dist
+          path: dist-preview/
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: tala-eats-version-web-dist

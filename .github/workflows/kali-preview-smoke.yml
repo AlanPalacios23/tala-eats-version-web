@@ -1,0 +1,42 @@
+name: Kali Preview Firewall Smoke
+on:
+  pull_request:
+    paths:
+      - 'deploy/nginx-preview-*.conf'
+      - 'deploy/kali-review-preview.sh'
+      - 'deploy/talaeats-web-preview.service'
+      - '.github/workflows/kali-preview-smoke.yml'
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  preview-firewall:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nginx
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nginx
+      - name: Validate preview Nginx templates
+        run: |
+          sudo mkdir -p /etc/talaeats-web-preview /run/talaeats-web-preview /srv/talaeats-web-preview/current
+          sudo cp deploy/nginx-preview-server.conf /etc/talaeats-web-preview/server.conf
+          sudo cp deploy/nginx-preview-main.conf /etc/talaeats-web-preview/nginx.conf
+          sudo chown www-data:www-data /run/talaeats-web-preview
+          sudo -u www-data nginx -t -c /etc/talaeats-web-preview/nginx.conf
+          bash -n deploy/kali-review-preview.sh
+      - name: Probe local-only read-only firewall (no real API)
+        run: |
+          sudo -u www-data nginx -c /etc/talaeats-web-preview/nginx.conf
+          curl -fsS --retry 10 --retry-delay 1 http://127.0.0.1:18196/__preview_health | grep -qx TALA_EATS_PREVIEW_READ_ONLY
+          for path in /api/v1/orders /api/v1/payments/stripe/orders/2/payment-intent /api/v1/platform/wallet /api/v1/auth/register /api/v1/owner/orders/1/status; do
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' -X POST "http://127.0.0.1:18196$path")"
+            test "$status" = 403 || { echo "PREVIEW_FIREWALL_FAILURE=$path:$status";exit 1; }
+          done
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X DELETE http://127.0.0.1:18196/api/v1/orders/2)" = 403
+          echo 'PREVIEW_FIREWALL=PASS_ALL_WRITES_DENIED'

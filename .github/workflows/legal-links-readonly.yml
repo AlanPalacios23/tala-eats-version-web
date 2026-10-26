@@ -1,0 +1,21 @@
+name: Legal Links Read-only
+on:
+  pull_request:
+    paths:
+      - 'deploy/verificar-legales-cloudflare.sh'
+      - 'src/lib/legal-links.ts'
+      - '.github/workflows/legal-links-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check-public-legal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check only GET public legal pages through existing Cloudflare Tunnel
+        run: bash deploy/verificar-legales-cloudflare.sh

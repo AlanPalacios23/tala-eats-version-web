@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {EMPTY_CART,addItem,updateQuantity,basketTotal,lineItems} from '../src/lib/cart';
+import {EMPTY_CART,addItem,updateQuantity,basketTotal,lineItems,restoreCustomerCart} from '../src/lib/cart';
 import type {MenuItem} from '../src/lib/types';
 const product=(id:number,rid=1,stock=5):MenuItem=>({id,restaurant_id:rid,name:'Tacos',price:'25.50',is_available:true,stock});
 describe('Carrito comercial - contratos sin dinero real',()=>{
@@ -16,6 +16,14 @@ describe('Carrito comercial - contratos sin dinero real',()=>{
   const c=updateQuantity(addItem(EMPTY_CART,product(1)),1,-1);
   expect(c.entries).toHaveLength(0);expect(c.restaurantId).toBe(null);
   expect(lineItems(addItem(EMPTY_CART,product(1)))).toEqual([{menu_item_id:1,quantity:1,options:''}]);
+ });
+ it('restaura el carrito tras iniciar sesión, sin saltarse cuotas ni stock',()=>{
+  const productOne=product(101,7,3);
+  const raw={restaurantId:7,entries:[{item:productOne,quantity:2,note:'Sin cebolla'}]};
+  expect(restoreCustomerCart(raw)).toEqual(raw);
+  expect(restoreCustomerCart({...raw,entries:[{item:productOne,quantity:99}]})).toEqual(EMPTY_CART);
+  expect(restoreCustomerCart({...raw,entries:[{item:productOne,quantity:2,note:'x'.repeat(201)}]})).toEqual(EMPTY_CART);
+  expect(restoreCustomerCart({...raw,entries:[{item:productOne,quantity:2},{item:{...productOne,restaurant_id:9},quantity:1}]})).toEqual(EMPTY_CART);
  });
  it('respeta las restricciones de disponibilidad',()=>{
   expect(addItem(EMPTY_CART,{...product(1),is_available:false})).toEqual(EMPTY_CART);

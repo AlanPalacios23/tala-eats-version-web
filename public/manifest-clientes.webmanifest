@@ -1,13 +1,13 @@
 {
   "id": "/app-clientes",
-  "name": "Tala Eats Clientes",
-  "short_name": "Tala Clientes",
-  "description": "Tus negocios locales, menú y pedidos para recoger.",
+  "name": "Tala Eats · Pedir comida",
+  "short_name": "Tala Eats",
+  "description": "Pide a restaurantes y comercios locales: entrega a domicilio o recoge en tienda, según disponibilidad.",
   "start_url": "/clientes",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#080808",
-  "theme_color": "#080808",
+  "background_color": "#FAFAF9",
+  "theme_color": "#FAFAF9",
   "lang": "es-MX",
   "icons": [
     {

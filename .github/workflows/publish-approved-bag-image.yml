@@ -1,0 +1,61 @@
+name: Versionar foto aprobada de la bolsa Tala Eats
+
+on:
+  push:
+    branches: [feat/mobile-parity-v1046-navigation]
+    paths:
+      - .github/workflows/publish-approved-bag-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tala-bag-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-original-user-photo:
+    if: github.repository == 'AlanPalacios23/tala-eats-version-web'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mobile-parity-v1046-navigation
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Recuperar exactamente la imagen original entregada por el usuario
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          IMG='public/branding/onboarding-rapido-seguro-864x1536.jpg'
+          mkdir -p public/branding
+          curl --fail --location --silent --show-error --retry 3 --max-time 45 \
+            'https://d2ol7oe51mr4n9.cloudfront.net/user_3JRVgcDQUmpH7yGXahR2Kecqub1/3a640d32-0df6-4644-baec-103aa92a6936.png' \
+            -o "$IMG"
+          printf '%s  %s\n' \
+            'f6e5db7fcf4430961d5b9f2eb55720b307b7fe9a81102c02d01515a341a54065' \
+            "$IMG" | sha256sum --check --status
+          python3 - "$IMG" <<'PY'
+          from pathlib import Path
+          import sys
+          p=Path(sys.argv[1]); data=p.read_bytes()
+          assert data[:3] == bytes.fromhex('ffd8ff') and data[-2:] == bytes.fromhex('ffd9')
+          assert len(data) == 168581, 'La fotografía no coincide con el original'
+          print('BAG_ORIGINAL_EXACT_SHA256=PASS')
+          PY
+      - name: Publicar archivo JPEG real en esta rama de GitHub
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/branding/onboarding-rapido-seguro-864x1536.jpg
+          if git diff --cached --quiet; then
+            echo BAG_IMAGE_ALREADY_VERSIONED=PASS
+          else
+            git commit -m 'assets(onboarding): version exact user-approved Tala Eats bag photo'
+            git push origin HEAD:feat/mobile-parity-v1046-navigation
+          fi
+          echo BAG_IMAGE_PUBLISHED_TO_GITHUB=PASS
