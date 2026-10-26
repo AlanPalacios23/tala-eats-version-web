@@ -119,6 +119,8 @@ export const api = {
   ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
+  ownerCompletePickup: (id:number,pin:string) => request<Order>(`/owner/orders/${id}/complete`,
+    json('POST',{pin,photo_url:''})),
   ownerUpdateRestaurant: (body:{is_open:boolean}) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
