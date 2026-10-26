@@ -45,7 +45,16 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     if(!response.ok){
       const details=body&&typeof body==='object'?body as Record<string,unknown>:null;
       const supplied=details?.detail??details?.error;
-      const msg=typeof supplied==='string'&&supplied.length<500?supplied:'No pudimos completar la solicitud.';
+      const known:Record<string,string>={
+        SELLER_CONNECT_NOT_APPROVED:'El restaurante todavía no está autorizado para recibir pedidos reales. Contacta al comercio.',
+        SELLER_CONNECT_NOT_READY:'El restaurante debe terminar de verificar su cuenta Stripe Connect antes de aceptar pedidos.',
+        SELLER_CONNECT_VERIFICATION_UNAVAILABLE:'No se pudo verificar el comercio en Stripe. No se creó el pedido.',
+        LIVE_FINANCIAL_RECONCILIATION_HOLD:'Stripe está conciliando pagos. No vuelvas a cobrar hasta verificar el estado.',
+        LIVE_CARD_CHECKOUT_NOT_APPROVED:'El pago con tarjeta LIVE no está habilitado para este comercio.',
+        PAYMENT_RECONCILIATION_REQUIRED:'El pago requiere revisión. Comprueba el pedido antes de intentar nuevamente.',
+      };
+      const msg=typeof supplied==='string'&&supplied.length<500
+        ?known[supplied]??supplied:'No pudimos completar la solicitud.';
       throw new ApiError(response.status,msg);
     }
     if(body===null&&raw==='')throw new ApiError(502,'El servidor respondió sin los datos esperados.');
