@@ -8,7 +8,7 @@ import { amountInCents } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
 import {CustomerAvatar} from './CustomerAvatar';
 import {LEGAL_LINKS} from '../lib/legal-links';
-import {enableWebPush,disableWebPush,getWebPushConfig,isWebPushEnabledForUser,revokeWebPushBeforeLogout,supportsWebPush,webPushPermission} from '../lib/web-push';
+import {enableWebPush,disableWebPush,getWebPushConfig,isWebPushEnabledForUser,supportsWebPush,webPushPermission} from '../lib/web-push';
 import type {WebPushConfig} from '../lib/web-push';
 import {PREVIEW_READONLY} from '../lib/preview';
 
@@ -25,7 +25,6 @@ export function CustomerAccount(){
   if(busy||!window.confirm('¿Cerrar sesión? Podrás volver a entrar con tu correo y contraseña.'))return;
   setBusy(true);setLogoutError('');
   try{
-   if(user?.id)await revokeWebPushBeforeLogout(user.id);
    await logout();
    // Flutter returns to the login/welcome flow after signing out; NEVER
    // leave the previous authenticated customer's storefront/account visible.
