@@ -13,7 +13,7 @@ import {normalizePickupPin} from '../lib/pickup-handoff';
 import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant.css';
-import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
+import {MerchantOverview,MerchantKitchen,MerchantMore,MerchantFinanceActivity} from './RestaurantParity';
 import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
 
 const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -524,6 +524,7 @@ export function RestaurantWorkspace(){
       <div className="rp-heading-row"><div><span className="rp-eyebrow">CONTABILIDAD DEL COMERCIO</span><h2>Finanzas</h2>
        <p>Importes reportados por el servidor; ninguna cifra implica una transferencia bancaria ejecutada.</p></div>
       </div>
+      <MerchantFinanceActivity orders={orders}/>
       {!finance?<Notice kind="info" message="El resumen financiero del servidor no está disponible. Actualiza o contacta administración; no se mostrarán importes inventados."/>:
        <><div className="rp-stats rp-finance-stats">
         <div><span>Venta bruta productos</span><strong>{pesos(finance.gross_food_sales)}</strong></div>
