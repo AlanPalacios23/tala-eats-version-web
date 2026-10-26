@@ -69,7 +69,7 @@ function MerchantInstallButton(){
 }
 export function RestaurantAccess(){
  const {user,login,register,logout}=useSession(),navigate=useNavigate();
- const [mode,setMode]=useState<'login'|'register'>('login');
+ const [mode,setMode]=useState<'login'|'register'>(()=>new URLSearchParams(window.location.search).get('mode')==='register'?'register':'login');
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  const allowed=AUTH_EMAIL.test(email.trim())&&password.length>0&&
