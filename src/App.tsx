@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
-import { api, ApiError, isDriverRole, isMerchantRole, pesos } from './lib/api';
+import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { PREVIEW_READONLY } from './lib/preview';
 import { EMPTY_CART, CUSTOMER_CART_STORAGE_KEY, restoreCustomerCart, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
-import type { MenuItem, Order } from './lib/types';
+import type { MenuItem } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
 import { CustomerCommerce } from './components/CustomerCommerce';
 import { isMarketCode, PILOT_MARKET } from './lib/markets';
@@ -18,8 +18,8 @@ import { CustomerAddresses } from './components/CustomerAddresses';
 import { CustomerProfile } from './components/CustomerProfile';
 import { LEGAL_LINKS } from './lib/legal-links';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
-import { normalizePickupPin, validPickupPin } from './lib/pickup-handoff';
 import { AdminPickupConnect } from './components/AdminPickupConnect';
+import { RestaurantAccess,RestaurantOnboarding,RestaurantWorkspace,RestaurantAdminActivation } from './components/RestaurantApp';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
@@ -92,7 +92,9 @@ function PortalLanding(){
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'admin'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
  if(loading)return <div className="container page"><Spinner/></div>;
- if(!user)return <Navigate to={role==='restaurant'||role==='driver'?'/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
+ if(!user)return <Navigate to={role==='restaurant'?'/restaurante/acceso':role==='driver'?'/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
+ if(role==='restaurant'&&user.role==='customer')return <Navigate to="/restaurante/alta" replace/>;
+ if(role==='restaurant'&&user.role==='admin')return <Navigate to="/admin/solicitudes-restaurantes" replace/>;
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role))||(role==='admin'&&user.role!=='admin'))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
@@ -105,125 +107,6 @@ function CustomerGate({children}:{children:ReactNode}){
  if(user.role!=='customer')return <div className="mobile-status" role="alert">Esta cuenta pertenece a otra aplicación de TALA EATS.</div>;
  return <>{children}</>;
 }
-function Merchant(){
- const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
- const [connectState,setConnectState]=useState<{
-  owner_approved:boolean;transfers_active:boolean;payouts_enabled:boolean;details_submitted:boolean
- }|null>(null);
- const [connectBusy,setConnectBusy]=useState(false),[connectError,setConnectError]=useState('');
- const [connectTick,setConnectTick]=useState(0);
- const [pickupPins,setPickupPins]=useState<Record<number,string>>({});
- const [cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
- const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
- const refresh=()=>{restaurant.refresh();orders.refresh();analytics.refresh();setConnectTick(x=>x+1);};
- useEffect(()=>{
-  let current=true;
-  const restaurantId=restaurant.value?.id;
-  setConnectState(null);setConnectError('');
-  if(!restaurantId)return()=>{current=false;};
-  api.ownerConnectStatus(restaurantId).then(x=>{if(current)setConnectState(x);})
-   .catch(e=>{
-    if(!current)return;
-    setConnectState(null);
-    if(!(e instanceof ApiError&&(e.status===403||e.status===404)))
-     setConnectError('No fue posible verificar Stripe Connect. No aceptes pagos hasta confirmar el estado.');
-   });
-  return()=>{current=false;};
- },[restaurant.value?.id,connectTick]);
- const connectReady=Boolean(connectState?.owner_approved&&connectState.transfers_active&&
-   connectState.payouts_enabled&&connectState.details_submitted);
- async function confirmConnectOwner(){
-  if(!restaurant.value||connectBusy||!connectState||connectState.owner_approved)return;
-  if(!window.confirm('¿Confirmas que eres el propietario de este comercio y autorizas asociarlo a tu cuenta Stripe Connect?'))return;
-  setConnectBusy(true);setConnectError('');
-  try{await api.ownerConfirmConnect(restaurant.value.id);setConnectTick(x=>x+1);}
-  catch(e){setConnectError(e instanceof Error?e.message:'No se pudo confirmar la vinculación.');}
-  finally{setConnectBusy(false);}
- }
- async function openConnectOnboarding(){
-  if(!restaurant.value||!connectState?.owner_approved||connectBusy)return;
-  setConnectBusy(true);setConnectError('');
-  try{
-   const result=await api.ownerConnectOnboardingLink(restaurant.value.id);
-   const url=new URL(result.url);
-   if(url.protocol!=='https:'||url.hostname!=='connect.stripe.com')
-    throw new Error('Stripe devolvió un enlace de incorporación no autorizado.');
-   window.location.assign(url.href);
-  }catch(e){setConnectError(e instanceof Error?e.message:'No fue posible abrir Stripe Connect.');setConnectBusy(false);}
- }
-
- async function status(id:number,s:'confirmed'|'preparing'|'ready'){setBusy(true);setMessage('');try{await api.ownerUpdateStatus(id,s);orders.refresh();setMessage('Estado actualizado en servidor.');}catch(e){setMessage(e instanceof Error?e.message:'Acción no disponible');}finally{setBusy(false);}}
- async function completePickup(order:Order){
-  if(busy||order.order_type!=='pickup'||order.status!=='ready')return;
-  const pin=pickupPins[order.id]??'';
-  if(!validPickupPin(pin)){setMessage('Solicita el PIN de 4 dígitos al cliente al entregar el pedido.');return;}
-  if(order.payment_method==='cash'&&!cashConfirmed[order.id]){
-   setMessage('Confirma que recibiste el efectivo antes de cerrar la recogida.');return;
-  }
-  if(order.payment_method==='stripe'&&order.payment_status!=='paid'){
-   setMessage('El cobro Stripe todavía no está confirmado por el servidor.');return;
-  }
-  const question=order.payment_method==='cash'
-   ?'¿El cliente recibió el pedido y cobraste '+pesos(order.total)+' en efectivo?'
-   :'¿Entregaste este pedido, ya pagado con Stripe, al cliente con PIN correcto?';
-  if(!window.confirm(question))return;
-  setBusy(true);setMessage('');
-  try{
-   await api.ownerCompletePickup(order.id,pin);
-   setPickupPins(v=>({...v,[order.id]:''}));
-   setCashConfirmed(v=>({...v,[order.id]:false}));
-   orders.refresh();analytics.refresh();
-   setMessage('Pedido recogido y registrado por el servidor.');
-  }catch(e){setMessage(e instanceof Error?e.message:'La entrega no pudo confirmarse; revisa el pedido.');}
-  finally{setBusy(false);}
- }
- async function toggle(){if(!restaurant.value)return;setBusy(true);setMessage('');try{await api.ownerUpdateRestaurant({is_open:!restaurant.value.is_open});restaurant.refresh();setMessage('Disponibilidad actualizada.');}catch(e){setMessage(e instanceof Error?e.message:'Error al actualizar');}finally{setBusy(false);}}
- const [newName,setNewName]=useState(''),[newPrice,setNewPrice]=useState(''),[newStock,setNewStock]=useState(20);
- async function addProduct(e:FormEvent){e.preventDefault();setBusy(true);setMessage('');try{await api.ownerAddItem({name:newName,price:newPrice,stock:newStock,description:'',category:'General',is_available:true});setNewName('');setNewPrice('');restaurant.refresh();setMessage('Producto agregado.');}catch(e){setMessage(e instanceof Error?e.message:'No fue posible agregar');}finally{setBusy(false);}}
- return <div className="container page dashboard"><div className="dashboard-heading"><div><span className="eyebrow">PORTAL DE COMERCIOS</span><h1>Hola, {restaurant.value?.name||'comercio'} 👋</h1><p>Administra tu negocio con información del servidor.</p></div><button className="btn outline small" onClick={refresh}><RefreshCw size={17}/> Actualizar</button></div>
- {(restaurant.error||orders.error||analytics.error)&&<Alert>{restaurant.error||orders.error||analytics.error}</Alert>}{(restaurant.loading||orders.loading)?<Spinner/>:<>
- <div className="stats-grid"><div className="stat"><span>Pedidos</span><strong>{analytics.value?.orders??'—'}</strong><small>Histórico total</small></div><div className="stat"><span>Entregados</span><strong>{analytics.value?.delivered??'—'}</strong><small>Completados</small></div><div className="stat"><span>Venta entregada</span><strong>{pesos(analytics.value?.gross_sales)}</strong><small>Dato del backend</small></div><div className="stat"><span>Stock bajo</span><strong>{analytics.value?.inventory_low??'—'}</strong><small>Productos con pocas piezas</small></div></div>
- <div className="tabs"><button className={tab==='pedidos'?'active':''} onClick={()=>setTab('pedidos')}>Pedidos</button><button className={tab==='menu'?'active':''} onClick={()=>setTab('menu')}>Mi menú</button><button className={tab==='negocio'?'active':''} onClick={()=>setTab('negocio')}>Mi negocio</button></div>
- {message&&<Alert kind={message.includes('actualizad')||message.includes('agregado')?'success':'info'}>{message}</Alert>}
- {tab==='pedidos'&&(!orders.value?.length?<EmptyState icon={<ShoppingBag size={31}/>} title="Sin pedidos por ahora" description="Cuando el servidor reciba pedidos válidos, estarán en esta sección."/>:<div className="owner-order-grid">{orders.value.map(o=><div className="card padded" key={o.id}><div className="order-top"><div><span className="eyebrow">ORDEN #{o.id}</span><h3>{pesos(o.total)}</h3></div><StateTag state={o.status}/></div><p>{o.items?.map(i=>`${i.quantity} × ${i.name_snapshot}`).join(', ')}</p><p className="muted">{o.payment_method==='cash'?'Efectivo':'Stripe verificado'} · {o.order_type==='pickup'?'Recoger':'Domicilio'}</p><div className="action-buttons">{o.status==='received'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'confirmed')}>Aceptar</button>}{o.status==='confirmed'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'preparing')}>Preparando</button>}{o.status==='preparing'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'ready')}>Marcar listo</button>}{o.status==='ready'&&o.order_type==='pickup'&&<div className="pickup-handoff">
-  <label className="muted">PIN del cliente
-   <input type="password" inputMode="numeric" autoComplete="off" placeholder="4 dígitos"
-    maxLength={4} pattern="[0-9]{4}" aria-label={'PIN de recogida pedido '+o.id}
-    value={pickupPins[o.id]??''} disabled={busy}
-    onChange={e=>setPickupPins(v=>({...v,[o.id]:normalizePickupPin(e.target.value)}))}/>
-  </label>
-  {o.payment_method==='cash'&&<label className="checkbox-label">
-   <input type="checkbox" checked={cashConfirmed[o.id]===true} disabled={busy}
-    onChange={e=>setCashConfirmed(v=>({...v,[o.id]:e.target.checked}))}/>
-   Confirmo que recibí {pesos(o.total)} en efectivo
-  </label>}
-  <button className="btn primary small" disabled={busy||(pickupPins[o.id]??'').length!==4||
-    (o.payment_method==='cash'&&!cashConfirmed[o.id])||
-    (o.payment_method==='stripe'&&o.payment_status!=='paid')}
-   onClick={()=>void completePickup(o)}>Confirmar recogida</button>
- </div>}{o.status==='ready'&&o.order_type!=='pickup'&&<span className="muted">Esperando repartidor</span>}
- {o.status==='delivered'&&<span className="muted">Finalizado</span>}</div></div>)}</div>)}
- {tab==='menu'&&<><div className="owner-order-grid">{(restaurant.value?.menu_items??[]).map(p=><MenuEditor key={p.id} item={p} onSaved={restaurant.refresh}/>)}</div><div className="card padded add-menu"><h3>Agregar producto</h3><form onSubmit={addProduct} className="form-grid"><label>Nombre<input required minLength={2} maxLength={150} value={newName} onChange={e=>setNewName(e.target.value)}/></label><label>Precio (MXN)<input required pattern="[0-9]+(\\.[0-9]{1,2})?" value={newPrice} onChange={e=>setNewPrice(e.target.value)} placeholder="89.00"/></label><label>Stock inicial<input type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><button className="btn primary" disabled={busy}>Agregar producto</button></form></div></>}
- {tab==='negocio'&&<div className="card padded business-settings"><h3>{restaurant.value?.name}</h3><p>{restaurant.value?.address||'Dirección sin publicar'}</p><p>Verificación: <strong>{restaurant.value?.verification_status??'sin datos'}</strong></p><p>Recogida: <strong>{restaurant.value?.pickup_enabled?'Activa':'Desactivada'}</strong></p><div className="space-between"><strong>{restaurant.value?.is_open?'El comercio aparece abierto':'El comercio está cerrado'}</strong><button className="btn outline" disabled={busy||!restaurant.value} onClick={()=>void toggle()}>{restaurant.value?.is_open?'Cerrar temporalmente':'Abrir comercio'}</button></div><p className="fineprint">Solo un comercio verificado puede abrirse. Para aceptar pedidos LIVE se requiere cuenta Stripe Connect propia y confirmada, incluso cuando el cliente elige efectivo.</p>
- <section className="mobile-checkout-card" aria-label="Estado de Stripe Connect para recoger">
-  <h3>Habilitación de pedidos para recoger</h3>
-  <p>{connectReady?'Cuenta del comercio lista para revisión final de pedidos LIVE.':
-    connectState?'Stripe Connect requiere completar las autorizaciones del negocio.':
-    'Este comercio todavía no tiene una asociación Stripe Connect verificada. Solicita al administrador vincular tu cuenta empresarial.'}</p>
-  {connectState&&<p className="fineprint">Propietario confirmado: {connectState.owner_approved?'Sí':'No'} · Datos enviados: {connectState.details_submitted?'Sí':'No'} · Transferencias: {connectState.transfers_active?'Activas':'Pendientes'} · Retiros: {connectState.payouts_enabled?'Habilitados':'Pendientes'}</p>}
-  {connectError&&<p role="alert" className="mobile-address-error">{connectError}</p>}
-  {connectState&&!connectState.owner_approved&&
-   <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void confirmConnectOwner()}>Confirmar titularidad del negocio</button>}
-  {connectState?.owner_approved&&!connectReady&&
-   <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void openConnectOnboarding()}>Completar registro Stripe Connect</button>}
-  <button type="button" className="btn outline small" disabled={connectBusy} onClick={()=>setConnectTick(x=>x+1)}>Volver a consultar</button>
- </section></div>}
- </>}
- </div>;
-}
-function MenuEditor({item,onSaved}:{item:MenuItem;onSaved:()=>void}){const [stock,setStock]=useState(item.stock),[available,setAvailable]=useState(item.is_available),[price,setPrice]=useState(item.price),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
- async function save(){setBusy(true);setMessage('');try{await api.ownerUpdateItem(item.id,{stock,is_available:available,price});onSaved();setMessage('Guardado');}catch(e){setMessage(e instanceof Error?e.message:'Error');}finally{setBusy(false);}}
- return <div className="card padded menu-editor"><div><h3>{item.name}</h3><p>{item.category||'General'}</p></div><div className="form-grid"><label>Precio<input value={price} onChange={e=>setPrice(e.target.value)} inputMode="decimal"/></label><label>Stock<input type="number" min="0" value={stock} onChange={e=>setStock(Number(e.target.value))}/></label><label className="checkbox-label"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/> Disponible</label><button className="btn outline small" disabled={busy} onClick={()=>void save()}>Guardar</button></div>{message&&<small role="status">{message}</small>}</div>;}
 function Driver(){
  const {value:profile,loading,error,refresh}=useLoad(()=>api.driverProfile(),[]);
  const mine=useLoad(()=>api.driverMine(),[]),available=useLoad(()=>api.driverAvailable(),[]), dashboard=useLoad(()=>api.driverDashboard(),[]);
@@ -277,12 +160,12 @@ export default function App(){
   else sessionStorage.removeItem(CUSTOMER_CART_STORAGE_KEY);
  }catch{/* Private browsing or storage full: in-memory cart remains functional. */}},[cart]);
  const [market,setMarket]=useState<MarketCode>(()=>{try{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;}catch{return PILOT_MARKET;}});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isOnboarding=['/iniciar','/acceso'].includes(location.pathname);const isCustomerShell=['/iniciar','/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isRestaurantPortal=location.pathname==='/restaurante'||location.pathname.startsWith('/restaurante/')||location.pathname==='/admin/solicitudes-restaurantes';const isOnboarding=['/iniciar','/acceso'].includes(location.pathname);const isCustomerShell=['/iniciar','/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);try{localStorage.setItem('talaeats-market-code',code);}catch{/* Privacy mode: keep market in memory. */}return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}const updated=addVariantItem(cart,item,quantity,note);if(updated===cart)return false;setCart(updated);return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
- if(session.loading && (location.pathname!=='/' && location.pathname!=='/restaurante' && location.pathname!=='/repartidor'))return <CustomerLaunch/>;
- return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{PREVIEW_READONLY&&<div className="tala-review-banner" role="status"><strong>VISTA PREVIA</strong><span>Modo de revisión: pedidos, pagos y cambios de datos bloqueados. La información consultada puede proceder del backend existente.</span></div>}{!isGateway&&!isOnboarding&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
+ if(session.loading && !isRestaurantPortal && location.pathname!=='/' && location.pathname!=='/repartidor')return <CustomerLaunch/>;
+ return <div className={"app"+(isCustomerShell?" customer-shell":"")}>{PREVIEW_READONLY&&<div className="tala-review-banner" role="status"><strong>VISTA PREVIA</strong><span>Modo de revisión: pedidos, pagos y cambios de datos bloqueados. La información consultada puede proceder del backend existente.</span></div>}{!isGateway&&!isOnboarding&&!isRestaurantPortal&&<AppHeader count={count}/>}<CustomerHashScroll/><main><Routes>
    <Route path="/" element={<PortalLanding/>}/>
    <Route path="/iniciar" element={<CustomerEntry/>}/>
    <Route path="/clientes" element={<CustomerGate><CustomerHome market={market} onSelectMarket={selectMarket}/></CustomerGate>}/><Route path="/buscar" element={<CustomerGate><CustomerSearch market={market}/></CustomerGate>}/><Route path="/comercio/:id" element={<CustomerGate><CustomerCommerce cart={cart} onAdd={add} market={market}/></CustomerGate>}/>
@@ -295,8 +178,11 @@ export default function App(){
    <Route path="/acceso" element={<CustomerStepAuth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
    <Route path="/admin/conectar-restaurante" element={<Protected role="admin"><AdminPickupConnect/></Protected>}/>
-   <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
+   <Route path="/restaurante/acceso" element={<RestaurantAccess/>}/>
+   <Route path="/restaurante/alta" element={<RestaurantOnboarding/>}/>
+   <Route path="/restaurante" element={<Protected role="restaurant"><RestaurantWorkspace/></Protected>}/>
+   <Route path="/admin/solicitudes-restaurantes" element={<Protected role="admin"><RestaurantAdminActivation/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
- </Routes></main>{!isOnboarding&&<CustomerBottomDock/>}{!isGateway&&!isOnboarding&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
+ </Routes></main>{!isOnboarding&&<CustomerBottomDock/>}{!isGateway&&!isOnboarding&&!isRestaurantPortal&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
