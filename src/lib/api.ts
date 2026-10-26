@@ -98,6 +98,42 @@ async function uploadRestaurantDocument(file:File):Promise<{url:string;name:stri
   }finally{globalThis.clearTimeout(timeout);}
 }
 
+
+async function uploadMerchantCatalogImage(file:File,endpoint:string):Promise<{url:string}>{
+ if(!/^\/uploads\/catalog\/(?:restaurant-cover|menu\/[1-9][0-9]*)$/.test(endpoint))
+  throw new ApiError(422,'Destino de fotografía no válido.');
+ if(!previewRequestAllowed(endpoint,'POST',PREVIEW_READONLY))
+  throw new ApiError(403,'Las fotografías no se publican desde la vista previa.');
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||!file.size||file.size>5*1024*1024)
+  throw new ApiError(422,'Selecciona una foto JPG, PNG o WEBP de hasta 5 MB.');
+ const form=new FormData();form.append('file',file,file.name);
+ const controller=new AbortController();
+ const timer=globalThis.setTimeout(()=>controller.abort(),45000);
+ try{
+  const res=await fetch(BASE+endpoint,{
+   method:'POST',body:form,credentials:'include',cache:'no-store',signal:controller.signal,
+   headers:{Accept:'application/json','X-Talaeats-Client':'web-pwa'}
+  });
+  const body=await res.json() as {url?:unknown;error?:unknown;detail?:unknown};
+  if(!res.ok)throw new ApiError(res.status,typeof body.error==='string'?body.error:'No se pudo publicar la fotografía.');
+  if(typeof body.url!=='string'){
+   throw new ApiError(502,'El backend no confirmó una URL de catálogo.');
+  }
+  const url=new URL(body.url,window.location.origin);
+  if(url.protocol!=='https:'&&url.origin!==window.location.origin)
+   throw new ApiError(502,'El servidor devolvió una dirección de imagen no permitida.');
+  if(!/^\/api\/v1\/uploads\/catalog\/[a-zA-Z0-9_-]{12,130}\.(?:jpg|png|webp)$/.test(url.pathname))
+   throw new ApiError(502,'El backend devolvió una ruta de imagen inválida.');
+  return {url:body.url};
+ }catch(e){
+  if(e instanceof ApiError)throw e;
+  throw new ApiError(503,'No se pudo confirmar la subida; comprueba el catálogo antes de volver a intentarlo.');
+ }finally{globalThis.clearTimeout(timer);}
+}
+export interface MerchantStaff {
+ id:number;user_id:number;name:string;email:string;role:string;
+}
+
 export interface MerchantApplication {
   id:number;user_id:number;entity_type:'restaurant'|'driver';
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
@@ -178,7 +214,12 @@ export const api = {
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
   ownerFinance: () => request<MerchantFinance>('/owner/finance'),
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
-  ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
+  ownerOrders: () => request<Order[]>('/owner/orders?limit=200&offset=0'),
+  ownerEmployees: () => request<MerchantStaff[]>('/owner/employees'),
+  ownerInviteEmployee: (email:string,role:'manager'|'cashier'|'kitchen') => request<MerchantStaff>(`/owner/employees?email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`,json('POST')),
+  ownerDeleteItem: (id:number) => request<void>(`/owner/menu/${id}`,{method:'DELETE'}),
+  ownerUploadCover: (file:File) => uploadMerchantCatalogImage(file,'/uploads/catalog/restaurant-cover'),
+  ownerUploadItemPhoto: (id:number,file:File) => uploadMerchantCatalogImage(file,`/uploads/catalog/menu/${id}`),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
   ownerCompletePickup: (id:number,pin:string) => request<Order>(`/owner/orders/${id}/complete`,
@@ -199,9 +240,9 @@ export const api = {
     `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
   ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
     `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
-  ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'is_open'|'pickup_enabled'|'address'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
-  ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
-  ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
+  ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'cuisine'|'eta_min'|'is_open'|'pickup_enabled'|'address'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
+  ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'|'category'|'allergens'|'dietary_tags'|'is_combo'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
+  ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean;allergens?:string;dietary_tags?:string;is_combo?:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
   driverProfile: () => request<DriverProfile>('/driver/profile'),
   driverDashboard: () => request<Record<string,unknown>>('/driver/dashboard'),
   driverMine: () => request<Order[]>('/driver/mine?limit=100'),
