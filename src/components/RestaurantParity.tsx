@@ -119,11 +119,31 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
  const [name,setName]=useState(restaurant.name),[description,setDescription]=useState(restaurant.description??'');
  const [cuisine,setCuisine]=useState(restaurant.cuisine??''),[eta,setEta]=useState(restaurant.eta_min??30);
  const [address,setAddress]=useState(restaurant.address??'');
+ const [lat,setLat]=useState(restaurant.lat==null?'':String(restaurant.lat)),[lng,setLng]=useState(restaurant.lng==null?'':String(restaurant.lng));
+ const [locationError,setLocationError]=useState('');
  const [cover,setCover]=useState<File|null>(null),[uploadBusy,setUploadBusy]=useState(false);
- useEffect(()=>{setName(restaurant.name);setDescription(restaurant.description??'');setCuisine(restaurant.cuisine??'');setEta(restaurant.eta_min??30);setAddress(restaurant.address??'');},[restaurant.id,restaurant.name,restaurant.description,restaurant.cuisine,restaurant.eta_min,restaurant.address]);
+ useEffect(()=>{setName(restaurant.name);setDescription(restaurant.description??'');setCuisine(restaurant.cuisine??'');setEta(restaurant.eta_min??30);setAddress(restaurant.address??'');setLat(restaurant.lat==null?'':String(restaurant.lat));setLng(restaurant.lng==null?'':String(restaurant.lng));},[restaurant.id,restaurant.name,restaurant.description,restaurant.cuisine,restaurant.eta_min,restaurant.address,restaurant.lat,restaurant.lng]);
+ function captureLocation(){
+  setLocationError('');
+  if(!navigator.geolocation){setLocationError('Este navegador no permite obtener ubicación. Puedes capturar las coordenadas manualmente.');return;}
+  if(!window.confirm('Usa esta función solo si estás físicamente en el negocio. ¿Solicitar ubicación del dispositivo?'))return;
+  navigator.geolocation.getCurrentPosition(
+   pos=>{setLat(pos.coords.latitude.toFixed(6));setLng(pos.coords.longitude.toFixed(6));setLocationError('Revisa las coordenadas antes de guardarlas en el servidor.');},
+   ()=>setLocationError('No fue posible obtener el GPS. Revisa los permisos o captura las coordenadas manualmente.'),
+   {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+ }
  async function saveProfile(e:FormEvent){
   e.preventDefault();if(name.trim().length<2||address.trim().length>0&&address.trim().length<5)return;
-  await run(()=>api.ownerUpdateRestaurant({name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,...(address.trim()?{address:address.trim()}:{})}),'Perfil actualizado desde el backend.');
+  const hasLat=lat.trim()!=='';const hasLng=lng.trim()!=='';
+  const latitude=Number(lat),longitude=Number(lng);
+  if(hasLat!==hasLng||hasLat&&(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude< -90||latitude>90||longitude< -180||longitude>180)){
+   setLocationError('Escribe una latitud y longitud válidas, juntas.');return;
+  }
+  const locationChanged=lat!==(restaurant.lat==null?'':String(restaurant.lat))||lng!==(restaurant.lng==null?'':String(restaurant.lng));
+  if(locationChanged&&hasLat&&!window.confirm('¿Confirmas que este punto GPS corresponde exactamente a la puerta del restaurante? Afectará las futuras cotizaciones de domicilio cuando estén habilitadas.'))return;
+  const updated={name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,...(address.trim()?{address:address.trim()}:{})};
+  await run(()=>api.ownerUpdateRestaurant({...updated,...(locationChanged&&hasLat?{lat:latitude,lng:longitude}:{})}),'Perfil actualizado desde el backend.');
  }
  async function uploadCover(){
   if(!cover||busy||uploadBusy)return;
@@ -142,7 +162,13 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
      <label>Descripción<textarea maxLength={1000} rows={3} value={description} onChange={e=>setDescription(e.target.value)}/></label>
      <label>Tiempo estimado de preparación (min)<input type="number" min={5} max={180} step={1} value={eta} onChange={e=>setEta(Number(e.target.value))}/></label>
      <label>Dirección del establecimiento<input maxLength={300} value={address} onChange={e=>setAddress(e.target.value)}/></label>
-     <p className="rp-legal"><MapPin size={15}/> La dirección textual no reemplaza el GPS verificado. No se calcula tarifa de domicilio desde este formulario.</p>
+     <div className="rm-location-fields">
+      <label>Latitud<input type="number" step="any" min={-90} max={90} placeholder="20.65" value={lat} onChange={e=>setLat(e.target.value)}/></label>
+      <label>Longitud<input type="number" step="any" min={-180} max={180} placeholder="-103.70" value={lng} onChange={e=>setLng(e.target.value)}/></label>
+     </div>
+     <button type="button" className="rp-btn outline small" onClick={captureLocation}><MapPin size={17}/> Usar ubicación del dispositivo</button>
+     {locationError&&<p className="rp-legal" role="status">{locationError}</p>}
+     <p className="rp-legal"><MapPin size={15}/> Verifica el punto físicamente. La dirección no sustituye el GPS; cotizaciones y entregas siguen bajo control del backend.</p>
      <button className="rp-btn primary" disabled={busy||!Number.isInteger(eta)||eta<5||eta>180||name.trim().length<2}>Guardar perfil</button>
     </form>
     <div className="rm-cover-uploader"><strong>Foto de portada</strong>
