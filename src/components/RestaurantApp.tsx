@@ -523,7 +523,7 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
   </section></>;
 }
 function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
- run:(fn:()=>Promise<unknown>,message:string)=>Promise<void>}){
+ run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
  const [price,setPrice]=useState(item.price),[stock,setStock]=useState(item.stock);
  const [available,setAvailable]=useState(item.is_available);
  useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);},[item.id,item.price,item.stock,item.is_available]);
