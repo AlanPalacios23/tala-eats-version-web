@@ -134,6 +134,14 @@ export const api = {
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
   ownerCompletePickup: (id:number,pin:string) => request<Order>(`/owner/orders/${id}/complete`,
     json('POST',{pin,photo_url:''})),
+  adminConnectMap: (restaurantId:number,stripeAccountId:string) =>
+    request<{restaurant_id:number;status:string}>('/admin/finance/connect-map',
+      json('POST',{restaurant_id:restaurantId,stripe_account_id:stripeAccountId})),
+  adminConnectStatus: (restaurantId:number) => request<{
+    restaurant_id:number;owner_approved:boolean;charges_enabled:boolean;
+    transfers_active:boolean;payouts_enabled:boolean;details_submitted:boolean;
+    transfer_automation_enabled:boolean;
+  }>(`/admin/finance/connect/${restaurantId}/status`),
   ownerConnectStatus: (restaurantId:number) => request<{
     owner_approved:boolean;transfers_active:boolean;
     payouts_enabled:boolean;details_submitted:boolean;ready?:boolean;
