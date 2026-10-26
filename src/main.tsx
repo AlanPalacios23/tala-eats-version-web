@@ -5,6 +5,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { SessionProvider } from './lib/session';
 import { PREVIEW_READONLY } from './lib/preview';
 import App from './App';
+import {CustomerPwaInstallNotice} from './components/CustomerPwaInstall';
 import './styles/main.css';
 
 // Four app identities share one vetted frontend and one LIVE backend.
@@ -13,7 +14,7 @@ import './styles/main.css';
 export function manifestForPath(path: string): string {
  if (path === '/restaurante' || path.startsWith('/restaurante/')) return '/manifest-restaurante.webmanifest';
  if (path === '/repartidor' || path.startsWith('/repartidor/')) return '/manifest-repartidor.webmanifest';
- if (path === '/clientes' || path.startsWith('/clientes/') ||
+ if (path === '/iniciar' || path === '/clientes' || path.startsWith('/clientes/') ||
      path === '/buscar' || path === '/acceso' || path === '/tala-club' || path === '/notificaciones' || path === '/soporte' || path === '/favoritos' || path === '/editar-perfil' || path === '/carrito' || path === '/checkout' || path === '/direcciones' || path === '/pedidos' || path.startsWith('/pedidos/') || path.startsWith('/pago/') || path.startsWith('/chat/') ||
      path === '/cuenta' || path.startsWith('/comercio/')) return '/manifest-clientes.webmanifest';
  return '/manifest.webmanifest';
@@ -32,7 +33,7 @@ function PortalInstallIdentity() {
  return null;
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(
- <React.StrictMode><BrowserRouter><PortalInstallIdentity/><SessionProvider><App/></SessionProvider></BrowserRouter></React.StrictMode>
+ <React.StrictMode><BrowserRouter><PortalInstallIdentity/><SessionProvider><App/><CustomerPwaInstallNotice/></SessionProvider></BrowserRouter></React.StrictMode>
 );
 // Replace the HTML first-paint brand only after React has committed.
 // React continues the real authenticated-startup splash during /auth/me.
