@@ -285,6 +285,8 @@ export function RestaurantWorkspace(){
  const {user,logout}=useSession();
  const navigate=useNavigate();
  const [tab,setTab]=useState<MerchantTab>('inicio');
+ const [orderFilter,setOrderFilter]=useState<'all'|'received'|'kitchen'|'ready'|'history'>('all');
+ const [orderQuery,setOrderQuery]=useState('');
  const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[orders,setOrders]=useState<Order[]>([]);
  const [stats,setStats]=useState<Stats|null>(null),[finance,setFinance]=useState<MerchantFinance|null>(null);
  const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
@@ -378,6 +380,12 @@ export function RestaurantWorkspace(){
    'Preferencia de recogida actualizada en el servidor.');
  }
  const activeOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
+ const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
+   (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
+ const visibleOrders=activeOrders.filter(o=>matchesOrder(o)&&(orderFilter==='all'||orderFilter==='received'&&o.status==='received'||
+  orderFilter==='kitchen'&&['confirmed','preparing'].includes(o.status)||
+  orderFilter==='ready'&&o.status==='ready'));
+
  const completedOrders=orders.filter(o=>['delivered','cancelled'].includes(o.status)).slice(0,12);
  const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
  const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
@@ -434,9 +442,15 @@ export function RestaurantWorkspace(){
         <p>Los pedidos reales se habilitan cuando el propietario confirma su cuenta Stripe Connect y el servidor valida la configuración.</p></div>
        <button className="rp-btn small dark" onClick={()=>setTab('activacion')}>Ver activación <ArrowRight size={16}/></button>
       </section>}
-      <div className="rp-lane-grid">
+      <div className="rp-order-controls">
+       <label><SearchIcon size={18}/><input aria-label="Buscar pedidos por número o producto" placeholder="Buscar número o producto" value={orderQuery} onChange={e=>setOrderQuery(e.target.value)}/></label>
+       <div className="rp-order-filters" aria-label="Filtrar pedidos">{([
+        ['all','Todos'],['received','Nuevos'],['kitchen','En cocina'],['ready','Listos'],['history','Historial']
+       ] as const).map(([id,label])=><button key={id} className={orderFilter===id?'selected':''} onClick={()=>setOrderFilter(id)} aria-pressed={orderFilter===id}>{label}</button>)}</div>
+      </div>
+      {orderFilter!=='history'&&<div className="rp-lane-grid">
        {(['received','confirmed','preparing','ready'] as const).map(state=>{
-        const lane=activeOrders.filter(o=>o.status===state);
+        const lane=visibleOrders.filter(o=>o.status===state);
         return <section className="rp-order-lane" key={state}>
          <div className="rp-lane-title"><span className={'rp-lane-indicator '+state}/>
           <h3>{merchantStateLabel(state)}</h3><span>{lane.length}</span></div>
@@ -472,10 +486,10 @@ export function RestaurantWorkspace(){
           </article>)}
         </section>;
        })}
-      </div>
+      </div>}
       <section className="rp-history"><h3>Últimos pedidos finalizados</h3>
        {completedOrders.length===0?<p className="rp-muted">Aún no hay pedidos finalizados.</p>:
-        completedOrders.map(o=><div className="rp-history-row" key={o.id}>
+        completedOrders.filter(matchesOrder).map(o=><div className="rp-history-row" key={o.id}>
          <span>#{o.id} · {merchantStateLabel(o.status)}</span><strong>{pesos(o.total)}</strong>
         </div>)}</section>
      </>}
@@ -536,6 +550,9 @@ export function RestaurantWorkspace(){
 function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
  const [name,setName]=useState(''),[price,setPrice]=useState(''),[stock,setStock]=useState(10),[category,setCategory]=useState('General'),[description,setDescription]=useState('');
+ const [search,setSearch]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todos');
+ const categories=['Todos',...Array.from(new Set((restaurant.menu_items??[]).map(i=>i.category||'General')))];
+ const shown=(restaurant.menu_items??[]).filter(i=>(selectedCategory==='Todos'||(i.category||'General')===selectedCategory)&&(i.name+' '+(i.description??'')).toLocaleLowerCase('es-MX').includes(search.trim().toLocaleLowerCase('es-MX')));
  async function add(event:FormEvent){
   event.preventDefault();
   if(name.trim().length<2||!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0)return;
@@ -545,7 +562,12 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  }
  return <><div className="rp-heading-row"><div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
    <p>Edita precios, stock y productos directamente en el servidor.</p></div><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span></div>
-  <div className="rp-menu-grid">{(restaurant.menu_items??[]).map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}/>)}</div>
+  <div className="rp-order-controls rp-menu-controls">
+    <label><SearchIcon size={18}/><input aria-label="Buscar productos" placeholder="Buscar productos" value={search} onChange={e=>setSearch(e.target.value)}/></label>
+    <div className="rp-order-filters" aria-label="Filtrar categorías">{categories.map(cat=><button key={cat} className={selectedCategory===cat?'selected':''} aria-pressed={selectedCategory===cat} onClick={()=>setSelectedCategory(cat)}>{cat}</button>)}</div>
+   </div>
+  <div className="rp-menu-grid">{shown.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}/>)}</div>
+  {shown.length===0&&(restaurant.menu_items??[]).length>0&&<p className="rp-muted">No hay productos para esta búsqueda o categoría.</p>}
   {(restaurant.menu_items??[]).length===0&&<div className="rp-panel-card"><p>Tu negocio todavía no tiene productos. Agrega el primero para que aparezca en el catálogo.</p></div>}
   <section className="rp-panel-card rp-menu-new"><div className="rp-card-top"><Plus size={23}/><h3>Agregar producto</h3></div>
    <form className="rp-form rp-product-form" onSubmit={e=>void add(e)}>
