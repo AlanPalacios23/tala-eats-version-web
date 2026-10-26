@@ -1,0 +1,522 @@
+import {useCallback,useEffect,useRef,useState} from 'react';
+import type {FormEvent} from 'react';
+import {Link,useNavigate} from 'react-router-dom';
+import {ArrowLeft,ArrowRight,BadgeCheck,Bell,Check,ChefHat,Clock3,CreditCard,
+ ClipboardList,Coins,KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
+ ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole} from 'lucide-react';
+import {api,pesos} from '../lib/api';
+import type {MerchantApplication,MerchantFinance} from '../lib/api';
+import {useSession} from '../lib/session';
+import type {Order,Restaurant,MenuItem} from '../lib/types';
+import {PREVIEW_READONLY} from '../lib/preview';
+import {normalizePickupPin} from '../lib/pickup-handoff';
+import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
+import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
+import '../styles/restaurant.css';
+
+const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
+ {id:'pedidos',label:'Pedidos',Icon:ShoppingBag},
+ {id:'menu',label:'Mi menú',Icon:UtensilsCrossed},
+ {id:'activacion',label:'Mi negocio',Icon:BadgeCheck},
+ {id:'finanzas',label:'Finanzas',Icon:Wallet},
+];
+function MerchantBrand(){return <Link className="rp-brand" to="/" aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
+function Notice({message,kind='info'}:{message:string;kind?:'info'|'error'|'success'}){
+ return <div role={kind==='error'?'alert':'status'} className={'rp-notice '+kind}>
+   {kind==='error'?<AlertCircle size={19}/>:<ShieldCheck size={19}/>}<span>{message}</span>
+ </div>;
+}
+function MerchantIntro({title,subtitle}:{title:string;subtitle:string}){
+ return <div className="rp-intro"><MerchantBrand/><span className="rp-eyebrow">TALA EATS BUSINESS</span>
+  <h1>{title}</h1><p>{subtitle}</p>
+  <div className="rp-intro-points"><span><Check size={17}/> Pedidos en vivo</span>
+   <span><Check size={17}/> Menú y disponibilidad</span>
+   <span><Check size={17}/> Stripe Connect seguro</span></div>
+  <p className="rp-intro-caption">Una plataforma para operar tu comercio, no para crear pagos de prueba.</p>
+ </div>;
+}
+export function RestaurantAccess(){
+ const {user,login,register,logout}=useSession(),navigate=useNavigate();
+ const [mode,setMode]=useState<'login'|'register'>('login');
+ const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const allowed=AUTH_EMAIL.test(email.trim())&&password.length>=8&&
+   (mode==='login'||name.trim().length>=2);
+ useEffect(()=>{
+  if(user?.role==='restaurant')navigate('/restaurante',{replace:true});
+  else if(user?.role==='admin')navigate('/admin/solicitudes-restaurantes',{replace:true});
+ },[user?.role,navigate]);
+ async function enter(event:FormEvent){
+  event.preventDefault();
+  if(busy||!allowed)return;
+  setBusy(true);setError('');
+  try{
+   if(mode==='login')await login(email.trim(),password,otp.trim()||undefined);
+   else await register(name.trim(),email.trim(),password);
+   const verified=await api.me();
+   navigate(verified.role==='restaurant'?'/restaurante':
+     verified.role==='admin'?'/admin/solicitudes-restaurantes':'/restaurante/alta',{replace:true});
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo verificar tu cuenta.');}
+  finally{setBusy(false);}
+ }
+ return <div className="rp-auth-page"><MerchantIntro title="Tu negocio, en movimiento."
+  subtitle="Recibe y prepara pedidos, administra tus productos y activa los pagos para recoger desde un solo espacio."/>
+  <section className="rp-access-card" aria-label="Acceso de restaurantes">
+   <Link to="/" className="rp-muted-link"><ArrowLeft size={16}/> Volver a Tala Eats</Link>
+   {user?.role==='customer'?<>
+    <span className="rp-eyebrow">CUENTA EXISTENTE</span>
+    <h2>Solicita activar tu comercio</h2>
+    <p>Tu cuenta actual es de cliente. Puedes enviar una solicitud real para que administración revise tu restaurante.</p>
+    <Link to="/restaurante/alta" className="rp-btn primary">Ir a mi solicitud <ArrowRight size={18}/></Link>
+    <button type="button" className="rp-btn quiet" onClick={()=>void logout()}>Entrar con otra cuenta</button>
+   </>:<>
+    <span className="rp-eyebrow">ACCESO EMPRESARIAL</span>
+    <h2>{mode==='login'?'Bienvenido de nuevo':'Comienza con tu comercio'}</h2>
+    <p>{mode==='login'?'Inicia sesión con tu cuenta autorizada de restaurante.':
+      'Primero crea una cuenta personal. El restaurante se activa únicamente después de la revisión administrativa.'}</p>
+    <form onSubmit={e=>void enter(e)} className="rp-form">
+     {mode==='register'&&<label>Nombre del titular
+      <input autoComplete="name" required minLength={2} maxLength={120} value={name} disabled={busy}
+       onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/></label>}
+     <label>Correo electrónico
+      <input type="email" autoComplete="email" required value={email} maxLength={254}
+       disabled={busy} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com"/></label>
+     <label>Contraseña
+      <input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required
+       minLength={8} value={password} disabled={busy} onChange={e=>setPassword(e.target.value)}
+       placeholder="Mínimo 8 caracteres"/></label>
+     {mode==='login'&&<label>Código 2FA (si tu cuenta lo tiene)
+      <input autoComplete="one-time-code" inputMode="numeric" maxLength={12}
+       value={otp} disabled={busy} onChange={e=>setOtp(e.target.value)} placeholder="Código de 6 dígitos"/></label>}
+     {error&&<Notice kind="error" message={error}/>}
+     <button type="submit" className="rp-btn primary" disabled={!allowed||busy}>
+       {busy?'Verificando…':mode==='login'?'Entrar a mi restaurante':'Crear cuenta y solicitar alta'}
+       <ArrowRight size={19}/>
+     </button>
+    </form>
+    <button type="button" className="rp-switch" disabled={busy} onClick={()=>{setError('');setMode(v=>v==='login'?'register':'login');}}>
+     {mode==='login'?'¿Aún no tienes cuenta? Registra tu negocio':'¿Ya tienes una cuenta? Inicia sesión'}
+    </button>
+    <p className="rp-legal">El registro no habilita automáticamente cobros ni asigna el rol Restaurante.</p>
+   </>}
+  </section>
+ </div>;
+}
+export function RestaurantOnboarding(){
+ const {user,loading,logout}=useSession();
+ const [requests,setRequests]=useState<MerchantApplication[]|null>(null);
+ const [businessName,setBusinessName]=useState(''),[taxId,setTaxId]=useState('');
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[note,setNote]=useState('');
+ const refresh=useCallback(async()=>{
+  try{
+   const mine=(await api.restaurantOnboardingMine()).filter(a=>a.entity_type==='restaurant');
+   setRequests(mine);
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo consultar tu solicitud.');}
+ },[]);
+ useEffect(()=>{if(user?.role==='customer')void refresh();},[user?.role,refresh]);
+ if(loading)return <div className="rp-loading"><RefreshCw className="rp-spin"/> Verificando sesión…</div>;
+ if(!user)return <RestaurantAccess/>;
+ if(user.role==='restaurant')return <div className="rp-standalone"><MerchantBrand/><h1>Tu restaurante ya está asignado</h1><Link className="rp-btn primary" to="/restaurante">Entrar al panel <ArrowRight size={18}/></Link></div>;
+ if(user.role!=='customer')return <div className="rp-standalone"><MerchantBrand/><h1>Tu cuenta no puede solicitar este alta</h1><Link to="/">Volver al inicio</Link></div>;
+ const latest=requests?.slice().sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at))[0];
+ const waiting=latest?.status==='pending'||latest?.status==='approved';
+ async function submit(event:FormEvent){
+  event.preventDefault();if(busy||businessName.trim().length<3)return;
+  setBusy(true);setError('');setNote('');
+  try{
+   const result=await api.restaurantOnboardingSubmit(businessName.trim(),taxId.trim());
+   setRequests(v=>[result,...(v??[]).filter(x=>x.id!==result.id)]);
+   setNote('Solicitud enviada al backend. Administración deberá verificar tu negocio antes de activar el acceso.');
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo guardar la solicitud.');}
+  finally{setBusy(false);}
+ }
+ return <div className="rp-onboarding"><div className="rp-onboard-wrap"><MerchantBrand/>
+  <Link to="/restaurante/acceso" className="rp-muted-link"><ArrowLeft size={16}/> Acceso restaurantes</Link>
+  <span className="rp-eyebrow">ACTIVACIÓN DE COMERCIOS</span>
+  <h1>Activa tu restaurante en Tala Eats.</h1>
+  <p>El alta requiere la aprobación de administración. Después podrás preparar tu catálogo y verificar Stripe Connect para aceptar pedidos reales.</p>
+  <div className="rp-activation-track">
+   <span className="active">01 Solicitud</span><span>02 Revisión</span><span>03 Panel</span><span>04 Stripe Connect</span>
+  </div>
+  {error&&<Notice kind="error" message={error}/>}
+  {note&&<Notice kind="success" message={note}/>}
+  {requests===null?<p>Consultando estado de tu alta…</p>:
+   latest&&waiting?<section className="rp-panel-card"><span className="rp-eyebrow">SOLICITUD #{latest.id}</span>
+    <h2>{latest.status==='approved'?'Solicitud aprobada':'Tu solicitud está en revisión'}</h2>
+    <p>{latest.business_name}</p>
+    {latest.status==='approved'?<p>Administración aprobó el comercio. Cierra sesión y vuelve a entrar: el backend revoca la autorización anterior al cambiar tu rol.</p>:
+     <p>El equipo administrativo debe confirmar los datos antes de activar tu restaurante.</p>}
+    {latest.notes&&<Notice message={latest.notes}/>}
+    <button className="rp-btn outline" onClick={()=>void refresh()}><RefreshCw size={18}/> Consultar estado</button>
+    {latest.status==='approved'&&<button className="rp-btn primary" onClick={()=>void logout()}>Cerrar sesión para volver a entrar</button>}
+   </section>:
+   <section className="rp-panel-card"><h2>Datos del negocio</h2>
+    {latest?.status==='needs_info'&&<Notice kind="info" message={'Administración solicita información adicional: '+(latest.notes||'actualiza los datos del negocio')}/>}
+    {latest?.status==='rejected'&&<Notice kind="error" message={'Solicitud rechazada: '+(latest.notes||'contacta administración')}/>}
+    <form onSubmit={e=>void submit(e)} className="rp-form">
+     <label>Nombre del restaurante
+      <input required minLength={3} maxLength={160} value={businessName}
+       onChange={e=>setBusinessName(e.target.value)} placeholder="Ej. Antojitos La Terraza" disabled={busy}/></label>
+     <label>RFC del negocio (si corresponde)
+      <input maxLength={60} value={taxId} onChange={e=>setTaxId(e.target.value.toUpperCase())}
+       placeholder="RFC del titular" disabled={busy}/></label>
+     <p className="rp-legal">Esta solicitud no adjunta documentos. Administración puede pedir información adicional. No cargues contraseñas ni datos bancarios en este formulario.</p>
+     <button type="submit" className="rp-btn primary" disabled={busy||businessName.trim().length<3}>Enviar solicitud <ArrowRight size={18}/></button>
+    </form>
+   </section>}
+  <p className="rp-legal">Tu cuenta seguirá siendo Cliente hasta que administración autorice el cambio. Ninguna solicitud crea por sí sola pagos Stripe LIVE.</p>
+ </div></div>;
+}
+export function RestaurantAdminActivation(){
+ const [requests,setRequests]=useState<MerchantApplication[]|null>(null);
+ const [notes,setNotes]=useState<Record<number,string>>({});
+ const [busy,setBusy]=useState<number|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const refresh=useCallback(async()=>{
+  setError('');
+  try{setRequests((await api.adminRestaurantApplications()).filter(x=>x.entity_type==='restaurant'));}
+  catch(e){setError(e instanceof Error?e.message:'No se pudieron consultar las solicitudes.');}
+ },[]);
+ useEffect(()=>{void refresh();},[refresh]);
+ async function review(item:MerchantApplication,status:'approved'|'rejected'|'needs_info'|'suspended'){
+  if(busy!==null)return;
+  const meaning=status==='approved'?'APROBAR Y ACTIVAR ROL RESTAURANTE':status==='rejected'?'RECHAZAR':status==='needs_info'?'SOLICITAR INFORMACIÓN':'SUSPENDER';
+  if(!window.confirm(meaning+' la solicitud #'+item.id+' del comercio '+item.business_name+'? El backend registrará la decisión y puede revocar sesiones.'))return;
+  setBusy(item.id);setError('');setNotice('');
+  try{
+   await api.adminReviewRestaurantApplication(item.id,status,(notes[item.id]??'').trim());
+   setNotice('Decisión registrada en el backend. Si se aprobó, el comerciante debe cerrar sesión y volver a iniciar.');
+   await refresh();
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo revisar la solicitud.');}
+  finally{setBusy(null);}
+ }
+ return <div className="rp-admin-page"><div className="rp-admin-title">
+  <div><span className="rp-eyebrow">ADMIN · VERIFICACIÓN</span><h1>Activación de restaurantes</h1>
+   <p>Revisa las solicitudes reales. La aprobación crea o verifica el comercio y asigna el rol Restaurante; Stripe Connect se autoriza por separado.</p></div>
+  <Link className="rp-btn outline" to="/admin/conectar-restaurante">Vincular Stripe Connect <ArrowRight size={18}/></Link>
+ </div>
+  <div className="rp-action-row"><button className="rp-btn outline" onClick={()=>void refresh()}><RefreshCw size={16}/> Actualizar solicitudes</button>
+   <Link className="rp-muted-link" to="/">Volver a Tala Eats</Link></div>
+  {error&&<Notice kind="error" message={error}/>}
+  {notice&&<Notice kind="success" message={notice}/>}
+  {requests===null?<p>Consultando backend administrativo…</p>:
+   requests.length===0?<section className="rp-panel-card"><h2>Sin solicitudes de restaurantes</h2><p>Las solicitudes aparecerán aquí en cuanto los comerciantes completen el formulario de alta.</p></section>:
+   <div className="rp-admin-grid">{requests.map(item=><article className="rp-panel-card" key={item.id}>
+    <span className={'rp-pill '+item.status}>{merchantStateLabel(item.status)}</span>
+    <h2>{item.business_name||'Restaurante sin nombre'}</h2>
+    <p className="rp-muted">Solicitud #{item.id} · Cuenta #{item.user_id} · {new Date(item.created_at).toLocaleDateString('es-MX')}</p>
+    <p className="rp-muted">RFC: {item.tax_id||'No proporcionado'}</p>
+    {item.notes&&<p>Última observación: {item.notes}</p>}
+    {item.status!=='approved'&&<><label className="rp-review-note">Nota para el comerciante
+     <textarea maxLength={2000} rows={3} value={notes[item.id]??''}
+      onChange={e=>setNotes(v=>({...v,[item.id]:e.target.value}))}
+      placeholder="Documentación revisada, información faltante…"/></label>
+     <div className="rp-admin-actions">
+      <button className="rp-btn primary" disabled={busy!==null} onClick={()=>void review(item,'approved')}>Aprobar <Check size={16}/></button>
+      <button className="rp-btn outline" disabled={busy!==null} onClick={()=>void review(item,'needs_info')}>Solicitar datos</button>
+      <button className="rp-btn quiet" disabled={busy!==null} onClick={()=>void review(item,'rejected')}>Rechazar</button>
+     </div></>}
+    {item.status==='approved'&&<p className="rp-approved-note"><BadgeCheck size={16}/> Alta aprobada. Falta habilitación individual de Stripe Connect.</p>}
+   </article>)}</div>}
+  <p className="rp-legal">El servidor exige rol administrador, 2FA y sesión válida para aprobar solicitudes. Esta pantalla no vincula automáticamente cuentas Stripe ni mueve dinero.</p>
+ </div>;
+}
+type Stats={orders:number;delivered:number;gross_sales:number;inventory_low:number};
+export function RestaurantWorkspace(){
+ const {user,logout}=useSession();
+ const navigate=useNavigate();
+ const [tab,setTab]=useState<MerchantTab>('pedidos');
+ const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[orders,setOrders]=useState<Order[]>([]);
+ const [stats,setStats]=useState<Stats|null>(null),[finance,setFinance]=useState<MerchantFinance|null>(null);
+ const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
+ const [connectError,setConnectError]=useState('');
+ const [loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [busy,setBusy]=useState(false),[lastSync,setLastSync]=useState<Date|null>(null);
+ const [pins,setPins]=useState<Record<number,string>>({}),[cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
+ const mounted=useRef(true),requestVersion=useRef(0),busyRef=useRef(false);
+ const refresh=useCallback(async()=>{
+  const version=++requestVersion.current;
+  try{
+   const [r,o,a]=await Promise.all([api.ownerRestaurant(),api.ownerOrders(),api.ownerAnalytics()]);
+   if(!mounted.current||version!==requestVersion.current)return;
+   if(!Array.isArray(o))throw Error('El backend no devolvió pedidos válidos.');
+   setRestaurant(r);setOrders(o);setStats(a);setError('');setLastSync(new Date());
+   const [c,f]=await Promise.allSettled([api.ownerConnectStatus(r.id),api.ownerFinance()]);
+   if(!mounted.current||version!==requestVersion.current)return;
+   if(c.status==='fulfilled'){setConnect(c.value);setConnectError('');}
+   else {setConnect(null);setConnectError('No hay una cuenta Connect autorizada o no se pudo consultar.');}
+   setFinance(f.status==='fulfilled'?f.value:null);
+  }catch(e){
+   if(mounted.current&&version===requestVersion.current)
+    setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
+  }finally{
+   if(mounted.current&&version===requestVersion.current)setLoading(false);
+  }
+ },[]);
+ useEffect(()=>{
+  mounted.current=true;
+  void refresh();
+  const poll=window.setInterval(()=>{
+   if(document.visibilityState==='visible'&&!busyRef.current)void refresh();
+  },20000);
+  return()=>{mounted.current=false;window.clearInterval(poll);requestVersion.current++;};
+ },[refresh]);
+ const doAction=async(work:()=>Promise<unknown>,message:string)=>{
+  if(busyRef.current)return;
+  busyRef.current=true;setBusy(true);setError('');setNotice('');
+  try{await work();setNotice(message);await refresh();}
+  catch(e){setError(e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.');await refresh();}
+  finally{busyRef.current=false;setBusy(false);}
+ };
+ async function signOut(){
+  if(busyRef.current)return;
+  try{await logout();navigate('/restaurante/acceso',{replace:true});}
+  catch(e){setError(e instanceof Error?e.message:'No se pudo cerrar sesión.');}
+ }
+ function confirmOwner(){
+  if(!restaurant||!connect||connect.owner_approved)return;
+  if(!window.confirm('Confirma SOLO si eres el titular legal del restaurante y reconoces como propia la cuenta Stripe Connect que administración vinculó. ¿Autorizar esta asociación?'))return;
+  void doAction(()=>api.ownerConfirmConnect(restaurant.id),'Titularidad registrada. Stripe y el backend verificarán los requisitos antes de aceptar pagos.');
+ }
+ async function onboardingLink(){
+  if(!restaurant||!connect?.owner_approved||busyRef.current)return;
+  busyRef.current=true;setBusy(true);setError('');
+  try{
+   const result=await api.ownerConnectOnboardingLink(restaurant.id);
+   const url=new URL(result.url);
+   if(url.protocol!=='https:'||url.hostname!=='connect.stripe.com')
+    throw new Error('Stripe Connect devolvió un enlace no autorizado.');
+   window.location.assign(url.href);
+  }catch(e){setError(e instanceof Error?e.message:'No fue posible continuar a Stripe Connect.');}
+  finally{busyRef.current=false;setBusy(false);}
+ }
+ function statusAction(order:Order){
+  const next=nextMerchantState(order);
+  if(!next)return;
+  void doAction(()=>api.ownerUpdateStatus(order.id,next),'Pedido #'+order.id+' actualizado por el servidor.');
+ }
+ function handoff(order:Order){
+  const pin=pins[order.id]??'',cash=cashConfirmed[order.id]===true;
+  if(!canHandoffPickup(order,pin,cash))return;
+  const message=order.payment_method==='cash'?
+   'Confirma que recibiste físicamente '+pesos(order.total)+' en efectivo y entregaste el pedido #'+order.id+'.':
+   'Confirma que entregaste el pedido #'+order.id+', pagado y conciliado mediante Stripe, al cliente con PIN válido.';
+  if(!window.confirm(message))return;
+  void doAction(async()=>{
+   await api.ownerCompletePickup(order.id,pin);
+   setPins(v=>({...v,[order.id]:''}));
+   setCashConfirmed(v=>({...v,[order.id]:false}));
+  },'Recogida registrada con PIN. El recibo y estado contable quedan en el servidor.');
+ }
+ function openToggle(){
+  if(!restaurant)return;
+  void doAction(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),
+   restaurant.is_open?'Comercio cerrado temporalmente.':'Comercio abierto según verificación del backend.');
+ }
+ function pickupToggle(){
+  if(!restaurant)return;
+  void doAction(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),
+   'Preferencia de recogida actualizada en el servidor.');
+ }
+ const activeOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
+ const completedOrders=orders.filter(o=>['delivered','cancelled'].includes(o.status)).slice(0,12);
+ const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
+ const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
+ return <div className="rp-layout" data-restaurant-app="true">
+  <aside className="rp-sidebar"><MerchantBrand/>
+   <span className="rp-side-caption">GESTIÓN DEL COMERCIO</span>
+   <nav className="rp-nav" aria-label="Secciones del restaurante">
+    {allTabs.map(({id,label,Icon})=><button key={id} type="button"
+      className={'rp-nav-item '+(tab===id?'selected':'')} aria-current={tab===id?'page':undefined}
+      onClick={()=>setTab(id)}><Icon size={20}/>{label}
+      {id==='pedidos'&&activeOrders.length>0&&<em>{activeOrders.length}</em>}
+      {id==='activacion'&&!connectComplete&&<span className="rp-nav-dot" aria-label="Configuración pendiente"/>}
+     </button>)}
+   </nav>
+   <div className="rp-side-bottom"><div className="rp-owner-avatar">{(user?.name||'R').slice(0,1).toUpperCase()}</div>
+    <div><strong>{user?.name||'Restaurante'}</strong><small>Cuenta del comercio</small></div>
+    <button type="button" title="Cerrar sesión" aria-label="Cerrar sesión" onClick={()=>void signOut()}><LogOut size={18}/></button>
+   </div>
+  </aside>
+  <div className="rp-workspace">
+   <header className="rp-topbar"><div><span className="rp-eyebrow">TALA EATS / RESTAURANTES</span>
+    <h1>{restaurant?.name||'Panel de restaurante'}</h1>
+    <p>{restaurant?.address||'Gestión operativa de tu comercio'}</p></div>
+    <div className="rp-top-actions">
+     <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
+       {restaurant?.is_open?'Abierto':'Cerrado'}</span>
+     <button type="button" className="rp-icon-btn" aria-label="Actualizar pedidos y negocio" onClick={()=>void refresh()}><RefreshCw size={20}/></button>
+    </div>
+   </header>
+   <main className="rp-content">
+    {PREVIEW_READONLY&&<Notice message="Vista previa: se puede explorar el diseño, pero las acciones de administración y cobro están bloqueadas."/>}
+    {error&&<Notice kind="error" message={error}/>}
+    {notice&&<Notice kind="success" message={notice}/>}
+    {loading?<div className="rp-loading"><RefreshCw className="rp-spin" size={24}/> Consultando información del backend LIVE…</div>:
+    !restaurant?<section className="rp-panel-card"><h2>No tienes un restaurante asignado</h2><p>Solicita el alta y aprobación administrativa. Ninguna cuenta recibe permisos de comercio automáticamente.</p>
+     <Link to="/restaurante/alta" className="rp-btn primary">Ver activación <ArrowRight size={18}/></Link></section>:
+    <>
+     {tab==='pedidos'&&<>
+      <div className="rp-heading-row"><div><span className="rp-eyebrow">OPERACIÓN EN TIEMPO REAL</span><h2>Pedidos</h2>
+       <p>Recibe, prepara y entrega solo pedidos autorizados por el backend.</p></div>
+       <span className="rp-last-sync"><Clock3 size={16}/> {lastSync?'Actualizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Sin sincronizar'} · Cada 20 s</span>
+      </div>
+      <div className="rp-stats">
+       <div><span>Pedidos históricos</span><strong>{stats?.orders??'—'}</strong><small>Desde el servidor</small></div>
+       <div><span>Activos</span><strong>{activeOrders.length}</strong><small>En espera o preparación</small></div>
+       <div><span>Entregados</span><strong>{stats?.delivered??'—'}</strong><small>Recogidas y entregas</small></div>
+       <div><span>Stock bajo</span><strong>{stats?.inventory_low??'—'}</strong><small>Productos bajo 10 uds.</small></div>
+      </div>
+      {!connectComplete&&<section className="rp-activation-banner">
+       <LockKeyhole size={24}/><div><strong>Falta completar la activación LIVE</strong>
+        <p>Los pedidos reales se habilitan cuando el propietario confirma su cuenta Stripe Connect y el servidor valida la configuración.</p></div>
+       <button className="rp-btn small dark" onClick={()=>setTab('activacion')}>Ver activación <ArrowRight size={16}/></button>
+      </section>}
+      <div className="rp-lane-grid">
+       {(['received','confirmed','preparing','ready'] as const).map(state=>{
+        const lane=activeOrders.filter(o=>o.status===state);
+        return <section className="rp-order-lane" key={state}>
+         <div className="rp-lane-title"><span className={'rp-lane-indicator '+state}/>
+          <h3>{merchantStateLabel(state)}</h3><span>{lane.length}</span></div>
+         {lane.length===0?<div className="rp-empty-lane"><PackageCheck size={29}/><p>Sin pedidos en esta etapa</p></div>:
+          lane.map(o=><article className="rp-order-card" key={o.id}>
+           <div className="rp-order-head"><div><strong>Pedido #{o.id}</strong>
+            <small>{new Date(o.created_at).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</small></div>
+            <b>{pesos(o.total)}</b></div>
+           <div className="rp-payment-tag"><CreditCard size={16}/>
+            {o.payment_method==='cash'?'Efectivo al recoger':
+             o.payment_status==='paid'?'Tarjeta · Confirmada por servidor':'Tarjeta · Pendiente de conciliación'}</div>
+           <div className="rp-order-items">{(o.items??[]).map((item,i)=><p key={i}>{item.quantity} × {item.name_snapshot}</p>)}</div>
+           <p className="rp-muted">{o.order_type==='pickup'?'Recoger en el local':'Entrega a domicilio'}</p>
+           {nextMerchantState(o)&&<button className="rp-btn primary small" disabled={busy}
+             onClick={()=>statusAction(o)}>{state==='received'?'Aceptar pedido':state==='confirmed'?'Comenzar preparación':'Marcar listo'} <ArrowRight size={16}/></button>}
+           {state==='ready'&&o.order_type==='pickup'&&<div className="rp-handoff">
+            <label>PIN del cliente
+             <input type="password" inputMode="numeric" autoComplete="off" maxLength={4}
+              value={pins[o.id]??''} placeholder="••••" aria-label={'PIN de pedido '+o.id}
+              onChange={e=>setPins(v=>({...v,[o.id]:normalizePickupPin(e.target.value)}))}
+              disabled={busy}/></label>
+            {o.payment_method==='cash'&&<label className="rp-cash-check">
+             <input type="checkbox" checked={cashConfirmed[o.id]===true} disabled={busy}
+              onChange={e=>setCashConfirmed(v=>({...v,[o.id]:e.target.checked}))}/>
+             Recibí {pesos(o.total)} en efectivo
+            </label>}
+            <button type="button" className="rp-btn primary small"
+             disabled={busy||!canHandoffPickup(o,pins[o.id]??'',cashConfirmed[o.id]===true)}
+             onClick={()=>handoff(o)}><PackageCheck size={16}/> Confirmar recogida</button>
+            <small>El servidor valida el PIN y registra el recibo sin duplicar cobros.</small>
+           </div>}
+           {state==='ready'&&o.order_type!=='pickup'&&<p className="rp-muted">Pendiente de reparto autorizado.</p>}
+          </article>)}
+        </section>;
+       })}
+      </div>
+      <section className="rp-history"><h3>Últimos pedidos finalizados</h3>
+       {completedOrders.length===0?<p className="rp-muted">Aún no hay pedidos finalizados.</p>:
+        completedOrders.map(o=><div className="rp-history-row" key={o.id}>
+         <span>#{o.id} · {merchantStateLabel(o.status)}</span><strong>{pesos(o.total)}</strong>
+        </div>)}</section>
+     </>}
+     {tab==='menu'&&<MerchantMenu restaurant={restaurant} busy={busy} run={doAction}/>}
+     {tab==='activacion'&&<>
+      <div className="rp-heading-row"><div><span className="rp-eyebrow">MI COMERCIO</span><h2>Activación del restaurante</h2>
+       <p>Verificación del negocio, recogida y cuenta Stripe Connect del propietario.</p></div>
+       <span className={'rp-pill '+(connectComplete?'approved':'pending')}>{connectComplete?'Requisitos revisados':'Configuración pendiente'}</span></div>
+      <div className="rp-activation-grid"><section className="rp-panel-card"><div className="rp-card-top"><BadgeCheck size={22}/><h3>Lista de activación</h3></div>
+       <div className="rp-steps">{connectSteps.map((step,i)=><div key={step.id} className={step.complete?'done':''}>
+        <span>{step.complete?<Check size={16}/>:String(i+1).padStart(2,'0')}</span><p>{step.label}</p></div>)}</div>
+       {connectError&&<Notice kind="info" message={connectError}/>}
+       {!connect&&<p className="rp-muted">Si no existe una asociación Connect, administración debe verificar el negocio y registrar la cuenta correcta.</p>}
+       {connect&&!connect.owner_approved&&<button className="rp-btn primary" disabled={busy} onClick={confirmOwner}>
+        <KeyRound size={17}/> Confirmar mi titularidad</button>}
+       {connect?.owner_approved&&!(connect.details_submitted&&connect.transfers_active&&connect.payouts_enabled)&&
+        <button className="rp-btn primary" disabled={busy} onClick={()=>void onboardingLink()}>
+         Completar verificación con Stripe <ArrowRight size={17}/></button>}
+       <button className="rp-btn outline small" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={16}/> Verificar de nuevo</button>
+       <p className="rp-legal">El panel nunca crea una cuenta Connect por su cuenta ni promete pagos automáticos. El checkout confirma cada habilitación directamente en el backend.</p>
+      </section>
+      <section className="rp-panel-card"><div className="rp-card-top"><Store size={22}/><h3>Disponibilidad</h3></div>
+       <p className="rp-muted">{restaurant.name}</p><p>{restaurant.address||'Agrega la dirección completa para que te encuentren.'}</p>
+       <div className="rp-setting"><div><strong>Comercio</strong><small>{restaurant.is_open?'Abierto para recibir pedidos autorizados':'Cerrado temporalmente'}</small></div>
+        <button className="rp-btn outline small" disabled={busy} onClick={openToggle}>{restaurant.is_open?'Cerrar':'Abrir'}</button></div>
+       <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Clientes pueden elegir recogida si están autorizados':'Opción de recogida desactivada'}</small></div>
+        <button className="rp-btn outline small" disabled={busy} onClick={pickupToggle}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
+       <p className="rp-legal">Abrir el comercio no sustituye la aprobación administrativa, la verificación del titular ni la conciliación de Stripe.</p>
+      </section></div>
+     </>}
+     {tab==='finanzas'&&<>
+      <div className="rp-heading-row"><div><span className="rp-eyebrow">CONTABILIDAD DEL COMERCIO</span><h2>Finanzas</h2>
+       <p>Importes reportados por el servidor; ninguna cifra implica una transferencia bancaria ejecutada.</p></div>
+      </div>
+      {!finance?<Notice kind="info" message="El resumen financiero del servidor no está disponible. Actualiza o contacta administración; no se mostrarán importes inventados."/>:
+       <><div className="rp-stats rp-finance-stats">
+        <div><span>Venta bruta productos</span><strong>{pesos(finance.gross_food_sales)}</strong></div>
+        <div><span>Comisión de plataforma</span><strong>{pesos(finance.commission)}</strong></div>
+        <div><span>Neto contable estimado</span><strong>{pesos(finance.net_payable)}</strong></div>
+        <div><span>Pedidos entregados</span><strong>{finance.orders}</strong></div>
+       </div><section className="rp-panel-card"><h3>Movimientos registrados</h3>
+        {finance.payouts.length===0?<p className="rp-muted">No hay transferencias registradas por el servidor.</p>:
+         finance.payouts.map(p=><div key={p.id} className="rp-history-row">
+          <span>Movimiento #{p.id} · {p.status}</span><strong>{pesos(p.amount)}</strong>
+         </div>)}
+        <p className="rp-legal">Efectivo recogido por el comercio no equivale a dinero capturado por Stripe. Las liquidaciones y transferencias automáticas no están activadas.</p>
+       </section></>}
+     </>}
+    </>}
+   </main>
+   <nav className="rp-mobile-tabs" aria-label="Navegación móvil de restaurantes">
+    {allTabs.map(({id,label,Icon})=><button key={id} className={tab===id?'selected':''}
+      aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={21}/><span>{label}</span></button>)}
+   </nav>
+  </div>
+ </div>;
+}
+function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
+ run:(fn:()=>Promise<unknown>,message:string)=>Promise<void>}){
+ const [name,setName]=useState(''),[price,setPrice]=useState(''),[stock,setStock]=useState(10),[category,setCategory]=useState('General'),[description,setDescription]=useState('');
+ async function add(event:FormEvent){
+  event.preventDefault();
+  if(name.trim().length<2||!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0)return;
+  await run(()=>api.ownerAddItem({name:name.trim(),price,stock,category:category.trim()||'General',
+   description:description.trim(),is_available:true}),'Producto agregado al catálogo del restaurante.');
+  setName('');setPrice('');setDescription('');
+ }
+ return <><div className="rp-heading-row"><div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
+   <p>Edita precios, stock y productos directamente en el servidor.</p></div><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span></div>
+  <div className="rp-menu-grid">{(restaurant.menu_items??[]).map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}/>)}</div>
+  {(restaurant.menu_items??[]).length===0&&<div className="rp-panel-card"><p>Tu negocio todavía no tiene productos. Agrega el primero para que aparezca en el catálogo.</p></div>}
+  <section className="rp-panel-card rp-menu-new"><div className="rp-card-top"><Plus size={23}/><h3>Agregar producto</h3></div>
+   <form className="rp-form rp-product-form" onSubmit={e=>void add(e)}>
+    <label>Nombre<input required minLength={2} maxLength={150} value={name}
+      onChange={e=>setName(e.target.value)} placeholder="Hamburguesa clásica"/></label>
+    <label>Precio MXN<input required inputMode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?"
+      value={price} onChange={e=>setPrice(e.target.value)} placeholder="89.00"/></label>
+    <label>Stock<input required type="number" min={0} max={100000} step={1}
+      value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
+    <label>Categoría<input maxLength={100} value={category} onChange={e=>setCategory(e.target.value)}/></label>
+    <label className="rp-product-wide">Descripción<input value={description}
+      onChange={e=>setDescription(e.target.value)} placeholder="Ingredientes y detalles"/></label>
+    <button className="rp-btn primary" type="submit" disabled={busy}><Plus size={16}/> Agregar al menú</button>
+   </form>
+  </section></>;
+}
+function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
+ run:(fn:()=>Promise<unknown>,message:string)=>Promise<void>}){
+ const [price,setPrice]=useState(item.price),[stock,setStock]=useState(item.stock);
+ const [available,setAvailable]=useState(item.is_available);
+ useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);},[item.id,item.price,item.stock,item.is_available]);
+ function save(){
+  if(!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0||!Number.isInteger(stock)||stock<0)return;
+  void run(()=>api.ownerUpdateItem(item.id,{price,stock,is_available:available}),
+   'Producto actualizado en el servidor.');
+ }
+ return <article className="rp-menu-item"><div className="rp-menu-visual"><ChefHat size={30}/></div>
+  <div className="rp-menu-details"><strong>{item.name}</strong><small>{item.category||'General'}</small>
+   <div className="rp-menu-inputs"><label>Precio MXN<input value={price} inputMode="decimal" onChange={e=>setPrice(e.target.value)}/></label>
+    <label>Existencias<input type="number" min={0} step={1} value={stock} onChange={e=>setStock(Number(e.target.value))}/></label></div>
+   <div className="rp-menu-actions"><label className="rp-cash-check"><input type="checkbox" checked={available}
+    onChange={e=>setAvailable(e.target.checked)}/> Disponible</label>
+    <button className="rp-btn outline small" disabled={busy||price.length===0} onClick={save}>Guardar</button></div>
+  </div>
+ </article>;
+}
