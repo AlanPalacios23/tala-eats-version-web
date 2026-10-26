@@ -1,8 +1,8 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {Link,useNavigate} from 'react-router-dom';
-import {ArrowLeft,ArrowRight,BadgeCheck,Bell,Check,ChefHat,Clock3,CreditCard,
- ClipboardList,Coins,KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
+import {ArrowLeft,ArrowRight,BadgeCheck,Check,ChefHat,Clock3,CreditCard,
+ KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
  ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {MerchantApplication,MerchantFinance} from '../lib/api';
