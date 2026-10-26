@@ -2,9 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Package, RefreshCw, ShoppingBag, WifiOff } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
-import { ORDER_LABELS, isCompletedOrder, orderProgress } from '../lib/mobile-parity';
+import { ORDER_LABELS, amountInCents, isCompletedOrder, orderProgress } from '../lib/mobile-parity';
 import type { Order } from '../lib/types';
 
+/** Every amount/status below comes from the backend; never label an uncertain payment as paid. */
+function paymentStatusLabel(status:string):string {
+ switch(status){
+  case 'paid':return 'Pagado';
+  case 'pending':case 'unpaid':return 'Pendiente';
+  case 'failed':return 'No aprobado';
+  case 'refunded':return 'Reembolsado';
+  case 'partially_refunded':return 'Reembolso parcial';
+  default:return 'Por confirmar';
+ }
+}
+function verifiedLineTotal(unitPrice:string,quantity:number):string {
+ const cents=amountInCents(unitPrice);
+ return cents===null||!Number.isSafeInteger(quantity)||quantity<1?'Por confirmar':pesos(cents*quantity/100);
+}
 /** Source: Flutter Usuarios 1.0.46 OrdersScreen / ActiveOrderCard / PastOrderTile. */
 function useOrders(){
  const [orders,setOrders]=useState<Order[]|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true);
@@ -45,7 +60,7 @@ export function CustomerOrders(){
   {error&&<div className="mobile-orders-offline" role="status"><WifiOff size={18}/><span>No pudimos actualizar tus pedidos. {orders?'Se muestra el último estado consultado.':'Revisa tu conexión.'}</span><button onClick={refresh}>Reintentar</button></div>}
   {loading&&!orders?<div className="mobile-loading-order"><RefreshCw size={20} className="spin"/>Cargando tus pedidos…</div>:
    !orders?.length?<div className="mobile-status"><Package size={33}/><h2>{error?'No pudimos cargar tus pedidos':'Aún no tienes pedidos'}</h2><p>{error?'Puedes intentar actualizar el historial.':'Cuando hagas tu primer pedido podrás seguirlo aquí en tiempo real.'}</p><Link className="mobile-status-link" to="/clientes">Explorar restaurantes</Link></div>:
-   <>{unpaid.length>0&&<section className="mobile-orders-section"><h2>Esperando pago</h2>{unpaid.map(o=><Link key={o.id} className="mobile-past-order" to={'/pago/'+o.id}><OrderImage/><div className="mobile-past-copy"><strong>Pedido #{o.id}</strong><span>Completa Stripe TEST si está habilitado</span></div><ChevronRight size={18}/></Link>)}</section>}
+   <>{unpaid.length>0&&<section className="mobile-orders-section"><h2>Esperando pago</h2>{unpaid.map(o=><Link key={o.id} className="mobile-past-order" to={'/pago/'+o.id}><OrderImage/><div className="mobile-past-copy"><strong>Pedido #{o.id}</strong><span>Consultar estado del pago con tarjeta</span></div><ChevronRight size={18}/></Link>)}</section>}
     {active.length>0&&<section className="mobile-orders-section"><div className="mobile-orders-section-head"><h2>En curso</h2><span>{active.length}</span></div>{active.map(order=><ActiveCard key={order.id} order={order}/>)}</section>}
     {past.length>0&&<section className="mobile-orders-section"><h2>Anteriores</h2>{past.map(order=><PastCard key={order.id} order={order}/>)}</section>}</>}
  </div>;
@@ -79,13 +94,13 @@ export function CustomerOrderDetail(){
   {loading&&!orders?<div className="mobile-loading-order"><RefreshCw className="spin" size={19}/> Consultando pedido…</div>:
    !order?<div className="mobile-status"><Package size={30}/><h2>No encontramos este pedido</h2><p>Comprueba tu conexión o consulta tu historial.</p><Link to="/pedidos" className="mobile-status-link">Ver mis pedidos</Link></div>:
    <><section className="mobile-order-detail-hero"><span className="mobile-order-mini">Estado del pedido</span><h2>{ORDER_LABELS[order.status]||order.status}</h2><p>{order.order_type==='delivery'?'Entrega a domicilio':'Recoger en establecimiento'} · {pesos(order.total)}</p></section>
-    {order.payment_method==='stripe'&&order.payment_status!=='paid'&&<Link to={'/pago/'+order.id} className="mobile-order-support">Pago pendiente · Ver Stripe TEST <ChevronRight size={18}/></Link>}
+    {order.status!=='cancelled'&&order.payment_method==='stripe'&&order.payment_status!=='paid'&&<Link to={'/pago/'+order.id} className="mobile-order-support">Pago pendiente · Consultar <ChevronRight size={18}/></Link>}
     {order.status!=='cancelled'&&<section className="mobile-order-timeline"><h3>Seguimiento</h3>{orderProgress(order.status,order.order_type).steps.map((step,i)=>{const current=orderProgress(order.status,order.order_type).index;return <div className={'mobile-order-timeline-step '+(i<current?'done':i===current?'current':'future')} key={step.label}><div className="mobile-order-step-indicator">{i<current?<Check size={14}/>:null}</div><span>{step.label}</span>{i===current&&<b>Ahora</b>}</div>;})}</section>}
     {order.status==='cancelled'&&<p className="mobile-order-cancelled">Este pedido fue cancelado.</p>}
-    <section className="mobile-order-products"><h3>Tu pedido</h3>{order.items?.map((item,i)=><div key={i}><span>{item.quantity} × {item.name_snapshot}</span><strong>{pesos(item.unit_price)}</strong></div>)}
+    <section className="mobile-order-products"><h3>Tu pedido</h3>{order.items?.map((item,i)=><div key={i}><span>{item.quantity} × {item.name_snapshot}</span><strong>{verifiedLineTotal(item.unit_price,item.quantity)}</strong></div>)}
     <div className="mobile-detail-total"><span>Total</span><strong>{pesos(order.total)}</strong></div></section>
     {order.delivery_pin&&order.status!=='cancelled'&&<div className="mobile-order-pin"><strong>PIN de entrega: {order.delivery_pin}</strong><span>Compártelo únicamente cuando recibas tu pedido.</span></div>}
-    <div className="mobile-order-payment">Pago: {order.payment_method==='cash'?'Efectivo':'Tarjeta'} · {order.payment_status}</div>
+    <div className="mobile-order-payment">Pago: {order.payment_method==='cash'?'Efectivo':'Tarjeta'} · {paymentStatusLabel(order.payment_status)}</div>
     <Link className="mobile-order-support" to={'/chat/'+order.id}>Chat del pedido <ChevronRight size={18}/></Link>
     <Link className="mobile-order-support" to={'/soporte?pedido='+order.id}>Ayuda con este pedido <ChevronRight size={18}/></Link>
     <p className="mobile-order-disclaimer">El seguimiento se consulta al servidor cada 12 segundos mientras esta pantalla esté visible. Un pago con Stripe no está confirmado hasta que el backend indique pagado.</p>
