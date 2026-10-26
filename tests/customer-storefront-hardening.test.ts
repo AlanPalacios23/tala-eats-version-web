@@ -33,6 +33,27 @@ describe('Tala Eats Usuarios Web — inventory and cart safety',()=>{
   expect(updateQuantity(b,1,1)).toBe(b); // Ambiguous variant update
   expect(b.entries.reduce((sum,e)=>sum+e.quantity,0)).toBe(3);
  });
+ it('rejects duplicated cart lines and aggregated stock violations on restoration',()=>{
+  const item=product(23,3);
+  const first=addVariantItem(EMPTY_CART,item,2,'Sin cebolla');
+  const duplicate={...first,entries:[...first.entries,...first.entries]};
+  expect(restoreCustomerCart(duplicate)).toEqual(EMPTY_CART);
+  const overstock={restaurantId:7,entries:[
+   {item,quantity:2,note:'Sin cebolla'},
+   {item,quantity:2,note:'Con salsa'}
+  ]};
+  expect(restoreCustomerCart(overstock)).toEqual(EMPTY_CART);
+  const inconsistent={restaurantId:7,entries:[
+   {item,quantity:1,note:'Sin cebolla'},
+   {item:{...item,stock:4},quantity:1,note:'Con salsa'}
+  ]};
+  expect(restoreCustomerCart(inconsistent)).toEqual(EMPTY_CART);
+  const valid={restaurantId:7,entries:[
+   {item,quantity:2,note:'Sin cebolla'},
+   {item,quantity:1,note:'Con salsa'}
+  ]};
+  expect(restoreCustomerCart(valid)).toEqual(valid);
+ });
  it('respects global capacity for incrementing existing cart lines',()=>{
   let cart=addVariantItem(EMPTY_CART,product(1,100),49);
   cart=addVariantItem(cart,product(2,100),1);
@@ -64,6 +85,26 @@ describe('Tala Eats Usuarios Web — visual and functional fixes',()=>{
   expect(mobile).toContain('normalized.length<2');
   expect(mobile).toContain('favorite.pending!==null');
   expect(mobile).toContain('r.address||marketLabel(market)');
+ });
+ it('refreshes menu results when crossing two characters and never leaks the prior market',()=>{
+  expect(mobile).toContain('setRestaurants(null);setLoading(true)');
+  expect(mobile).toContain('[market,restaurants,normalized.length>=2]');
+  expect(mobile).toContain('if(normalized.length<2||!restaurants?.length)');
+  expect(mobile).toContain('previousFocus?.focus()');
+  expect(mobile).toContain('document.body.style.overflow=\'hidden\'');
+ });
+ it('restores focus after product details and resets stale selection on merchant change',()=>{
+  expect(commerce).toContain("setCategory('Todos');setSelected(null);");
+  expect(commerce).toContain('previousFocus?.focus()');
+  expect(commerce).toContain('aria-modal="true"');
+  expect(commerce).toContain('marketLabel(market)');
+ });
+ it('shows actual product photos and never labels delivery-only carts as free pickup',()=>{
+  expect(checkout).toContain('<CustomerPhoto src={entry.item.image_url}');
+  expect(checkout).toContain('Estimación antes del envío');
+  expect(checkout).not.toContain('Total de referencia para recoger');
+  expect(css).toContain('.customer-shell .mobile-cart-item-image');
+  expect(css).toContain('.customer-shell .mobile-cart-entry{');
  });
  it('keeps persistent mobile checkout and cart CTAs clear of bottom navigation',()=>{
   expect(css).toContain('.customer-shell .mobile-commerce-cartbar{');
