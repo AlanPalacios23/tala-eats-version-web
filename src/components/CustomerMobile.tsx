@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Clock3, Heart, MapPin, Search, Store, UserRound, WifiOff, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -19,7 +19,7 @@ function useRestaurants(market:MarketCode) {
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [tick,setTick]=useState(0);
- useEffect(()=>{let active=true;setLoading(true);setError('');
+ useEffect(()=>{let active=true;setRestaurants(null);setLoading(true);setError('');
   api.restaurantsForMarket(market).then(value=>{if(active)setRestaurants(value);}).catch(e=>{if(active)setError(e instanceof Error?e.message:'No hay conexión');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[tick,market]);
@@ -71,19 +71,38 @@ function MerchantList({items,loading,error,refresh,market,searching=false}:{item
 }
 function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:MarketCode)=>boolean}){
  const [open,setOpen]=useState(false);
- useEffect(()=>{if(!open)return;const key=(e:KeyboardEvent)=>{if(e.key==='Escape')setOpen(false);};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);},[open]);
+ const closeRef=useRef<HTMLButtonElement>(null);
+ const sheetRef=useRef<HTMLElement>(null);
+ useEffect(()=>{
+  if(!open)return;
+  const previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const oldOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  closeRef.current?.focus();
+  const onKey=(e:KeyboardEvent)=>{
+   if(e.key==='Escape'){e.preventDefault();setOpen(false);return;}
+   if(e.key!=='Tab'||!sheetRef.current)return;
+   const controls=Array.from(sheetRef.current.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+   const first=controls[0],last=controls[controls.length-1];
+   if(!first||!last)return;
+   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  };
+  document.addEventListener('keydown',onKey);
+  return()=>{document.body.style.overflow=oldOverflow;document.removeEventListener('keydown',onKey);previousFocus?.focus();};
+ },[open]);
  return <>
   <button className="mobile-market-select" onClick={()=>setOpen(true)} aria-label={'Comprar en '+marketLabel(market)+'. Cambiar localidad'}>
    <Store size={17}/><span>Comprar en {marketLabel(market)}</span><span aria-hidden="true">⌄</span>
   </button>
   {open&&<div className="mobile-market-scrim" onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}>
-   <section className="mobile-market-sheet" role="dialog" aria-modal="true" aria-label="Seleccionar localidad">
+   <section ref={sheetRef} className="mobile-market-sheet" role="dialog" aria-modal="true" aria-label="Seleccionar localidad">
     <span className="mobile-sheet-handle"/><h2>¿Dónde quieres comprar?</h2>
     <p>Selecciona tu localidad. Tala es el mercado piloto; las demás zonas mostrarán negocios solo cuando estén disponibles.</p>
     <div>{MARKETS.map(m=><button key={m.code} onClick={()=>{if(market===m.code||onChange(m.code))setOpen(false);}} aria-pressed={market===m.code}>
      <MapPin size={19}/><span><strong>{m.label}</strong><small>{m.code==='TALA-JAL'?'Mercado piloto':'Sujeto a disponibilidad de comercios'}</small></span>{market===m.code?<span>✓</span>:<span>›</span>}
     </button>)}</div>
-    <button className="mobile-market-close" onClick={()=>setOpen(false)}>Cerrar</button>
+    <button ref={closeRef} type="button" className="mobile-market-close" onClick={()=>setOpen(false)}>Cerrar</button>
    </section>
   </div>}
  </>;
@@ -141,7 +160,7 @@ export function CustomerSearch({market}:{market:MarketCode}){
   };
   void check();
   return ()=>{active=false;};
- },[normalized?market:'',restaurants,Boolean(normalized)]);
+ },[market,restaurants,normalized.length>=2]);
  return <div className="mobile-customer-page mobile-search-page" data-mobile-screen="search">
   <h1>Buscar</h1><p className="mobile-search-locality">Comprar en {marketLabel(market)}</p>
   <label className="mobile-search-input"><Search size={22}/><input aria-label="Buscar restaurante, comercio o platillo" type="search" placeholder="Restaurante, comercio o platillo…" value={query} onChange={event=>setQuery(event.target.value)}/>{query&&<button aria-label="Borrar búsqueda" type="button" onClick={()=>setQuery('')}><X size={19}/></button>}</label>
@@ -149,8 +168,8 @@ export function CustomerSearch({market}:{market:MarketCode}){
    {!normalized?<><h2>Comercios disponibles</h2><MerchantList items={directory} loading={loading} error={error} refresh={refresh} market={market}/></>:
     <>
      {loading?<div className="mobile-loading-order">Cargando comercios…</div>:error?<div role="alert" className="mobile-address-error">{error}<button onClick={refresh}>Reintentar</button></div>:null}
-     {directory.length>0&&<><h2>Restaurantes</h2><MerchantList items={directory} loading={false} error="" refresh={refresh} market={market} searching/></>}
-     <h2>Platillos</h2>
+     {directory.length>0&&<><h2>Comercios</h2><MerchantList items={directory} loading={false} error="" refresh={refresh} market={market} searching/></>}
+     <h2>Productos y platillos</h2>
      {normalized.length===1&&<p className="mobile-search-helper" role="status">Escribe al menos dos caracteres para buscar en los menús.</p>}
      {menuLoading&&<p className="mobile-loading-order">Buscando platillos en menús reales…</p>}
      {menuError&&<div role="status" className="mobile-address-error">{menuError}</div>}
