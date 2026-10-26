@@ -57,7 +57,7 @@ describe('RC814 production Stripe CSP recovery is additive and scoped',()=>{
  it('refuses changed backend, port or other CSP baseline security',()=>{
   for(const altered of [
    fixture.replace('127.0.0.1:18190','127.0.0.1:18192'),
-   fixture.replace('127.0.0.1:18195','127.0.0.1:18196'),
+   fixture.replace('listen 127.0.0.1:18195;','listen 127.0.0.1:18196;'),
    fixture.replace("object-src 'none'","object-src 'self'"),
    fixture.replace("frame-ancestors 'none'","frame-ancestors 'self'"),
   ]){
