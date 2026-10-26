@@ -8,6 +8,9 @@ import { amountInCents } from '../lib/mobile-parity';
 import type { Restaurant } from '../lib/types';
 import {CustomerAvatar} from './CustomerAvatar';
 import {LEGAL_LINKS} from '../lib/legal-links';
+import {enableWebPush,disableWebPush,getWebPushConfig,isWebPushEnabledForUser,supportsWebPush,webPushPermission} from '../lib/web-push';
+import type {WebPushConfig} from '../lib/web-push';
+import {PREVIEW_READONLY} from '../lib/preview';
 
 function Heading({title,back='/cuenta',refresh}:{title:string;back?:string;refresh?:()=>void}){
  return <div className="mobile-detail-header"><Link to={back} aria-label="Regresar"><ArrowLeft size={22}/></Link><h1>{title}</h1>{refresh&&<button aria-label="Actualizar" onClick={refresh}><RefreshCw size={20}/></button>}</div>;
@@ -78,12 +81,58 @@ export function CustomerWallet(){
 }
 interface Notice{id:number;kind:string;title:string;message:string;is_read:boolean;created_at:string}
 export function CustomerNotifications(){
+ const {user}=useSession();
  const [rows,setRows]=useState<Notice[]|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[tick,setTick]=useState(0),[busy,setBusy]=useState(false);
+ const [pushConfig,setPushConfig]=useState<WebPushConfig|null>(null);
+ const [pushEnabled,setPushEnabled]=useState(false),[pushLoading,setPushLoading]=useState(true);
+ const [pushBusy,setPushBusy]=useState(false),[pushError,setPushError]=useState(''),[pushInfo,setPushInfo]=useState('');
  const refresh=()=>setTick(v=>v+1);
  useEffect(()=>{let active=true;setLoading(true);setError('');
   api.customerNotifications().then(value=>{if(active)setRows(value);}).catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudieron verificar las notificaciones.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false};
  },[tick]);
+ useEffect(()=>{
+  let active=true;
+  setPushConfig(null);setPushEnabled(false);setPushInfo('');setPushError('');
+  if(!user||user.role!=='customer'||PREVIEW_READONLY){setPushLoading(false);return()=>{active=false};}
+  setPushLoading(true);
+  Promise.allSettled([getWebPushConfig(),isWebPushEnabledForUser(user.id)]).then(([config,state])=>{
+   if(!active)return;
+   if(config.status==='fulfilled')setPushConfig(config.value);
+   else setPushError('El servidor todavía no confirma el servicio de notificaciones push para esta PWA.');
+   if(state.status==='fulfilled')setPushEnabled(state.value);
+  }).finally(()=>{if(active)setPushLoading(false);});
+  return()=>{active=false};
+ },[user?.id,user?.role]);
+ useEffect(()=>{
+  if(!user)return;
+  const check=()=>{if(document.visibilityState==='visible')refresh();};
+  const interval=window.setInterval(check,60_000);
+  document.addEventListener('visibilitychange',check);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',check);};
+ },[user?.id]);
+ async function changePush(){
+  if(!user||user.role!=='customer'||pushBusy||PREVIEW_READONLY)return;
+  setPushBusy(true);setPushError('');setPushInfo('');
+  try{
+   if(pushEnabled){
+    await disableWebPush(user.id);
+    setPushEnabled(false);
+    setPushInfo('Notificaciones del navegador desactivadas.');
+   }else{
+    if(!pushConfig)throw new Error('Web Push no está disponible en el backend de este entorno.');
+    await enableWebPush(user.id,pushConfig);
+    setPushEnabled(true);
+    setPushInfo('Dispositivo registrado en el servidor. Recibirás avisos cuando haya eventos reales.');
+   }
+  }catch(e){
+   setPushError(e instanceof Error?e.message:'No fue posible actualizar las notificaciones push.');
+   if(pushEnabled){
+    const stillEnabled=await isWebPushEnabledForUser(user.id).catch(()=>false);
+    setPushEnabled(stillEnabled);
+   }
+  }finally{setPushBusy(false);}
+ }
  async function mark(id:number|null){
   if(busy)return;setBusy(true);setError('');
   try{if(id===null)await api.notificationsReadAll();else await api.notificationRead(id);refresh();}
@@ -91,12 +140,24 @@ export function CustomerNotifications(){
  }
  return <div className="mobile-customer-page mobile-notifications" data-mobile-screen="notifications">
   <Heading title="Notificaciones" refresh={refresh}/>
+  <section className="mobile-push-preferences" aria-labelledby="mobile-push-title">
+   <div className="mobile-push-title"><Bell size={22}/><div><h2 id="mobile-push-title">Avisos en tu dispositivo</h2><p>Pedidos, repartos, pagos y novedades de tu cuenta. Sin permiso automático ni mensajes de prueba.</p></div></div>
+   {pushLoading?<p role="status">Comprobando compatibilidad con el servidor…</p>:
+    !supportsWebPush()?<p role="status">Este navegador no admite Web Push. En iPhone, instala primero la PWA desde Safari y ábrela desde tu pantalla de inicio.</p>:
+    webPushPermission()==='denied'?<p role="status">Las notificaciones están bloqueadas. Habilítalas en los ajustes de este navegador o de la PWA.</p>:
+    <button type="button" className={'mobile-push-toggle'+(pushEnabled?' active':'')} disabled={pushBusy||(!pushConfig&&!pushEnabled)} onClick={()=>void changePush()}>
+     {pushBusy?'Guardando…':pushEnabled?'Desactivar avisos push':'Activar notificaciones reales'}
+    </button>}
+   {pushInfo&&<p role="status" className="mobile-push-ok">{pushInfo}</p>}
+   {pushError&&<p role="alert" className="mobile-push-error">{pushError}</p>}
+   <p className="mobile-push-disclosure">Para recibir avisos con la aplicación cerrada, el servidor debe tener VAPID y un worker de Web Push activos. Las promociones requieren consentimiento independiente.</p>
+  </section>
   {rows?.some(r=>!r.is_read)&&<button className="mobile-notice-all" disabled={busy} onClick={()=>void mark(null)}>Marcar todo leído</button>}
   {error&&<div className="mobile-address-error" role="alert">{error}</div>}
   {loading&&!rows?<div className="mobile-loading-order"><RefreshCw className="spin" size={19}/>Cargando avisos…</div>:
    !rows?.length?<div className="mobile-status"><Bell size={32}/><h2>{error?'Avisos sin verificar':'No hay notificaciones'}</h2><p>{error?'Intenta actualizar para consultar tus avisos.':'Cuando haya novedades de tu cuenta y pedidos las verás aquí.'}</p></div>:
    <div className="mobile-account-group">{rows.map(row=><button className={'mobile-notice '+(!row.is_read?'unread':'')} key={row.id} disabled={busy||row.is_read} onClick={()=>void mark(row.id)}><Bell size={20}/><span><strong>{row.title}</strong><small>{row.message}</small><small>{row.created_at?new Date(row.created_at).toLocaleString('es-MX'):''}</small></span>{!row.is_read&&<span className="mobile-unread-dot"/>}</button>)}</div>}
-  <p className="mobile-checkout-disclosure">Estos son los avisos dentro de Tala Eats. Las notificaciones push del navegador requieren una integración independiente.</p>
+  <p className="mobile-checkout-disclosure">Los avisos de esta lista proceden de tu cuenta en el backend de Tala Eats.</p>
  </div>;
 }
 interface Ticket{id:number;user_id?:number;order_id?:number|null;category?:string;message:string;status?:string;created_at?:string}
