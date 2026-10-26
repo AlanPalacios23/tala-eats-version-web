@@ -7,7 +7,7 @@ umask 077
 RAW="https://raw.githubusercontent.com/AlanPalacios23/tala-eats-version-web/feat/mobile-parity-v1046-navigation"
 TMP="$(mktemp -d)"
 trap 'rm -rf -- "$TMP"' EXIT
-for cmd in curl bash grep git sha256sum readlink;do
+for cmd in curl bash grep git sha256sum readlink awk;do
  command -v "$cmd" >/dev/null || { echo "USERS_WEB_ABORT=MISSING:$cmd"; exit 1; }
 done
 curl -fsSL --retry 2 --max-time 30 "$RAW/src/lib/cart.ts" -o "$TMP/cart.ts"
@@ -26,12 +26,18 @@ bash -n "$TMP/installer.sh"
 grep -Fq 'kali-update-existing-public.sh' "$TMP/installer.sh" || {
  echo 'USERS_WEB_ABORT=UNSAFE_DEPLOYER';exit 1;
 }
-bash "$TMP/installer.sh"
+# Pin the exact tested branch HEAD: if it moves during installation,
+# the upstream static installer aborts BEFORE plan/apply.
+EXPECTED="$(git ls-remote 'https://github.com/AlanPalacios23/tala-eats-version-web.git' 'refs/heads/feat/mobile-parity-v1046-navigation' | awk 'NR==1{print $1}')"
+[[ "$EXPECTED" =~ ^[a-f0-9]{40}$ ]] || { echo 'USERS_WEB_ABORT=REMOTE_SHA_INVALID';exit 1; }
+echo "USERS_WEB_TARGET_SHA=$EXPECTED"
+TALA_EXPECTED_WEB_SHA="$EXPECTED" bash "$TMP/installer.sh"
 ACTIVE="$(readlink -f /srv/talaeats-pwa/current)"
 [[ "$ACTIVE" == /srv/talaeats-pwa/releases/* ]] || {
  echo 'USERS_WEB_ABORT=ACTIVE_RELEASE_UNKNOWN';exit 1;
 }
 SHA="${ACTIVE##*/}"
+test "$SHA" = "$EXPECTED" || { echo 'USERS_WEB_ABORT=ACTIVE_RELEASE_SHA_CHANGED';exit 1; }
 SOURCE="/home/tala-node-stage/tala-eats-web-releases/$SHA"
 test -s "$SOURCE/tests/customer-storefront-hardening.test.ts"
 test -s "$ACTIVE/index.html"
