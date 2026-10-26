@@ -70,6 +70,10 @@ self.addEventListener('push',event=>{
    tag:typeof body.tag==='string'?body.tag.slice(0,90):undefined,
    data:{url},renotify:false
   });
+  // Live screens update from the authenticated API, not from untrusted push
+  // contents; no user or payment data is broadcast to clients.
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  for(const client of windows)client.postMessage({type:'tala-web-push-arrived'});
  })());
 });
 self.addEventListener('notificationclick',event=>{
