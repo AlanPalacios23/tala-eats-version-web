@@ -46,7 +46,7 @@ function useFavorites(){
  };
  return {ids,ready,error,pending,toggle,user};
 }
-function MerchantCard({restaurant:r,index,favorite,ready,pending,toggle,user}:{restaurant:Restaurant;index:number;favorite:boolean;ready:boolean;pending:boolean;toggle:(id:number)=>void;user:boolean}){
+function MerchantCard({restaurant:r,index,favorite,ready,pending,toggle,user,market}:{restaurant:Restaurant;index:number;favorite:boolean;ready:boolean;pending:boolean;toggle:(id:number)=>void;user:boolean;market:MarketCode}){
  return <article className="mobile-merchant-card reveal-enter" style={{animationDelay:Math.min(index,7)*45+'ms'}}>
   <Link to={'/comercio/'+r.id} className="mobile-merchant-photo" aria-label={'Ver '+r.name}>
    <CustomerPhoto src={r.cover_image_url} alt={r.name} fallback={r.emoji||'🍲'}/>
@@ -58,16 +58,16 @@ function MerchantCard({restaurant:r,index,favorite,ready,pending,toggle,user}:{r
   <Link to={'/comercio/'+r.id} className="mobile-merchant-details">
    <strong>{r.name}</strong>
    <span>{r.cuisine||r.description||'Comercio local'}</span>
-   <div className="mobile-merchant-meta">{r.eta_min!=null&&<small><Clock3 size={14}/>{r.eta_min} min</small>}<small><MapPin size={14}/>Tala y región</small></div>
+   <div className="mobile-merchant-meta">{r.eta_min!=null&&<small><Clock3 size={14}/>{r.eta_min} min</small>}<small><MapPin size={14}/>{r.address||marketLabel(market)}</small></div>
   </Link>
  </article>;
 }
-function MerchantList({items,loading,error,refresh,searching=false}:{items:Restaurant[];loading:boolean;error:string;refresh:()=>void;searching?:boolean}){
+function MerchantList({items,loading,error,refresh,market,searching=false}:{items:Restaurant[];loading:boolean;error:string;refresh:()=>void;market:MarketCode;searching?:boolean}){
  const favorite=useFavorites();
  if(loading)return <div className="mobile-customer-list" aria-label="Cargando comercios">{[0,1,2].map(i=><div className="customer-card-skeleton" key={i}><div/><span/><span/></div>)}</div>;
  if(error)return <div className="mobile-status"><WifiOff size={30}/><h3>No pudimos cargar los comercios</h3><p>Revisa tu conexión e inténtalo de nuevo.</p><button onClick={refresh}>Reintentar</button></div>;
  if(!items.length)return <div className="mobile-status"><Store size={30}/><h3>{searching?'Sin resultados':'Aún no hay comercios disponibles'}</h3><p>{searching?'Prueba con otro nombre o categoría.':'Cuando haya negocios activos en esta zona podrás encontrarlos aquí.'}</p></div>;
- return <><div role="status" className="mobile-favorites-error">{favorite.error}</div><div className="mobile-customer-list">{items.map((item,index)=><MerchantCard restaurant={item} index={index} key={item.id} favorite={favorite.ids.has(item.id)} ready={favorite.ready} pending={favorite.pending===item.id} toggle={favorite.toggle} user={Boolean(favorite.user)}/>)}</div></>;
+ return <>{favorite.error&&<div role="status" className="mobile-favorites-error">{favorite.error}</div>}<div className="mobile-customer-list">{items.map((item,index)=><MerchantCard restaurant={item} index={index} key={item.id} favorite={favorite.ids.has(item.id)} ready={favorite.ready} pending={favorite.pending!==null} toggle={favorite.toggle} user={Boolean(favorite.user)} market={market}/>)}</div></>;
 }
 function MarketSelector({market,onChange}:{market:MarketCode;onChange:(next:MarketCode)=>boolean}){
  const [open,setOpen]=useState(false);
@@ -109,7 +109,7 @@ export function CustomerHome({market,onSelectMarket}:{market:MarketCode;onSelect
   <div className="mobile-greeting reveal-enter"><span>{first?'Hola, '+first+' 👋':'Hola 👋'}</span><h1>¿Qué se te antoja hoy?</h1></div>
   <Link className="mobile-search-pill reveal-enter reveal-delay-one" to="/buscar"><Search size={23}/><span>Buscar restaurantes o comida…</span></Link>
   <div className="mobile-section-heading"><h2>Restaurantes y comercios</h2></div>
-  <MerchantList items={restaurants??[]} loading={loading} error={error} refresh={refresh}/>
+  <MerchantList items={restaurants??[]} loading={loading} error={error} refresh={refresh} market={market}/>
  </div>;
 }
 export function CustomerSearch({market}:{market:MarketCode}){
@@ -120,7 +120,7 @@ export function CustomerSearch({market}:{market:MarketCode}){
  const dishes=useMemo(()=>matchCustomerDishes(details,query),[details,query]);
  useEffect(()=>{
   let active=true;setDetails([]);setMenuError('');setMenuLoading(false);
-  if(!normalized||!restaurants?.length)return ()=>{active=false;};
+  if(normalized.length<2||!restaurants?.length)return ()=>{active=false;};
   if(restaurants.length>100){setMenuError('La búsqueda de platillos requiere un índice completo del servidor para esta cantidad de comercios.');return ()=>{active=false;};}
   const check=async()=>{
    setMenuLoading(true);
@@ -146,17 +146,18 @@ export function CustomerSearch({market}:{market:MarketCode}){
   <h1>Buscar</h1><p className="mobile-search-locality">Comprar en {marketLabel(market)}</p>
   <label className="mobile-search-input"><Search size={22}/><input aria-label="Buscar restaurante, comercio o platillo" type="search" placeholder="Restaurante, comercio o platillo…" value={query} onChange={event=>setQuery(event.target.value)}/>{query&&<button aria-label="Borrar búsqueda" type="button" onClick={()=>setQuery('')}><X size={19}/></button>}</label>
   <section className="mobile-search-results" key={normalized?'results':'idle'}>
-   {!normalized?<><h2>Comercios disponibles</h2><MerchantList items={directory} loading={loading} error={error} refresh={refresh}/></>:
+   {!normalized?<><h2>Comercios disponibles</h2><MerchantList items={directory} loading={loading} error={error} refresh={refresh} market={market}/></>:
     <>
      {loading?<div className="mobile-loading-order">Cargando comercios…</div>:error?<div role="alert" className="mobile-address-error">{error}<button onClick={refresh}>Reintentar</button></div>:null}
-     {directory.length>0&&<><h2>Restaurantes</h2><MerchantList items={directory} loading={false} error="" refresh={refresh} searching/></>}
+     {directory.length>0&&<><h2>Restaurantes</h2><MerchantList items={directory} loading={false} error="" refresh={refresh} market={market} searching/></>}
      <h2>Platillos</h2>
+     {normalized.length===1&&<p className="mobile-search-helper" role="status">Escribe al menos dos caracteres para buscar en los menús.</p>}
      {menuLoading&&<p className="mobile-loading-order">Buscando platillos en menús reales…</p>}
      {menuError&&<div role="status" className="mobile-address-error">{menuError}</div>}
      {dishes.length>0?<div className="mobile-dish-search-results">{dishes.map(hit=><Link key={hit.restaurant.id+'-'+hit.item.id} to={'/comercio/'+hit.restaurant.id+'?platillo='+hit.item.id} className="mobile-dish-search-tile">
        <div><strong>{hit.item.name}</strong><span>{hit.restaurant.name} · {hit.item.category||'Comida local'}</span><b>{pesos(hit.item.price)}</b></div>
        <CustomerPhoto src={hit.item.image_url} alt={hit.item.name} fallback="🍔" className="mobile-dish-search-photo"/>
-      </Link>)}</div>:!menuLoading&&!directory.length&&!error&&!menuError?<div className="mobile-status"><Search size={30}/><h3>Sin resultados</h3><p>No encontramos “{query.trim()}”. Prueba con otro nombre, comida o categoría.</p></div>:null}
+      </Link>)}</div>:normalized.length>=2&&!menuLoading&&!directory.length&&!error&&!menuError?<div className="mobile-status"><Search size={30}/><h3>Sin resultados</h3><p>No encontramos “{query.trim()}”. Prueba con otro nombre, comida o categoría.</p></div>:null}
     </>}
   </section>
  </div>;
