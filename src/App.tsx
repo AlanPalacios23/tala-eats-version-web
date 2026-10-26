@@ -105,9 +105,35 @@ function CustomerGate({children}:{children:ReactNode}){
 }
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ const [pickupPins,setPickupPins]=useState<Record<number,string>>({});
+ const [cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
  const refresh=()=>{restaurant.refresh();orders.refresh();analytics.refresh();};
  async function status(id:number,s:'confirmed'|'preparing'|'ready'){setBusy(true);setMessage('');try{await api.ownerUpdateStatus(id,s);orders.refresh();setMessage('Estado actualizado en servidor.');}catch(e){setMessage(e instanceof Error?e.message:'Acción no disponible');}finally{setBusy(false);}}
+ async function completePickup(order:Order){
+  if(busy||order.order_type!=='pickup'||order.status!=='ready')return;
+  const pin=pickupPins[order.id]??'';
+  if(!/^\\d{4}$/.test(pin)){setMessage('Solicita el PIN de 4 dígitos al cliente al entregar el pedido.');return;}
+  if(order.payment_method==='cash'&&!cashConfirmed[order.id]){
+   setMessage('Confirma que recibiste el efectivo antes de cerrar la recogida.');return;
+  }
+  if(order.payment_method==='stripe'&&order.payment_status!=='paid'){
+   setMessage('El cobro Stripe todavía no está confirmado por el servidor.');return;
+  }
+  const question=order.payment_method==='cash'
+   ?'¿El cliente recibió el pedido y cobraste '+pesos(order.total)+' en efectivo?'
+   :'¿Entregaste este pedido, ya pagado con Stripe, al cliente con PIN correcto?';
+  if(!window.confirm(question))return;
+  setBusy(true);setMessage('');
+  try{
+   await api.ownerCompletePickup(order.id,pin);
+   setPickupPins(v=>({...v,[order.id]:''}));
+   setCashConfirmed(v=>({...v,[order.id]:false}));
+   orders.refresh();analytics.refresh();
+   setMessage('Pedido recogido y registrado por el servidor.');
+  }catch(e){setMessage(e instanceof Error?e.message:'La entrega no pudo confirmarse; revisa el pedido.');}
+  finally{setBusy(false);}
+ }
  async function toggle(){if(!restaurant.value)return;setBusy(true);setMessage('');try{await api.ownerUpdateRestaurant({is_open:!restaurant.value.is_open});restaurant.refresh();setMessage('Disponibilidad actualizada.');}catch(e){setMessage(e instanceof Error?e.message:'Error al actualizar');}finally{setBusy(false);}}
  const [newName,setNewName]=useState(''),[newPrice,setNewPrice]=useState(''),[newStock,setNewStock]=useState(20);
  async function addProduct(e:FormEvent){e.preventDefault();setBusy(true);setMessage('');try{await api.ownerAddItem({name:newName,price:newPrice,stock:newStock,description:'',category:'General',is_available:true});setNewName('');setNewPrice('');restaurant.refresh();setMessage('Producto agregado.');}catch(e){setMessage(e instanceof Error?e.message:'No fue posible agregar');}finally{setBusy(false);}}
@@ -116,7 +142,24 @@ function Merchant(){
  <div className="stats-grid"><div className="stat"><span>Pedidos</span><strong>{analytics.value?.orders??'—'}</strong><small>Histórico total</small></div><div className="stat"><span>Entregados</span><strong>{analytics.value?.delivered??'—'}</strong><small>Completados</small></div><div className="stat"><span>Venta entregada</span><strong>{pesos(analytics.value?.gross_sales)}</strong><small>Dato del backend</small></div><div className="stat"><span>Stock bajo</span><strong>{analytics.value?.inventory_low??'—'}</strong><small>Productos con pocas piezas</small></div></div>
  <div className="tabs"><button className={tab==='pedidos'?'active':''} onClick={()=>setTab('pedidos')}>Pedidos</button><button className={tab==='menu'?'active':''} onClick={()=>setTab('menu')}>Mi menú</button><button className={tab==='negocio'?'active':''} onClick={()=>setTab('negocio')}>Mi negocio</button></div>
  {message&&<Alert kind={message.includes('actualizad')||message.includes('agregado')?'success':'info'}>{message}</Alert>}
- {tab==='pedidos'&&(!orders.value?.length?<EmptyState icon={<ShoppingBag size={31}/>} title="Sin pedidos por ahora" description="Cuando el servidor reciba pedidos válidos, estarán en esta sección."/>:<div className="owner-order-grid">{orders.value.map(o=><div className="card padded" key={o.id}><div className="order-top"><div><span className="eyebrow">ORDEN #{o.id}</span><h3>{pesos(o.total)}</h3></div><StateTag state={o.status}/></div><p>{o.items?.map(i=>`${i.quantity} × ${i.name_snapshot}`).join(', ')}</p><p className="muted">{o.payment_method==='cash'?'Efectivo':'Stripe verificado'} · {o.order_type==='pickup'?'Recoger':'Domicilio'}</p><div className="action-buttons">{o.status==='received'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'confirmed')}>Aceptar</button>}{o.status==='confirmed'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'preparing')}>Preparando</button>}{o.status==='preparing'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'ready')}>Marcar listo</button>}{['ready','delivered'].includes(o.status)&&<span className="muted">{o.status==='ready'?'Esperando recogida':'Finalizado'}</span>}</div></div>)}</div>)}
+ {tab==='pedidos'&&(!orders.value?.length?<EmptyState icon={<ShoppingBag size={31}/>} title="Sin pedidos por ahora" description="Cuando el servidor reciba pedidos válidos, estarán en esta sección."/>:<div className="owner-order-grid">{orders.value.map(o=><div className="card padded" key={o.id}><div className="order-top"><div><span className="eyebrow">ORDEN #{o.id}</span><h3>{pesos(o.total)}</h3></div><StateTag state={o.status}/></div><p>{o.items?.map(i=>`${i.quantity} × ${i.name_snapshot}`).join(', ')}</p><p className="muted">{o.payment_method==='cash'?'Efectivo':'Stripe verificado'} · {o.order_type==='pickup'?'Recoger':'Domicilio'}</p><div className="action-buttons">{o.status==='received'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'confirmed')}>Aceptar</button>}{o.status==='confirmed'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'preparing')}>Preparando</button>}{o.status==='preparing'&&<button disabled={busy} className="btn primary small" onClick={()=>void status(o.id,'ready')}>Marcar listo</button>}{o.status==='ready'&&o.order_type==='pickup'&&<div className="pickup-handoff">
+  <label className="muted">PIN del cliente
+   <input type="password" inputMode="numeric" autoComplete="off" placeholder="4 dígitos"
+    maxLength={4} pattern="[0-9]{4}" aria-label={'PIN de recogida pedido '+o.id}
+    value={pickupPins[o.id]??''} disabled={busy}
+    onChange={e=>setPickupPins(v=>({...v,[o.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/>
+  </label>
+  {o.payment_method==='cash'&&<label className="checkbox-label">
+   <input type="checkbox" checked={cashConfirmed[o.id]===true} disabled={busy}
+    onChange={e=>setCashConfirmed(v=>({...v,[o.id]:e.target.checked}))}/>
+   Confirmo que recibí {pesos(o.total)} en efectivo
+  </label>}
+  <button className="btn primary small" disabled={busy||(pickupPins[o.id]??'').length!==4||
+    (o.payment_method==='cash'&&!cashConfirmed[o.id])||
+    (o.payment_method==='stripe'&&o.payment_status!=='paid')}
+   onClick={()=>void completePickup(o)}>Confirmar recogida</button>
+ </div>}{o.status==='ready'&&o.order_type!=='pickup'&&<span className="muted">Esperando repartidor</span>}
+ {o.status==='delivered'&&<span className="muted">Finalizado</span>}</div></div>)}</div>)}
  {tab==='menu'&&<><div className="owner-order-grid">{(restaurant.value?.menu_items??[]).map(p=><MenuEditor key={p.id} item={p} onSaved={restaurant.refresh}/>)}</div><div className="card padded add-menu"><h3>Agregar producto</h3><form onSubmit={addProduct} className="form-grid"><label>Nombre<input required minLength={2} maxLength={150} value={newName} onChange={e=>setNewName(e.target.value)}/></label><label>Precio (MXN)<input required pattern="[0-9]+(\\.[0-9]{1,2})?" value={newPrice} onChange={e=>setNewPrice(e.target.value)} placeholder="89.00"/></label><label>Stock inicial<input type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><button className="btn primary" disabled={busy}>Agregar producto</button></form></div></>}
  {tab==='negocio'&&<div className="card padded business-settings"><h3>{restaurant.value?.name}</h3><p>{restaurant.value?.address||'Dirección sin publicar'}</p><p>Verificación: <strong>{restaurant.value?.verification_status??'sin datos'}</strong></p><p>Recogida: <strong>{restaurant.value?.pickup_enabled?'Activa':'Desactivada'}</strong></p><div className="space-between"><strong>{restaurant.value?.is_open?'El comercio aparece abierto':'El comercio está cerrado'}</strong><button className="btn outline" disabled={busy||!restaurant.value} onClick={()=>void toggle()}>{restaurant.value?.is_open?'Cerrar temporalmente':'Abrir comercio'}</button></div><p className="fineprint">Solo un comercio verificado puede abrirse. Los cobros reales requieren aprobación administrativa de Stripe Connect.</p></div>}
  </>}
