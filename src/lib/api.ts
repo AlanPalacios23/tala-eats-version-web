@@ -86,6 +86,10 @@ export const api = {
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
   stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
   stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
+  stripePaymentStatus: (orderId:number) => request<{
+    order_id:number;provider:string;mode:'live'|'test';payment_status:string;
+    order_status:string;confirmed_by_server:boolean;amount:string;currency:string;
+  }>(`/payments/stripe/orders/${orderId}/status`),
   liveOrder: (orderId:number) => request<{order:Order}>(`/v11/orders/${orderId}/live`),
   customerOrderChat: (id:number) => request<{id?:number;sender_id:number;message:string;created_at?:string}[]>(`/platform/orders/${id}/chat`),
   sendCustomerOrderChat: (id:number,message:string) => request<{id?:number;sender_id:number;message:string;created_at?:string}>(`/platform/orders/${id}/chat`,json('POST',{message,message_type:'text',media_url:''})),
