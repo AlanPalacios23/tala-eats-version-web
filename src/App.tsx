@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Bike, Home as HomeIcon, ClipboardList, ChefHat, Compass, LogIn, Menu, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, UserRound, WifiOff, X } from 'lucide-react';
-import { api, isDriverRole, isMerchantRole, pesos } from './lib/api';
+import { api, ApiError, isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { PREVIEW_READONLY } from './lib/preview';
 import { EMPTY_CART, CUSTOMER_CART_STORAGE_KEY, restoreCustomerCart, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
@@ -105,10 +105,51 @@ function CustomerGate({children}:{children:ReactNode}){
 }
 function Merchant(){
  const [tab,setTab]=useState<'pedidos'|'menu'|'negocio'>('pedidos');const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ const [connectState,setConnectState]=useState<{
+  owner_approved:boolean;transfers_active:boolean;payouts_enabled:boolean;details_submitted:boolean
+ }|null>(null);
+ const [connectBusy,setConnectBusy]=useState(false),[connectError,setConnectError]=useState('');
+ const [connectTick,setConnectTick]=useState(0);
  const [pickupPins,setPickupPins]=useState<Record<number,string>>({});
  const [cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const restaurant=useLoad(()=>api.ownerRestaurant(),[]),orders=useLoad(()=>api.ownerOrders(),[]),analytics=useLoad(()=>api.ownerAnalytics(),[]);
- const refresh=()=>{restaurant.refresh();orders.refresh();analytics.refresh();};
+ const refresh=()=>{restaurant.refresh();orders.refresh();analytics.refresh();setConnectTick(x=>x+1);};
+ useEffect(()=>{
+  let current=true;
+  const restaurantId=restaurant.value?.id;
+  setConnectState(null);setConnectError('');
+  if(!restaurantId)return()=>{current=false;};
+  api.ownerConnectStatus(restaurantId).then(x=>{if(current)setConnectState(x);})
+   .catch(e=>{
+    if(!current)return;
+    setConnectState(null);
+    if(!(e instanceof ApiError&&(e.status===403||e.status===404)))
+     setConnectError('No fue posible verificar Stripe Connect. No aceptes pagos hasta confirmar el estado.');
+   });
+  return()=>{current=false;};
+ },[restaurant.value?.id,connectTick]);
+ const connectReady=Boolean(connectState?.owner_approved&&connectState.transfers_active&&
+   connectState.payouts_enabled&&connectState.details_submitted);
+ async function confirmConnectOwner(){
+  if(!restaurant.value||connectBusy||!connectState||connectState.owner_approved)return;
+  if(!window.confirm('¿Confirmas que eres el propietario de este comercio y autorizas asociarlo a tu cuenta Stripe Connect?'))return;
+  setConnectBusy(true);setConnectError('');
+  try{await api.ownerConfirmConnect(restaurant.value.id);setConnectTick(x=>x+1);}
+  catch(e){setConnectError(e instanceof Error?e.message:'No se pudo confirmar la vinculación.');}
+  finally{setConnectBusy(false);}
+ }
+ async function openConnectOnboarding(){
+  if(!restaurant.value||!connectState?.owner_approved||connectBusy)return;
+  setConnectBusy(true);setConnectError('');
+  try{
+   const result=await api.ownerConnectOnboardingLink(restaurant.value.id);
+   const url=new URL(result.url);
+   if(url.protocol!=='https:'||url.hostname!=='connect.stripe.com')
+    throw new Error('Stripe devolvió un enlace de incorporación no autorizado.');
+   window.location.assign(url.href);
+  }catch(e){setConnectError(e instanceof Error?e.message:'No fue posible abrir Stripe Connect.');setConnectBusy(false);}
+ }
+
  async function status(id:number,s:'confirmed'|'preparing'|'ready'){setBusy(true);setMessage('');try{await api.ownerUpdateStatus(id,s);orders.refresh();setMessage('Estado actualizado en servidor.');}catch(e){setMessage(e instanceof Error?e.message:'Acción no disponible');}finally{setBusy(false);}}
  async function completePickup(order:Order){
   if(busy||order.order_type!=='pickup'||order.status!=='ready')return;
@@ -161,7 +202,20 @@ function Merchant(){
  </div>}{o.status==='ready'&&o.order_type!=='pickup'&&<span className="muted">Esperando repartidor</span>}
  {o.status==='delivered'&&<span className="muted">Finalizado</span>}</div></div>)}</div>)}
  {tab==='menu'&&<><div className="owner-order-grid">{(restaurant.value?.menu_items??[]).map(p=><MenuEditor key={p.id} item={p} onSaved={restaurant.refresh}/>)}</div><div className="card padded add-menu"><h3>Agregar producto</h3><form onSubmit={addProduct} className="form-grid"><label>Nombre<input required minLength={2} maxLength={150} value={newName} onChange={e=>setNewName(e.target.value)}/></label><label>Precio (MXN)<input required pattern="[0-9]+(\\.[0-9]{1,2})?" value={newPrice} onChange={e=>setNewPrice(e.target.value)} placeholder="89.00"/></label><label>Stock inicial<input type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><button className="btn primary" disabled={busy}>Agregar producto</button></form></div></>}
- {tab==='negocio'&&<div className="card padded business-settings"><h3>{restaurant.value?.name}</h3><p>{restaurant.value?.address||'Dirección sin publicar'}</p><p>Verificación: <strong>{restaurant.value?.verification_status??'sin datos'}</strong></p><p>Recogida: <strong>{restaurant.value?.pickup_enabled?'Activa':'Desactivada'}</strong></p><div className="space-between"><strong>{restaurant.value?.is_open?'El comercio aparece abierto':'El comercio está cerrado'}</strong><button className="btn outline" disabled={busy||!restaurant.value} onClick={()=>void toggle()}>{restaurant.value?.is_open?'Cerrar temporalmente':'Abrir comercio'}</button></div><p className="fineprint">Solo un comercio verificado puede abrirse. Los cobros reales requieren aprobación administrativa de Stripe Connect.</p></div>}
+ {tab==='negocio'&&<div className="card padded business-settings"><h3>{restaurant.value?.name}</h3><p>{restaurant.value?.address||'Dirección sin publicar'}</p><p>Verificación: <strong>{restaurant.value?.verification_status??'sin datos'}</strong></p><p>Recogida: <strong>{restaurant.value?.pickup_enabled?'Activa':'Desactivada'}</strong></p><div className="space-between"><strong>{restaurant.value?.is_open?'El comercio aparece abierto':'El comercio está cerrado'}</strong><button className="btn outline" disabled={busy||!restaurant.value} onClick={()=>void toggle()}>{restaurant.value?.is_open?'Cerrar temporalmente':'Abrir comercio'}</button></div><p className="fineprint">Solo un comercio verificado puede abrirse. Para aceptar pedidos LIVE se requiere cuenta Stripe Connect propia y confirmada, incluso cuando el cliente elige efectivo.</p>
+ <section className="mobile-checkout-card" aria-label="Estado de Stripe Connect para recoger">
+  <h3>Habilitación de pedidos para recoger</h3>
+  <p>{connectReady?'Cuenta del comercio lista para revisión final de pedidos LIVE.':
+    connectState?'Stripe Connect requiere completar las autorizaciones del negocio.':
+    'Este comercio todavía no tiene una asociación Stripe Connect verificada. Solicita al administrador vincular tu cuenta empresarial.'}</p>
+  {connectState&&<p className="fineprint">Propietario confirmado: {connectState.owner_approved?'Sí':'No'} · Datos enviados: {connectState.details_submitted?'Sí':'No'} · Transferencias: {connectState.transfers_active?'Activas':'Pendientes'} · Retiros: {connectState.payouts_enabled?'Habilitados':'Pendientes'}</p>}
+  {connectError&&<p role="alert" className="mobile-address-error">{connectError}</p>}
+  {connectState&&!connectState.owner_approved&&
+   <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void confirmConnectOwner()}>Confirmar titularidad del negocio</button>}
+  {connectState.owner_approved&&!connectReady&&
+   <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void openConnectOnboarding()}>Completar registro Stripe Connect</button>}
+  <button type="button" className="btn outline small" disabled={connectBusy} onClick={()=>setConnectTick(x=>x+1)}>Volver a consultar</button>
+ </section></div>}
  </>}
  </div>;
 }
