@@ -59,11 +59,13 @@ async function registration():Promise<ServiceWorkerRegistration> {
  const found=await navigator.serviceWorker.getRegistration('/');
  return found??navigator.serviceWorker.register('/sw.js',{scope:'/'});
 }
-export async function enableWebPush(userId:number):Promise<void> {
+export async function enableWebPush(userId:number,config:WebPushConfig):Promise<void> {
  if(!Number.isSafeInteger(userId)||userId<=0)throw new Error('Inicia sesión para activar las notificaciones.');
  if(!supportsWebPush())throw new Error('Instala Tala Eats o usa un navegador compatible con notificaciones push.');
- // Backend must confirm capability BEFORE requesting a browser permission.
- const config=await getWebPushConfig();
+ // UI has already verified capability; permission MUST be requested in the
+ // direct click handler (not after any network await).
+ if(config.enabled!==true||!validVapidPublicKey(config.public_key))
+  throw new Error('El backend no confirmó la configuración Web Push.');
  if(Notification.permission==='denied')throw new Error('Las notificaciones están bloqueadas en los ajustes del navegador.');
  const permission=Notification.permission==='granted'?'granted':await Notification.requestPermission();
  if(permission!=='granted')throw new Error('No se concedió permiso para notificaciones.');
@@ -118,6 +120,11 @@ export async function disableWebPush(userId:number):Promise<void> {
 }
 export function webPushRecordForUser(userId:number):boolean {
  const row=decodeRecord();return row?.userId===userId;
+}
+export async function isWebPushEnabledForUser(userId:number):Promise<boolean> {
+ if(!webPushRecordForUser(userId)||!supportsWebPush()||Notification.permission!=='granted')return false;
+ const reg=await navigator.serviceWorker.getRegistration('/');
+ return Boolean(await reg?.pushManager.getSubscription());
 }
 /** Called before logout, not silently on page load. */
 export async function revokeWebPushBeforeLogout(userId:number):Promise<void> {
