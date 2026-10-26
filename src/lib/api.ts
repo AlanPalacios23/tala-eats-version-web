@@ -120,8 +120,9 @@ async function uploadMerchantCatalogImage(file:File,endpoint:string):Promise<{ur
    throw new ApiError(502,'El backend no confirmó una URL de catálogo.');
   }
   const url=new URL(body.url,window.location.origin);
-  if(url.protocol!=='https:'&&url.origin!==window.location.origin)
-   throw new ApiError(502,'El servidor devolvió una dirección de imagen no permitida.');
+  const local=url.origin===window.location.origin;
+  const stage=url.hostname==='api-stage-talaeats.alan-palacios-dev.com'&&url.protocol==='https:';
+  if(!local&&!stage)throw new ApiError(502,'El servidor devolvió un origen de imagen no permitido.');
   if(!/^\/api\/v1\/uploads\/catalog\/[a-zA-Z0-9_-]{12,130}\.(?:jpg|png|webp)$/.test(url.pathname))
    throw new ApiError(502,'El backend devolvió una ruta de imagen inválida.');
   return {url:body.url};
