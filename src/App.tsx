@@ -20,6 +20,7 @@ import { LEGAL_LINKS } from './lib/legal-links';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
 import { AdminPickupConnect } from './components/AdminPickupConnect';
 import { RestaurantAccess,RestaurantOnboarding,RestaurantWorkspace,RestaurantAdminActivation } from './components/RestaurantApp';
+import { RestaurantWelcome } from './components/RestaurantWelcome';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
@@ -88,6 +89,13 @@ function PortalLanding(){
    <a href={LEGAL_LINKS.deletion} target="_blank" rel="noopener noreferrer">Eliminación de cuenta</a>
   </footer>
  </div>;
+}
+function RestaurantEntry(){
+ const {user,loading}=useSession();
+ if(loading)return <div className="rb-welcome-loading" role="status"><Store size={24}/> Abriendo Tala Eats Restaurantes…</div>;
+ if(user?.role==='restaurant')return <RestaurantWorkspace/>;
+ if(user?.role==='admin')return <Navigate to="/admin/solicitudes-restaurantes" replace/>;
+ return <RestaurantWelcome existingCustomer={user?.role==='customer'}/>;
 }
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'admin'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
@@ -160,7 +168,7 @@ export default function App(){
   else sessionStorage.removeItem(CUSTOMER_CART_STORAGE_KEY);
  }catch{/* Private browsing or storage full: in-memory cart remains functional. */}},[cart]);
  const [market,setMarket]=useState<MarketCode>(()=>{try{const stored=localStorage.getItem('talaeats-market-code');return stored&&isMarketCode(stored)?stored:PILOT_MARKET;}catch{return PILOT_MARKET;}});
- const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isRestaurantPortal=location.pathname==='/restaurante'||location.pathname.startsWith('/restaurante/')||location.pathname==='/admin/solicitudes-restaurantes';const isOnboarding=['/iniciar','/acceso'].includes(location.pathname);const isCustomerShell=['/iniciar','/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
+ const navigate=useNavigate();const location=useLocation();const isGateway=location.pathname==='/';const isRestaurantPortal=location.pathname==='/restaurante'||location.pathname.startsWith('/restaurante/')||location.pathname.startsWith('/admin/');const isOnboarding=['/iniciar','/acceso'].includes(location.pathname);const isCustomerShell=['/iniciar','/clientes','/buscar','/pedidos','/cuenta','/carrito','/checkout','/direcciones','/tala-club','/notificaciones','/soporte','/favoritos','/editar-perfil','/acceso'].includes(location.pathname)||location.pathname.startsWith('/comercio/')||location.pathname.startsWith('/pedidos/');
  const selectMarket=(code:MarketCode):boolean=>{if(code===market)return true;if(cart.entries.length&&!window.confirm('Tienes un carrito activo. Para cambiar de localidad es necesario vaciarlo. ¿Cambiar de zona?'))return false;setCart(EMPTY_CART);setMarket(code);try{localStorage.setItem('talaeats-market-code',code);}catch{/* Privacy mode: keep market in memory. */}return true;};
  const add=(item:MenuItem,quantity:number,note:string):boolean=>{if(cart.restaurantId!==null&&cart.restaurantId!==item.restaurant_id){if(!window.confirm('Tu carrito tiene productos de otro restaurante. ¿Empezar un carrito nuevo?'))return false;}const updated=addVariantItem(cart,item,quantity,note);if(updated===cart)return false;setCart(updated);return true;};
  const count=cart.entries.reduce((sum,e)=>sum+e.quantity,0);
@@ -180,7 +188,7 @@ export default function App(){
    <Route path="/admin/conectar-restaurante" element={<Protected role="admin"><AdminPickupConnect/></Protected>}/>
    <Route path="/restaurante/acceso" element={<RestaurantAccess/>}/>
    <Route path="/restaurante/alta" element={<RestaurantOnboarding/>}/>
-   <Route path="/restaurante" element={<Protected role="restaurant"><RestaurantWorkspace/></Protected>}/>
+   <Route path="/restaurante" element={<RestaurantEntry/>}/>
    <Route path="/admin/solicitudes-restaurantes" element={<Protected role="admin"><RestaurantAdminActivation/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
