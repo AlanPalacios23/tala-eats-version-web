@@ -128,6 +128,19 @@ export async function isWebPushEnabledForUser(userId:number):Promise<boolean> {
  const reg=await navigator.serviceWorker.getRegistration('/');
  return Boolean(await reg?.pushManager.getSubscription());
 }
+/** A shared-browser account switch must never inherit another user's push. */
+export async function clearForeignWebPush(currentUserId:number):Promise<void> {
+ if(!supportsWebPush())return;
+ const record=decodeRecord();
+ if(record?.userId===currentUserId)return;
+ try{
+  const reg=await navigator.serviceWorker.getRegistration('/');
+  const subscription=await reg?.pushManager.getSubscription();
+  if(subscription)await subscription.unsubscribe();
+ }catch{/* Browser may block access; never request permission here. */}
+ saveRecord(null);
+}
+
 /** Called before logout, not silently on page load. */
 export async function revokeWebPushBeforeLogout(userId:number):Promise<void> {
  try{await disableWebPush(userId);}
