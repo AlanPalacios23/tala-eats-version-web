@@ -110,7 +110,9 @@ export function CustomerNotifications(){
   const check=()=>{if(document.visibilityState==='visible')refresh();};
   const interval=window.setInterval(check,60_000);
   document.addEventListener('visibilitychange',check);
-  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',check);};
+  const onPush=(e:MessageEvent)=>{if(e.data?.type==='tala-web-push-arrived')refresh();};
+  navigator.serviceWorker?.addEventListener?.('message',onPush);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',check);navigator.serviceWorker?.removeEventListener?.('message',onPush);};
  },[user?.id]);
  async function changePush(){
   if(!user||user.role!=='customer'||pushBusy||PREVIEW_READONLY)return;
