@@ -93,6 +93,10 @@ export const api = {
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
+  pickupReadiness: (restaurantId:number) => request<{
+    restaurant_id:number;order_type:'pickup';ready:boolean;
+    cash_enabled:boolean;stripe_enabled:boolean;reason:string;
+  }>(`/restaurants/${restaurantId}/pickup-readiness`),
   stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
   stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
   stripePaymentStatus: (orderId:number) => request<{
