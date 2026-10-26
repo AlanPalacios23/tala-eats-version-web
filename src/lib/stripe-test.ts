@@ -62,11 +62,11 @@ export function requireStripeIntent(
    reply.provider!=='stripe'||reply.mode!==expectedMode||
    reply.publishable_key!==publishable||
    reply.order_id!==order.id||reply.currency!=='mxn'||
-   !Number.isSafeInteger(reply.amount_minor)||reply.amount_minor!<=0||
+   !Number.isSafeInteger(reply.amount_minor)||!reply.amount_minor||reply.amount_minor<=0||
    !/^pi_[A-Za-z0-9]+$/.test(reply.payment_intent_id??''))
    throw new Error('El intento de pago no coincide con el pedido ni el entorno Stripe.');
  const [whole,part='']=String(order.total).split('.');
- if(!/^(?:0|[1-9]\\d{0,7})$/.test(whole)||!/^\\d{0,2}$/.test(part)||
+ if(!/^(?:0|[1-9]\d{0,7})$/.test(whole)||!/^\d{0,2}$/.test(part)||
    Number(whole)*100+Number((part+'00').slice(0,2))!==reply.amount_minor)
    throw new Error('Stripe devolvió un importe diferente al total verificado.');
  if(reply.already_paid===true||reply.payment_status==='paid')
