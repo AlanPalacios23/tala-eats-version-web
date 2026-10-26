@@ -25,6 +25,8 @@ function PortalInstallIdentity() {
    const href = manifestForPath(location.pathname);
    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
    if (link && link.getAttribute('href') !== href) link.setAttribute('href', href);
+   const theme=document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+   if(theme)theme.content=href==='/manifest-clientes.webmanifest'?'#FAFAF9':'#080808';
    const label = href.includes('restaurante') ? 'Restaurantes' :
       href.includes('repartidor') ? 'Repartidores' :
       href.includes('clientes') ? 'Clientes' : 'Inicio';
