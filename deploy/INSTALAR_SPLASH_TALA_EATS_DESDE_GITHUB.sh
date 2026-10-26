@@ -5,17 +5,24 @@ set -euo pipefail
 REPO="https://github.com/AlanPalacios23/tala-eats-version-web.git"
 BRANCH="feat/mobile-parity-v1046-navigation"
 IMG="public/branding/splash-exacto-728x1536.webp"
+EXPECTED_SHA="${TALA_EXPECTED_WEB_SHA:-}"
+if [[ -n "$EXPECTED_SHA" && ! "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+ echo "WEB_ABORT=INVALID_EXPECTED_SHA";exit 1
+fi
 echo "SPLASH_INSTALL_SOURCE=GITHUB_ONLY"
 
-sudo -iu tala-node-stage bash -s -- "$REPO" "$BRANCH" "$IMG" <<'BUILD'
+sudo -iu tala-node-stage bash -s -- "$REPO" "$BRANCH" "$IMG" "$EXPECTED_SHA" <<'BUILD'
 set -euo pipefail
-REPO="$1"; BRANCH="$2"; IMG="$3"
+REPO="$1"; BRANCH="$2"; IMG="$3"; EXPECTED_SHA="$4"
 export PATH="$HOME/.local/node24/bin:$HOME/.local/bin:$PATH"
 mkdir -p "$HOME/tala-eats-web-releases"
 TMP="$(mktemp -d "$HOME/tala-eats-web-releases/.incoming.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 --branch "$BRANCH" "$REPO" "$TMP"
 SHA="$(git -C "$TMP" rev-parse HEAD)"
+if [[ -n "$EXPECTED_SHA" && "$SHA" != "$EXPECTED_SHA" ]]; then
+ echo "WEB_ABORT=BRANCH_MOVED_EXPECTED_${EXPECTED_SHA}_ACTUAL_${SHA}";exit 1
+fi
 ROOT="$HOME/tala-eats-web-releases/$SHA"
 if [[ -d "$ROOT" ]]; then
   test "$(git -C "$ROOT" rev-parse HEAD)" = "$SHA"
