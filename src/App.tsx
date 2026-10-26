@@ -92,7 +92,7 @@ function PortalLanding(){
 }
 function RestaurantEntry(){
  const {user,loading}=useSession();
- if(loading)return <div className="rb-welcome-loading" role="status"><Store size={24}/> Abriendo Tala Eats Restaurantes…</div>;
+ if(loading)return <div className="rb-welcome-loading" role="status"><ChefHat size={24}/> Abriendo Tala Eats Restaurantes…</div>;
  if(user?.role==='restaurant')return <RestaurantWorkspace/>;
  if(user?.role==='admin')return <Navigate to="/admin/solicitudes-restaurantes" replace/>;
  return <RestaurantWelcome existingCustomer={user?.role==='customer'}/>;
