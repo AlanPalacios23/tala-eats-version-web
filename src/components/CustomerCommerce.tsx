@@ -92,9 +92,11 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
    </div>
    <div className="mobile-commerce-categories" role="group" aria-label="Categorías">{cats.map(c=><button key={c} onClick={()=>setCategory(c)} aria-pressed={category===c} className={category===c?'selected':''}>{c}</button>)}</div>
    <div className="mobile-commerce-dishes">{dishes.length?dishes.map(item=>{
-    const available=canOrder&&item.is_available&&item.stock>0;
+    const remaining=remainingForVariant(cart,item,'');
+    const available=canOrder&&item.is_available&&item.stock>0&&remaining>0;
+    const cartLimitReached=canOrder&&item.is_available&&item.stock>0&&remaining===0&&cart.restaurantId===restaurantId;
     return <article key={item.id} className={'mobile-dish-card'+(!available?' unavailable':'')}>
-     <div className="mobile-dish-details"><h3>{item.name}</h3>{item.description&&<p>{item.description}</p>}<strong>{pesos(item.price)}</strong>{(!item.is_available||item.stock<=0)&&<span className="mobile-dish-soldout">Agotado</span>}</div>
+     <div className="mobile-dish-details"><h3>{item.name}</h3>{item.description&&<p>{item.description}</p>}<strong>{pesos(item.price)}</strong>{(!item.is_available||item.stock<=0)&&<span className="mobile-dish-soldout">Agotado</span>}{cartLimitReached&&<span className="mobile-dish-soldout">Máximo en tu carrito</span>}</div>
      <div className="mobile-dish-photo"><ProductPhoto url={item.image_url} label={item.name}/><button disabled={!available} onClick={()=>setSelected(item)} aria-label={'Ver detalles y agregar '+item.name}><Plus size={23}/></button></div>
     </article>;
    }):<div className="mobile-status"><Store size={30}/><h3>Menú en preparación</h3><p>Este comercio aún no tiene productos en esta categoría.</p></div>}</div>
