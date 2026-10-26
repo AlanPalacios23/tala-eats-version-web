@@ -168,7 +168,9 @@
 .rp-access-card{padding:30px 32px 55px}.rp-muted-link{margin-bottom:22px}
 .rp-admin-title{flex-direction:column;align-items:flex-start}
 }
-@media(max-width:590px){.rp-top-actions .rp-install-wrap{display:none}
+@media(max-width:590px){.rp-top-actions .rp-install-wrap{display:block}
+.rp-top-actions .rp-install-wrap .rp-btn{width:36px;height:36px;padding:8px;gap:0;font-size:0}
+.rp-install-help{width:220px;right:-65px}
 .rp-activation-grid,.rp-product-form{grid-template-columns:1fr}.rp-product-wide{grid-column:auto}.rp-lane-grid{grid-template-columns:1fr}.rp-stats{gap:9px}
 .rp-stats>div{padding:17px}.rp-stats strong{font-size:28px}.rp-heading-row{align-items:flex-start;flex-direction:column}
 .rp-last-sync{white-space:normal}.rp-activation-banner{align-items:flex-start;flex-wrap:wrap;padding:18px}.rp-activation-banner .rp-btn{width:100%}
