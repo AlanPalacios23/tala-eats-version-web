@@ -78,7 +78,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   let active=true;setLoading(true);setOptions(null);setServerError('');setRestaurant(null);
   if(!restaurantId||!userId){setLoading(false);return ()=>{active=false};}
   void api.stripeTestConfig().then(value=>{if(active)setStripeConfig(value);}).catch(()=>{if(active)setStripeConfig(null);});
-  Promise.all([api.restaurant(restaurantId),api.paymentOptions(),api.customerAddresses()]).then(([r,p,a])=>{
+  Promise.all([api.restaurant(restaurantId),api.paymentOptions(),
+    api.customerAddresses().catch(()=>[])]).then(([r,p,a])=>{
    if(active){setRestaurant(r);setOptions(p);setAddresses(a);if(!r.pickup_enabled&&p.delivery_checkout_supported===true&&p.delivery_quote_supported===true)setMode('delivery');}
   }).catch(e=>{if(active)setServerError(e instanceof Error?e.message:'Error verificando tu pedido.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
