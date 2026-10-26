@@ -70,6 +70,34 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 }
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+async function uploadRestaurantDocument(file:File):Promise<{url:string;name:string}>{
+  if(!previewRequestAllowed('/uploads/onboarding-document','POST',PREVIEW_READONLY))
+   throw new ApiError(403,'En vista previa no es posible subir documentos.');
+  if(!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type) ||
+    !file.size || file.size>5*1024*1024)
+   throw new ApiError(422,'Adjunta JPG, PNG, WEBP o PDF de máximo 5 MB.');
+  const form=new FormData();
+  form.append('file',file,file.name);
+  const controller=new AbortController();
+  const timeout=globalThis.setTimeout(()=>controller.abort(),45000);
+  try{
+   const response=await fetch(BASE+'/uploads/onboarding-document',{
+    method:'POST',body:form,credentials:'include',cache:'no-store',
+    signal:controller.signal,headers:{Accept:'application/json','X-Talaeats-Client':'web-pwa'}
+   });
+   const body=await response.json() as {url?:unknown;name?:unknown;error?:unknown};
+   if(!response.ok)throw new ApiError(response.status,
+     typeof body.error==='string'?body.error:'No fue posible subir el documento.');
+   if(typeof body.url!=='string'||typeof body.name!=='string'||
+      !/^\/api\/v1\/uploads\/onboarding-document\/u[1-9][0-9]*-[A-Za-z0-9_-]{32}\.(?:jpg|png|webp|pdf)$/.test(body.url))
+    throw new ApiError(502,'La subida no devolvió una referencia segura del servidor.');
+   return {url:body.url,name:body.name};
+  }catch(err){
+   if(err instanceof ApiError)throw err;
+   throw new ApiError(503,'No se pudo subir el documento. Revisa tu conexión.');
+  }finally{globalThis.clearTimeout(timeout);}
+}
+
 export interface MerchantApplication {
   id:number;user_id:number;entity_type:'restaurant'|'driver';
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
@@ -139,10 +167,11 @@ export const api = {
   byReference: (ref: string) => request<Order>(`/orders/by-reference/${encodeURIComponent(ref)}`),
   myOrders: () => request<Order[]>('/orders/mine?limit=100&offset=0'),
   restaurantOnboardingMine: () => request<MerchantApplication[]>('/onboarding/mine'),
-  restaurantOnboardingSubmit: (businessName:string,taxId:string) => request<MerchantApplication>(
+  restaurantOnboardingDocument: (file:File) => uploadRestaurantDocument(file),
+  restaurantOnboardingSubmit: (businessName:string,taxId:string,documents:string[]=[]) => request<MerchantApplication>(
     '/onboarding',json('POST',{
       entity_type:'restaurant',business_name:businessName,tax_id:taxId,
-      vehicle:'',payout_account_ref:'',documents:[],
+      vehicle:'',payout_account_ref:'',documents,
     })),
   adminRestaurantApplications: () => request<MerchantApplication[]>('/admin/onboarding'),
   adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
