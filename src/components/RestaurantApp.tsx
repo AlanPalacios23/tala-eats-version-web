@@ -4,7 +4,7 @@ import {Link,useNavigate} from 'react-router-dom';
 import {ArrowLeft,ArrowRight,BadgeCheck,Check,ChefHat,Clock3,CreditCard,
  KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
  ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole} from 'lucide-react';
-import {api,pesos} from '../lib/api';
+import {api,ApiError,pesos} from '../lib/api';
 import type {MerchantApplication,MerchantFinance} from '../lib/api';
 import {useSession} from '../lib/session';
 import type {Order,Restaurant,MenuItem} from '../lib/types';
@@ -41,8 +41,8 @@ export function RestaurantAccess(){
  const [mode,setMode]=useState<'login'|'register'>('login');
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
- const allowed=AUTH_EMAIL.test(email.trim())&&password.length>=8&&
-   (mode==='login'||name.trim().length>=2);
+ const allowed=AUTH_EMAIL.test(email.trim())&&password.length>0&&
+   (mode==='login'||(name.trim().length>=2&&password.length>=8));
  useEffect(()=>{
   if(user?.role==='restaurant')navigate('/restaurante',{replace:true});
   else if(user?.role==='admin')navigate('/admin/solicitudes-restaurantes',{replace:true});
@@ -107,12 +107,15 @@ export function RestaurantOnboarding(){
  const {user,loading,logout}=useSession();
  const [requests,setRequests]=useState<MerchantApplication[]|null>(null);
  const [businessName,setBusinessName]=useState(''),[taxId,setTaxId]=useState('');
+ const [documents,setDocuments]=useState<File[]>([]);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[note,setNote]=useState('');
  const refresh=useCallback(async()=>{
   try{
    const mine=(await api.restaurantOnboardingMine()).filter(a=>a.entity_type==='restaurant');
    setRequests(mine);
-  }catch(e){setError(e instanceof Error?e.message:'No se pudo consultar tu solicitud.');}
+  }catch(e){setError(e instanceof ApiError&&e.status===401?
+    'Tu sesión venció o los permisos fueron actualizados. Vuelve a iniciar sesión para activar tu panel.':
+    e instanceof Error?e.message:'No se pudo consultar tu solicitud.');}
  },[]);
  useEffect(()=>{if(user?.role==='customer')void refresh();},[user?.role,refresh]);
  if(loading)return <div className="rp-loading"><RefreshCw className="rp-spin"/> Verificando sesión…</div>;
@@ -123,11 +126,21 @@ export function RestaurantOnboarding(){
  const waiting=latest?.status==='pending'||latest?.status==='approved';
  async function submit(event:FormEvent){
   event.preventDefault();if(busy||businessName.trim().length<3)return;
+  if(documents.length>3||documents.some(f=>!f.size||f.size>5*1024*1024||
+    !['image/jpeg','image/png','image/webp','application/pdf'].includes(f.type))){
+   setError('Solo se aceptan 3 archivos JPG, PNG, WEBP o PDF de máximo 5 MB cada uno.');return;
+  }
   setBusy(true);setError('');setNote('');
   try{
-   const result=await api.restaurantOnboardingSubmit(businessName.trim(),taxId.trim());
+   const uploaded:string[]=[];
+   for(const file of documents){
+    const doc=await api.restaurantOnboardingDocument(file);
+    uploaded.push(doc.url);
+   }
+   const result=await api.restaurantOnboardingSubmit(businessName.trim(),taxId.trim(),uploaded);
    setRequests(v=>[result,...(v??[]).filter(x=>x.id!==result.id)]);
-   setNote('Solicitud enviada al backend. Administración deberá verificar tu negocio antes de activar el acceso.');
+   setDocuments([]);
+   setNote('Solicitud y referencias de documentos enviadas al backend. Administración deberá verificar tu negocio antes de activar el acceso.');
   }catch(e){setError(e instanceof Error?e.message:'No se pudo guardar la solicitud.');}
   finally{setBusy(false);}
  }
@@ -140,6 +153,7 @@ export function RestaurantOnboarding(){
    <span className="active">01 Solicitud</span><span>02 Revisión</span><span>03 Panel</span><span>04 Stripe Connect</span>
   </div>
   {error&&<Notice kind="error" message={error}/>}
+  {error.includes('sesión venció')&&<a className="rp-btn outline" href="/restaurante/acceso">Volver a iniciar sesión</a>}
   {note&&<Notice kind="success" message={note}/>}
   {requests===null?<p>Consultando estado de tu alta…</p>:
    latest&&waiting?<section className="rp-panel-card"><span className="rp-eyebrow">SOLICITUD #{latest.id}</span>
@@ -161,7 +175,15 @@ export function RestaurantOnboarding(){
      <label>RFC del negocio (si corresponde)
       <input maxLength={60} value={taxId} onChange={e=>setTaxId(e.target.value.toUpperCase())}
        placeholder="RFC del titular" disabled={busy}/></label>
-     <p className="rp-legal">Esta solicitud no adjunta documentos. Administración puede pedir información adicional. No cargues contraseñas ni datos bancarios en este formulario.</p>
+     <label>Documentos del negocio (opcional, máximo 3)
+      <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple disabled={busy}
+       onChange={e=>{
+        const files=Array.from(e.target.files??[]).slice(0,3);
+        setDocuments(files);setError('');
+       }}/>
+      <span className="rp-legal">{documents.length?documents.length+' archivo(s) seleccionado(s). ':' '}JPG, PNG, WEBP o PDF; máximo 5 MB por archivo. Solo el titular y administración pueden acceder a documentos asociados.</span>
+     </label>
+     <p className="rp-legal">Administración puede solicitar información adicional. No cargues contraseñas ni claves de Stripe. Los documentos se guardan en almacenamiento privado del backend.</p>
      <button type="submit" className="rp-btn primary" disabled={busy||businessName.trim().length<3}>Enviar solicitud <ArrowRight size={18}/></button>
     </form>
    </section>}
@@ -262,10 +284,10 @@ export function RestaurantWorkspace(){
   return()=>{mounted.current=false;window.clearInterval(poll);requestVersion.current++;};
  },[refresh]);
  const doAction=async(work:()=>Promise<unknown>,message:string)=>{
-  if(busyRef.current)return;
+  if(busyRef.current)return false;
   busyRef.current=true;setBusy(true);setError('');setNotice('');
-  try{await work();setNotice(message);await refresh();}
-  catch(e){setError(e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.');await refresh();}
+  try{await work();setNotice(message);await refresh();return true;}
+  catch(e){setError(e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.');await refresh();return false;}
   finally{busyRef.current=false;setBusy(false);}
  };
  async function signOut(){
@@ -472,14 +494,14 @@ export function RestaurantWorkspace(){
  </div>;
 }
 function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
- run:(fn:()=>Promise<unknown>,message:string)=>Promise<void>}){
+ run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
  const [name,setName]=useState(''),[price,setPrice]=useState(''),[stock,setStock]=useState(10),[category,setCategory]=useState('General'),[description,setDescription]=useState('');
  async function add(event:FormEvent){
   event.preventDefault();
   if(name.trim().length<2||!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0)return;
-  await run(()=>api.ownerAddItem({name:name.trim(),price,stock,category:category.trim()||'General',
+  const ok=await run(()=>api.ownerAddItem({name:name.trim(),price,stock,category:category.trim()||'General',
    description:description.trim(),is_available:true}),'Producto agregado al catálogo del restaurante.');
-  setName('');setPrice('');setDescription('');
+  if(ok){setName('');setPrice('');setDescription('');}
  }
  return <><div className="rp-heading-row"><div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
    <p>Edita precios, stock y productos directamente en el servidor.</p></div><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span></div>
