@@ -588,19 +588,46 @@ function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
  run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
  const [price,setPrice]=useState(item.price),[stock,setStock]=useState(item.stock);
  const [available,setAvailable]=useState(item.is_available);
- useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);},[item.id,item.price,item.stock,item.is_available]);
+ const [productName,setProductName]=useState(item.name),[description,setDescription]=useState(item.description??'');
+ const [category,setCategory]=useState(item.category??'General');
+ const [allergens,setAllergens]=useState(item.allergens??''),[isCombo,setIsCombo]=useState(item.is_combo??false);
+ const [photo,setPhoto]=useState<File|null>(null);
+ useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);
+  setProductName(item.name);setDescription(item.description??'');setCategory(item.category??'General');
+  setAllergens(item.allergens??'');setIsCombo(item.is_combo??false);
+ },[item.id,item.price,item.stock,item.is_available,item.name,item.description,item.category,item.allergens,item.is_combo]);
  function save(){
-  if(!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0||!Number.isInteger(stock)||stock<0)return;
-  void run(()=>api.ownerUpdateItem(item.id,{price,stock,is_available:available}),
+  if(!/^[0-9]+(\\.[0-9]{1,2})?$/.test(price)||Number(price)<=0||!Number.isInteger(stock)||stock<0||productName.trim().length<2)return;
+  void run(()=>api.ownerUpdateItem(item.id,{name:productName.trim(),description:description.trim(),category:category.trim(),allergens:allergens.trim(),is_combo:isCombo,price,stock,is_available:available}),
    'Producto actualizado en el servidor.');
  }
- return <article className="rp-menu-item"><div className="rp-menu-visual"><ChefHat size={30}/></div>
-  <div className="rp-menu-details"><strong>{item.name}</strong><small>{item.category||'General'}</small>
-   <div className="rp-menu-inputs"><label>Precio MXN<input value={price} inputMode="decimal" onChange={e=>setPrice(e.target.value)}/></label>
-    <label>Existencias<input type="number" min={0} step={1} value={stock} onChange={e=>setStock(Number(e.target.value))}/></label></div>
-   <div className="rp-menu-actions"><label className="rp-cash-check"><input type="checkbox" checked={available}
-    onChange={e=>setAvailable(e.target.checked)}/> Disponible</label>
-    <button className="rp-btn outline small" disabled={busy||price.length===0} onClick={save}>Guardar</button></div>
+ function remove(){
+  if(!window.confirm('¿Eliminar '+item.name+' del catálogo? El backend bloqueará la eliminación si está asociado a pedidos históricos.'))return;
+  void run(()=>api.ownerDeleteItem(item.id),'Producto eliminado tras validar historial en el servidor.');
+ }
+ async function upload(){
+  if(!photo||busy)return;
+  const ok=await run(()=>api.ownerUploadItemPhoto(item.id,photo),'Foto del producto publicada desde el backend.');
+  if(ok)setPhoto(null);
+ }
+ return <article className="rp-menu-item">
+  <div className="rp-menu-visual">{item.image_url?<img src={item.image_url} alt="" loading="lazy" onError={e=>{e.currentTarget.hidden=true;}}/>:<ChefHat size={30}/>}</div>
+  <div className="rp-menu-details">
+   <label className="rp-menu-edit-label">Nombre<input maxLength={150} value={productName} onChange={e=>setProductName(e.target.value)}/></label>
+   <div className="rp-menu-inputs">
+    <label>Precio MXN<input value={price} inputMode="decimal" onChange={e=>setPrice(e.target.value)}/></label>
+    <label>Existencias<input type="number" min={0} step={1} value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
+    <label>Categoría<input value={category} maxLength={100} onChange={e=>setCategory(e.target.value)}/></label>
+    <label>Alérgenos<input value={allergens} maxLength={300} onChange={e=>setAllergens(e.target.value)}/></label>
+   </div>
+   <label className="rp-menu-edit-label">Descripción<textarea value={description} maxLength={1000} rows={2} onChange={e=>setDescription(e.target.value)}/></label>
+   <div className="rp-menu-actions">
+    <label className="rp-cash-check"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/> Disponible</label>
+    <label className="rp-cash-check"><input type="checkbox" checked={isCombo} onChange={e=>setIsCombo(e.target.checked)}/> Es un combo</label>
+   </div>
+   <div className="rp-menu-photo"><input type="file" accept="image/jpeg,image/png,image/webp" aria-label={'Foto para '+item.name} onChange={e=>setPhoto(e.target.files?.[0]??null)}/><button className="rp-btn outline small" disabled={!photo||busy} onClick={()=>void upload()}>Subir foto</button></div>
+   <div className="rp-menu-actions"><button className="rp-btn primary small" disabled={busy||productName.trim().length<2} onClick={save}>Guardar cambios</button>
+    <button className="rp-btn quiet small" disabled={busy} onClick={remove}>Eliminar</button></div>
   </div>
  </article>;
 }
