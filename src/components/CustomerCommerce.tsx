@@ -6,24 +6,35 @@ import { CustomerPhoto } from './CustomerPhoto';
 import type { MenuItem, Restaurant } from '../lib/types';
 import { basketTotal, remainingForVariant } from '../lib/cart';
 import type { Cart } from '../lib/cart';
+import { marketLabel } from '../lib/markets';
 import type { MarketCode } from '../lib/markets';
 
 function ProductPhoto({url,label}:{url?:string|null;label:string}){
- return <CustomerPhoto src={url} alt={label} fallback="🍔"/>;
+ return <CustomerPhoto src={url} alt={label} fallback="🛍️"/>;
 }
 function ProductSheet({item,merchant,cart,onClose,onAdd}:{item:MenuItem;merchant:Restaurant;cart:Cart;onClose:()=>void;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean}){
  const [quantity,setQuantity]=useState(1),[note,setNote]=useState(''),[addError,setAddError]=useState('');
  const closeRef=useRef<HTMLButtonElement>(null);
+ const sheetRef=useRef<HTMLElement>(null);
  const onCloseRef=useRef(onClose);onCloseRef.current=onClose;
- useEffect(()=>{const old=document.body.style.overflow;document.body.style.overflow='hidden';closeRef.current?.focus();
-  const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')onCloseRef.current();};
+ useEffect(()=>{
+  const previousFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const old=document.body.style.overflow;document.body.style.overflow='hidden';closeRef.current?.focus();
+  const onKey=(e:KeyboardEvent)=>{
+   if(e.key==='Escape'){e.preventDefault();onCloseRef.current();return;}
+   if(e.key!=='Tab'||!sheetRef.current)return;
+   const controls=Array.from(sheetRef.current.querySelectorAll<HTMLElement>('button:not(:disabled),textarea:not(:disabled)'));
+   const first=controls[0],last=controls[controls.length-1];
+   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  };
   document.addEventListener('keydown',onKey);
-  return()=>{document.body.style.overflow=old;document.removeEventListener('keydown',onKey);};
+  return()=>{document.body.style.overflow=old;document.removeEventListener('keydown',onKey);previousFocus?.focus();};
  },[]);
  const max=remainingForVariant(cart,item,note);
  const effectiveQuantity=Math.min(quantity,max);
  return <div className="mobile-sheet-scrim" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
-  <section className="mobile-product-sheet" role="dialog" aria-modal="true" aria-label={'Agregar '+item.name}>
+  <section ref={sheetRef} className="mobile-product-sheet" role="dialog" aria-modal="true" aria-label={'Agregar '+item.name}>
    <div className="mobile-sheet-handle"/>
    <button ref={closeRef} className="mobile-sheet-close" onClick={onClose} aria-label="Cerrar ficha"><X size={21}/></button>
    <div className="mobile-sheet-body">
@@ -46,6 +57,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
  const {id}=useParams(),restaurantId=Number(id);const [params,setParams]=useSearchParams();
  const [merchant,setMerchant]=useState<Restaurant|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [retry,setRetry]=useState(0),[category,setCategory]=useState('Todos'),[selected,setSelected]=useState<MenuItem|null>(null);
+ useEffect(()=>{setCategory('Todos');setSelected(null);},[restaurantId,market]);
  useEffect(()=>{let active=true;setLoading(true);setError('');setMerchant(null);
   if(!Number.isSafeInteger(restaurantId)||restaurantId<=0){setError('Comercio no válido');setLoading(false);return;}
   api.restaurant(restaurantId).then(value=>{if(value.market_code?.trim().toUpperCase()!==market)throw new Error('Este comercio no pertenece a la localidad seleccionada o el servidor no confirma su zona.');if(active)setMerchant(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No pudimos cargar el menú');}).finally(()=>{if(active)setLoading(false);});
@@ -73,7 +85,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
     <h1>{merchant.name}</h1>
     <p>{merchant.cuisine||'Comercio local'}</p>
     {merchant.description&&<p className="mobile-commerce-about">{merchant.description}</p>}
-    <div className="mobile-commerce-metadata">{merchant.eta_min!=null&&<span><Clock3 size={16}/>{merchant.eta_min} min</span>}<span><MapPin size={16}/>{merchant.address||'Tala y región'}</span>{merchant.pickup_enabled&&<span><Store size={16}/>Para recoger</span>}</div>
+    <div className="mobile-commerce-metadata">{merchant.eta_min!=null&&<span><Clock3 size={16}/>{merchant.eta_min} min</span>}<span><MapPin size={16}/>{merchant.address||marketLabel(market)}</span>{merchant.pickup_enabled&&<span><Store size={16}/>Para recoger</span>}</div>
     {!merchant.is_open&&<div className="mobile-commerce-warning">Este comercio está cerrado por ahora. Puedes ver su menú y pedir cuando vuelva a abrir.</div>}
     {merchant.is_open&&!merchant.pickup_enabled&&<div className="mobile-commerce-warning">Este comercio no permite recoger en tienda. Consulta la disponibilidad de entrega a domicilio y pagos al finalizar tu pedido.</div>}
     <h2>Menú</h2>
@@ -83,7 +95,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
     const available=canOrder&&item.is_available&&item.stock>0;
     return <article key={item.id} className={'mobile-dish-card'+(!available?' unavailable':'')}>
      <div className="mobile-dish-details"><h3>{item.name}</h3>{item.description&&<p>{item.description}</p>}<strong>{pesos(item.price)}</strong>{(!item.is_available||item.stock<=0)&&<span className="mobile-dish-soldout">Agotado</span>}</div>
-     <div className="mobile-dish-photo"><ProductPhoto url={item.image_url} label={item.name}/><button disabled={!available} onClick={()=>setSelected(item)} aria-label={'Ver preferencias y agregar '+item.name}><Plus size={23}/></button></div>
+     <div className="mobile-dish-photo"><ProductPhoto url={item.image_url} label={item.name}/><button disabled={!available} onClick={()=>setSelected(item)} aria-label={'Ver detalles y agregar '+item.name}><Plus size={23}/></button></div>
     </article>;
    }):<div className="mobile-status"><Store size={30}/><h3>Menú en preparación</h3><p>Este comercio aún no tiene productos en esta categoría.</p></div>}</div>
    {quantity>0&&<Link to="/carrito" className="mobile-commerce-cartbar"><span>{quantity}</span><strong>Ver carrito</strong><strong>{pesos(basketTotal(cart))}</strong><ChevronRight size={21}/></Link>}
