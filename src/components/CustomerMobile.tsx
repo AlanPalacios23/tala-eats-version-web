@@ -31,18 +31,27 @@ function useFavorites(){
  const [ready,setReady]=useState(false);
  const [error,setError]=useState('');
  const [pending,setPending]=useState<number|null>(null);
- useEffect(()=>{let active=true;setIds(new Set());setReady(false);setError('');
+ const activeUserRef=useRef(user?.id??null);activeUserRef.current=user?.id??null;
+ useEffect(()=>{let active=true;setIds(new Set());setReady(false);setPending(null);setError('');
   if(!user){setReady(true);return ()=>{active=false};}
   api.favorites().then(rows=>{if(active){setIds(new Set(rows.map(row=>row.id)));setReady(true);}}).catch(()=>{if(active){setError('No pudimos verificar tus favoritos.');setReady(false);}});
   return()=>{active=false};
  },[user?.id]);
  const toggle=async(id:number)=>{
   if(!user||pending!==null||!ready)return;
+  const userId=user.id;
+  const sameAccount=()=>activeUserRef.current===userId;
   const was=ids.has(id);
   setPending(id);setError('');setIds(old=>{const next=new Set(old);if(next.has(id))next.delete(id);else next.add(id);return next;});
-  try{const response=await api.toggleFavorite(id);setIds(old=>{const next=new Set(old);if(response.favorite)next.add(id);else next.delete(id);return next;});}
-  catch{setIds(old=>{const next=new Set(old);if(was)next.add(id);else next.delete(id);return next;});setError('No se pudo guardar el favorito. Vuelve a intentarlo.');}
-  finally{setPending(null);}
+  try{
+   const response=await api.toggleFavorite(id);
+   if(sameAccount())setIds(old=>{const next=new Set(old);if(response.favorite)next.add(id);else next.delete(id);return next;});
+  }catch{
+   if(sameAccount()){
+    setIds(old=>{const next=new Set(old);if(was)next.add(id);else next.delete(id);return next;});
+    setError('No se pudo guardar el favorito. Vuelve a intentarlo.');
+   }
+  }finally{if(sameAccount())setPending(null);}
  };
  return {ids,ready,error,pending,toggle,user};
 }
