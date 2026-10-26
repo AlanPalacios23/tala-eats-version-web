@@ -7,7 +7,7 @@ import { basketTotal, remainingForVariant, updateQuantity } from '../lib/cart';
 import { referenceBreakdown } from '../lib/checkout-preview';
 import type { Cart } from '../lib/cart';
 import { useSession } from '../lib/session';
-import { stripeTestAllowed } from '../lib/stripe-test';
+import { stripePaymentAllowed, stripePaymentMode } from '../lib/stripe-test';
 import type { StripeTestConfig } from '../lib/stripe-test';
 import { buildCheckoutRequest, checkoutAllowed, assertServerQuote, fingerprint, quoteMateriallyChanged, validAddress, validateCartAgainstRestaurant } from '../lib/customer-checkout';
 import type { CustomerAddress, FulfillmentMode, PaymentKind, VerifiedQuote } from '../lib/customer-checkout';
@@ -85,7 +85,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  },[restaurantId,userId,refresh]);
  const address=addresses.find(a=>a.is_default)??addresses[0];
  const cashEnabled=checkoutAllowed(options,mode,'cash');
- const stripeEnabled=stripeTestAllowed(options,stripeConfig,mode);
+ const stripeEnabled=stripePaymentAllowed(options,stripeConfig,mode);
+ const stripeMode=stripePaymentMode(options,stripeConfig,mode);
  const canUse=method==='cash'?cashEnabled:stripeEnabled;
  const selectedRequest=useMemo(()=>{
   if(!restaurantId||!cart.entries.length||!canUse||mode==='delivery'&&!validAddress(address))return null;
@@ -129,7 +130,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    if(!canUse)throw new Error('El servidor no autoriza el método seleccionado.');
    const freshOptions=await api.paymentOptions();
    if(method==='cash'?!checkoutAllowed(freshOptions,mode,'cash'):
-     !stripeTestAllowed(freshOptions,await api.stripeTestConfig(),mode))throw new Error('El método de pago dejó de estar disponible. Revisa el pago.');
+     !stripePaymentAllowed(freshOptions,await api.stripeTestConfig(),mode))throw new Error('El método de pago dejó de estar disponible. Revisa el pago.');
    const freshMerchant=await api.restaurant(restaurantId);
    validateCartAgainstRestaurant(cart,freshMerchant);
    if(mode==='pickup'&&!freshMerchant.pickup_enabled)throw new Error('Recoger en tienda ya no está disponible.');
@@ -171,7 +172,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
     <Wallet size={22}/><span><strong>Efectivo</strong><small>{cashEnabled?(mode==='delivery'?'Paga al recibir tu pedido':'Paga al recoger tu pedido'):'Pendiente de activación del servidor'}</small></span>{method==='cash'&&cashEnabled&&<CheckCircle2 size={20}/>}
    </button>
    <button className={'mobile-payment-method'+(method==='stripe'&&stripeEnabled?' selected':'')} disabled={!stripeEnabled||loading||submitting||Boolean(pending)} aria-pressed={method==='stripe'&&stripeEnabled} onClick={()=>{setMethod('stripe');setError('');}}>
-    <CreditCard size={22}/><span><strong>Tarjeta con Stripe</strong><small>{stripeEnabled?'Stripe TEST · método de prueba seguro':'Disponible únicamente cuando el backend active Stripe TEST'}</small></span>{method==='stripe'&&stripeEnabled&&<CheckCircle2 size={20}/>}
+    <CreditCard size={22}/><span><strong>Tarjeta con Stripe</strong><small>{stripeEnabled?(stripeMode==='live'?'Pago real y seguro con Stripe':'Stripe TEST · método de prueba seguro'):'Disponible cuando el restaurante y el servidor autoricen Stripe'}</small></span>{method==='stripe'&&stripeEnabled&&<CheckCircle2 size={20}/>}
    </button>
    <p className="mobile-checkout-disclosure">Los métodos disponibles y el cobro los confirma el servidor.</p>
   </section>
@@ -181,6 +182,6 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <OrderSummary quote={displayed} delivery={mode==='delivery'} cart={cart} options={options} tip={tip} coupon={coupon}/>
   {error&&<div className="mobile-address-error" role="alert"><Info size={16}/>{error}</div>}
   {pending&&<div className="mobile-checkout-pending"><strong>Pedido pendiente de confirmación</strong><p>No volveremos a enviarlo mientras no podamos comprobar qué sucedió.</p><button disabled={rechecking} onClick={()=>void recover()}>{rechecking?'Consultando…':'Consultar pedido pendiente'}</button></div>}
-  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} aria-busy={submitting} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':pending?'Pedido en verificación':quoteBusy?'Calculando total…':!displayed?'Verifica tu pedido':method==='stripe'?'Continuar a pago con Stripe TEST':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
+  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} aria-busy={submitting} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':pending?'Pedido en verificación':quoteBusy?'Calculando total…':!displayed?'Verifica tu pedido':method==='stripe'?(stripeMode==='live'?'Continuar a pago seguro con Stripe':'Continuar a Stripe TEST'):'Confirmar pedido'} <ChevronRight size={19}/></button></div>
  </div>;
 }
