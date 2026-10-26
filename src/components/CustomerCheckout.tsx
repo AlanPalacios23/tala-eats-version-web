@@ -25,7 +25,7 @@ function OrderSummary({quote,delivery,cart,options,tip,coupon}:{quote:VerifiedQu
   <div className="mobile-checkout-products">{cart.entries.map(row=><div key={row.item.id+'-'+(row.note??'')}><b>{row.quantity}×</b><span>{row.item.name}</span><strong>{pesos(Number(row.item.price)*row.quantity)}</strong></div>)}</div>
   <OrderAmount label="Subtotal" value={quote?.subtotal??reference.subtotal}/>
   <OrderAmount label={reference.rateLabel} value={fee} hint="Aplica a efectivo y pago digital; no a envío ni propina."/>
-  <OrderAmount label={delivery?(quote?'Envío según distancia GPS':'Envío (referencia base)'):'Recoger en restaurante'} value={shipping} hint={delivery&&!quote?'La tarifa final depende de la distancia; este valor es solo la base.':undefined}/>
+  <OrderAmount label={delivery?(quote?'Envío estimado por distancia':'Envío (referencia base)'):'Recoger en restaurante'} value={shipping} hint={delivery&&!quote?'La tarifa final depende del cálculo del servidor; esta es solo la tarifa base.':undefined}/>
   {delivery&&<OrderAmount label="Propina para repartidor" value={quote?.tip as string|number|undefined??reference.tip}/>}
   <OrderAmount label={quote?'Total calculado por el servidor':'Total de referencia'} value={total} primary/>
   <p className="mobile-checkout-disclosure">{quote?'Importes calculados por el servidor; se verifican otra vez al registrar el pedido. No se ha reservado inventario.':reference.note}</p>
@@ -97,10 +97,15 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   setQuote(null);setQuoteBusy(false);setError('');
   if(!selectedRequest)return ()=>{active=false};
   setQuoteBusy(true);
-  api.checkoutQuote(selectedRequest).then(raw=>{const verified=assertServerQuote(raw,selectedRequest);if(active)setQuote({fingerprint:key,value:verified});})
-   .catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo cotizar el pedido.');})
-   .finally(()=>{if(active)setQuoteBusy(false);});
-  return()=>{active=false;};
+  // Debounce address, tip and coupon changes; never expose stale quotes.
+  const timer=window.setTimeout(()=>{
+   api.checkoutQuote(selectedRequest).then(raw=>{
+    const verified=assertServerQuote(raw,selectedRequest);
+    if(active)setQuote({fingerprint:key,value:verified});
+   }).catch(e=>{if(active)setError(e instanceof Error?e.message:'No se pudo cotizar el pedido.');})
+    .finally(()=>{if(active)setQuoteBusy(false);});
+  },350);
+  return()=>{active=false;window.clearTimeout(timer);};
  },[key,quoteEpoch]);
  const displayed=quote?.fingerprint===key?quote.value:null;
  const ready=Boolean(user?.role==='customer'&&restaurant?.is_open&&
@@ -172,10 +177,10 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   </section>
   <section className="mobile-checkout-card"><h2>Cupón</h2><input className="mobile-checkout-input" maxLength={50} value={coupon} disabled={submitting||Boolean(pending)} onChange={e=>{setCoupon(e.target.value);setError('');}} placeholder="Código de descuento (opcional)" aria-label="Código de descuento"/></section>
   <section className="mobile-checkout-card"><h2>Notas para restaurante</h2><textarea className="mobile-checkout-input" maxLength={1000} rows={2} value={notes} disabled={submitting||Boolean(pending)} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales (opcional)"/></section>
-  {quoteBusy?<p className="mobile-loading-order"><RefreshCw size={18} className="spin"/> Solicitando importe al servidor…</p>:null}
+  <div className="mobile-quote-status" role="status" aria-live="polite">{quoteBusy?<><RefreshCw size={16} className="spin"/> Calculando el total…</>:displayed?<><CheckCircle2 size={16}/> Total verificado por el servidor</>:<><Info size={16}/> Esperando una cotización válida</>}</div>
   <OrderSummary quote={displayed} delivery={mode==='delivery'} cart={cart} options={options} tip={tip} coupon={coupon}/>
   {error&&<div className="mobile-address-error" role="alert"><Info size={16}/>{error}</div>}
   {pending&&<div className="mobile-checkout-pending"><strong>Pedido pendiente de confirmación</strong><p>No volveremos a enviarlo mientras no podamos comprobar qué sucedió.</p><button disabled={rechecking} onClick={()=>void recover()}>{rechecking?'Consultando…':'Consultar pedido pendiente'}</button></div>}
-  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':method==='stripe'?'Continuar a pago con Stripe TEST':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
+  <div className="mobile-checkout-actions"><button className="mobile-checkout-fixed" disabled={!ready} aria-busy={submitting} onClick={()=>void submit()}>{submitting?'Confirmando pedido…':pending?'Pedido en verificación':quoteBusy?'Calculando total…':!displayed?'Verifica tu pedido':method==='stripe'?'Continuar a pago con Stripe TEST':'Confirmar pedido'} <ChevronRight size={19}/></button></div>
  </div>;
 }
