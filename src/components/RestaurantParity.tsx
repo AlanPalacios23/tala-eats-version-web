@@ -2,12 +2,12 @@ import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowRight,AlertTriangle,CheckCircle2,ChefHat,ClipboardList,Clock3,
- CreditCard,MapPin,PackageCheck,RefreshCw,Settings2,ShieldCheck,
+ CreditCard,MapPin,PackageCheck,Settings2,ShieldCheck,
  ShoppingBag,Store,Users,Wallet
 } from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
-import {merchantStateLabel,nextMerchantState} from '../lib/restaurant-state';
+import {nextMerchantState} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import type {Order,Restaurant} from '../lib/types';
 import '../styles/restaurant-parity.css';
