@@ -25,7 +25,6 @@ describe('Real browser Web Push — authenticated opt-in, no mock delivery',()=>
   expect(lib).toContain("reply.active!==true");
   expect(lib).toContain('await sub.unsubscribe()');
   expect(lib).toContain('PREVIEW_READONLY');
-  expect(lib).not.toContain('Notification.requestPermission()');
   expect(lib).toContain('await Notification.requestPermission()');
  });
  it('shows consent controls only on real user click and explains missing Node API',()=>{
