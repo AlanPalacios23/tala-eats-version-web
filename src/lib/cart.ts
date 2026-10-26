@@ -69,6 +69,8 @@ export function restoreCustomerCart(raw:unknown):Cart{
  const id=value.restaurantId;
  if(typeof id!=='number'||!Number.isSafeInteger(id)||id<=0||!Array.isArray(value.entries)||value.entries.length>50)return EMPTY_CART;
  const entries:CartEntry[]=[];
+ const variants=new Set<string>();
+ const itemTotals=new Map<number,{quantity:number;stock:number;price:string}>();
  let total=0;
  for(const entry of value.entries){
   if(!entry||typeof entry!=='object')return EMPTY_CART;
@@ -80,9 +82,18 @@ export function restoreCustomerCart(raw:unknown):Cart{
    (e.note!==undefined&&(typeof e.note!=='string'||e.note.length>200)))return EMPTY_CART;
   const quantity=Math.min(e.quantity as number,item.stock);
   if(quantity<1||!item.is_available)return EMPTY_CART;
+  const note=typeof e.note==='string'?e.note:'';
+  const variantKey=JSON.stringify([item.id,note]);
+  if(variants.has(variantKey))return EMPTY_CART;
+  variants.add(variantKey);
+  const previous=itemTotals.get(item.id);
+  if(previous&&(previous.stock!==item.stock||previous.price!==String(item.price)))return EMPTY_CART;
+  const aggregate=(previous?.quantity??0)+quantity;
+  if(aggregate>item.stock)return EMPTY_CART;
+  itemTotals.set(item.id,{quantity:aggregate,stock:item.stock,price:String(item.price)});
   total+=quantity;
   if(total>50)return EMPTY_CART;
-  entries.push({item,quantity,note:typeof e.note==='string'?e.note:''});
+  entries.push({item,quantity,note});
  }
  return entries.length?{restaurantId:id,entries}:EMPTY_CART;
 }
