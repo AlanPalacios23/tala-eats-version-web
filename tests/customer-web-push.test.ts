@@ -6,6 +6,7 @@ const read=(p:string)=>readFileSync(new URL(p,import.meta.url),'utf8');
 const lib=read('../src/lib/web-push.ts');
 const sw=read('../public/sw.js');
 const account=read('../src/components/CustomerAccount.tsx');
+const session=read('../src/lib/session.tsx');
 const css=read('../src/styles/main.css');
 
 describe('Real browser Web Push — authenticated opt-in, no mock delivery',()=>{
@@ -32,7 +33,8 @@ describe('Real browser Web Push — authenticated opt-in, no mock delivery',()=>
   expect(account).toContain('enableWebPush(user.id,pushConfig)');
   expect(account).toContain('disableWebPush(user.id)');
   expect(account).toContain('getWebPushConfig()');
-  expect(account).toContain('revokeWebPushBeforeLogout(user.id)');
+  expect(session).toContain('revokeWebPushBeforeLogout(user.id)');
+  expect(session).toContain('clearForeignWebPush(user.id)');
   expect(account).toContain('Notificaciones del navegador');
   expect(css).toContain('.mobile-push-preferences{');
   expect(pwaInstallPlatform('Mozilla Android')).toBe('android');
