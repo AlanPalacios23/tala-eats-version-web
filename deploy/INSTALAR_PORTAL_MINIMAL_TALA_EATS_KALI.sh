@@ -16,7 +16,7 @@ done
 
 # Confirm the GitHub source is the minimal portal, not an older review.
 curl -fsSL --retry 2 --max-time 30 "$RAW/src/App.tsx" -o "$TMP/App.tsx"
-awk '/function PortalLanding\\(\\)\\{/{inside=1} /function Protected\\(/{inside=0} inside {print}' "$TMP/App.tsx" > "$TMP/portal.tsx"
+awk 'index($0,"function PortalLanding(){"){inside=1} index($0,"function Protected("){inside=0} inside {print}' "$TMP/App.tsx" > "$TMP/portal.tsx"
 grep -Fq 'className="gateway gateway-minimal"' "$TMP/portal.tsx" ||
  { echo 'GATEWAY_ABORT=NOT_MINIMAL';exit 1; }
 grep -Fq 'href={LEGAL_LINKS.terms}' "$TMP/portal.tsx" ||
