@@ -1171,3 +1171,73 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
  .customer-shell .mobile-commerce-metadata{gap:8px}
  .customer-shell .mobile-checkout-products>div{min-width:0;overflow-wrap:anywhere}
 }
+
+/* Installation is offered once on the customer web experience, not as a push
+   permission request or blocking takeover of the restaurant's checkout. */
+.customer-pwa-install-notice{
+ position:fixed;z-index:1200;
+ top:max(14px,env(safe-area-inset-top));right:16px;
+ width:min(426px,calc(100vw - 32px));max-height:min(80dvh,490px);
+ display:grid;grid-template-columns:54px minmax(0,1fr) 32px;gap:12px;
+ overflow:auto;overscroll-behavior:contain;
+ border:1px solid #e9e4dd;border-radius:21px;
+ background:#fffdfb;color:#171717;padding:17px 15px;
+ box-shadow:0 17px 50px #21100826;
+ -webkit-font-smoothing:antialiased;
+}
+.customer-pwa-install-icon{
+ width:54px;height:54px;object-fit:contain;border-radius:14px;
+ background:#fff3eb;border:1px solid #ffecdf;padding:4px;
+}
+.customer-pwa-install-copy{min-width:0}
+.customer-pwa-install-copy>strong{
+ display:flex;align-items:center;gap:7px;
+ color:#202020;font:800 17px/1.25 Roboto,Arial,sans-serif;
+ letter-spacing:-.3px;
+}
+.customer-pwa-install-copy>strong svg{color:#ce3c0a;flex:0 0 auto}
+.customer-pwa-install-copy>p{
+ margin:7px 0 0;color:#625c57;
+ font:500 13px/1.5 Roboto,Arial,sans-serif;
+}
+.customer-pwa-install-steps{
+ background:#fff4eb;border:1px solid #ffdfcc;border-radius:12px;
+ padding:10px 11px;overflow-wrap:anywhere;
+}
+.customer-pwa-install-steps svg{
+ vertical-align:-4px;margin-right:3px;color:#ce3c0a;
+}
+.customer-pwa-install-steps b{font-weight:800;color:#31261f}
+.customer-pwa-install-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.customer-pwa-install-actions button{min-height:44px;cursor:pointer}
+.customer-pwa-install-primary{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ border:0;border-radius:12px;padding:10px 14px;
+ background:#e94c0c;color:white;font:800 13px Roboto,Arial,sans-serif;
+}
+.customer-pwa-install-primary:disabled{opacity:.65;cursor:wait}
+.customer-pwa-install-later{
+ border:1px solid #e9e4e0;border-radius:12px;
+ padding:10px 12px;background:#fff;color:#514a44;
+ font:700 12px Roboto,Arial,sans-serif;
+}
+.customer-pwa-install-close{
+ width:32px;height:32px;display:grid;place-items:center;
+ border:0;border-radius:11px;background:#f7f4f0;color:#67615b;
+ cursor:pointer;
+}
+.customer-pwa-install-notice button:focus-visible{
+ outline:3px solid #ce3c0a;outline-offset:3px;
+}
+@media(max-width:380px){
+ .customer-pwa-install-notice{
+  right:10px;left:10px;width:auto;top:max(10px,env(safe-area-inset-top));
+  grid-template-columns:44px minmax(0,1fr) 30px;gap:9px;padding:13px 11px;
+ }
+ .customer-pwa-install-icon{width:44px;height:44px}
+ .customer-pwa-install-copy>strong{font-size:15px}
+ .customer-pwa-install-copy>p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .customer-pwa-install-notice{scroll-behavior:auto}
+}
