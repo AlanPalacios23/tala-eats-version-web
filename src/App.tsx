@@ -76,38 +76,27 @@ function AppHeader({count}:{count:number}){
 }
 function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><Link to="/repartidor">Soy repartidor</Link></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
 function PortalLanding(){
- const [menuOpen,setMenuOpen]=useState(false);
  const links=[
   {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/iniciar',number:'01'},
   {title:'Restaurantes',description:'Pedidos, menús y gestión de tu comercio',path:'/restaurante',number:'02'},
   {title:'Repartidores',description:'Tu espacio para gestionar entregas',path:'/repartidor',number:'03'},
  ];
- return <div className="gateway">
-  <header className="gateway-header" aria-label="Encabezado Tala Eats">
+ return <div className="gateway gateway-minimal">
+  <header className="gateway-header" aria-label="Tala Eats">
    <Link to="/" className="gateway-brand" aria-label="Tala Eats, inicio"><span>Tala</span><b>Eats</b><span className="gateway-brand-dot"/></Link>
-   <div className="gateway-header-actions">
-    <Link className="gateway-login" to="/iniciar" state={{from:'/clientes'}}>Entrar</Link>
-    <Link className="gateway-signup" to="/acceso" state={{create:true,from:'/clientes'}}>Registrarse</Link>
-    <button type="button" className="gateway-menu-toggle" aria-label={menuOpen?'Cerrar menú':'Abrir menú'} aria-expanded={menuOpen} aria-controls="gateway-menu" onClick={()=>setMenuOpen(x=>!x)}>{menuOpen?<X size={22}/>:<Menu size={23}/>}</button>
-   </div>
-   {menuOpen&&<nav className="gateway-menu" id="gateway-menu" aria-label="Accesos principales">
-    {links.map(item=><Link key={item.path} to={item.path} onClick={()=>setMenuOpen(false)}>{item.title}<ArrowRight size={18}/></Link>)}
-    <Link to="/pedidos" onClick={()=>setMenuOpen(false)}>Mis pedidos<ArrowRight size={18}/></Link>
-   </nav>}
   </header>
   <main className="gateway-main">
-   <div className="gateway-heading"><p className="gateway-kicker"><span className="gateway-kicker-dot"/> TU CIUDAD, A TU ALCANCE</p>
-    <h1>Tala<span>Eats</span></h1><p className="gateway-tagline">Todo lo bueno de aquí, en un solo lugar.</p>
-   </div>
-   <nav className="gateway-portals" aria-label="Elige cómo usar Tala Eats">
-    <p className="gateway-choose">¿Cómo quieres empezar?</p>
+   <nav className="gateway-portals" aria-label="Acceso a las aplicaciones de Tala Eats">
     {links.map(item=><Link className="gateway-portal" to={item.path} key={item.path}>
      <span className="gateway-portal-text"><strong>{item.title}</strong><small>{item.description}</small></span>
      <span className="gateway-portal-arrow" aria-hidden="true"><ArrowRight size={35} strokeWidth={1.7}/></span>
     </Link>)}
    </nav>
   </main>
-  <footer className="gateway-footer"><div><span className="gateway-footer-brand">Tala Eats</span><p>Hecho para Tala y nuestra región.</p></div><div><Link to="/iniciar" state={{from:"/clientes"}}>Explorar comercios</Link><Link to="/acceso">Mi cuenta</Link><InstallPWA/></div><span className="gateway-copyright">© 2026 TALA EATS</span></footer>
+  <footer className="gateway-footer" aria-label="Enlaces legales">
+   <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer">Términos y condiciones</a>
+   <a href={LEGAL_LINKS.deletion} target="_blank" rel="noopener noreferrer">Eliminación de cuenta</a>
+  </footer>
  </div>;
 }
 function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
