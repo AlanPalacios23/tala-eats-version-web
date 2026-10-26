@@ -10,6 +10,7 @@ const read=(name:string)=>readFileSync(new URL('../src/components/'+name,import.
 const mobile=read('CustomerMobile.tsx');
 const commerce=read('CustomerCommerce.tsx');
 const checkout=read('CustomerCheckout.tsx');
+const orders=read('CustomerOrders.tsx');
 const app=readFileSync(new URL('../src/App.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/main.css',import.meta.url),'utf8');
 
@@ -105,6 +106,13 @@ describe('Tala Eats Usuarios Web — visual and functional fixes',()=>{
   expect(checkout).not.toContain('Total de referencia para recoger');
   expect(css).toContain('.customer-shell .mobile-cart-item-image');
   expect(css).toContain('.customer-shell .mobile-cart-entry{');
+ });
+ it('shows verified quantities and avoids misleading Stripe or canceled-payment messaging',()=>{
+  expect(orders).toContain('verifiedLineTotal(item.unit_price,item.quantity)');
+  expect(orders).toContain('paymentStatusLabel(order.payment_status)');
+  expect(orders).toContain("order.status!=='cancelled'&&order.payment_method==='stripe'");
+  expect(orders).toContain('Consultar estado del pago con tarjeta');
+  expect(orders).not.toContain('Completa Stripe TEST si está habilitado');
  });
  it('keeps persistent mobile checkout and cart CTAs clear of bottom navigation',()=>{
   expect(css).toContain('.customer-shell .mobile-commerce-cartbar{');
