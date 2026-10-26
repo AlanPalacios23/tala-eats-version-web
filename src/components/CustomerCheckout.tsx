@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, ChevronRight, CreditCard, Info, MapPin, Minus, Plus, RefreshCw, ShoppingBag, Store, Truck, Wallet } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
+import { CustomerPhoto } from './CustomerPhoto';
 import { basketTotal, remainingForVariant, updateQuantity } from '../lib/cart';
 import { referenceBreakdown } from '../lib/checkout-preview';
 import type { Cart } from '../lib/cart';
@@ -43,10 +44,10 @@ export function CustomerCart({cart,setCart}:{cart:Cart;setCart:(value:Cart)=>voi
   {!count?<div className="mobile-status"><ShoppingBag size={32}/><h2>Tu carrito está vacío</h2><p>Agrega productos desde el menú de un restaurante.</p><Link className="mobile-status-link" to="/clientes">Explorar restaurantes</Link></div>:
   <><section className="mobile-checkout-card"><h2>{count} {count===1?'producto':'productos'}</h2><Link className="mobile-cart-merchant" to={'/comercio/'+cart.restaurantId}><Store size={21}/> Agregar más productos <ChevronRight size={18}/></Link></section>
    <div className="mobile-cart-lines">{cart.entries.map(entry=><article className="mobile-cart-entry" key={entry.item.id+'-'+(entry.note??'')}>
-    <div className="mobile-cart-entry-info"><strong>{entry.item.name}</strong>{entry.note&&<small>{entry.note}</small>}<span>{pesos(entry.item.price)}</span></div>
+    <CustomerPhoto src={entry.item.image_url} alt={entry.item.name} fallback="🛍️" className="mobile-cart-item-image"/><div className="mobile-cart-entry-info"><strong>{entry.item.name}</strong>{entry.note&&<small>{entry.note}</small>}<span>{pesos(entry.item.price)} por unidad</span></div>
     <div className="mobile-stepper"><button aria-label={'Restar '+entry.item.name} onClick={()=>setCart(updateQuantity(cart,entry.item.id,-1,entry.note??''))}><Minus size={18}/></button><strong>{entry.quantity}</strong><button aria-label={'Sumar '+entry.item.name} onClick={()=>setCart(updateQuantity(cart,entry.item.id,1,entry.note??''))} disabled={remainingForVariant(cart,entry.item,entry.note??'')===0}><Plus size={18}/></button></div>
    </article>)}</div>
-   <section className="mobile-checkout-card"><h2>Resumen</h2><OrderAmount label="Productos" value={basketTotal(cart)}/><OrderAmount label={reference.rateLabel} value={reference.serviceFee}/><OrderAmount label="Recoger en restaurante" value={0}/><OrderAmount label="Total de referencia para recoger" value={reference.total} primary/><p className="mobile-checkout-disclosure">{reference.note} La comisión del restaurante no se cobra aparte al cliente.</p></section>
+   <section className="mobile-checkout-card"><h2>Resumen</h2><OrderAmount label="Productos" value={basketTotal(cart)}/><OrderAmount label={reference.rateLabel} value={reference.serviceFee}/><OrderAmount label="Estimación antes del envío" value={reference.total} primary/><p className="mobile-checkout-disclosure">Elige domicilio o recoger al finalizar la compra. {reference.note} Los envíos y descuentos solo se confirman en la cotización del servidor; la comisión al comercio no se cobra aparte.</p></section>
    <Link className="mobile-checkout-fixed" to="/checkout">Continuar al pago <ChevronRight size={19}/></Link>
   </>}
  </div>;
