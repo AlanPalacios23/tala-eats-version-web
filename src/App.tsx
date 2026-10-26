@@ -18,6 +18,7 @@ import { CustomerAddresses } from './components/CustomerAddresses';
 import { CustomerProfile } from './components/CustomerProfile';
 import { LEGAL_LINKS } from './lib/legal-links';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
+import { AdminPickupConnect } from './components/AdminPickupConnect';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
@@ -87,11 +88,11 @@ function PortalLanding(){
   </footer>
  </div>;
 }
-function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'any';children:ReactNode}){
+function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'admin'|'any';children:ReactNode}){
  const {user,loading}=useSession();const location=useLocation();
  if(loading)return <div className="container page"><Spinner/></div>;
  if(!user)return <Navigate to={role==='restaurant'||role==='driver'?'/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
- if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role)))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
+ if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role))||(role==='admin'&&user.role!=='admin'))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
 function CustomerGate({children}:{children:ReactNode}){
@@ -292,6 +293,7 @@ export default function App(){
    <Route path="/eliminar-cuenta" element={<ExternalLegalRedirect href={LEGAL_LINKS.deletion}/>}/>
    <Route path="/acceso" element={<CustomerStepAuth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
+   <Route path="/admin/conectar-restaurante" element={<Protected role="admin"><AdminPickupConnect/></Protected>}/>
    <Route path="/restaurante" element={<Protected role="restaurant"><Merchant/></Protected>}/>
    <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
