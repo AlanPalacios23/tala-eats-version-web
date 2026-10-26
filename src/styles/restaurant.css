@@ -27,6 +27,7 @@
 .rp-open-badge{display:flex;align-items:center;gap:8px;padding:11px 14px;border:1px solid #dbefe0;border-radius:999px;background:#edf9f0;color:#20804b;font-weight:800;font-size:12px;white-space:nowrap}
 .rp-open-badge.closed{color:#676966;background:#f2f2f0;border-color:#dddeda}
 .rp-open-badge span{display:block;width:8px;height:8px;border-radius:50%;background:currentColor}
+.rp-install-wrap{position:relative}.rp-install-help{position:absolute;right:0;top:100%;z-index:6;background:#262725;color:#fff;padding:13px 16px;line-height:1.45;border-radius:12px;width:265px;font-size:12px;box-shadow:0 13px 34px #0002}
 .rp-icon-btn{background:#f7f7f5;border:1px solid #e5e5e2;border-radius:11px;padding:10px;color:#4b4b49;display:flex;align-items:center}
 .rp-content{padding:32px clamp(20px,3.7vw,58px) 75px;max-width:1600px;width:100%;margin:0 auto;flex:1}
 .rp-heading-row{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:7px 0 22px}
@@ -167,7 +168,8 @@
 .rp-access-card{padding:30px 32px 55px}.rp-muted-link{margin-bottom:22px}
 .rp-admin-title{flex-direction:column;align-items:flex-start}
 }
-@media(max-width:590px){.rp-activation-grid,.rp-product-form{grid-template-columns:1fr}.rp-product-wide{grid-column:auto}.rp-lane-grid{grid-template-columns:1fr}.rp-stats{gap:9px}
+@media(max-width:590px){.rp-top-actions .rp-install-wrap{display:none}
+.rp-activation-grid,.rp-product-form{grid-template-columns:1fr}.rp-product-wide{grid-column:auto}.rp-lane-grid{grid-template-columns:1fr}.rp-stats{gap:9px}
 .rp-stats>div{padding:17px}.rp-stats strong{font-size:28px}.rp-heading-row{align-items:flex-start;flex-direction:column}
 .rp-last-sync{white-space:normal}.rp-activation-banner{align-items:flex-start;flex-wrap:wrap;padding:18px}.rp-activation-banner .rp-btn{width:100%}
 .rp-topbar{gap:8px}.rp-topbar h1{font-size:23px}.rp-topbar p{font-size:11px}.rp-top-actions{gap:6px}.rp-open-badge{font-size:10px;padding:7px}
