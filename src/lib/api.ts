@@ -11,31 +11,54 @@ export class ApiError extends Error {
   constructor(readonly status: number, message: string) { super(message); this.name = 'ApiError'; }
 }
 const BASE = '/api/v1';
+/**
+ * Give read-only requests a bounded lifetime so mobile screens never spin
+ * forever on unreachable APIs. Writes also have a bounded client wait, but
+ * they must NOT be auto-retried: checkout holds a pending idempotency journal.
+ */
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Ruta API inválida');
-  if(!previewRequestAllowed(path,init.method??'GET',PREVIEW_READONLY))throw new ApiError(403,'Vista previa: las operaciones de escritura están bloqueadas.');
-  const response = await fetch(BASE + path, {
-    ...init,
-    credentials: 'include',
-    cache: 'no-store',
-    headers: {
-      'Accept': 'application/json',
-      'X-Talaeats-Client': 'web-pwa',
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init.headers,
-    },
-  });
-  if (response.status === 204) return undefined as T;
-  const raw = await response.text();
-  let body: unknown;
-  try { body = raw ? JSON.parse(raw) : null; } catch { body = null; }
-  if (!response.ok) {
-    const msg = body && typeof body === 'object' ?
-      String((body as Record<string,unknown>).detail ?? (body as Record<string,unknown>).error ?? 'No pudimos completar la solicitud') :
-      'No pudimos completar la solicitud';
-    throw new ApiError(response.status, msg);
+  const method=(init.method??'GET').toUpperCase();
+  if(!previewRequestAllowed(path,method,PREVIEW_READONLY))
+    throw new ApiError(403,'Vista previa: las operaciones de escritura están bloqueadas.');
+  const controller=new AbortController();
+  let timedOut=false;
+  const forwardAbort=()=>controller.abort();
+  if(init.signal?.aborted)controller.abort();
+  else init.signal?.addEventListener('abort',forwardAbort,{once:true});
+  const timer=globalThis.setTimeout(()=>{timedOut=true;controller.abort();},method==='GET'?25000:45000);
+  try {
+    const response=await fetch(BASE+path,{
+      ...init,signal:controller.signal,
+      credentials:'include',cache:'no-store',
+      headers:{
+        'Accept':'application/json',
+        'X-Talaeats-Client':'web-pwa',
+        ...(init.body?{'Content-Type':'application/json'}:{}),
+        ...init.headers,
+      },
+    });
+    if(response.status===204)return undefined as T;
+    const raw=await response.text();
+    let body:unknown;
+    try{body=raw?JSON.parse(raw):null;}catch{throw new ApiError(502,'El servidor devolvió una respuesta que no pudimos interpretar.');}
+    if(!response.ok){
+      const details=body&&typeof body==='object'?body as Record<string,unknown>:null;
+      const supplied=details?.detail??details?.error;
+      const msg=typeof supplied==='string'&&supplied.length<500?supplied:'No pudimos completar la solicitud.';
+      throw new ApiError(response.status,msg);
+    }
+    if(body===null&&raw==='')throw new ApiError(502,'El servidor respondió sin los datos esperados.');
+    return body as T;
+  }catch(err){
+    if(err instanceof ApiError)throw err;
+    if(timedOut)throw new ApiError(408,'El servidor tardó demasiado en responder. Revisa tu conexión y consulta el estado antes de reintentar.');
+    if(err instanceof TypeError)throw new ApiError(0,'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.');
+    throw err;
+  }finally{
+    globalThis.clearTimeout(timer);
+    init.signal?.removeEventListener('abort',forwardAbort);
   }
-  return body as T;
 }
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
 export const api = {
