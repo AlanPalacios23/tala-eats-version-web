@@ -1,3 +1,18 @@
+## Estado real de Kali tras el backend RC8.14 — 26/10/2026
+Salida verificada del operador (`RC814_PICKUP_LIVE_BACKEND_DEPLOYED=PASS`):
+
+- Versión backend LIVE activa `09ee09c8364382597c8e9ab1573a5b417884d47e`, API/worker PM2 y dominio público PASS.
+- `226/226` pruebas backend PASS; `27` migraciones Prisma al día; backup previo de PostgreSQL verificado antes del cutover.
+- Stripe LIVE + Web Push activos y conservados. `RC814_STRIPE_LIVE_AND_WEB_PUSH_PRESERVED=PASS`.
+- **Efectivo ya habilitado**: `PICKUP_LIVE_CASH_FLAG=true`. **No ejecutar una segunda activación** del flag.
+- Restaurante real único en esta base: `restaurant_id=1`, **The Burger House**; estado `verified=true`, `onboarding_approved=true`, `open=true`, `pickup=true`, `real_owner=true`, `connect_mapped=true`, `menu_ready_items=1`, pero **`connect_owner_approved=false`**.
+- En consecuencia, `PICKUP_OWNER_APPROVED_MAPPINGS=0`; la seguridad del backend impide ambos tipos de pedido real hasta aprobación del propietario. **NO ejecutar de nuevo admin connect-map sobre cuenta ya mapeada.** El propietario del restaurante 1 confirma su titularidad desde `/restaurante` → Mi negocio, autenticado con SU cuenta.
+- PWA nueva con checkout LIVE, PIN y administración Connect está compilada en PR #4, **pendiente despliegue**. No anunciar pedidos end-to-end confirmados todavía.
+- Transferencias automáticas permanecen OFF.
+
+
+---
+
 # Tala Eats — Primer pedido real para recoger (efectivo + Stripe LIVE)
 
 **Alcance**: PWA Clientes y Restaurante, reutilizando un solo Node LIVE
