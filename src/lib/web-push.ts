@@ -4,6 +4,7 @@ import {PREVIEW_READONLY} from './preview';
 export interface WebPushConfig {enabled:boolean;public_key:string|null}
 export interface WebPushRecord {id:number;userId:number}
 export const PUSH_RECORD_KEY='tala-eats-pwa-push-subscription-v1';
+let inMemoryRecord:WebPushRecord|null=null;
 export function validVapidPublicKey(value:unknown):value is string {
  if(typeof value!=='string'||!/^[-_A-Za-z0-9]{86,88}$/.test(value))return false;
  try{return vapidToBytes(value).length===65;}catch{return false;}
@@ -18,15 +19,16 @@ export function vapidToBytes(key:string):Uint8Array {
 function decodeRecord():WebPushRecord|null {
  try{
   const raw=localStorage.getItem(PUSH_RECORD_KEY);
-  if(!raw)return null;
+  if(!raw)return inMemoryRecord;
   const row:unknown=JSON.parse(raw);
   if(!row||typeof row!=='object')return null;
   const parsed=row as Record<string,unknown>;
   return Number.isSafeInteger(parsed.id)&&Number(parsed.id)>0&&Number.isSafeInteger(parsed.userId)&&Number(parsed.userId)>0
    ?{id:Number(parsed.id),userId:Number(parsed.userId)}:null;
- }catch{return null;}
+ }catch{return inMemoryRecord;}
 }
 function saveRecord(record:WebPushRecord|null):void {
+ inMemoryRecord=record;
  try{
   if(record)localStorage.setItem(PUSH_RECORD_KEY,JSON.stringify(record));
   else localStorage.removeItem(PUSH_RECORD_KEY);
@@ -128,11 +130,9 @@ export async function isWebPushEnabledForUser(userId:number):Promise<boolean> {
 }
 /** Called before logout, not silently on page load. */
 export async function revokeWebPushBeforeLogout(userId:number):Promise<void> {
- const record=decodeRecord();
- if(!record||record.userId!==userId)return;
  try{await disableWebPush(userId);}
  catch{
-  // Security over convenience: avoid claiming remote removal. Local browser
-  // subscription was attempted; backend still requires expired-endpoint cleanup.
+  // Even with blocked localStorage, always attempt to revoke the local browser
+  // subscription. Backend must clean up any expired endpoint (HTTP 410).
  }
 }
