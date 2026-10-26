@@ -39,6 +39,8 @@ export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''
 export function addItem(cart:Cart,item:MenuItem):Cart{return addVariantItem(cart,item,1,'');}
 export function updateQuantity(cart:Cart,itemId:number,delta:number,note?:string):Cart{
  if(!Number.isSafeInteger(delta)||delta===0)return cart;
+ // A legacy unqualified item ID must not change multiple preference lines.
+ if(note===undefined&&cart.entries.filter(e=>e.item.id===itemId).length!==1)return cart;
  let changed=false;
  const entries=cart.entries.map(e=>{
   if(e.item.id!==itemId||(note!==undefined&&(e.note??'')!==note))return e;
