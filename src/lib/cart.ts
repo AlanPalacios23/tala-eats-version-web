@@ -3,29 +3,53 @@ export interface CartEntry { item: MenuItem; quantity: number; note?: string; }
 export interface Cart { restaurantId: number|null; entries: CartEntry[]; }
 export const EMPTY_CART:Cart={restaurantId:null,entries:[]};
 /** The mobile app keeps preferences per cart line and enforces stock limits. */
-export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''):Cart {
- if(!item.is_available||item.stock<1||!Number.isSafeInteger(desiredQuantity)||desiredQuantity<1)return cart;
+/**
+ * One merchant at a time; a physical item's stock is SHARED by its notes/
+ * variations, and no more than 50 total units survive session restoration.
+ */
+export function remainingForVariant(cart:Cart,item:MenuItem,note=''):number{
+ if(!item.is_available||!Number.isSafeInteger(item.stock)||item.stock<1)return 0;
+ const entries=cart.restaurantId===item.restaurant_id?cart.entries:[];
+ const normalizedNote=note.trim().slice(0,200);
+ const current=entries.find(e=>e.item.id===item.id&&(e.note??'')===normalizedNote);
+ const otherVariants=entries.filter(e=>e.item.id===item.id&&e!==current)
+  .reduce((sum,e)=>sum+e.quantity,0);
+ const otherProducts=entries.filter(e=>e.item.id!==item.id)
+  .reduce((sum,e)=>sum+e.quantity,0);
+ const already=current?.quantity??0;
+ const physical=Math.max(0,item.stock-otherVariants-already);
+ const remainingCart=Math.max(0,50-otherVariants-otherProducts-already);
+ const remainingLine=Math.max(0,50-already);
+ return Math.min(physical,remainingCart,remainingLine);
+}
+export function addVariantItem(cart:Cart,item:MenuItem,desiredQuantity=1,note=''):Cart{
+ if(!Number.isSafeInteger(desiredQuantity)||desiredQuantity<1)return cart;
+ const available=remainingForVariant(cart,item,note);
+ if(available<1)return cart;
  const normalizedNote=note.trim().slice(0,200);
  const sameRestaurant=cart.restaurantId===item.restaurant_id;
  const entries=sameRestaurant?cart.entries:[];
- const old=entries.find(x=>x.item.id===item.id && (x.note??'')===normalizedNote);
- const allocatedToOtherVariants=entries.filter(e=>e.item.id===item.id&&e!==old).reduce((total,e)=>total+e.quantity,0);
- const freeForThisLine=Math.max(0,item.stock-allocatedToOtherVariants);
- const quantity=Math.min(freeForThisLine,Math.min(50,(old?.quantity??0)+desiredQuantity));
- if(quantity<1)return cart;
- const changed=old?
-  entries.map(x=>x===old?{item,quantity,note:normalizedNote}:x):
+ const old=entries.find(e=>e.item.id===item.id&&(e.note??'')===normalizedNote);
+ const quantity=(old?.quantity??0)+Math.min(desiredQuantity,available);
+ const updated=old?
+  entries.map(e=>e===old?{item,quantity,note:normalizedNote}:e):
   [...entries,{item,quantity,note:normalizedNote}];
- return {restaurantId:item.restaurant_id,entries:changed};
+ return {restaurantId:item.restaurant_id,entries:updated};
 }
-export function addItem(cart:Cart,item:MenuItem):Cart {return addVariantItem(cart,item,1,'');}
-/** Option-aware quantity updates. Legacy IDs continue to work for unambiguous lines. */
-export function updateQuantity(cart:Cart,itemId:number,delta:number,note?:string):Cart {
+export function addItem(cart:Cart,item:MenuItem):Cart{return addVariantItem(cart,item,1,'');}
+export function updateQuantity(cart:Cart,itemId:number,delta:number,note?:string):Cart{
+ if(!Number.isSafeInteger(delta)||delta===0)return cart;
+ let changed=false;
  const entries=cart.entries.map(e=>{
   if(e.item.id!==itemId||(note!==undefined&&(e.note??'')!==note))return e;
-  const others=cart.entries.filter(v=>v.item.id===itemId&&v!==e).reduce((n,v)=>n+v.quantity,0);
-  return {...e,quantity:Math.min(50,Math.min(Math.max(0,e.item.stock-others),e.quantity+delta))};
+  const otherCount=cart.entries.filter(v=>v!==e).reduce((n,v)=>n+v.quantity,0);
+  const otherVariants=cart.entries.filter(v=>v.item.id===itemId&&v!==e).reduce((n,v)=>n+v.quantity,0);
+  const upper=Math.max(0,Math.min(50-otherCount,50,e.item.stock-otherVariants));
+  const next=Math.max(0,Math.min(upper,e.quantity+delta));
+  if(next!==e.quantity)changed=true;
+  return {...e,quantity:next};
  }).filter(e=>e.quantity>0);
+ if(!changed)return cart;
  return entries.length?{...cart,entries}:EMPTY_CART;
 }
 export function lineItems(cart:Cart) {
