@@ -78,7 +78,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   if(!restaurantId||!userId){setLoading(false);return ()=>{active=false};}
   void api.stripeTestConfig().then(value=>{if(active)setStripeConfig(value);}).catch(()=>{if(active)setStripeConfig(null);});
   Promise.all([api.restaurant(restaurantId),api.paymentOptions(),api.customerAddresses()]).then(([r,p,a])=>{
-   if(active){setRestaurant(r);setOptions(p);setAddresses(a);}
+   if(active){setRestaurant(r);setOptions(p);setAddresses(a);if(!r.pickup_enabled&&p.delivery_checkout_supported===true&&p.delivery_quote_supported===true)setMode('delivery');}
   }).catch(e=>{if(active)setServerError(e instanceof Error?e.message:'Error verificando tu pedido.');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[restaurantId,userId,refresh]);
@@ -93,7 +93,7 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  const key=selectedRequest?fingerprint(selectedRequest):'';
  useEffect(()=>{
   let active=true;
-  setQuote(null);setQuoteBusy(false);
+  setQuote(null);setQuoteBusy(false);setError('');
   if(!selectedRequest)return ()=>{active=false};
   setQuoteBusy(true);
   api.checkoutQuote(selectedRequest).then(raw=>{const verified=assertServerQuote(raw,selectedRequest);if(active)setQuote({fingerprint:key,value:verified});})
@@ -150,8 +150,8 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <div className="mobile-detail-header"><Link to="/carrito" aria-label="Volver a carrito"><ArrowLeft size={22}/></Link><h1>Finalizar pedido</h1><button onClick={reload} disabled={loading||submitting} aria-label="Actualizar cotización"><RefreshCw size={19}/></button></div>
   {serverError&&<div className="mobile-address-error" role="alert">No logramos verificar tu pedido: {serverError}<button onClick={reload}>Reintentar</button></div>}
   <section className="mobile-checkout-card"><h2>Entrega</h2><div className="mobile-checkout-modes">
-   <button className={mode==='delivery'?'selected':''} aria-pressed={mode==='delivery'} disabled={submitting||Boolean(pending)} onClick={()=>choose('delivery')}><Truck size={24}/><span>A domicilio<small>{options?.delivery_checkout_supported===true?'Según disponibilidad':'Sujeto a activación'}</small></span></button>
-   <button className={mode==='pickup'?'selected':''} aria-pressed={mode==='pickup'} disabled={submitting||Boolean(pending)} onClick={()=>choose('pickup')}><Store size={24}/><span>Recoger<small>Sin costo de envío</small></span></button>
+   <button className={mode==='delivery'?'selected':''} aria-pressed={mode==='delivery'} disabled={loading||options?.delivery_checkout_supported!==true||submitting||Boolean(pending)} onClick={()=>choose('delivery')}><Truck size={24}/><span>A domicilio<small>{options?.delivery_checkout_supported===true?'Según disponibilidad':'Sujeto a activación'}</small></span></button>
+   <button className={mode==='pickup'?'selected':''} aria-pressed={mode==='pickup'} disabled={loading||restaurant?.pickup_enabled!==true||submitting||Boolean(pending)} onClick={()=>choose('pickup')}><Store size={24}/><span>Recoger<small>Sin costo de envío</small></span></button>
   </div>
   {mode==='delivery'?<div className="mobile-checkout-address">
    <h3>Dirección de entrega</h3>{validAddress(address)?<p><MapPin size={18}/>{address.label}: {address.address}</p>:<p>No hay una dirección con coordenadas verificadas.</p>}
