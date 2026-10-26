@@ -45,7 +45,16 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     if(!response.ok){
       const details=body&&typeof body==='object'?body as Record<string,unknown>:null;
       const supplied=details?.detail??details?.error;
-      const msg=typeof supplied==='string'&&supplied.length<500?supplied:'No pudimos completar la solicitud.';
+      const known:Record<string,string>={
+        SELLER_CONNECT_NOT_APPROVED:'El restaurante todavía no está autorizado para recibir pedidos reales. Contacta al comercio.',
+        SELLER_CONNECT_NOT_READY:'El restaurante debe terminar de verificar su cuenta Stripe Connect antes de aceptar pedidos.',
+        SELLER_CONNECT_VERIFICATION_UNAVAILABLE:'No se pudo verificar el comercio en Stripe. No se creó el pedido.',
+        LIVE_FINANCIAL_RECONCILIATION_HOLD:'Stripe está conciliando pagos. No vuelvas a cobrar hasta verificar el estado.',
+        LIVE_CARD_CHECKOUT_NOT_APPROVED:'El pago con tarjeta LIVE no está habilitado para este comercio.',
+        PAYMENT_RECONCILIATION_REQUIRED:'El pago requiere revisión. Comprueba el pedido antes de intentar nuevamente.',
+      };
+      const msg=typeof supplied==='string'&&supplied.length<500
+        ?known[supplied]??supplied:'No pudimos completar la solicitud.';
       throw new ApiError(response.status,msg);
     }
     if(body===null&&raw==='')throw new ApiError(502,'El servidor respondió sin los datos esperados.');
@@ -84,8 +93,16 @@ export const api = {
   toggleFavorite: (id:number) => request<{favorite:boolean}>(`/platform/favorites/${id}`,json('POST')),
   restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
+  pickupReadiness: (restaurantId:number) => request<{
+    restaurant_id:number;order_type:'pickup';ready:boolean;
+    cash_enabled:boolean;stripe_enabled:boolean;reason:string;
+  }>(`/restaurants/${restaurantId}/pickup-readiness`),
   stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
   stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
+  stripePaymentStatus: (orderId:number) => request<{
+    order_id:number;provider:string;mode:'live'|'test';payment_status:string;
+    order_status:string;confirmed_by_server:boolean;amount:string;currency:string;
+  }>(`/payments/stripe/orders/${orderId}/status`),
   liveOrder: (orderId:number) => request<{order:Order}>(`/v11/orders/${orderId}/live`),
   customerOrderChat: (id:number) => request<{id?:number;sender_id:number;message:string;created_at?:string}[]>(`/platform/orders/${id}/chat`),
   sendCustomerOrderChat: (id:number,message:string) => request<{id?:number;sender_id:number;message:string;created_at?:string}>(`/platform/orders/${id}/chat`,json('POST',{message,message_type:'text',media_url:''})),
@@ -115,6 +132,24 @@ export const api = {
   ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
+  ownerCompletePickup: (id:number,pin:string) => request<Order>(`/owner/orders/${id}/complete`,
+    json('POST',{pin,photo_url:''})),
+  adminConnectMap: (restaurantId:number,stripeAccountId:string) =>
+    request<{restaurant_id:number;status:string}>('/admin/finance/connect-map',
+      json('POST',{restaurant_id:restaurantId,stripe_account_id:stripeAccountId})),
+  adminConnectStatus: (restaurantId:number) => request<{
+    restaurant_id:number;owner_approved:boolean;charges_enabled:boolean;
+    transfers_active:boolean;payouts_enabled:boolean;details_submitted:boolean;
+    transfer_automation_enabled:boolean;
+  }>(`/admin/finance/connect/${restaurantId}/status`),
+  ownerConnectStatus: (restaurantId:number) => request<{
+    owner_approved:boolean;transfers_active:boolean;
+    payouts_enabled:boolean;details_submitted:boolean;ready?:boolean;
+  }>(`/owner/finance/connect/${restaurantId}/status`),
+  ownerConfirmConnect: (restaurantId:number) => request<{owner_confirmed:boolean}>(
+    `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
+  ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
+    `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
   ownerUpdateRestaurant: (body:{is_open:boolean}) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
