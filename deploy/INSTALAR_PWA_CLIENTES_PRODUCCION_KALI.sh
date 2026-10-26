@@ -10,7 +10,7 @@ BRANCH='feat/mobile-parity-v1046-navigation'
 SITE='https://web-talaeats.alan-palacios-dev.com'
 TMP="$(mktemp -d)"
 trap 'rm -rf -- "$TMP"' EXIT
-for name in curl bash git grep readlink python3;do
+for name in curl bash git grep readlink python3 cmp;do
  command -v "$name" >/dev/null || { echo "CUSTOMER_PWA_ABORT=MISSING:$name";exit 1; }
 done
 
