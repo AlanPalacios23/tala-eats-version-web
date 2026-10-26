@@ -1,5 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {pwaInstallPlatform} from '../src/components/CustomerPwaInstall';
 import {validVapidPublicKey,vapidToBytes} from '../src/lib/web-push';
 const read=(p:string)=>readFileSync(new URL(p,import.meta.url),'utf8');
@@ -38,6 +40,18 @@ describe('Real browser Web Push — authenticated opt-in, no mock delivery',()=>
   expect(account).toContain('Notificaciones del navegador');
   expect(css).toContain('.mobile-push-preferences{');
   expect(pwaInstallPlatform('Mozilla Android')).toBe('android');
+ });
+ it('verifies Kali check script parses and remains read-only in --check mode',()=>{
+  const path=fileURLToPath(new URL('../deploy/INSTALAR_WEB_PUSH_TALA_EATS_KALI.sh',import.meta.url));
+  const source=read('../deploy/INSTALAR_WEB_PUSH_TALA_EATS_KALI.sh');
+  expect(source).toContain("if [[ \"$MODE\" == '--check' ]]");
+  expect(source).toContain('WEB_PUSH_CHECK_READ_ONLY=PASS');
+  expect(source).toContain("WEB_PUSH_DEPLOY=HOLD_BACKEND_NOT_READY");
+  expect(source).not.toContain('||{');
+  if(process.platform!=='win32'){
+   const check=spawnSync('bash',['-n',path],{encoding:'utf8'});
+   expect(check.status,check.stderr).toBe(0);
+  }
  });
  it('background push comes only from server payload and notification clicks stay same origin',()=>{
   expect(sw).toContain("self.addEventListener('push'");
