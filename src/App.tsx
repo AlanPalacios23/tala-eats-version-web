@@ -212,7 +212,7 @@ function Merchant(){
   {connectError&&<p role="alert" className="mobile-address-error">{connectError}</p>}
   {connectState&&!connectState.owner_approved&&
    <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void confirmConnectOwner()}>Confirmar titularidad del negocio</button>}
-  {connectState.owner_approved&&!connectReady&&
+  {connectState?.owner_approved&&!connectReady&&
    <button type="button" className="btn outline" disabled={connectBusy} onClick={()=>void openConnectOnboarding()}>Completar registro Stripe Connect</button>}
   <button type="button" className="btn outline small" disabled={connectBusy} onClick={()=>setConnectTick(x=>x+1)}>Volver a consultar</button>
  </section></div>}
