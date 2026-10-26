@@ -1106,3 +1106,46 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 .customer-shell .mobile-product-sheet button:focus-visible{
  outline:3px solid #e75012;outline-offset:2px;
 }
+
+/* Mobile checkout transparency and input dialog safety */
+.customer-shell .mobile-quote-status{
+ display:flex;align-items:center;gap:8px;
+ background:#fff;border:1px solid #eae4df;border-radius:13px;
+ padding:11px 13px;margin:8px 0 12px;
+ color:#5d5752;font:600 13px/1.35 Roboto,Arial,sans-serif;
+}
+.customer-shell .mobile-quote-status svg{flex:0 0 16px;color:#ce3c0a}
+.customer-shell .mobile-quote-status:has(.spin){
+ background:#fff7f2;border-color:#f8ddcf;
+}
+.customer-shell .mobile-address-warning{
+ padding:11px 13px;border-radius:12px;
+ background:#fff0e9;border:1px solid #ffd4bd;
+ color:#773716;font:600 13px/1.5 Roboto,Arial,sans-serif;
+}
+.customer-shell .mobile-address-choice:disabled{opacity:.62;cursor:not-allowed}
+.customer-shell .mobile-address-delete{
+ border-radius:13px;flex:0 0 44px;min-height:44px;
+}
+.customer-shell .mobile-address-delete:hover{background:#fff0e8;color:#ae3210}
+.customer-shell .mobile-address-delete:focus-visible{
+ outline:3px solid #ce3c0a;outline-offset:2px;
+}
+.customer-shell .mobile-product-sheet .mobile-sheet-body{
+ min-height:0;overscroll-behavior:contain;
+ -webkit-overflow-scrolling:touch;
+}
+.customer-shell .mobile-checkout-input:focus-visible,
+.customer-shell .mobile-address-sheet input:focus-visible{
+ outline:2px solid #ce3c0a;outline-offset:2px;
+}
+@media(max-height:620px){
+ .customer-shell .mobile-product-sheet{max-height:94dvh}
+ .customer-shell .mobile-product-sheet .mobile-sheet-photo{aspect-ratio:16/6}
+ .customer-shell .mobile-product-sheet .mobile-sheet-actions{
+  flex:0 0 auto;padding-bottom:max(12px,env(safe-area-inset-bottom));
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .customer-shell .mobile-quote-status .spin{animation:none}
+}
