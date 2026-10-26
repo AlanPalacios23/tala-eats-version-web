@@ -121,6 +121,14 @@ export const api = {
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
   ownerCompletePickup: (id:number,pin:string) => request<Order>(`/owner/orders/${id}/complete`,
     json('POST',{pin,photo_url:''})),
+  ownerConnectStatus: (restaurantId:number) => request<{
+    owner_approved:boolean;transfers_active:boolean;
+    payouts_enabled:boolean;details_submitted:boolean;ready?:boolean;
+  }>(`/owner/finance/connect/${restaurantId}/status`),
+  ownerConfirmConnect: (restaurantId:number) => request<{owner_confirmed:boolean}>(
+    `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
+  ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
+    `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
   ownerUpdateRestaurant: (body:{is_open:boolean}) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
