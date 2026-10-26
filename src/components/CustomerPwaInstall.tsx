@@ -84,7 +84,7 @@ export function CustomerPwaInstallNotice(){
  const close=()=>{setOpen(false);markSeen();};
  async function install(){
   const event=promptEvent.current;
-  if(!event){setHelp(true);return;}
+  if(!event){if(help)close();else setHelp(true);return;}
   promptEvent.current=null;setCanPrompt(false);
   setBusy(true);
   try{
