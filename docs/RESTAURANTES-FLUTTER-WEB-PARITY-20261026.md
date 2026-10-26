@@ -13,7 +13,7 @@ Fuente nativa: AlanPalacios23/tala-eats-mobile/tala-eats-restaurante/app/lib (ma
 - Navegación móvil con cinco destinos, escritorio con secciones completas y diseño responsive.
 
 ## Dependencias o paridad parcial (no declarar operativas)
-- GPS/direcciones geocodificadas: el campo de texto no representa una coordenada de entrega. Verificar lat/lng y rutas LIVE.
+- Ubicación: ya admite latitud/longitud reales y captura GPS por consentimiento explícito en el navegador. Aún falta la pantalla de mapa/pin y la validación de tarifas de domicilio con backend LIVE.
 - Equipo: POST /owner/employees asocia un usuario existente, pero el backend continúa protegiendo operaciones owner-only; probar permisos reales por empleado.
 - 2FA: se admite OTP al inicio de sesión; no hay ruta pública de configuración Node confirmada aquí.
 - Retiros/transferencias automáticas: no habilitados; el neto contable no es un saldo bancario disponible.
