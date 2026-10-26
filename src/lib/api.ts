@@ -240,7 +240,7 @@ export const api = {
     `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
   ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
     `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
-  ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'cuisine'|'eta_min'|'is_open'|'pickup_enabled'|'address'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
+  ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'cuisine'|'eta_min'|'is_open'|'pickup_enabled'|'address'|'lat'|'lng'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'|'category'|'allergens'|'dietary_tags'|'is_combo'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean;allergens?:string;dietary_tags?:string;is_combo?:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
   driverProfile: () => request<DriverProfile>('/driver/profile'),
