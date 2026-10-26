@@ -1,5 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {CUSTOMER_PWA_HELP_EVENT,CUSTOMER_PWA_INSTALL_NOTICE_KEY,isCustomerInstallRoute,isInstalledPwa,pwaInstallPlatform,shouldShowCustomerPwaOffer} from '../src/components/CustomerPwaInstall';
 const read=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
 const main=read('../src/main.tsx');
@@ -56,6 +58,19 @@ describe('first-visit Tala Eats customer PWA installation',()=>{
   expect(manifest.description).toContain('domicilio');
   expect(manifest.display).toBe('standalone');
   expect(manifest.icons).toHaveLength(2);
+ });
+ it('production installer has valid shell syntax and pins/validates the public release',()=>{
+  const text=read('../deploy/INSTALAR_PWA_CLIENTES_PRODUCCION_KALI.sh');
+  expect(text).toContain('TALA_EXPECTED_WEB_SHA="$SHA"');
+  expect(text).toContain('CUSTOMER_PWA_PUBLIC=PASS');
+  expect(text).toContain('CUSTOMER_PWA_BACKEND_PAYMENTS_POSTGRES_CLOUDFLARED=UNMODIFIED');
+  expect(text).toContain("cmp \"$ACTIVE/sw.js\" \"$TMP/public-sw.js\"");
+  if(process.platform!=='win32'){
+   const script=fileURLToPath(new URL('../deploy/INSTALAR_PWA_CLIENTES_PRODUCCION_KALI.sh',import.meta.url));
+   const result=spawnSync('bash',['-n',script],{encoding:'utf8'});
+   expect(result.status).toBe(0);
+   expect(result.stderr).toBe('');
+  }
  });
  it('is mobile and keyboard accessible, preserves the offline shell and does not cache API',()=>{
   expect(css).toContain('.customer-pwa-install-notice{');
