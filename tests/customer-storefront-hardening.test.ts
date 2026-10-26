@@ -11,6 +11,8 @@ const mobile=read('CustomerMobile.tsx');
 const commerce=read('CustomerCommerce.tsx');
 const checkout=read('CustomerCheckout.tsx');
 const orders=read('CustomerOrders.tsx');
+const addresses=read('CustomerAddresses.tsx');
+const apiSource=readFileSync(new URL('../src/lib/api.ts',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/App.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/main.css',import.meta.url),'utf8');
 
@@ -113,6 +115,38 @@ describe('Tala Eats Usuarios Web — visual and functional fixes',()=>{
   expect(orders).toContain("order.status!=='cancelled'&&order.payment_method==='stripe'");
   expect(orders).toContain('Consultar estado del pago con tarjeta');
   expect(orders).not.toContain('Completa Stripe TEST si está habilitado');
+ });
+ it('prevents duplicate address writes after uncertain network outcomes',()=>{
+  expect(addresses).toContain('if(busy||uncertain)return');
+  expect(addresses).toContain('setUncertain(true)');
+  expect(addresses).toContain('disabled={busy||uncertain}');
+  expect(addresses).toContain('previouslyFocused?.focus()');
+  expect(addresses).toContain('mobile-address-warning');
+  expect(addresses).not.toContain('rows.length<=1)return');
+ });
+ it('debounces server quotes and blocks confirm until backend quote is verified',()=>{
+  expect(checkout).toContain('window.setTimeout(()=>');
+  expect(checkout).toContain('},350)');
+  expect(checkout).toContain('window.clearTimeout(timer)');
+  expect(checkout).toContain('quote?.fingerprint===key');
+  expect(checkout).toContain('disabled={!ready}');
+  expect(checkout).toContain('Total verificado por el servidor');
+  expect(checkout).not.toContain('Envío según distancia GPS');
+ });
+ it('never fabricates success on a timed-out network call or reuses favorites across users',()=>{
+  expect(apiSource).toContain("method==='GET'?25000:45000");
+  expect(apiSource).toContain('const controller=new AbortController()');
+  expect(apiSource).toContain('throw new ApiError(408');
+  expect(apiSource).not.toContain('return fetch(BASE');
+  expect(mobile).toContain('activeUserRef.current===userId');
+  expect(mobile).toContain('setPending(null);setError');
+ });
+ it('shows accurate capacity feedback on merchant cards and adapts to tablets',()=>{
+  expect(commerce).toContain("const remaining=remainingForVariant(cart,item,'')");
+  expect(commerce).toContain('Máximo en tu carrito');
+  expect(css).toContain('@media(min-width:900px)');
+  expect(css).toContain('grid-template-columns:repeat(2,minmax(0,1fr))');
+  expect(css).toContain('max-height:94dvh');
  });
  it('keeps persistent mobile checkout and cart CTAs clear of bottom navigation',()=>{
   expect(css).toContain('.customer-shell .mobile-commerce-cartbar{');
