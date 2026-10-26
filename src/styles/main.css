@@ -910,3 +910,34 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
  .customer-photo-auth,.customer-food-screen{min-height:540px}
  .customer-photo-auth{overflow-y:auto}
 }
+
+/* Portal principal / — solo marca, tres accesos y dos enlaces legales.
+   Scope root-only: no altera Usuarios, Restaurantes ni Repartidores. */
+.gateway.gateway-minimal .gateway-header{justify-content:flex-start}
+.gateway.gateway-minimal .gateway-main{
+ justify-content:center;
+ padding-top:clamp(18px,4vh,54px);
+ padding-bottom:clamp(24px,5vh,70px);
+}
+.gateway.gateway-minimal .gateway-portals{max-width:1120px}
+.gateway.gateway-minimal .gateway-footer{
+ display:flex;justify-content:center;align-items:center;
+ gap:clamp(18px,5vw,55px);flex-wrap:wrap;
+ padding:22px clamp(18px,4.7vw,78px) max(25px,env(safe-area-inset-bottom));
+ border-top:1px solid #303030;
+}
+.gateway.gateway-minimal .gateway-footer a{
+ display:inline-flex;align-items:center;min-height:44px;
+ color:#c1c1c1;font-size:clamp(12px,1.5vw,14px);
+ font-weight:600;text-decoration:none;
+}
+.gateway.gateway-minimal .gateway-footer a:hover,
+.gateway.gateway-minimal .gateway-footer a:focus-visible{
+ color:#ff8129;text-decoration:underline;text-underline-offset:4px;
+}
+@media(max-width:600px){
+ .gateway.gateway-minimal .gateway-header{padding:20px 22px}
+ .gateway.gateway-minimal .gateway-main{padding:22px 22px 34px}
+ .gateway.gateway-minimal .gateway-footer{padding:16px 18px 22px;gap:12px 24px}
+ .gateway.gateway-minimal .gateway-portal{min-height:112px}
+}
