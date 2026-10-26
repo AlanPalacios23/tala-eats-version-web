@@ -9,7 +9,7 @@ Fuente nativa: AlanPalacios23/tala-eats-mobile/tala-eats-restaurante/app/lib (ma
 - Modo cocina: comandas por etapas, artículos y avance protegido según pago conciliado.
 - Menú: buscar, categorías, CRUD real, stock, disponibilidad, descripción, alérgenos, combo, fotos y eliminación condicionada por backend.
 - Más: editar restaurante y tiempo de preparación, dirección textual, foto de portada, apertura/recogida, equipo y permisos.
-- Finanzas: datos reales de /owner/finance, sin inventar liquidaciones. Activación Stripe Connect por consentimiento real.
+- Finanzas: datos reales de /owner/finance, sin inventar liquidaciones; selector Hoy/7 días/30 días solo para conteos de pedidos en muestra de hasta 200 (no lo confundir con reportes contables por periodo). Activación Stripe Connect por consentimiento real.
 - Navegación móvil con cinco destinos, escritorio con secciones completas y diseño responsive.
 
 ## Dependencias o paridad parcial (no declarar operativas)
