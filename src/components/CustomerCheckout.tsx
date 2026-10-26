@@ -98,13 +98,18 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   return()=>{active=false;};
  },[restaurantId,userId,refresh]);
  const address=addresses.find(a=>a.is_default)??addresses[0];
- const sellerApproved=stripeConfig?.environment!=='production'||sellerReadiness?.ready===true;
- const cashEnabled=sellerApproved&&
-   (stripeConfig?.environment!=='production'||sellerReadiness?.cash_enabled===true)&&
-   checkoutAllowed(options,mode,'cash');
- const stripeEnabled=sellerApproved&&
-   (stripeConfig?.environment!=='production'||sellerReadiness?.stripe_enabled===true)&&
-   stripePaymentAllowed(options,stripeConfig,mode);
+ // A missing Stripe environment response is never permission to take cash
+ // in production. Both live methods require this merchant's Connect approval.
+ const trustedEnvironment=stripeConfig?.environment==='production'||
+   stripeConfig?.environment==='staging';
+ const sellerApproved=trustedEnvironment&&
+   (stripeConfig?.environment==='staging'||sellerReadiness?.ready===true);
+ const cashEnabled=Boolean(sellerApproved&&
+   (stripeConfig?.environment==='staging'||sellerReadiness?.cash_enabled===true)&&
+   checkoutAllowed(options,mode,'cash'));
+ const stripeEnabled=Boolean(sellerApproved&&
+   (stripeConfig?.environment==='staging'||sellerReadiness?.stripe_enabled===true)&&
+   stripePaymentAllowed(options,stripeConfig,mode));
  const stripeMode=stripePaymentMode(options,stripeConfig,mode);
  const canUse=method==='cash'?cashEnabled:stripeEnabled;
  const selectedRequest=useMemo(()=>{
