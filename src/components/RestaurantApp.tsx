@@ -13,14 +13,20 @@ import {normalizePickupPin} from '../lib/pickup-handoff';
 import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant.css';
+import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
+import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
 
 const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
+ {id:'inicio',label:'Inicio',Icon:LayoutDashboard},
  {id:'pedidos',label:'Pedidos',Icon:ShoppingBag},
- {id:'menu',label:'Mi menú',Icon:UtensilsCrossed},
- {id:'activacion',label:'Mi negocio',Icon:BadgeCheck},
+ {id:'cocina',label:'Cocina',Icon:ChefHat},
+ {id:'menu',label:'Menú',Icon:UtensilsCrossed},
  {id:'finanzas',label:'Finanzas',Icon:Wallet},
+ {id:'activacion',label:'Activación',Icon:BadgeCheck},
+ {id:'mas',label:'Más',Icon:SlidersHorizontal},
 ];
+const bottomTabs=allTabs.filter(t=>['inicio','pedidos','cocina','menu','mas'].includes(t.id));
 function MerchantBrand(){return <Link className="rp-brand" to="/" aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
 function Notice({message,kind='info'}:{message:string;kind?:'info'|'error'|'success'}){
  return <div role={kind==='error'?'alert':'status'} className={'rp-notice '+kind}>
@@ -278,7 +284,7 @@ type Stats={orders:number;delivered:number;gross_sales:number;inventory_low:numb
 export function RestaurantWorkspace(){
  const {user,logout}=useSession();
  const navigate=useNavigate();
- const [tab,setTab]=useState<MerchantTab>('pedidos');
+ const [tab,setTab]=useState<MerchantTab>('inicio');
  const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[orders,setOrders]=useState<Order[]>([]);
  const [stats,setStats]=useState<Stats|null>(null),[finance,setFinance]=useState<MerchantFinance|null>(null);
  const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
@@ -409,6 +415,9 @@ export function RestaurantWorkspace(){
     !restaurant?<section className="rp-panel-card"><h2>No tienes un restaurante asignado</h2><p>Solicita el alta y aprobación administrativa. Ninguna cuenta recibe permisos de comercio automáticamente.</p>
      <Link to="/restaurante/alta" className="rp-btn primary">Ver activación <ArrowRight size={18}/></Link></section>:
     <>
+     {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
+     {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
+     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
      {tab==='pedidos'&&<>
       <div className="rp-heading-row"><div><span className="rp-eyebrow">OPERACIÓN EN TIEMPO REAL</span><h2>Pedidos</h2>
        <p>Recibe, prepara y entrega solo pedidos autorizados por el backend.</p></div>
@@ -518,7 +527,7 @@ export function RestaurantWorkspace(){
     </>}
    </main>
    <nav className="rp-mobile-tabs" aria-label="Navegación móvil de restaurantes">
-    {allTabs.map(({id,label,Icon})=><button key={id} className={tab===id?'selected':''}
+    {bottomTabs.map(({id,label,Icon})=><button key={id} className={tab===id?'selected':''}
       aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={21}/><span>{label}</span></button>)}
    </nav>
   </div>
