@@ -70,6 +70,16 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 }
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+export interface MerchantApplication {
+  id:number;user_id:number;entity_type:'restaurant'|'driver';
+  business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
+  notes:string;created_at:string;updated_at:string;
+}
+export interface MerchantFinance {
+  restaurant_id:number;commercial_plan:string;commission_rate:string;
+  gross_food_sales:string;commission:string;net_payable:string;orders:number;
+  payouts:Array<{id:number;amount:string;status:string;period_start:string;period_end:string}>;
+}
 export const api = {
   login: (email: string, password: string, otp?: string) => request<AuthResponse>('/auth/login',json('POST',{email,password,...(otp?{otp}:{})})),
   register: (name: string, email: string, password: string) => request<AuthResponse>('/auth/register',json('POST',{name,email,password})),
@@ -128,6 +138,16 @@ export const api = {
   })),
   byReference: (ref: string) => request<Order>(`/orders/by-reference/${encodeURIComponent(ref)}`),
   myOrders: () => request<Order[]>('/orders/mine?limit=100&offset=0'),
+  restaurantOnboardingMine: () => request<MerchantApplication[]>('/onboarding/mine'),
+  restaurantOnboardingSubmit: (businessName:string,taxId:string) => request<MerchantApplication>(
+    '/onboarding',json('POST',{
+      entity_type:'restaurant',business_name:businessName,tax_id:taxId,
+      vehicle:'',payout_account_ref:'',documents:[],
+    })),
+  adminRestaurantApplications: () => request<MerchantApplication[]>('/admin/onboarding'),
+  adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
+    request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
+  ownerFinance: () => request<MerchantFinance>('/owner/finance'),
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
@@ -150,7 +170,7 @@ export const api = {
     `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
   ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
     `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
-  ownerUpdateRestaurant: (body:{is_open:boolean}) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
+  ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'is_open'|'pickup_enabled'|'address'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
   driverProfile: () => request<DriverProfile>('/driver/profile'),
