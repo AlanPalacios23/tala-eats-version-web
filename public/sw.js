@@ -12,7 +12,7 @@ self.addEventListener('activate',event=>{
 });
 self.addEventListener('fetch',event=>{
  const req=event.request;
- if(req.method!=='GET')return;
+ if (req.method !== 'GET') return;
  const url=new URL(req.url);
  if(url.origin!==self.location.origin||url.pathname.startsWith('/api/')||
     url.pathname.startsWith('/__')||url.pathname.includes('/payments/'))return;
