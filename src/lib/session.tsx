@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { PropsWithChildren } from 'react';
 import { api, ApiError } from './api';
 import type { User } from './types';
+import {clearForeignWebPush,revokeWebPushBeforeLogout} from './web-push';
 
 interface Session {user:User|null;loading:boolean;login:(email:string,password:string,otp?:string)=>Promise<void>;register:(name:string,email:string,password:string)=>Promise<void>;logout:()=>Promise<void>;refresh:()=>Promise<void>;}
 const SessionContext=createContext<Session|null>(null);
@@ -55,8 +56,12 @@ export function SessionProvider({children}:PropsWithChildren){
   const verified=await api.me();
   if(current===epoch.current){setUser(verified);setLoading(false);booted.current=true;}
  };
+ useEffect(()=>{
+  if(user?.id)void clearForeignWebPush(user.id);
+ },[user?.id]);
  const logout=async()=>{
   const current=++epoch.current;
+  if(user?.id)await revokeWebPushBeforeLogout(user.id);
   try{await api.logout();if(current===epoch.current)setUser(null);}
   finally{if(current===epoch.current){setLoading(false);booted.current=true;}}
  };
