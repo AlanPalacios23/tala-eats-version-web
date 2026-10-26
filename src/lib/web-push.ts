@@ -58,8 +58,18 @@ function subscriptionPayload(sub:PushSubscription) {
  return {endpoint,p256dh,auth,platform:'web',device_label:'Tala Eats PWA'};
 }
 async function registration():Promise<ServiceWorkerRegistration> {
- const found=await navigator.serviceWorker.getRegistration('/');
- return found??navigator.serviceWorker.register('/sw.js',{scope:'/'});
+ let reg=await navigator.serviceWorker.getRegistration('/');
+ if(!reg)reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+ if(reg.active)return reg;
+ let timer:ReturnType<typeof setTimeout>|null=null;
+ try{
+  return await Promise.race([
+   navigator.serviceWorker.ready,
+   new Promise<never>((_,reject)=>{
+    timer=setTimeout(()=>reject(new Error('El servicio PWA no se activó. Cierra y vuelve a abrir Tala Eats.')),15000);
+   })
+  ]);
+ }finally{if(timer!==null)clearTimeout(timer);}
 }
 export async function enableWebPush(userId:number,config:WebPushConfig):Promise<void> {
  if(!Number.isSafeInteger(userId)||userId<=0)throw new Error('Inicia sesión para activar las notificaciones.');
