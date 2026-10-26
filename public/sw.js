@@ -44,3 +44,48 @@ self.addEventListener('fetch',event=>{
   })));
  }
 });
+
+
+/* Push payloads are sent from the backend worker, never synthesized by JS
+   timers. The notification click navigates ONLY within the same PWA origin. */
+function safePushRoute(raw){
+ try{
+  const url=new URL(typeof raw==='string'?raw:'/notificaciones',self.location.origin);
+  if(url.origin!==self.location.origin)return '/notificaciones';
+  if(url.pathname==='/notificaciones')return url.pathname;
+  if(/^\/pedidos\/[1-9][0-9]{0,11}$/.test(url.pathname))return url.pathname;
+  return '/notificaciones';
+ }catch{return '/notificaciones';}
+}
+self.addEventListener('push',event=>{
+ event.waitUntil((async()=>{
+  let body={};
+  try{body=event.data?event.data.json():{};}catch{body={};}
+  if(!body||typeof body!=='object'||Array.isArray(body))body={};
+  const title=typeof body.title==='string'?body.title.slice(0,90):'Tala Eats';
+  const message=typeof body.body==='string'?body.body.slice(0,240):'Tienes una actualización en tu cuenta.';
+  const url=safePushRoute(body.url);
+  await self.registration.showNotification(title,{
+   body:message,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',
+   tag:typeof body.tag==='string'?body.tag.slice(0,90):undefined,
+   data:{url},renotify:false
+  });
+ })());
+});
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();
+ const url=safePushRoute(event.notification.data?.url);
+ event.waitUntil((async()=>{
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  for(const client of windows){
+   try{
+    if(new URL(client.url).origin===self.location.origin){
+     await client.navigate(url);
+     await client.focus();
+     return;
+    }
+   }catch{/* Best effort; fall back to a new PWA window. */}
+  }
+  await self.clients.openWindow(url);
+ })());
+});
