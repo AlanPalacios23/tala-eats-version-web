@@ -18,6 +18,7 @@ import { CustomerAddresses } from './components/CustomerAddresses';
 import { CustomerProfile } from './components/CustomerProfile';
 import { LEGAL_LINKS } from './lib/legal-links';
 import { CustomerStripeTest } from './components/CustomerStripeTest';
+import { normalizePickupPin, validPickupPin } from './lib/pickup-handoff';
 import { AdminPickupConnect } from './components/AdminPickupConnect';
 import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
@@ -155,7 +156,7 @@ function Merchant(){
  async function completePickup(order:Order){
   if(busy||order.order_type!=='pickup'||order.status!=='ready')return;
   const pin=pickupPins[order.id]??'';
-  if(!/^\d{4}$/.test(pin)){setMessage('Solicita el PIN de 4 dígitos al cliente al entregar el pedido.');return;}
+  if(!validPickupPin(pin)){setMessage('Solicita el PIN de 4 dígitos al cliente al entregar el pedido.');return;}
   if(order.payment_method==='cash'&&!cashConfirmed[order.id]){
    setMessage('Confirma que recibiste el efectivo antes de cerrar la recogida.');return;
   }
@@ -189,7 +190,7 @@ function Merchant(){
    <input type="password" inputMode="numeric" autoComplete="off" placeholder="4 dígitos"
     maxLength={4} pattern="[0-9]{4}" aria-label={'PIN de recogida pedido '+o.id}
     value={pickupPins[o.id]??''} disabled={busy}
-    onChange={e=>setPickupPins(v=>({...v,[o.id]:e.target.value.replace(/\D/g,'').slice(0,4)}))}/>
+    onChange={e=>setPickupPins(v=>({...v,[o.id]:normalizePickupPin(e.target.value)}))}/>
   </label>
   {o.payment_method==='cash'&&<label className="checkbox-label">
    <input type="checkbox" checked={cashConfirmed[o.id]===true} disabled={busy}
