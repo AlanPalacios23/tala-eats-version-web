@@ -194,3 +194,35 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
  </div>;
 }
+
+/** Flutter Finanzas offers Hoy/Semana/Mes. Node /owner/finance is all-time.
+ * Show explicitly partial activity (last 200 fetched orders) rather than
+ * representing an approximate UI subtotal as an authoritative ledger.
+ */
+export function MerchantFinanceActivity({orders}:{orders:Order[]}){
+ const [period,setPeriod]=useState<'today'|'week'|'month'>('today');
+ const tz='America/Mexico_City';
+ const localDay=(d:Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+ const today=localDay(new Date());
+ const now=Date.now();
+ const since=period==='week'?now-7*24*60*60*1000:now-30*24*60*60*1000;
+ const sample=orders.filter(o=>{
+  if(o.status!=='delivered')return false;
+  const timestamp=Date.parse(o.created_at);
+  return Number.isFinite(timestamp)&&(period==='today'?localDay(new Date(timestamp))===today:timestamp>=since);
+ });
+ return <section className="rp-panel-card rm-finance-activity" aria-labelledby="rm-finance-activity-title">
+  <div className="rm-heading-row"><div><h3 id="rm-finance-activity-title">Actividad de pedidos consultados</h3><p className="rp-muted">Muestra de hasta 200 pedidos recientes, no es un reporte contable del periodo.</p></div>
+   <div className="rp-order-filters" aria-label="Periodo de actividad">
+    {([['today','Hoy'],['week','7 días'],['month','30 días']] as const).map(([id,name])=><button key={id} onClick={()=>setPeriod(id)} className={period===id?'selected':''} aria-pressed={period===id}>{name}</button>)}
+   </div>
+  </div>
+  <div className="rm-finance-activity-summary"><span>Entregados encontrados en la muestra</span><strong>{sample.length}</strong></div>
+  <div className="rm-team-list">{sample.slice(0,10).map(o=><div key={o.id}>
+   <span><strong>Pedido #{o.id}</strong><small>{new Date(o.created_at).toLocaleDateString('es-MX',{timeZone:tz})}</small></span>
+   <b>Entregado</b></div>)}
+   {sample.length===0&&<p className="rp-muted">No hay pedidos entregados en los registros consultados de este periodo.</p>}
+  </div>
+  <p className="rp-legal">Los importes oficiales de comisiones, ventas y neto contable se muestran por separado desde /owner/finance. La fecha de pedidos se calcula con zona horaria de Jalisco.</p>
+ </section>;
+}
