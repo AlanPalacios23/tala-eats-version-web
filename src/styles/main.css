@@ -1149,3 +1149,25 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 @media(prefers-reduced-motion:reduce){
  .customer-shell .mobile-quote-status .spin{animation:none}
 }
+
+/* Tablet / desktop storefront: use the viewport rather than a phone-sized strip. */
+@media(min-width:900px){
+ .customer-shell .mobile-commerce{max-width:1060px}
+ .customer-shell .mobile-commerce-hero{aspect-ratio:21/8;border-radius:0 0 30px 30px}
+ .customer-shell .mobile-commerce-info{padding:28px 32px 12px}
+ .customer-shell .mobile-commerce-categories{padding:16px 32px}
+ .customer-shell .mobile-commerce-dishes{
+  padding:12px 32px 50px;
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;
+ }
+ .customer-shell .mobile-commerce-cartbar{
+  left:max(24px,calc((100% - 1012px)/2));
+  right:max(24px,calc((100% - 1012px)/2));
+ }
+}
+@media(max-width:410px){
+ .customer-shell .mobile-commerce-info{padding:18px 16px 6px}
+ .customer-shell .mobile-merchant-meta{gap:7px 12px}
+ .customer-shell .mobile-commerce-metadata{gap:8px}
+ .customer-shell .mobile-checkout-products>div{min-width:0;overflow-wrap:anywhere}
+}
