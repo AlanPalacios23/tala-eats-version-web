@@ -35,7 +35,7 @@ function installedInBrowser():boolean {
 }
 export function CustomerPwaInstallNotice(){
  const {pathname}=useLocation();
- const [open,setOpen]=useState(false),[help,setHelp]=useState(false);
+ const [open,setOpen]=useState(false),[help,setHelp]=useState(false),[manual,setManual]=useState(false);
  const [canPrompt,setCanPrompt]=useState(false),[installed,setInstalled]=useState(()=>typeof window!=='undefined'&&installedInBrowser());
  const [platform]=useState(()=>typeof navigator==='undefined'?'other':pwaInstallPlatform(navigator.userAgent));
  const [busy,setBusy]=useState(false);
@@ -76,12 +76,12 @@ export function CustomerPwaInstallNotice(){
   if(PREVIEW_READONLY)return;
   const showHelp=()=>{
    if(installedInBrowser())return;
-   setOpen(true);setHelp(true);
+   setOpen(true);setHelp(true);setManual(true);
   };
   window.addEventListener(CUSTOMER_PWA_HELP_EVENT,showHelp);
   return()=>window.removeEventListener(CUSTOMER_PWA_HELP_EVENT,showHelp);
  },[]);
- const close=()=>{setOpen(false);markSeen();};
+ const close=()=>{setOpen(false);setManual(false);markSeen();};
  async function install(){
   const event=promptEvent.current;
   if(!event){if(help)close();else setHelp(true);return;}
@@ -95,7 +95,7 @@ export function CustomerPwaInstallNotice(){
   }catch{setHelp(true);}
   finally{setBusy(false);}
  }
- if(PREVIEW_READONLY||installed||!open||!eligible)return null;
+ if(PREVIEW_READONLY||installed||!open||(!eligible&&!manual))return null;
  return <aside className="customer-pwa-install-notice" aria-label="Instala la aplicación de Tala Eats">
   <img className="customer-pwa-install-icon" src="/icons/icon-192.png" alt="" width="54" height="54"/>
   <div className="customer-pwa-install-copy">
