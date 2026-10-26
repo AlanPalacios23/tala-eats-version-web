@@ -22,6 +22,7 @@ import { CustomerOrderChat } from './components/CustomerOrderChat';
 import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
+import {CustomerPwaInstallMenuButton} from './components/CustomerPwaInstall';
 
 function ExternalLegalRedirect({href}:{href:string}){
  useEffect(()=>{window.location.replace(href)},[href]);
@@ -45,19 +46,6 @@ function Spinner(){return <div className="loading"><RefreshCw className="spin" s
 function SectionTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){return <div className="section-title"><span className="eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;}
 function EmptyState({icon,title,description,action}:{icon:ReactNode;title:string;description:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{description}</p>{action}</div>;}
 function StateTag({state}:{state:string}){const tags:Record<string,string>={received:'Recibido',confirmed:'Confirmado',preparing:'Preparando',ready:'Listo',assigned:'Asignado',picked_up:'Recogido',on_the_way:'En camino',delivered:'Entregado',cancelled:'Cancelado',awaiting_payment:'Esperando pago'};return <span className={'status status-'+state}>{tags[state]??state}</span>;}
-function InstallPWA(){
- const [prompt,setPrompt]=useState<(Event & {prompt:()=>Promise<void>})|null>(null);
- const [ios,setIos]=useState(false);
- useEffect(()=>{
-  const show=(event:Event)=>{event.preventDefault();setPrompt(event as Event & {prompt:()=>Promise<void>});};
-  window.addEventListener('beforeinstallprompt',show);
-  setIos(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches);
-  return()=>window.removeEventListener('beforeinstallprompt',show);
- },[]);
- if(prompt)return <button className="text-button install" onClick={()=>{void prompt.prompt();setPrompt(null);}}>Instalar la app</button>;
- if(ios)return <span className="install-tip" title="En Safari: Compartir → Agregar a inicio">Agregar a inicio desde Safari</span>;
- return null;
-}
 function AppHeader({count}:{count:number}){
  const session=useSession();const [menuOpen,setMenuOpen]=useState(false);const location=useLocation();
  useEffect(()=>setMenuOpen(false),[location.pathname]);
@@ -67,7 +55,7 @@ function AppHeader({count}:{count:number}){
    <NavLink to="/clientes">Explorar</NavLink><NavLink to="/pedidos">Mis pedidos</NavLink>
    <NavLink to="/restaurante">Restaurantes</NavLink><NavLink to="/repartidor">Repartidores</NavLink>
   </nav>
-  <div className="header-actions"><InstallPWA/>
+  <div className="header-actions"><CustomerPwaInstallMenuButton/>
     <Link className="header-cart" to="/carrito" aria-label={'Carrito con '+count+' artículos'}><ShoppingBag size={21}/>{count>0&&<span className="cart-dot">{count}</span>}</Link>
     {session.user?<Link className="user-pill" to="/cuenta"><UserRound size={18}/><span>{session.user.name.split(' ')[0]}</span></Link>:<Link className="user-pill" to="/acceso"><LogIn size={18}/><span>Entrar</span></Link>}
     <button className="icon-button nav-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Abrir menú">{menuOpen?<X size={22}/>:<Menu size={22}/>}</button>
