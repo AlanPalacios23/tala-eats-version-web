@@ -35,3 +35,6 @@
 @media(max-width:1370px){.rm-kitchen-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:980px){.rm-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rm-duo{grid-template-columns:1fr}.rm-team-form{grid-template-columns:1fr 1fr}.rm-team-form button{grid-column:1/-1}}
 @media(max-width:680px){.rm-heading-row{align-items:start;flex-direction:column}.rm-kitchen-grid{grid-template-columns:1fr}.rm-status-card{flex-wrap:wrap}.rm-status-card .rp-btn{width:100%}.rm-metrics{gap:9px}.rm-metrics>div{padding:16px}.rm-metrics strong{font-size:30px}.rm-quick{gap:7px}.rm-quick button{padding:12px}.rm-team-form{grid-template-columns:1fr}.rm-team-form button{grid-column:auto}}
+
+.rm-location-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:490px){.rm-location-fields{grid-template-columns:1fr}}
