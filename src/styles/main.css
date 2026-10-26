@@ -1241,3 +1241,45 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
 @media(prefers-reduced-motion:reduce){
  .customer-pwa-install-notice{scroll-behavior:auto}
 }
+
+
+/* Real, explicitly opted-in Web Push preferences for authenticated customers. */
+.mobile-push-preferences{
+ background:#fff;border:1px solid #ede7e0;border-radius:22px;
+ padding:18px;margin:12px 0 20px;box-shadow:0 8px 24px #391e0809;
+}
+.mobile-push-title{display:flex;align-items:flex-start;gap:12px}
+.mobile-push-title>svg{
+ flex:0 0 22px;color:#d64c12;margin-top:3px;
+}
+.mobile-push-title h2{
+ margin:0 0 4px;font:800 17px/1.3 Roboto,Arial,sans-serif;
+ color:#191919;
+}
+.mobile-push-title p,.mobile-push-disclosure{
+ font:500 12px/1.5 Roboto,Arial,sans-serif;
+ color:#6b645e;margin:0 0 12px;
+}
+.mobile-push-toggle{
+ width:100%;min-height:48px;
+ border:1px solid #c63c0c;background:#ce3c0a;color:white;
+ border-radius:13px;cursor:pointer;
+ font:800 14px/1.35 Roboto,Arial,sans-serif;
+ margin:7px 0 11px;
+}
+.mobile-push-toggle.active{
+ color:#9b3512;background:#fff9f4;
+}
+.mobile-push-toggle:disabled{opacity:.5;cursor:not-allowed}
+.mobile-push-toggle:focus-visible{outline:3px solid #d54f12;outline-offset:3px}
+.mobile-push-ok,.mobile-push-error{
+ font:600 12px/1.45 Roboto,Arial,sans-serif;
+ padding:10px 12px;border-radius:11px;margin:5px 0 10px;
+}
+.mobile-push-ok{background:#ecfff4;color:#185b3b}
+.mobile-push-error{background:#fff0ec;color:#922e14}
+.mobile-push-preferences .mobile-push-disclosure{margin:4px 0 0}
+@media(max-width:360px){
+ .mobile-push-preferences{padding:14px;border-radius:17px}
+ .mobile-push-title h2{font-size:16px}
+}
