@@ -7,7 +7,7 @@ import { PREVIEW_READONLY } from './lib/preview';
 import { EMPTY_CART, CUSTOMER_CART_STORAGE_KEY, restoreCustomerCart, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
-import type { MenuItem } from './lib/types';
+import type { MenuItem, Order } from './lib/types';
 import { CustomerHome, CustomerSearch } from './components/CustomerMobile';
 import { CustomerCommerce } from './components/CustomerCommerce';
 import { isMarketCode, PILOT_MARKET } from './lib/markets';
