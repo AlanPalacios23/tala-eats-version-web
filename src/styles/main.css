@@ -941,3 +941,135 @@ html:has(.customer-shell),body:has(.customer-shell),#root:has(.customer-shell){h
  .gateway.gateway-minimal .gateway-footer{padding:16px 18px 22px;gap:12px 24px}
  .gateway.gateway-minimal .gateway-portal{min-height:112px}
 }
+
+/* Usuarios Web — premium minimal food storefront and mobile hardening.
+   No decorative banners or fabricated menu content. Styles only scoped
+   to the consumer customer-shell, never the minimal corporate portal. */
+.customer-shell .mobile-home,
+.customer-shell .mobile-search-page{max-width:920px}
+.customer-shell .mobile-home-top{margin-bottom:20px}
+.customer-shell .mobile-greeting{margin:18px 0 4px}
+.customer-shell .mobile-greeting h1{
+ font-size:clamp(28px,4vw,37px);letter-spacing:-1.25px;line-height:1.1;
+}
+.customer-shell .mobile-search-pill,
+.customer-shell .mobile-search-input{
+ background:#fff;border:1px solid #e9e5e1;border-radius:18px;
+ box-shadow:0 7px 26px #24160b09;color:#6d6864;
+}
+.customer-shell .mobile-search-pill{font-weight:600;min-height:60px}
+.customer-shell .mobile-search-pill:focus-visible,
+.customer-shell .mobile-merchant-details:focus-visible,
+.customer-shell .mobile-merchant-photo:focus-visible,
+.customer-shell .mobile-commerce-categories button:focus-visible{
+ outline:3px solid #ee5a16;outline-offset:3px;
+}
+.customer-shell .mobile-section-heading{margin-bottom:16px}
+.customer-shell .mobile-customer-list{gap:18px}
+.customer-shell .mobile-merchant-card{
+ background:#fff;border:1px solid #ede9e5;border-radius:24px;
+ box-shadow:0 8px 26px #2f170912;padding:9px;overflow:hidden;
+ transition:box-shadow .18s ease,transform .18s ease;
+}
+.customer-shell .mobile-merchant-card:hover{
+ box-shadow:0 12px 32px #2f17091d;transform:translateY(-2px);
+}
+.customer-shell .mobile-merchant-photo{border-radius:17px;aspect-ratio:16/9}
+.customer-shell .mobile-merchant-details{padding:14px 8px 12px}
+.customer-shell .mobile-merchant-details strong{
+ font-size:clamp(17px,2vw,20px);letter-spacing:-.35px;
+}
+.customer-shell .mobile-merchant-details>span{
+ max-width:100%;display:-webkit-box;-webkit-line-clamp:2;
+ -webkit-box-orient:vertical;overflow:hidden;
+}
+.customer-shell .mobile-merchant-meta{gap:8px 16px}
+.customer-shell .mobile-merchant-meta small{
+ overflow-wrap:anywhere;min-width:0;line-height:1.35;
+}
+.customer-shell .mobile-favorite{
+ top:18px;right:18px;box-shadow:0 3px 16px #0002;
+}
+.customer-shell .mobile-favorites-error:empty{display:none}
+.customer-shell .mobile-status{
+ border:1px solid #e9e5e1;box-shadow:0 6px 26px #24160b08;
+}
+.customer-shell .mobile-search-helper{
+ color:#69635e;font-size:13px;line-height:1.5;
+ border-radius:12px;background:#fff6ef;padding:11px 13px;margin:0 0 16px;
+}
+.customer-shell .mobile-commerce{max-width:760px;background:#fafaf9}
+.customer-shell .mobile-commerce-hero{border-radius:0 0 28px 28px}
+.customer-shell .mobile-commerce-info{padding:24px 22px 5px}
+.customer-shell .mobile-commerce-info h1{font-size:clamp(26px,3.9vw,35px)}
+.customer-shell .mobile-commerce-metadata{gap:9px}
+.customer-shell .mobile-commerce-metadata span{
+ padding:7px 10px;border:1px solid #ebe7e2;border-radius:10px;
+ background:white;font-size:12px;max-width:100%;overflow-wrap:anywhere;
+}
+.customer-shell .mobile-commerce-categories{top:0;padding:12px 22px}
+.customer-shell .mobile-commerce-dishes{padding:10px 22px 36px}
+.customer-shell .mobile-dish-card{
+ border-color:#ebe5df;box-shadow:0 5px 22px #2a170809;
+ border-radius:22px;padding:17px;gap:16px;min-width:0;
+}
+.customer-shell .mobile-dish-details h3{font-size:17px}
+.customer-shell .mobile-dish-details strong{font-size:18px}
+.customer-shell .mobile-dish-photo{width:112px;height:112px;flex-basis:112px}
+.customer-shell .mobile-sheet-photo{border-radius:20px}
+.customer-shell .mobile-product-note{display:grid;gap:9px;margin:8px 0 12px}
+.customer-shell .mobile-product-note strong{font:700 15px/1.3 Roboto,Arial,sans-serif}
+.customer-shell .mobile-product-note small{color:#76716d;font-weight:500}
+.customer-shell .mobile-product-note textarea{
+ width:100%;min-height:83px;resize:vertical;margin:0;border:1px solid #e8e1db;
+ border-radius:14px;padding:13px 14px;background:#fffdfb;
+ font:500 14px/1.5 Roboto,Arial,sans-serif;color:#25211e;outline-color:#ee5a16;
+}
+.customer-shell .mobile-product-stock{
+ color:#65605c;font-size:12px;line-height:1.4;margin:0 0 6px;
+}
+.customer-shell .mobile-product-error{
+ color:#932e13;font-size:13px;line-height:1.45;
+ background:#fff0ea;padding:10px;border-radius:12px;margin:10px 0;
+}
+.customer-shell .mobile-checkout-card,
+.customer-shell .mobile-cart-entry{border-color:#e9e4df;box-shadow:0 5px 22px #24160b07}
+.customer-shell .mobile-checkout-card{padding:clamp(16px,3vw,22px)}
+.customer-shell .mobile-cart-entry{padding:clamp(14px,3vw,19px)}
+.customer-shell .mobile-checkout-fixed:focus-visible,
+.customer-shell .mobile-add-action:focus-visible,
+.customer-shell .mobile-stepper button:focus-visible{
+ outline:3px solid #ee5a16;outline-offset:3px;
+}
+@media(min-width:701px){
+ .customer-shell .mobile-home .mobile-customer-list,
+ .customer-shell .mobile-search-page .mobile-customer-list{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;
+ }
+ .customer-shell .mobile-customer-page.mobile-home,
+ .customer-shell .mobile-customer-page.mobile-search-page{padding-top:35px}
+}
+@media(max-width:700px){
+ .customer-shell .mobile-merchant-card{padding:8px;border-radius:20px}
+ .customer-shell .mobile-merchant-details{padding:12px 6px 8px}
+ .customer-shell .mobile-commerce-dishes{padding:8px 15px 36px}
+ .customer-shell .mobile-dish-photo{width:100px;height:100px;flex-basis:100px}
+ /* The always-visible bottom dock must not cover the order/checkout CTAs. */
+ .customer-shell .mobile-commerce-cartbar{
+  bottom:max(94px,calc(env(safe-area-inset-bottom) + 84px));
+ }
+ .customer-shell .mobile-cart>.mobile-checkout-fixed{
+  bottom:max(94px,calc(env(safe-area-inset-bottom) + 84px));
+ }
+ .customer-shell .mobile-checkout-actions{
+  bottom:max(94px,calc(env(safe-area-inset-bottom) + 84px));
+ }
+}
+@media(max-width:360px){
+ .customer-shell .mobile-dish-card{gap:10px;padding:12px}
+ .customer-shell .mobile-dish-photo{width:88px;height:88px;flex-basis:88px}
+ .customer-shell .mobile-sheet-actions{gap:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .customer-shell .mobile-merchant-card{transition:none;transform:none!important}
+}
