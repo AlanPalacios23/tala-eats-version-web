@@ -1,26 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, Clock3, MapPin, Minus, Plus, Store, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock3, MapPin, Minus, Plus, Store, X } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, pesos } from '../lib/api';
 import { CustomerPhoto } from './CustomerPhoto';
 import type { MenuItem, Restaurant } from '../lib/types';
-import { basketTotal } from '../lib/cart';
+import { basketTotal, remainingForVariant } from '../lib/cart';
 import type { Cart } from '../lib/cart';
 import type { MarketCode } from '../lib/markets';
 
-const CHOICES=['Sin cambios','Sin cebolla','Extra salsa','Bien cocido'] as const;
 function ProductPhoto({url,label}:{url?:string|null;label:string}){
  return <CustomerPhoto src={url} alt={label} fallback="🍔"/>;
 }
-function ProductSheet({item,merchant,onClose,onAdd}:{item:MenuItem;merchant:Restaurant;onClose:()=>void;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean}){
- const [quantity,setQuantity]=useState(1),[choice,setChoice]=useState('Sin cambios');
+function ProductSheet({item,merchant,cart,onClose,onAdd}:{item:MenuItem;merchant:Restaurant;cart:Cart;onClose:()=>void;onAdd:(item:MenuItem,quantity:number,note:string)=>boolean}){
+ const [quantity,setQuantity]=useState(1),[note,setNote]=useState(''),[addError,setAddError]=useState('');
  const closeRef=useRef<HTMLButtonElement>(null);
+ const onCloseRef=useRef(onClose);onCloseRef.current=onClose;
  useEffect(()=>{const old=document.body.style.overflow;document.body.style.overflow='hidden';closeRef.current?.focus();
-  const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();};
+  const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')onCloseRef.current();};
   document.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=old;document.removeEventListener('keydown',onKey);};
- },[onClose]);
- const max=Math.min(50,item.stock);
+ },[]);
+ const max=remainingForVariant(cart,item,note);
+ const effectiveQuantity=Math.min(quantity,max);
  return <div className="mobile-sheet-scrim" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
   <section className="mobile-product-sheet" role="dialog" aria-modal="true" aria-label={'Agregar '+item.name}>
    <div className="mobile-sheet-handle"/>
@@ -30,12 +31,13 @@ function ProductSheet({item,merchant,onClose,onAdd}:{item:MenuItem;merchant:Rest
     <h2>{item.name}</h2><p className="mobile-sheet-merchant">{merchant.name}</p>
     {item.description&&<p className="mobile-sheet-description">{item.description}</p>}
     <div className="mobile-sheet-price">{pesos(item.price)}</div>
-    <div className="mobile-sheet-preferences"><strong>Preferencias</strong><span>Opcional</span></div>
-    <div className="mobile-sheet-choices">{CHOICES.map(option=><button key={option} className={choice===option?'selected':''} onClick={()=>setChoice(option)} aria-pressed={choice===option}>{choice===option&&<Check size={15}/>} {option}</button>)}</div>
+    <label className="mobile-product-note"><strong>Indicaciones para el comercio <small>(opcional)</small></strong><textarea maxLength={200} rows={2} value={note} onChange={e=>{setNote(e.target.value);setAddError('');}} placeholder="Escribe indicaciones sobre este producto, si son necesarias…"/></label>
+    <p className="mobile-product-stock" role="status">{max>0?`Puedes agregar ${max} ${max===1?'unidad':'unidades'} más de esta presentación.`:'No quedan unidades disponibles para agregar en este carrito.'}</p>
+    {addError&&<p className="mobile-product-error" role="alert">{addError}</p>}
    </div>
    <div className="mobile-sheet-actions">
-    <div className="mobile-stepper"><button disabled={quantity<=1} aria-label="Quitar uno" onClick={()=>setQuantity(v=>Math.max(1,v-1))}><Minus size={18}/></button><strong>{quantity}</strong><button disabled={quantity>=max} aria-label="Agregar uno" onClick={()=>setQuantity(v=>Math.min(max,v+1))}><Plus size={18}/></button></div>
-    <button className="mobile-add-action" onClick={()=>{if(onAdd(item,quantity,choice==='Sin cambios'?'':choice))onClose();}}>Agregar · {pesos(Number(item.price)*quantity)}</button>
+    <div className="mobile-stepper"><button type="button" disabled={quantity<=1||max<1} aria-label="Quitar uno" onClick={()=>setQuantity(v=>Math.max(1,v-1))}><Minus size={18}/></button><strong>{max>0?effectiveQuantity:0}</strong><button type="button" disabled={quantity>=max||max<1} aria-label="Agregar uno" onClick={()=>setQuantity(v=>Math.min(max,v+1))}><Plus size={18}/></button></div>
+    <button type="button" className="mobile-add-action" disabled={max<1} onClick={()=>{if(onAdd(item,effectiveQuantity,note.trim()))onClose();else setAddError('No se agregó el producto. Revisa el inventario y el límite de tu carrito.');}}>Agregar · {pesos(Number(item.price)*effectiveQuantity)}</button>
    </div>
   </section>
  </div>;
@@ -58,7 +60,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
  const closeProduct=()=>{setSelected(null);if(params.has('platillo')){const next=new URLSearchParams(params);next.delete('platillo');setParams(next,{replace:true});}};
  const cats=useMemo(()=>['Todos',...new Set((merchant?.menu_items||[]).map(item=>item.category||'General'))],[merchant]);
  const dishes=(merchant?.menu_items||[]).filter(item=>category==='Todos'||(item.category||'General')===category);
- const canOrder=Boolean(merchant?.is_open&&merchant?.pickup_enabled);
+ const canOrder=Boolean(merchant?.is_open);
  const quantity=cart.restaurantId===restaurantId?cart.entries.reduce((n,e)=>n+e.quantity,0):0;
  return <div className="mobile-commerce" data-mobile-screen="restaurant">
   <div className="mobile-commerce-hero">
@@ -71,9 +73,9 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
     <h1>{merchant.name}</h1>
     <p>{merchant.cuisine||'Comercio local'}</p>
     {merchant.description&&<p className="mobile-commerce-about">{merchant.description}</p>}
-    <div className="mobile-commerce-metadata">{merchant.eta_min!=null&&<span><Clock3 size={16}/>{merchant.eta_min} min</span>}<span><MapPin size={16}/>{merchant.address||'Tala y región'}</span><span><Store size={16}/>Para recoger</span></div>
+    <div className="mobile-commerce-metadata">{merchant.eta_min!=null&&<span><Clock3 size={16}/>{merchant.eta_min} min</span>}<span><MapPin size={16}/>{merchant.address||'Tala y región'}</span>{merchant.pickup_enabled&&<span><Store size={16}/>Para recoger</span>}</div>
     {!merchant.is_open&&<div className="mobile-commerce-warning">Este comercio está cerrado por ahora. Puedes ver su menú y pedir cuando vuelva a abrir.</div>}
-    {merchant.is_open&&!merchant.pickup_enabled&&<div className="mobile-commerce-warning">Recoger en tienda no está disponible. El pedido a domicilio se habilitará cuando el backend lo autorice para Web.</div>}
+    {merchant.is_open&&!merchant.pickup_enabled&&<div className="mobile-commerce-warning">Este comercio no permite recoger en tienda. Consulta la disponibilidad de entrega a domicilio y pagos al finalizar tu pedido.</div>}
     <h2>Menú</h2>
    </div>
    <div className="mobile-commerce-categories" role="group" aria-label="Categorías">{cats.map(c=><button key={c} onClick={()=>setCategory(c)} aria-pressed={category===c} className={category===c?'selected':''}>{c}</button>)}</div>
@@ -85,7 +87,7 @@ export function CustomerCommerce({cart,onAdd,market}:{cart:Cart;onAdd:(item:Menu
     </article>;
    }):<div className="mobile-status"><Store size={30}/><h3>Menú en preparación</h3><p>Este comercio aún no tiene productos en esta categoría.</p></div>}</div>
    {quantity>0&&<Link to="/carrito" className="mobile-commerce-cartbar"><span>{quantity}</span><strong>Ver carrito</strong><strong>{pesos(basketTotal(cart))}</strong><ChevronRight size={21}/></Link>}
-   {selected&&<ProductSheet item={selected} merchant={merchant} onClose={closeProduct} onAdd={onAdd}/>}
+   {selected&&<ProductSheet item={selected} merchant={merchant} cart={cart} onClose={closeProduct} onAdd={onAdd}/>}
   </>}
  </div>;
 }
