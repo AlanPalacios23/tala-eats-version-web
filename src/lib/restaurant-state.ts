@@ -1,7 +1,7 @@
 import type {Order,Restaurant} from './types';
 import type {MerchantApplication} from './api';
 
-export type MerchantTab='pedidos'|'menu'|'activacion'|'finanzas';
+export type MerchantTab='inicio'|'pedidos'|'cocina'|'menu'|'finanzas'|'activacion'|'mas';
 export type MerchantConnectStatus={
  owner_approved:boolean;transfers_active:boolean;
  payouts_enabled:boolean;details_submitted:boolean;ready?:boolean;
