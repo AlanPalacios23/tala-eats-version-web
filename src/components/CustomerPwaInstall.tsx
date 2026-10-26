@@ -17,6 +17,9 @@ export function isCustomerInstallRoute(path:string):boolean {
  return ['/iniciar','/clientes','/buscar','/acceso'].includes(path);
 }
 export function isInstalledPwa(mq:boolean,standalone:boolean):boolean{return mq||standalone;}
+export function shouldShowCustomerPwaOffer(path:string,seen:boolean,installed:boolean,preview:boolean):boolean{
+ return isCustomerInstallRoute(path)&&!seen&&!installed&&!preview;
+}
 export function pwaInstallPlatform(agent:string):'ios'|'android'|'other' {
  if(/iPad|iPhone|iPod/i.test(agent)||/Macintosh/i.test(agent)&&/Mobile/i.test(agent))return 'ios';
  if(/Android/i.test(agent))return 'android';
@@ -64,7 +67,7 @@ export function CustomerPwaInstallNotice(){
   };
  },[]);
  useEffect(()=>{
-  if(PREVIEW_READONLY||installed||!eligible||alreadyOffered.current||localSeen())return;
+  if(!shouldShowCustomerPwaOffer(pathname,alreadyOffered.current||localSeen(),installed,PREVIEW_READONLY))return;
   // Show after initial onboarding paint, not over the first animation frame.
   const timer=window.setTimeout(()=>{
    if(installedInBrowser())return;
