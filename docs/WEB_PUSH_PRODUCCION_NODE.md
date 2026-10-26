@@ -13,7 +13,9 @@ Se implementó Web Push (NO FCM nativo) en el backend Python anterior:
 - Promociones requieren consentimiento de marketing independiente. La activación de notificaciones operativas no lo concede.
 
 ## Gate del backend Node.js de Kali
-No asumir que los endpoints antiguos de Python se replicaron. Primero comprobar sus rutas reales y que el worker Node consume el outbox y despacha push:
+**Confirmado en el código Node RC8.13 (26/10/2026):** la rama base `release/rc813-unified-live-20261024` tiene POST/DELETE de suscripciones, pero GET `/v11/push/config` devolvía `enabled:false` y no existía el worker Web Push. Se preparó una implementación aislada en [backend PR #160](https://github.com/AlanPalacios23/AlanPalacios23-tala-eats-backend/pull/160), todavía en DRAFT y apagada por defecto. La entrega real requiere migración, VAPID, un worker y prueba con móvil antes de habilitar LIVE.
+
+Verificar las rutas reales y que el worker Node consume notificaciones persistidas y despacha push:
 1. Configurar claves VAPID públicas/privadas en el entorno **solo del servidor**, y verificar que Node expone exactamente `GET /api/v1/v11/push/config` por el mismo dominio PWA.
 2. Implementar y probar registro, desactivación, autenticación, ownership, cifrado/protección de credenciales push, revocación de endpoint compartido, rotación de claves, expiración HTTP 404/410 y deduplicación idempotente.
 3. Vincular creación de notificaciones de pedido/estado/pago/entrega a la cola persistente; el worker debe usar VAPID y confirmar resultado por proveedor, reintentos acotados y sin duplicar envíos.
