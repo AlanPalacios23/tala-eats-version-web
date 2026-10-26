@@ -3,7 +3,7 @@ import type {FormEvent} from 'react';
 import {Link,useNavigate} from 'react-router-dom';
 import {ArrowLeft,ArrowRight,BadgeCheck,Check,ChefHat,Clock3,CreditCard,
  KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
- ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole} from 'lucide-react';
+ ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole,Download} from 'lucide-react';
 import {api,ApiError,pesos} from '../lib/api';
 import type {MerchantApplication,MerchantFinance} from '../lib/api';
 import {useSession} from '../lib/session';
@@ -34,6 +34,37 @@ function MerchantIntro({title,subtitle}:{title:string;subtitle:string}){
    <span><Check size={17}/> Menú y disponibilidad</span>
    <span><Check size={17}/> Stripe Connect seguro</span></div>
   <p className="rp-intro-caption">Una plataforma para operar tu comercio, no para crear pagos de prueba.</p>
+ </div>;
+}
+interface MerchantInstallPrompt extends Event{
+ prompt:()=>Promise<void>;
+ userChoice?:Promise<{outcome:'accepted'|'dismissed'}>;
+}
+function MerchantInstallButton(){
+ const deferred=useRef<MerchantInstallPrompt|null>(null);
+ const [available,setAvailable]=useState(false),[help,setHelp]=useState(false);
+ useEffect(()=>{
+  const onPrompt=(event:Event)=>{event.preventDefault();deferred.current=event as MerchantInstallPrompt;setAvailable(true);};
+  const onInstalled=()=>{deferred.current=null;setAvailable(false);setHelp(false);};
+  window.addEventListener('beforeinstallprompt',onPrompt);
+  window.addEventListener('appinstalled',onInstalled);
+  return()=>{
+   window.removeEventListener('beforeinstallprompt',onPrompt);
+   window.removeEventListener('appinstalled',onInstalled);
+  };
+ },[]);
+ async function install(){
+  const event=deferred.current;
+  if(!event){setHelp(v=>!v);return;}
+  deferred.current=null;setAvailable(false);
+  try{await event.prompt();await event.userChoice;}
+  catch{setHelp(true);}
+ }
+ if(PREVIEW_READONLY)return null;
+ return <div className="rp-install-wrap">
+  <button type="button" className="rp-btn outline small" onClick={()=>void install()}>
+   <Download size={16}/>{available?'Instalar app':'Instalar en mi equipo'}</button>
+  {help&&<p role="status" className="rp-install-help">En Chrome o Edge, utiliza «Instalar aplicación» del menú del navegador. En iPhone, Safari → Compartir → Añadir a pantalla de inicio.</p>}
  </div>;
 }
 export function RestaurantAccess(){
@@ -364,7 +395,7 @@ export function RestaurantWorkspace(){
    <header className="rp-topbar"><div><span className="rp-eyebrow">TALA EATS / RESTAURANTES</span>
     <h1>{restaurant?.name||'Panel de restaurante'}</h1>
     <p>{restaurant?.address||'Gestión operativa de tu comercio'}</p></div>
-    <div className="rp-top-actions">
+    <div className="rp-top-actions"><MerchantInstallButton/>
      <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
        {restaurant?.is_open?'Abierto':'Cerrado'}</span>
      <button type="button" className="rp-icon-btn" aria-label="Actualizar pedidos y negocio" onClick={()=>void refresh()}><RefreshCw size={20}/></button>
