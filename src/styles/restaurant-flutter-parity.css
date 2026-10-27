@@ -571,3 +571,36 @@
  .rp-layout .rm-flutter-switch-row{gap:7px!important;padding-inline:10px!important}
  .rp-layout .rm-flutter-switch-row>.rp-btn{padding-inline:8px;font-size:11px}
 }
+
+/* Flutter LoginScreen mobile parity: no marketing pane or brand noise, only
+   a centered 480px form with clear fields and an on-demand TOTP challenge. */
+.rp-flutter-login-brand{display:none}
+@media(max-width:839px){
+ .rp-auth-page{display:flex!important;justify-content:center;align-items:stretch;
+  background:#F1F2EF!important;min-height:100dvh}
+ .rp-auth-page .rp-intro{display:none!important}
+ .rp-auth-page .rp-access-card{width:100%;max-width:520px;
+  background:#F1F2EF!important;min-height:100dvh;justify-content:flex-start;
+  padding:calc(36px + env(safe-area-inset-top)) 20px
+   calc(36px + env(safe-area-inset-bottom))!important}
+ .rp-auth-page .rp-flutter-login-brand{display:block;margin-bottom:31px}
+ .rp-auth-page .rp-flutter-login-brand .rp-brand{color:#1C1D1B!important}
+ .rp-auth-page .rp-access-card>h2{font-size:clamp(30px,8.7vw,40px);
+  font-weight:830;line-height:1.12;letter-spacing:-.8px;margin:12px 0 11px}
+ .rp-auth-page .rp-access-card>p{font-size:15px;line-height:1.55;color:#525750}
+ .rp-auth-page .rp-access-card .rp-eyebrow{display:none}
+ .rp-auth-page .rp-muted-link{margin:0 0 16px;color:#525750;min-height:40px}
+ .rp-auth-page .rp-form{margin:27px 0 22px;gap:18px}
+ .rp-auth-page .rp-form label{font-size:14px;font-weight:700;gap:8px;color:#1C1D1B}
+ .rp-auth-page .rp-form label small{font-size:12px;color:#525750;line-height:1.4}
+ .rp-auth-page .rp-form input{font-size:16px;min-height:53px;
+  padding:13px 15px;border:1px solid #C9CCC5;border-radius:14px;
+  background:#fff;color:#1C1D1B}
+ .rp-auth-page .rp-form input:focus-visible{
+  border-color:#FF5A1F;outline:3px solid #FF5A1F55;outline-offset:0}
+ .rp-auth-page .rp-form .rp-btn.primary{background:#FF5A1F;
+  color:#1C1D1B;border-color:#FF5A1F;
+  border-radius:14px;min-height:54px;font-size:15px}
+ .rp-auth-page .rp-switch{width:100%;min-height:48px;color:#B53B0A;font-weight:750}
+ .rp-auth-page .rp-legal{line-height:1.5}
+}
