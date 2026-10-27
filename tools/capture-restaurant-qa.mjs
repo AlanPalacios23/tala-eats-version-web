@@ -112,8 +112,8 @@ for(const width of widths){
  page.on('pageerror',err=>{console.error('MERCANTE PAGE ERROR:',err.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-app="true"]').waitFor();
- if(width<840)await page.locator('.flutter-store-heading h2').waitFor({timeout:12000});
- else await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
+ // Flutter uses the same Inicio hierarchy on phone and on the wider shell.
+ await page.locator('.flutter-store-heading h2').waitFor({timeout:12000});
  if(BASE.endsWith('4174')){
   await page.locator('[data-merchant-standalone="true"]').waitFor();
   const foreign=await page.evaluate(()=>[...document.querySelectorAll('script[src]')].some(node=>node.getAttribute('src')?.includes('main.tsx')));
