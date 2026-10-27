@@ -331,6 +331,7 @@ export function RestaurantWorkspace(){
  const [busy,setBusy]=useState(false),[lastSync,setLastSync]=useState<Date|null>(null);
  const [pins,setPins]=useState<Record<number,string>>({}),[cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const mounted=useRef(true),requestVersion=useRef(0),busyRef=useRef(false);
+ const currentRestaurantId=useRef<number|null>(null);
  const refresh=useCallback(async()=>{
   const version=++requestVersion.current;
   setRefreshing(true);
@@ -341,6 +342,14 @@ export function RestaurantWorkspace(){
    if(!mounted.current||version!==requestVersion.current)return;
    if(!r||!Number.isSafeInteger(r.id)||!Array.isArray(o))
     throw new Error('El backend no devolvió los datos válidos del restaurante.');
+   if(o.some(order=>order.restaurant_id!==r.id))
+    throw new Error('Los pedidos no corresponden al restaurante autorizado.');
+   if(currentRestaurantId.current!==r.id){
+    // Discard approvals and balances belonging to the previous merchant.
+    currentRestaurantId.current=r.id;
+    setStats(null);setFinance(null);setConnect(null);setConnectError('');
+    setPins({});setCashConfirmed({});
+   }
    setRestaurant(r);setOrders(o);setError('');setSyncHealthy(true);
    setLoading(false);setLastSync(new Date());
    const [a,c,f]=await Promise.allSettled([
@@ -355,7 +364,9 @@ export function RestaurantWorkspace(){
    if(mounted.current&&version===requestVersion.current){
     // No assigned shop is a legitimate empty state, not a retry loop.
     if(e instanceof ApiError&&e.status===404){
+     currentRestaurantId.current=null;
      setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
+     setPins({});setCashConfirmed({});
      setSyncHealthy(true);setError('');
     }else{
      // Do not allow actions against stale orders after a server/session failure.
