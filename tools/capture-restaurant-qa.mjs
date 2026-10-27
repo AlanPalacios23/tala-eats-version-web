@@ -246,6 +246,22 @@ for(const width of widths){
     if(await week.getAttribute('aria-pressed')!=='true')throw Error('Wallet period switch failed');
    }
   }
+  if(name==='activacion'){
+   const status=page.getByRole('progressbar',{name:'Progreso de activación Stripe Connect'});
+   await status.waitFor();
+   if(await status.getAttribute('aria-valuemax')!=='5')
+    throw Error('Stripe Connect must report five server-gated activation steps');
+   if(await page.locator('.rp-connect-guide .rp-connect-steps li').count()!==5)
+    throw Error('Stripe Connect native wizard steps missing');
+   if(width===390){
+    const ready=page.locator('.rp-connect-state.ready');
+    if(!await ready.isVisible())throw Error('Backend-approved Connect must be shown as verified');
+    if(await page.getByRole('button',{name:'Confirmar mi titularidad'}).count())
+     throw Error('Owner consent must not repeat for an approved mapping');
+    if(await page.getByRole('button',{name:/Continuar de forma segura en Stripe/}).count())
+     throw Error('Cannot create a new Account Link for fully ready Stripe Connect');
+   }
+  }
   if(name==='pedidos'){
    if(await page.locator('.rp-order-lane').count()!==3)
     throw Error('Flutter Pedidos must group Nuevos, En cocina and Listos');
