@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from 'react';
-import {ArrowRight,ArrowDownToLine,CheckCircle2,Clock3,Info,RefreshCw,ShieldCheck,Wallet, X} from 'lucide-react';
+import {ArrowRight,RefreshCw,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {MerchantEarnings,MerchantFinance} from '../lib/api';
 import {merchantEarningTotals,merchantWithdrawalEnabled} from '../lib/merchant-wallet';
@@ -46,41 +46,41 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
   connect?.payouts_enabled&&connect?.details_submitted);
  return <div className="mw-screen" data-merchant-wallet="true">
   <header className="mw-heading">
-   <div><span className="mw-overline">MI COMERCIO</span><h2>Wallet</h2></div>
+   <div><h2>Wallet</h2></div>
    <button type="button" className="mw-refresh" aria-label="Actualizar Wallet"
     onClick={()=>void refresh()} disabled={loading}><RefreshCw size={19}/></button>
   </header>
   <section className="mw-balance" aria-labelledby="mw-balance-title">
-   <span className="mw-balance-mark"><Wallet size={18}/> TALA EATS WALLET</span>
+   
    <p id="mw-balance-title">Disponible para retirar</p>
    <strong aria-label="Saldo disponible aún no certificado">—</strong>
-   <span className="mw-balance-note"><ShieldCheck size={15}/> El backend aún no certifica un saldo retirable.</span>
+   <span className="mw-balance-note">Saldo pendiente de verificación.</span>
    <button type="button" className="mw-withdraw" onClick={()=>setWithdrawOpen(true)}
     aria-haspopup="dialog" aria-label="Retirar ganancias, consultar disponibilidad">
-    <ArrowDownToLine size={19}/> Retirar ganancias <ArrowRight size={17}/></button>
+    Retirar ganancias</button>
   </section>
   <section className="mw-summary" aria-label="Ganancias del comercio">
    <div>
     <span>Ganancias registradas</span>
     <strong>{loading?'Consultando…':totals?money(totals.registeredMinor):'—'}</strong>
-    <small>Asignaciones reportadas, no saldo bancario.</small>
+    <small>Según el servidor</small>
    </div>
    <div>
     <span>Neto contable</span>
     <strong>{finance?pesos(finance.net_payable):'—'}</strong>
-    <small>No significa fondos disponibles.</small>
+    <small>Sin conciliar para retiros</small>
    </div>
   </section>
-  {error&&<div className="mw-notice" role="alert"><Info size={17}/>{error}</div>}
+  {error&&<div className="mw-notice" role="alert">{error}</div>}
   {!connected&&<button type="button" className="mw-connect" onClick={()=>go('activacion')}>
-   <ShieldCheck size={19}/><span><strong>Completa tu cuenta de pagos</strong><small>Verifica titularidad y requisitos de Stripe Connect.</small></span><ArrowRight size={17}/>
+   <span><strong>Activar cuenta de pagos</strong></span><ArrowRight size={16}/>
   </button>}
   <section className="mw-activity">
-   <div className="mw-activity-heading"><h3>Movimientos</h3><span>Registros del servidor</span></div>
-   {loading?<p className="mw-empty" role="status"><RefreshCw size={16}/> Consultando movimientos…</p>:
+   <div className="mw-activity-heading"><h3>Movimientos</h3></div>
+   {loading?<p className="mw-empty" role="status">Consultando movimientos…</p>:
     totals&&totals.rows.length>0?
     <div className="mw-entries">{totals.rows.map(row=><div key={row.state} className="mw-entry">
-     <span className="mw-entry-icon"><Clock3 size={18}/></span>
+     
      <span className="mw-entry-copy"><strong>{statusLabel(row.state)}</strong><small>{row.orders} pedido(s) registrados</small></span>
      <b>{money(row.amountMinor)}</b>
     </div>)}</div>:
@@ -88,19 +88,19 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
    {finance?.payouts?.length?<>
     <h4>Liquidaciones reportadas</h4>
     <div className="mw-entries">{finance.payouts.map(p=><div className="mw-entry" key={p.id}>
-     <span className="mw-entry-icon"><CheckCircle2 size={18}/></span>
+     
      <span className="mw-entry-copy"><strong>Registro #{p.id}</strong><small>Estado: {p.status}</small></span>
      <b>{pesos(p.amount)}</b>
     </div>)}</div>
    </>:null}
   </section>
-  <p className="mw-disclaimer">Las ventas, las asignaciones retenidas y los cobros en efectivo no son automáticamente dinero disponible para retirar. Los saldos y transferencias bancarias necesitan conciliación real del servidor.</p>
+  
   {withdrawOpen&&<div className="mw-modal-backdrop" onClick={()=>setWithdrawOpen(false)}>
    <section className="mw-modal" role="dialog" aria-modal="true"
     aria-labelledby="mw-modal-title" onClick={e=>e.stopPropagation()}>
     <button className="mw-modal-close" type="button" aria-label="Cerrar información de retiro"
      onClick={()=>setWithdrawOpen(false)}><X size={21}/></button>
-    <span className="mw-modal-icon"><ArrowDownToLine size={25}/></span>
+    
     <h3 id="mw-modal-title">Retirar ganancias</h3>
     <p>{enabled?'Confirma el retiro con el servidor.':
      'Los retiros bancarios aún no están habilitados en Tala Eats Restaurantes.'}</p>
