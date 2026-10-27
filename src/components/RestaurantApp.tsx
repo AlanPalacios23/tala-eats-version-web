@@ -599,43 +599,73 @@ export function RestaurantWorkspace(){
 }
 function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
- const [name,setName]=useState(''),[price,setPrice]=useState(''),[stock,setStock]=useState(10),[category,setCategory]=useState('General'),[description,setDescription]=useState('');
+ const [name,setName]=useState(''),[price,setPrice]=useState(''),[stock,setStock]=useState(10);
+ const [category,setCategory]=useState('General'),[description,setDescription]=useState('');
  const [search,setSearch]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todos');
+ const [editingId,setEditingId]=useState<number|null>(null),[showAddForm,setShowAddForm]=useState(false);
  const categories=['Todos',...Array.from(new Set((restaurant.menu_items??[]).map(i=>i.category||'General')))];
- const shown=(restaurant.menu_items??[]).filter(i=>(selectedCategory==='Todos'||(i.category||'General')===selectedCategory)&&(i.name+' '+(i.description??'')).toLocaleLowerCase('es-MX').includes(search.trim().toLocaleLowerCase('es-MX')));
+ const shown=(restaurant.menu_items??[]).filter(i=>(selectedCategory==='Todos'||(i.category||'General')===selectedCategory)
+  &&(i.name+' '+(i.description??'')).toLocaleLowerCase('es-MX').includes(search.trim().toLocaleLowerCase('es-MX')));
+ const nameGood=name.trim().length>=2;
+ const priceGood=/^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,2})?$/.test(price)&&Number(price)>0;
+ const stockGood=Number.isInteger(stock)&&stock>=0&&stock<=100000;
  async function add(event:FormEvent){
   event.preventDefault();
-  if(name.trim().length<2||!/^[0-9]+(\.[0-9]{1,2})?$/.test(price)||Number(price)<=0)return;
+  if(busy||!nameGood||!priceGood||!stockGood)return;
   const ok=await run(()=>api.ownerAddItem({name:name.trim(),price,stock,category:category.trim()||'General',
    description:description.trim(),is_available:true}),'Producto agregado al catálogo del restaurante.');
-  if(ok){setName('');setPrice('');setDescription('');}
+  if(ok){setName('');setPrice('');setDescription('');setShowAddForm(false);}
  }
- return <><div className="rp-heading-row"><div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
-   <p>Edita precios, stock y productos directamente en el servidor.</p></div><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span></div>
+ return <section className="rp-catalog">
+  <div className="rp-heading-row rp-catalog-heading">
+   <div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
+    <p>Productos, precios y existencias sincronizados con el servidor.</p></div>
+   <div className="rp-catalog-heading-actions"><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span>
+    <button className="rp-btn primary" type="button" onClick={()=>{setShowAddForm(p=>!p);setEditingId(null);}}>
+     <Plus size={17}/>{showAddForm?'Cerrar formulario':'Nuevo producto'}</button></div>
+  </div>
   <div className="rp-order-controls rp-menu-controls">
-    <label><SearchIcon size={18}/><input aria-label="Buscar productos" placeholder="Buscar productos" value={search} onChange={e=>setSearch(e.target.value)}/></label>
-    <div className="rp-order-filters" aria-label="Filtrar categorías">{categories.map(cat=><button key={cat} className={selectedCategory===cat?'selected':''} aria-pressed={selectedCategory===cat} onClick={()=>setSelectedCategory(cat)}>{cat}</button>)}</div>
+   <label><SearchIcon size={18}/><input aria-label="Buscar productos" placeholder="Buscar por nombre o descripción"
+     value={search} onChange={e=>setSearch(e.target.value)}/></label>
+   <div className="rp-order-filters" aria-label="Filtrar categorías">
+    {categories.map(cat=><button type="button" key={cat} className={selectedCategory===cat?'selected':''}
+     aria-pressed={selectedCategory===cat} onClick={()=>setSelectedCategory(cat)}>{cat}</button>)}
    </div>
-  <div className="rp-menu-grid">{shown.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}/>)}</div>
-  {shown.length===0&&(restaurant.menu_items??[]).length>0&&<p className="rp-muted">No hay productos para esta búsqueda o categoría.</p>}
-  {(restaurant.menu_items??[]).length===0&&<div className="rp-panel-card"><p>Tu negocio todavía no tiene productos. Agrega el primero para que aparezca en el catálogo.</p></div>}
-  <section className="rp-panel-card rp-menu-new"><div className="rp-card-top"><Plus size={23}/><h3>Agregar producto</h3></div>
+  </div>
+  {showAddForm&&<section className="rp-panel-card rp-menu-new">
+   <div className="rp-card-top"><Plus size={22}/><h3>Nuevo producto</h3></div>
+   <p className="rp-muted">Registra tu producto con precio y stock reales. Puedes subir su fotografía después de crearlo.</p>
    <form className="rp-form rp-product-form" onSubmit={e=>void add(e)}>
     <label>Nombre<input required minLength={2} maxLength={150} value={name}
       onChange={e=>setName(e.target.value)} placeholder="Hamburguesa clásica"/></label>
-    <label>Precio MXN<input required inputMode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?"
+    <label>Precio MXN<input required inputMode="decimal" pattern="[0-9]+(\\.[0-9]{1,2})?"
       value={price} onChange={e=>setPrice(e.target.value)} placeholder="89.00"/></label>
     <label>Stock<input required type="number" min={0} max={100000} step={1}
       value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
     <label>Categoría<input maxLength={100} value={category} onChange={e=>setCategory(e.target.value)}/></label>
-    <label className="rp-product-wide">Descripción<input value={description}
+    <label className="rp-product-wide">Descripción<textarea value={description} rows={3}
       onChange={e=>setDescription(e.target.value)} placeholder="Ingredientes y detalles"/></label>
-    <button className="rp-btn primary" type="submit" disabled={busy}><Plus size={16}/> Agregar al menú</button>
+    <div className="rp-product-wide rp-product-cta">
+     <button className="rp-btn primary" type="submit" disabled={busy||!nameGood||!priceGood||!stockGood}><Plus size={16}/> Publicar producto</button>
+     <button className="rp-btn outline" type="button" onClick={()=>setShowAddForm(false)}>Cancelar</button>
+    </div>
    </form>
-  </section></>;
+  </section>}
+  {shown.length>0?<div className="rp-menu-grid rp-catalog-grid">
+   {shown.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}
+    editing={editingId===item.id}
+    onEdit={()=>{setEditingId(v=>v===item.id?null:item.id);setShowAddForm(false);}}
+    onClose={()=>setEditingId(null)}/>)}
+  </div>:<div className="rp-panel-card rp-catalog-empty">
+   <UtensilsCrossed size={30}/><h3>{(restaurant.menu_items??[]).length?'Sin coincidencias':'Tu menú está vacío'}</h3>
+   <p>{(restaurant.menu_items??[]).length?'Prueba otra búsqueda o categoría.':'Agrega tu primer producto para que aparezca en el catálogo.'}</p>
+   {search&&<button className="rp-btn outline small" onClick={()=>{setSearch('');setSelectedCategory('Todos');}}>Limpiar filtros</button>}
+  </div>}
+ </section>;
 }
-function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
- run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>}){
+function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:boolean;
+ run:(fn:()=>Promise<unknown>,message:string)=>Promise<boolean>;
+ editing:boolean;onEdit:()=>void;onClose:()=>void}){
  const [price,setPrice]=useState(item.price),[stock,setStock]=useState(item.stock);
  const [available,setAvailable]=useState(item.is_available);
  const [productName,setProductName]=useState(item.name),[description,setDescription]=useState(item.description??'');
@@ -644,42 +674,81 @@ function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
  const [photo,setPhoto]=useState<File|null>(null),[imageBroken,setImageBroken]=useState(false);
  const safePhoto=safeImage(item.image_url);
  useEffect(()=>{setImageBroken(false);},[safePhoto]);
- useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);
+ useEffect(()=>{
+  if(editing)return;
+  setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);
   setProductName(item.name);setDescription(item.description??'');setCategory(item.category??'General');
-  setAllergens(item.allergens??'');setIsCombo(item.is_combo??false);
- },[item.id,item.price,item.stock,item.is_available,item.name,item.description,item.category,item.allergens,item.is_combo]);
- function save(){
-  if(!/^[0-9]+(\\.[0-9]{1,2})?$/.test(price)||Number(price)<=0||!Number.isInteger(stock)||stock<0||productName.trim().length<2)return;
-  void run(()=>api.ownerUpdateItem(item.id,{name:productName.trim(),description:description.trim(),category:category.trim(),allergens:allergens.trim(),is_combo:isCombo,price,stock,is_available:available}),
-   'Producto actualizado en el servidor.');
+  setAllergens(item.allergens??'');setIsCombo(item.is_combo??false);setPhoto(null);
+ },[editing,item.id,item.price,item.stock,item.is_available,item.name,item.description,item.category,item.allergens,item.is_combo]);
+ const priceValid=/^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,2})?$/.test(price)&&Number(price)>0;
+ const stockValid=Number.isInteger(stock)&&stock>=0&&stock<=100000;
+ const valid=productName.trim().length>=2&&priceValid&&stockValid;
+ async function save(){
+  if(busy||!valid)return;
+  const ok=await run(()=>api.ownerUpdateItem(item.id,{name:productName.trim(),description:description.trim(),
+   category:category.trim()||'General',allergens:allergens.trim(),is_combo:isCombo,price,stock,
+   is_available:available}),'Producto actualizado en el servidor.');
+  if(ok)onClose();
  }
- function remove(){
+ async function remove(){
   if(!window.confirm('¿Eliminar '+item.name+' del catálogo? El backend bloqueará la eliminación si está asociado a pedidos históricos.'))return;
-  void run(()=>api.ownerDeleteItem(item.id),'Producto eliminado tras validar historial en el servidor.');
+  const ok=await run(()=>api.ownerDeleteItem(item.id),'Producto eliminado tras validar historial en el servidor.');
+  if(ok)onClose();
  }
  async function upload(){
   if(!photo||busy)return;
   const ok=await run(()=>api.ownerUploadItemPhoto(item.id,photo),'Foto del producto publicada desde el backend.');
   if(ok)setPhoto(null);
  }
- return <article className="rp-menu-item">
-  <div className="rp-menu-visual">{safePhoto&&!imageBroken?<img src={safePhoto} alt="" loading="lazy" onError={()=>setImageBroken(true)}/>:<ChefHat size={30}/>}</div>
-  <div className="rp-menu-details">
-   <label className="rp-menu-edit-label">Nombre<input maxLength={150} value={productName} onChange={e=>setProductName(e.target.value)}/></label>
-   <div className="rp-menu-inputs">
-    <label>Precio MXN<input value={price} inputMode="decimal" onChange={e=>setPrice(e.target.value)}/></label>
-    <label>Existencias<input type="number" min={0} step={1} value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
-    <label>Categoría<input value={category} maxLength={100} onChange={e=>setCategory(e.target.value)}/></label>
-    <label>Alérgenos<input value={allergens} maxLength={300} onChange={e=>setAllergens(e.target.value)}/></label>
+ return <article className={'rp-menu-item rp-catalog-item '+(editing?'is-editing':'')} data-product-id={item.id}>
+  <div className="rp-catalog-topline">
+   <div className="rp-menu-visual">{safePhoto&&!imageBroken?
+    <img src={safePhoto} alt="" loading="lazy" onError={()=>setImageBroken(true)}/>:<ChefHat size={30}/>}</div>
+   <div className="rp-catalog-product">
+    <strong>{item.name}</strong><small>{item.category||'General'}</small>
+    <b className="rp-catalog-price">{pesos(item.price)}</b>
    </div>
-   <label className="rp-menu-edit-label">Descripción<textarea value={description} maxLength={1000} rows={2} onChange={e=>setDescription(e.target.value)}/></label>
-   <div className="rp-menu-actions">
-    <label className="rp-cash-check"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/> Disponible</label>
-    <label className="rp-cash-check"><input type="checkbox" checked={isCombo} onChange={e=>setIsCombo(e.target.checked)}/> Es un combo</label>
+   <div className="rp-catalog-product-actions">
+    <span className={'rp-catalog-stock '+(!item.is_available||item.stock===0?'paused':item.stock<10?'low':'')}>
+     {!item.is_available?'Pausado':item.stock===0?'Agotado':item.stock<10?'Stock bajo: '+item.stock:'Stock: '+item.stock}</span>
+    <button type="button" className="rp-btn outline small" disabled={busy} onClick={onEdit}
+      aria-expanded={editing} aria-controls={'rp-product-editor-'+item.id}>
+     {editing?'Cerrar':'Editar'}</button>
    </div>
-   <div className="rp-menu-photo"><input type="file" accept="image/jpeg,image/png,image/webp" aria-label={'Foto para '+item.name} onChange={e=>setPhoto(e.target.files?.[0]??null)}/><button className="rp-btn outline small" disabled={!photo||busy} onClick={()=>void upload()}>Subir foto</button></div>
-   <div className="rp-menu-actions"><button className="rp-btn primary small" disabled={busy||productName.trim().length<2} onClick={save}>Guardar cambios</button>
-    <button className="rp-btn quiet small" disabled={busy} onClick={remove}>Eliminar</button></div>
   </div>
+  {editing&&<div id={'rp-product-editor-'+item.id} className="rp-catalog-editor">
+   <form onSubmit={e=>{e.preventDefault();void save();}} className="rp-catalog-form">
+    <div className="rp-menu-inputs">
+     <label>Nombre<input maxLength={150} minLength={2} required value={productName}
+      onChange={e=>setProductName(e.target.value)}/></label>
+     <label>Precio MXN<input value={price} required inputMode="decimal" onChange={e=>setPrice(e.target.value)}/></label>
+     <label>Existencias<input type="number" min={0} max={100000} step={1} value={stock}
+      onChange={e=>setStock(Number(e.target.value))}/></label>
+     <label>Categoría<input value={category} maxLength={100} onChange={e=>setCategory(e.target.value)}/></label>
+     <label>Alérgenos<input value={allergens} maxLength={300} onChange={e=>setAllergens(e.target.value)}/></label>
+    </div>
+    <label className="rp-menu-edit-label">Descripción<textarea value={description} maxLength={1000} rows={3}
+     onChange={e=>setDescription(e.target.value)}/></label>
+    <div className="rp-menu-actions">
+     <label className="rp-cash-check"><input type="checkbox" checked={available}
+      onChange={e=>setAvailable(e.target.checked)}/> Disponible</label>
+     <label className="rp-cash-check"><input type="checkbox" checked={isCombo}
+      onChange={e=>setIsCombo(e.target.checked)}/> Es un combo</label>
+    </div>
+    <div className="rp-menu-actions rp-catalog-save">
+     <button type="submit" className="rp-btn primary small" disabled={!valid||busy}>Guardar cambios</button>
+     <button type="button" className="rp-btn outline small" disabled={busy} onClick={onClose}>Cancelar</button>
+     <button type="button" className="rp-btn quiet small" disabled={busy} onClick={()=>void remove()}>Eliminar</button>
+    </div>
+   </form>
+   <div className="rp-menu-photo">
+    <span className="rp-menu-edit-label">Fotografía del producto</span>
+    <input type="file" accept="image/jpeg,image/png,image/webp" aria-label={'Foto para '+item.name}
+     onChange={e=>setPhoto(e.target.files?.[0]??null)}/>
+    <button type="button" className="rp-btn outline small" disabled={!photo||busy}
+     onClick={()=>void upload()}>Subir foto</button>
+    <small className="rp-muted">Formato JPG, PNG o WEBP · hasta 5 MB.</small>
+   </div>
+  </div>}
  </article>;
 }
