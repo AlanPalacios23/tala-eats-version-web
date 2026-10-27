@@ -293,13 +293,11 @@ export function RestaurantWorkspace(){
  const [connectError,setConnectError]=useState('');
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [syncHealthy,setSyncHealthy]=useState(false),[refreshing,setRefreshing]=useState(false);
- const refreshLock=useRef(false);
+
  const [busy,setBusy]=useState(false),[lastSync,setLastSync]=useState<Date|null>(null);
  const [pins,setPins]=useState<Record<number,string>>({}),[cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const mounted=useRef(true),requestVersion=useRef(0),busyRef=useRef(false);
  const refresh=useCallback(async()=>{
-  if(refreshLock.current)return;
-  refreshLock.current=true;
   const version=++requestVersion.current;
   setRefreshing(true);
   try{
@@ -321,12 +319,17 @@ export function RestaurantWorkspace(){
    setFinance(f.status==='fulfilled'?f.value:null);
   }catch(e){
    if(mounted.current&&version===requestVersion.current){
-    // Do not allow actions against stale orders after a server/session failure.
-    setSyncHealthy(false);
-    setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
+    // No assigned shop is a legitimate empty state, not a retry loop.
+    if(e instanceof ApiError&&e.status===404){
+     setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
+     setSyncHealthy(true);setError('');
+    }else{
+     // Do not allow actions against stale orders after a server/session failure.
+     setSyncHealthy(false);
+     setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
+    }
    }
   }finally{
-   refreshLock.current=false;
    if(mounted.current&&version===requestVersion.current){setLoading(false);setRefreshing(false);}
   }
  },[]);
