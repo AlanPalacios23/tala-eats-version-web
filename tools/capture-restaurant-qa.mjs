@@ -120,10 +120,10 @@ for(const width of widths){
   ['inicio',null],
   ['pedidos','Pedidos'],
   ['cocina','Comandas en preparación'],
-  ['menu','Mi menú'],
-  ['mas','Más y ajustes'],
+  ['menu','Menú'],
+  ['mas','Más'],
   ['finanzas','Wallet'],
-  ['activacion','Activación del restaurante']
+  ['activacion','Activación']
  ];
  for(const [name,title] of scenes){
   if(name!=='inicio')await openTab(page,width,name);
