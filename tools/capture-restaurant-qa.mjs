@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import fs from 'node:fs';
 
 const BASE=process.env.RESTAURANT_QA_ORIGIN||'http://127.0.0.1:4173';
-const widths=[320,390,768,1280];
+const widths=[320,360,390,430,768,1280];
 const dir=process.env.RESTAURANT_QA_DIR||'artifacts/restaurant-visual';
 fs.mkdirSync(dir,{recursive:true});
 const shop={
