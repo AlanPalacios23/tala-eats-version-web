@@ -556,7 +556,7 @@ export function RestaurantWorkspace(){
         <p>Los pedidos reales se habilitan cuando el propietario confirma su cuenta Stripe Connect y el servidor valida la configuración.</p></div>
        <button className="rp-btn small dark" onClick={()=>setTab('activacion')}>Ver activación <ArrowRight size={16}/></button>
       </section>}
-      <div className="rp-order-controls rp-flutter-filter-controls">
+      <div className="rp-order-controls rp-flutter-filter-controls" data-filter={orderFilter}>
        <div className="rp-order-filters" aria-label="Filtrar pedidos">{([
         ['all','Activos',activeOrders.length],['received','Nuevos',incomingCount],
         ['kitchen','En cocina',activeOrders.filter(o=>o.status==='confirmed'||o.status==='preparing').length],
