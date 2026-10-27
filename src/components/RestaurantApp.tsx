@@ -156,7 +156,7 @@ export function RestaurantAccess(){
       <input autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
        required value={otp} disabled={busy} onChange={e=>setOtp(e.target.value.replace(/\D/g,'').slice(0,6))}
        placeholder="000000"/>
-      <small>Escribe los 6 dígitos de tu autenticador.</small></label>
+      <small>Escribe los 6 dígitos de tu autenticador.</small></label>}
      {error&&<Notice kind="error" message={error}/>}
      <button type="submit" className="rp-btn primary" disabled={!allowed||busy}>
        {busy?'Verificando…':mode==='login'?(needsOtp?'Verificar e iniciar sesión':'Iniciar sesión'):'Crear cuenta y solicitar alta'}
