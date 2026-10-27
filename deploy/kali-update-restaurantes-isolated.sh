@@ -36,7 +36,7 @@ for bin in curl git cmp grep readlink python3 sha256sum;do
 done
 [[ -L "$CURRENT" ]] || { echo 'RESTAURANTES_STATIC_ABORT=CURRENT_NOT_SYMLINK';exit 2; }
 OLD="$(readlink -f "$CURRENT")"
-[[ "$OLD" == "$ROOT"/releases/* && -s "$OLD/index.html" ]] || {
+[[ "$OLD" == "$ROOT"/releases/* && -s "$OLD/restaurantes.html" ]] || {
  echo 'RESTAURANTES_STATIC_ABORT=INVALID_CURRENT_TARGET';exit 2;
 }
 grep -Fq 'listen 127.0.0.1:18197;' /etc/talaeats-restaurantes-pwa/server.conf &&
@@ -48,20 +48,20 @@ systemctl is-active --quiet "$SERVICE" || {
  echo 'RESTAURANTES_STATIC_ABORT=ISOLATED_SERVICE_NOT_RUNNING';exit 2;
 }
 curl -fsS --max-time 8 -H "Host: $HOST" "$ORIGIN/restaurante" |
- cmp -s - "$OLD/index.html" || {
+ cmp -s - "$OLD/restaurantes.html" || {
  echo 'RESTAURANTES_STATIC_ABORT=CURRENT_SERVED_BYTES_MISMATCH';exit 2;
 }
 if [[ "$MODE" == '--rollback' ]];then
  [[ -L "$PREVIOUS" ]] || { echo 'RESTAURANTES_STATIC_ABORT=NO_PREVIOUS';exit 2; }
  BACK="$(readlink -f "$PREVIOUS")"
- [[ "$BACK" == "$ROOT"/releases/* && "$BACK" != "$OLD" && -s "$BACK/index.html" ]] || {
+ [[ "$BACK" == "$ROOT"/releases/* && "$BACK" != "$OLD" && -s "$BACK/restaurantes.html" ]] || {
  echo 'RESTAURANTES_STATIC_ABORT=UNSAFE_PREVIOUS';exit 2;
  }
  TEMP="$ROOT/.rollback-$$"
  trap 'rm -f -- "$TEMP"' EXIT
  ln -s "$BACK" "$TEMP";mv -Tf "$TEMP" "$CURRENT"
  if ! curl -fsS --max-time 8 -H "Host: $HOST" "$ORIGIN/restaurante" |
- cmp -s - "$BACK/index.html";then
+ cmp -s - "$BACK/restaurantes.html";then
   ln -s "$OLD" "$TEMP";mv -Tf "$TEMP" "$CURRENT"
   echo 'RESTAURANTES_STATIC_ROLLBACK=FAILED_CURRENT_RESTORED';exit 1
  fi
@@ -74,18 +74,24 @@ DEST="$ROOT/releases/$SHA"
 [[ "$DEST" != "$OLD" && ! -e "$DEST" && ! -L "$DEST" ]] || {
  echo 'RESTAURANTES_STATIC_ABORT=TARGET_ALREADY_EXISTS_OR_ACTIVE';exit 2;
 }
-[[ -d "$SOURCE" && ! -L "$SOURCE" && -d "$SOURCE/dist" && ! -L "$SOURCE/dist" ]] || {
+[[ -d "$SOURCE" && ! -L "$SOURCE" && -d "$SOURCE/dist-restaurantes" && ! -L "$SOURCE/dist-restaurantes" ]] || {
  echo 'RESTAURANTES_STATIC_ABORT=PINNED_BUILD_MISSING';exit 2;
 }
 [[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
  -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
  echo 'RESTAURANTES_STATIC_ABORT=PINNED_SHA_OR_TREE_UNSAFE';exit 2;
 }
-for asset in index.html sw.js manifest-restaurante.webmanifest;do
- [[ -s "$SOURCE/dist/$asset" ]] || { echo "RESTAURANTES_STATIC_ABORT=ASSET_MISSING:$asset";exit 2; }
+for asset in restaurantes.html sw-restaurante.js manifest-restaurante.webmanifest;do
+ [[ -s "$SOURCE/dist-restaurantes/$asset" ]] || { echo "RESTAURANTES_STATIC_ABORT=ASSET_MISSING:$asset";exit 2; }
 done
-grep -Fq 'name="tala-preview-mode"' "$SOURCE/dist/index.html" && {
+grep -Fq 'name="tala-preview-mode"' "$SOURCE/dist-restaurantes/restaurantes.html" && {
  echo 'RESTAURANTES_STATIC_ABORT=PREVIEW_DIST_NOT_ALLOWED';exit 2;
+}
+[[ ! -e "$SOURCE/dist-restaurantes/index.html" ]] || {
+ echo 'RESTAURANTES_STATIC_ABORT=CUSTOMER_HTML_INCLUDED';exit 2;
+}
+grep -Fq 'Tala Eats Restaurantes' "$SOURCE/dist-restaurantes/restaurantes.html" || {
+ echo 'RESTAURANTES_STATIC_ABORT=WRONG_MERCHANT_SHELL';exit 2;
 }
 echo "RESTAURANTES_STATIC_CURRENT=$OLD"
 echo "RESTAURANTES_STATIC_TARGET=$DEST"
@@ -98,7 +104,7 @@ mkdir -p -m 755 "$BACKUPS"
 BACKUP="$BACKUPS/$(basename "$OLD")-before-$SHA"
 [[ ! -e "$BACKUP" ]] || { echo 'RESTAURANTES_STATIC_ABORT=BACKUP_NAME_COLLISION';exit 2; }
 cp -a "$OLD" "$BACKUP"
-cmp -s "$BACKUP/index.html" "$OLD/index.html" || {
+cmp -s "$BACKUP/restaurantes.html" "$OLD/restaurantes.html" || {
  echo 'RESTAURANTES_STATIC_ABORT=BACKUP_FAILED';exit 2;
 }
 SWITCHED=no CREATED=no
@@ -117,17 +123,17 @@ recover(){
 }
 trap recover EXIT
 mkdir -m 755 "$DEST";CREATED=yes
-cp -a "$SOURCE/dist/." "$DEST/"
+cp -a "$SOURCE/dist-restaurantes/." "$DEST/"
 # Preserve original hashed assets while installed users transition versions.
 if [[ -d "$OLD/assets" && -d "$DEST/assets" ]];then
  cp -an "$OLD/assets/." "$DEST/assets/"
 fi
 chmod -R a+rX,go-w "$DEST"
-cmp -s "$SOURCE/dist/index.html" "$DEST/index.html" || exit 1
+cmp -s "$SOURCE/dist-restaurantes/restaurantes.html" "$DEST/restaurantes.html" || exit 1
 TEMP="$ROOT/.current-$$"
 ln -s "$DEST" "$TEMP";mv -Tf "$TEMP" "$CURRENT";SWITCHED=yes
 curl -fsS --max-time 8 -H "Host: $HOST" "$ORIGIN/restaurante" |
- cmp -s - "$DEST/index.html" || exit 1
+ cmp -s - "$DEST/restaurantes.html" || exit 1
 curl -fsS --max-time 8 -H "Host: $HOST" "$ORIGIN/api/v1/health" |
  python3 -c 'import json,sys;x=json.load(sys.stdin);assert x.get("status")=="ok" and x.get("production") is True' || exit 1
 TEMP="$ROOT/.previous-$$"
