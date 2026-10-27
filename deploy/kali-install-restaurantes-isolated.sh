@@ -57,7 +57,7 @@ done
 [[ -z "$(find "$DIST" -type f \( -name '*.pem' -o -name '*.key' -o -name '.env*' \) -print -quit)" ]] || {
  echo 'RESTAURANTES_INSTALL_ABORT=SECRETS_IN_STATIC_DIST';exit 2;
 }
-if grep -Fq 'name="tala-preview-mode"' "$DIST/index.html";then
+if grep -Fq 'name="tala-preview-mode"' "$DIST/restaurantes.html";then
  echo 'RESTAURANTES_INSTALL_ABORT=READONLY_PREVIEW_NOT_FOR_PUBLIC';exit 2;
 fi
 for p in "$CONFIG" "$SYSUNIT" "$ROOT/current" "$DEST";do
