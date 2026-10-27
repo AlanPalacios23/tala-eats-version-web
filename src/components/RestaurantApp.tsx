@@ -536,7 +536,7 @@ export function RestaurantWorkspace(){
     <>
      {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
      {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onRefresh={refresh}/>}
-     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut} accountName={user?.name} accountEmail={user?.email}/>}
+     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut} accountName={user?.name} accountEmail={user?.email} accountTwoFactorEnabled={user?.two_factor_enabled===true}/>}
      {tab==='pedidos'&&<>
       <div className="rp-heading-row rp-flutter-orders-heading">
        <div><h2>Pedidos</h2>
