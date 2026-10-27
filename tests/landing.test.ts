@@ -32,7 +32,8 @@ describe('portada / del portal Tala Eats: exactamente tres apps y dos links lega
   for(const name of ["title:'Pedir comida'","title:'Restaurantes'","title:'Repartidores'"]){
    expect(portal).toContain(name);
   }
-  expect(portal).toContain('className="gateway-portal" to={item.path}');
+  expect(portal).toContain('className="gateway-portal"');
+  expect(portal).toContain('restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL)');
   expect(portal).toContain('aria-label="Acceso a las aplicaciones de Tala Eats"');
  });
  it('muestra exactamente dos enlaces finales, a términos y eliminación de cuenta',()=>{
