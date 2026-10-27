@@ -361,3 +361,18 @@
   overflow-wrap:anywhere;max-width:100%;
  }
 }
+
+/* Final mobile grid intrinsic-size guard: prevent filter/search text from
+   imposing a >viewport min-content column on the entire catalogue. */
+.rp-layout .rp-catalog{
+ grid-template-columns:minmax(0,1fr);
+ width:100%;
+ max-width:100%;
+ min-width:0;
+}
+.rp-layout .rp-catalog>*{min-width:0;max-width:100%}
+@media(max-width:960px){
+ .rp-layout .rp-catalog-grid{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
+ .rp-layout .rp-order-controls.rp-menu-controls{min-width:0;width:100%;max-width:100%}
+ .rp-layout .rp-menu-controls .rp-order-filters{min-width:0;max-width:100%}
+}
