@@ -1,6 +1,6 @@
 # Tala Eats Restaurantes — dominio propio / publicación en Kali
 
-**Estado:** preparado en código y scripts; **NO desplegado** en Kali desde este PR. Esta guía no altera Stripe ni cuentas de comercios. Fecha: 26/oct/2026.
+**Estado:** preparado en código y scripts; **NO desplegado** en Kali desde este PR. Esta guía no altera Stripe ni cuentas de comercios. Actualizado: 27/oct/2026 (réplica visual Flutter Restaurante, PR #7).
 
 ## Arquitectura aprobable
 
@@ -17,8 +17,9 @@ El dominio `restaurantes-talaeats.alan-palacios-dev.com` es **propuesta pendient
 
 ## I. Preparación del build inmutable (sin escrituras a LIVE)
 
-1. Consultar el **SHA completo del último commit de la rama** `feat/restaurant-app-activation-20261026` que pasó los workflows PWA CI, Restaurantes QA visual y Capturas Clientes.
-2. En Kali, usando el usuario existente `tala-node-stage` y el SHA aprobado (sustituir el marcador en el siguiente bloque):
+1. Antes de elegir el SHA, exigir **SUCCESS** en los tres workflows del mismo commit: Tala Eats PWA CI, Restaurantes Web QA visual y Usuarios Web capturas; un run `cancelled` o `in_progress` no equivale a PASS.
+2. Consultar el **SHA completo del último commit de la rama** `feat/restaurantes-premium-clean-20261027` que pasó los workflows PWA CI, Restaurantes QA visual y Capturas Clientes.
+3. En Kali, usando el usuario existente `tala-node-stage` y el SHA aprobado (sustituir el marcador en el siguiente bloque):
 
 ```bash
 SHA='<SHA_COMPLETO_40_HEX_APROBADO>'
@@ -26,7 +27,7 @@ sudo -H -u tala-node-stage bash -s -- "$SHA" <<'BUILD'
 set -euo pipefail
 export PATH="$HOME/.local/node24/bin:$HOME/.local/bin:$PATH"
 SHA="$1"
-BRANCH='feat/restaurant-app-activation-20261026'
+BRANCH='feat/restaurantes-premium-clean-20261027'
 DEST="$HOME/tala-eats-web-releases/$SHA"
 test ! -e "$DEST"
 mkdir -p "$HOME/tala-eats-web-releases"
@@ -134,5 +135,7 @@ No se hace `nginx reload`, y el cambio de `/srv/talaeats-restaurantes-pwa/curren
 - Verificar que alta ADMIN con MFA, confirmación propietaria de Stripe Connect, personal y fotos funcione en el NUEVO origin HTTPS.
 - Domicilio/repartidor LIVE y transferencias bancarias automáticas no se habilitan mediante esta publicación estática.
 - Probar doble toque, conexión intermitente, fallos 401, stock y devoluciones 409 sin generar cobros de prueba en LIVE.
+
+La app de Restaurantes toma como referencia `tala-eats-mobile/main/tala-eats-restaurante/app`: Inicio, Pedidos, Menú, Wallet y Más, además de Cocina dedicada. Wallet muestra datos verificados y consulta de retiro, pero **no** ejecuta payouts ni transferencias, aunque Stripe Connect figure aprobado. El cambio de interfaz nunca debe simular dinero disponible.
 
 El criterio para publicar es **SHA exacto + CI verde + Nginx local PASS + Cloudflare HTTPS PASS + QA de sesión real con consentimiento del comercio**. No declarar despliegue realizado hasta ejecutar estos pasos en Kali.
