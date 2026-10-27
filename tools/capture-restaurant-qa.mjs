@@ -162,6 +162,18 @@ for(const width of widths){
   }
   if(name==='mas'){
    await page.locator('.flutter-signout').waitFor({timeout:12000});
+   if(width===390){
+    const identity=page.locator('.rm-flutter-identity');
+    if(!await identity.isVisible())throw Error('Flutter business identity missing in Más');
+    if(!await page.locator('.rm-flutter-settings').isVisible())throw Error('Flutter operation rows missing');
+    await identity.getByRole('button',{name:'Editar',exact:true}).click();
+    if(!await page.locator('.rm-more-profile').evaluate(el=>el.open))
+     throw Error('Flutter Editar did not open the real business editor');
+    await page.locator('.rm-more-profile>summary').click();
+    await page.locator('.rm-flutter-settings').getByRole('button',{name:/Equipo y permisos/}).click();
+    if(!await page.locator('.rm-team-fold').evaluate(el=>el.open))
+     throw Error('Equipo y permisos did not open the team editor');
+   }
    await page.locator('.flutter-incoming-banner').waitFor({timeout:12000});
    if(width===390){
     page.once('dialog',dialog=>void dialog.dismiss());
@@ -199,8 +211,18 @@ for(const width of widths){
    }
    await dialog.getByRole('button',{name:'Entendido'}).click();
    if(await dialog.count())throw Error('Wallet withdrawal modal did not close');
+   if(width===390){
+    const periods=page.locator('.rm-finance-activity').getByRole('button');
+    if(await periods.count()!==3)throw Error('Wallet missing native periods');
+    const week=page.locator('.rm-finance-activity').getByRole('button',{name:'7 días'});
+    await week.click();
+    if(await week.getAttribute('aria-pressed')!=='true')throw Error('Wallet period switch failed');
+   }
   }
   if(name==='pedidos'){
+   if(await page.locator('.rp-order-lane').count()!==3)
+    throw Error('Flutter Pedidos must group Nuevos, En cocina and Listos');
+   await page.getByRole('button',{name:'Abrir modo cocina'}).waitFor();
    const group=page.locator('.rp-order-filters').first();
    await group.getByRole('button',{name:'Historial',exact:true}).click();
    if(await page.locator('.rp-lane-grid').count()!==0||await page.locator('.rp-history').count()!==1)
@@ -274,6 +296,10 @@ for(const width of widths){
  page.on('pageerror',e=>{console.error('GUEST PAGE ERROR:',e.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-welcome="true"]').waitFor({timeout:12000});
+ if(!await page.locator('.rb-flutter-welcome').isVisible())
+  throw Error('Native welcome is missing on mobile');
+ if(await page.locator('.rb-preview').isVisible())
+  throw Error('Marketing illustration leaked into native welcome');
  if(await page.locator('[data-mobile-screen="splash"]').count())throw Error('Merchant welcome leaked customer splash');
  await checkViewport(page,390,'bienvenida');
  await page.screenshot({path:`${dir}/390-bienvenida.png`,fullPage:true});
