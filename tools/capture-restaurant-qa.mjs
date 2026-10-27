@@ -31,11 +31,18 @@ const orders=[
  order(8099,'delivered','stripe','paid'),
 ];
 const owner={id:12,name:'Comerciante QA',email:'merchant@example.test',role:'restaurant'};
+const accountByRole={
+ restaurant:owner,
+ customer:{id:23,name:'Comerciante aspirante QA',email:'aspirante@example.test',role:'customer'},
+ admin:{id:2,name:'Administrador QA',email:'admin@example.test',role:'admin'}
+};
 const connect={owner_approved:true,transfers_active:true,payouts_enabled:true,details_submitted:true,ready:true};
 const finance={restaurant_id:11,commercial_plan:'FAIR',commission_rate:'0.1500',gross_food_sales:'100.00',commission:'15.00',net_payable:'85.00',orders:1,payouts:[]};
 const data=new Map([
  ['/api/v1/auth/me',owner],
  ['/api/v1/owner/restaurant',shop],
+ ['/api/v1/onboarding/mine',[]],
+ ['/api/v1/admin/onboarding',[{id:41,user_id:23,entity_type:'restaurant',business_name:'Antojitos La Terraza',status:'pending',tax_id:'',created_at:time,updated_at:time,notes:''}]],
  ['/api/v1/owner/orders',orders],
  ['/api/v1/owner/analytics',{orders:5,delivered:1,gross_sales:100,inventory_low:1}],
  ['/api/v1/owner/finance',finance],
@@ -46,14 +53,14 @@ const data=new Map([
 ]);
 const browser=await chromium.launch({headless:true});
 let writeRequests=0;
-const routeApi=async(route,loggedIn=true)=>{
+const routeApi=async(route,role='restaurant')=>{
  const req=route.request(),path=new URL(req.url()).pathname,method=req.method();
  if(method!=='GET'){
   writeRequests++;
   await route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({detail:'QA visual — escrituras bloqueadas'})});
   return;
  }
- const content=path==='/api/v1/auth/me'&&!loggedIn?null:data.get(path);
+ const content=path==='/api/v1/auth/me'?(role==='guest'?null:accountByRole[role]):data.get(path);
  await route.fulfill({status:content===undefined||content===null?401:200,
   contentType:'application/json',
   body:JSON.stringify(content===undefined||content===null?{detail:'Sin sesión de prueba'}:content)});
@@ -90,7 +97,7 @@ async function openTab(page,width,label){
 }
 for(const width of widths){
  const ctx=await browser.newContext({viewport:{width,height:870},deviceScaleFactor:1,reducedMotion:'reduce'});
- await ctx.route('**/api/v1/**',route=>routeApi(route,true));
+ await ctx.route('**/api/v1/**',route=>routeApi(route,'restaurant'));
  const page=await ctx.newPage();
  page.on('pageerror',err=>{console.error('MERCANTE PAGE ERROR:',err.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
@@ -158,7 +165,7 @@ for(const width of widths){
 }
 {
  const ctx=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
- await ctx.route('**/api/v1/**',route=>routeApi(route,false));
+ await ctx.route('**/api/v1/**',route=>routeApi(route,'guest'));
  const page=await ctx.newPage();
  page.on('pageerror',e=>{console.error('GUEST PAGE ERROR:',e.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
@@ -177,6 +184,22 @@ for(const width of widths){
   const worker=await page.request.get(BASE+'/sw.js');
   if(worker.status()!==404)throw new Error('Customer service worker leaked');
  }
+ await ctx.close();
+}
+// Additional final-design QA: review genuine onboarding and MFA-protected
+// admin page shapes with strictly synthetic read-only accounts.
+for(const [role,path,heading,width] of [
+ ['customer','/restaurante/alta','Activa tu restaurante en Tala Eats.',390],
+ ['admin','/admin/solicitudes-restaurantes','Activación de restaurantes',1280]
+]){
+ const ctx=await browser.newContext({viewport:{width,height:870},reducedMotion:'reduce'});
+ await ctx.route('**/api/v1/**',route=>routeApi(route,role));
+ const page=await ctx.newPage();
+ page.on('pageerror',err=>{console.error('MERCHANT FINAL-SCREEN ERROR:',err.message);process.exitCode=1;});
+ await page.goto(BASE+path,{waitUntil:'networkidle'});
+ await page.getByRole('heading',{name:heading,exact:true}).waitFor({timeout:12000});
+ await checkViewport(page,width,role+'-final');
+ await page.screenshot({path:`${dir}/${width}-${role}-activacion.png`,fullPage:true});
  await ctx.close();
 }
 if(writeRequests>0)throw new Error('Se intentó escribir en el servidor durante el QA visual: '+writeRequests);
