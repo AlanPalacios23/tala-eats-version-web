@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
- ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
+ ArrowLeft,ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
  MapPin,PackageCheck,Settings2,
  ShoppingBag,Store,Users
 } from 'lucide-react';
@@ -134,7 +134,7 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
  ] as const);
  return <div className="rm-experience rm-kitchen">
   <header className="flutter-kds-header">
-   <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowRight size={20}/></button>
+   <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowLeft size={20}/></button>
    <h2>Cocina</h2>
    <button type="button" className="flutter-kds-view" onClick={()=>setExpanded(p=>!p)} aria-pressed={!expanded}>{expanded?'Compacta':'Ampliada'}</button>
   </header>
