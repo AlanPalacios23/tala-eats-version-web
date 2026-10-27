@@ -4,7 +4,7 @@ import {Link,useNavigate} from 'react-router-dom';
 import {ArrowLeft,ArrowRight,BadgeCheck,Check,ChefHat,Clock3,CreditCard,
  KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
  ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole,Download} from 'lucide-react';
-import {api,ApiError,pesos} from '../lib/api';
+import {api,ApiError,pesos,safeImage} from '../lib/api';
 import type {MerchantApplication,MerchantFinance} from '../lib/api';
 import {useSession} from '../lib/session';
 import type {Order,Restaurant,MenuItem} from '../lib/types';
@@ -641,7 +641,9 @@ function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
  const [productName,setProductName]=useState(item.name),[description,setDescription]=useState(item.description??'');
  const [category,setCategory]=useState(item.category??'General');
  const [allergens,setAllergens]=useState(item.allergens??''),[isCombo,setIsCombo]=useState(item.is_combo??false);
- const [photo,setPhoto]=useState<File|null>(null);
+ const [photo,setPhoto]=useState<File|null>(null),[imageBroken,setImageBroken]=useState(false);
+ const safePhoto=safeImage(item.image_url);
+ useEffect(()=>{setImageBroken(false);},[safePhoto]);
  useEffect(()=>{setPrice(item.price);setStock(item.stock);setAvailable(item.is_available);
   setProductName(item.name);setDescription(item.description??'');setCategory(item.category??'General');
   setAllergens(item.allergens??'');setIsCombo(item.is_combo??false);
@@ -661,7 +663,7 @@ function MenuRow({item,busy,run}:{item:MenuItem;busy:boolean;
   if(ok)setPhoto(null);
  }
  return <article className="rp-menu-item">
-  <div className="rp-menu-visual">{item.image_url?<img src={item.image_url} alt="" loading="lazy" onError={e=>{e.currentTarget.hidden=true;}}/>:<ChefHat size={30}/>}</div>
+  <div className="rp-menu-visual">{safePhoto&&!imageBroken?<img src={safePhoto} alt="" loading="lazy" onError={()=>setImageBroken(true)}/>:<ChefHat size={30}/>}</div>
   <div className="rp-menu-details">
    <label className="rp-menu-edit-label">Nombre<input maxLength={150} value={productName} onChange={e=>setProductName(e.target.value)}/></label>
    <div className="rp-menu-inputs">
