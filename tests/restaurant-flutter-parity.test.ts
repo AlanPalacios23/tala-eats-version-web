@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 const get=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
 const view=get('../src/components/RestaurantApp.tsx');
 const more=get('../src/components/RestaurantParity.tsx');
+const wallet=get('../src/components/MerchantWallet.tsx');
 const api=get('../src/lib/api.ts');
 const css=get('../src/styles/restaurant.css');
 describe('Tala Eats Restaurantes web parity vs Flutter',()=>{
@@ -23,7 +24,8 @@ describe('Tala Eats Restaurantes web parity vs Flutter',()=>{
   expect(more).toContain('api.ownerInviteEmployee');
  });
  it('does not promise withdrawals or delivery as a completed live feature',()=>{
-  expect(more).toContain('No se solicitan retiros ni transferencias automáticas');
+  expect(wallet).toContain('Los retiros bancarios aún no están habilitados');
+  expect(wallet).toContain('No iniciada');
   expect(more).toContain('El reparto a domicilio LIVE requiere');
  });
 });
