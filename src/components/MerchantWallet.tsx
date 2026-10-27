@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {ArrowRight,RefreshCw,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {MerchantEarnings,MerchantFinance} from '../lib/api';
@@ -20,25 +20,59 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
  const [withdrawOpen,setWithdrawOpen]=useState(false);
+ const requestId=useRef(0);
+ const withdrawalTrigger=useRef<HTMLButtonElement>(null);
+ const withdrawalDialog=useRef<HTMLElement>(null);
  const refresh=useCallback(async()=>{
-  setLoading(true);setError('');
+  // Never retain a previous business's balance or accept superseded requests.
+  const thisRequest=++requestId.current;
+  setEarnings(null);setLoading(true);setError('');
   try{
    const data=await api.ownerEarnings(restaurantId);
    if(data.restaurant_id!==restaurantId||data.currency!=='MXN'||
-      data.unit!=='centavos'||data.transfer_not_executed!==true)
-    throw new Error('La información de ganancias no coincide con el comercio.');
-   setEarnings(data);
+      data.unit!=='centavos'||data.transfer_not_executed!==true||
+      merchantEarningTotals(data)===null)
+    throw new Error('La información de ganancias no coincide con el comercio o no está validada.');
+   if(thisRequest===requestId.current)setEarnings(data);
   }catch(e){
-   setEarnings(null);
-   setError(e instanceof Error?e.message:'No fue posible consultar las ganancias.');
-  }finally{setLoading(false);}
+   if(thisRequest===requestId.current){
+    setEarnings(null);
+    setError(e instanceof Error?e.message:'No fue posible consultar las ganancias.');
+   }
+  }finally{if(thisRequest===requestId.current)setLoading(false);}
  },[restaurantId]);
  useEffect(()=>{void refresh();},[refresh]);
+ useEffect(()=>()=>{requestId.current+=1;},[]);
  useEffect(()=>{
   if(!withdrawOpen)return;
-  const onEsc=(event:KeyboardEvent)=>{if(event.key==='Escape')setWithdrawOpen(false);};
-  document.addEventListener('keydown',onEsc);
-  return()=>document.removeEventListener('keydown',onEsc);
+  const previouslyFocused=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  withdrawalDialog.current?.querySelector<HTMLButtonElement>('.mw-modal-close')?.focus();
+  const onKey=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'){
+    event.preventDefault();setWithdrawOpen(false);return;
+   }
+   if(event.key!=='Tab')return;
+   // A bank-related dialog must not allow keyboard actions behind the sheet.
+   const buttons=Array.from(withdrawalDialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')??[]);
+   const first=buttons[0],last=buttons[buttons.length-1];
+   if(!first||!last)return;
+   if(!withdrawalDialog.current?.contains(document.activeElement)){
+    event.preventDefault();first.focus();
+   }else if(event.shiftKey&&document.activeElement===first){
+    event.preventDefault();last.focus();
+   }else if(!event.shiftKey&&document.activeElement===last){
+    event.preventDefault();first.focus();
+   }
+  };
+  document.addEventListener('keydown',onKey);
+  return()=>{
+   document.removeEventListener('keydown',onKey);
+   document.body.style.overflow=previousOverflow;
+   const target=withdrawalTrigger.current?.isConnected?withdrawalTrigger.current:previouslyFocused;
+   if(target?.isConnected)target.focus({preventScroll:true});
+  };
  },[withdrawOpen]);
  const totals=merchantEarningTotals(earnings);
  const enabled=merchantWithdrawalEnabled(earnings);
@@ -55,7 +89,7 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
    <p id="mw-balance-title">Disponible para retirar</p>
    <strong aria-label="Saldo disponible aún no certificado">—</strong>
    <span className="mw-balance-note">Saldo pendiente de verificación.</span>
-   <button type="button" className="mw-withdraw" onClick={()=>setWithdrawOpen(true)}
+   <button ref={withdrawalTrigger} type="button" className="mw-withdraw" onClick={()=>setWithdrawOpen(true)}
     aria-haspopup="dialog" aria-label="Retirar ganancias, consultar disponibilidad">
     Retirar ganancias</button>
   </section>
@@ -96,13 +130,13 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
   </section>
   
   {withdrawOpen&&<div className="mw-modal-backdrop" onClick={()=>setWithdrawOpen(false)}>
-   <section className="mw-modal" role="dialog" aria-modal="true"
-    aria-labelledby="mw-modal-title" onClick={e=>e.stopPropagation()}>
+   <section ref={withdrawalDialog} className="mw-modal" role="dialog" aria-modal="true"
+    aria-labelledby="mw-modal-title" aria-describedby="mw-modal-description" onClick={e=>e.stopPropagation()}>
     <button className="mw-modal-close" type="button" aria-label="Cerrar información de retiro"
      onClick={()=>setWithdrawOpen(false)}><X size={21}/></button>
     
     <h3 id="mw-modal-title">Retirar ganancias</h3>
-    <p>{enabled?'Confirma el retiro con el servidor.':
+    <p id="mw-modal-description">{enabled?'Confirma el retiro con el servidor.':
      'Los retiros bancarios aún no están habilitados en Tala Eats Restaurantes.'}</p>
     <div className="mw-modal-facts">
      <span>Saldo retirable confirmado <strong>No disponible</strong></span>
