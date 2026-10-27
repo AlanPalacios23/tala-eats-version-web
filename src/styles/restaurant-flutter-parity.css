@@ -604,3 +604,22 @@
  .rp-auth-page .rp-switch{width:100%;min-height:48px;color:#B53B0A;font-weight:750}
  .rp-auth-page .rp-legal{line-height:1.5}
 }
+
+/* Flutter finance sales hero, with values explicitly all-time because
+   Node merchant finance currently does not expose trusted period totals. */
+.rp-layout .mw-balance{display:grid;gap:12px}
+.rp-layout .mw-balance>strong{font-size:clamp(31px,9vw,40px);
+ overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.rp-layout .mw-net-line{display:flex;gap:9px;align-items:center;
+ justify-content:space-between;min-width:0;padding:12px;
+ border-radius:12px;background:#ffffff14;color:#fff}
+.rp-layout .mw-net-line>span{font-size:13px;font-weight:650;min-width:0;flex:1}
+.rp-layout .mw-net-line>strong{font-size:18px;color:#8FD9B0;
+ font-variant-numeric:tabular-nums;white-space:nowrap}
+.rp-layout .mw-balance-note{line-height:1.5}
+.rp-layout .mw-heading p{font-size:13px;margin:4px 0 0;color:var(--fl-soft)}
+@media(max-width:360px){
+ .rp-layout .mw-net-line{padding:10px;gap:5px}
+ .rp-layout .mw-net-line>span{font-size:12px}
+ .rp-layout .mw-net-line>strong{font-size:16px}
+}
