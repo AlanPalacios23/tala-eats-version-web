@@ -13,7 +13,7 @@
 
 El dominio `restaurantes-talaeats.alan-palacios-dev.com` es **propuesta pendiente de DNS/Cloudflare**. No afirmar que existe ni que responde hasta verificarlo.
 
-`/restaurante` abre bienvenida empresarial o el panel si el rol es restaurante; `/restaurante/acceso` inicio de sesión; `/restaurante/alta` alta; `/admin/solicitudes-restaurantes` autorización ADMIN protegida. Nginx del dominio específico redirige `/` a `/restaurante`, responde 404 a `/clientes` y solo ofrece recursos estáticos de la PWA y `/api/v1`. El manifiesto predeterminado redirige al manifiesto de Restaurantes.
+`/restaurante` abre bienvenida empresarial o el panel si el rol es restaurante; `/restaurante/acceso` inicio de sesión; `/restaurante/alta` alta; `/admin/solicitudes-restaurantes` autorización ADMIN protegida. El build de Restaurantes es **independiente** (`restaurantes.html`, `src/main-restaurantes.tsx`, `dist-restaurantes/`, `sw-restaurante.js`), por lo que no importa el onboarding ni el carrito de Clientes. Nginx del dominio específico redirige `/` a `/restaurante`, responde 404 a `/clientes` y solo ofrece recursos estáticos de la PWA y `/api/v1`. El manifiesto predeterminado redirige al manifiesto de Restaurantes.
 
 ## I. Preparación del build inmutable (sin escrituras a LIVE)
 
@@ -36,7 +36,8 @@ test "$(git -C "$DEST" rev-parse HEAD)" = "$SHA"
 cd "$DEST"
 unset VITE_PREVIEW_READONLY VITE_RESTAURANT_APP_URL
 npm install --no-package-lock --no-audit --no-fund
-npm run check
+npm run check # tests + Clientes dist/ + Restaurantes dist-restaurantes/
+test -s dist-restaurantes/restaurantes.html
 bash -n deploy/kali-install-restaurantes-isolated.sh
 bash -n deploy/kali-update-restaurantes-isolated.sh
 bash deploy/kali-install-restaurantes-isolated.sh --plan "$SHA"
@@ -53,7 +54,7 @@ sudo bash "/home/tala-node-stage/tala-eats-web-releases/$SHA/deploy/kali-install
   --apply "$SHA" I_APPROVE_NEW_RESTAURANTES_NGINX_18197_ONLY
 ```
 
-Resultado requerido: `RESTAURANTES_INSTALL=PASS_LOCAL_ONLY`. Crea **únicamente**:
+Resultado requerido: `RESTAURANTES_INSTALL=PASS_LOCAL_ONLY`. Copia solo `dist-restaurantes/`, no `dist/` de Clientes. Crea **únicamente**:
 - `/srv/talaeats-restaurantes-pwa/releases/$SHA`, `current`.
 - `/etc/talaeats-restaurantes-pwa/nginx.conf`, `server.conf`.
 - `/etc/systemd/system/talaeats-restaurantes-pwa.service`.
