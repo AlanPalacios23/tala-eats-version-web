@@ -92,9 +92,11 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
   </header>
   <section className="mw-balance" aria-labelledby="mw-balance-title">
    
-   <p id="mw-balance-title">Disponible para retirar</p>
-   <strong aria-label="Saldo disponible aún no certificado">—</strong>
-   <span className="mw-balance-note">Saldo pendiente de verificación.</span>
+   <p id="mw-balance-title">Ventas registradas · histórico</p>
+   <strong aria-label="Ventas históricas registradas en el servidor">{verifiedFinance?pesos(verifiedFinance.gross_food_sales):'—'}</strong>
+   <div className="mw-net-line"><span>Ingreso neto contable</span>
+    <strong>{verifiedFinance?pesos(verifiedFinance.net_payable):'—'}</strong></div>
+   <span className="mw-balance-note">Disponible para retirar: saldo pendiente de verificación. Las ventas no equivalen a dinero retirable.</span>
    <button ref={withdrawalTrigger} type="button" className="mw-withdraw" onClick={()=>setWithdrawOpen(true)}
     aria-haspopup="dialog" aria-label="Retirar ganancias, consultar disponibilidad">
     Retirar ganancias</button>
@@ -106,9 +108,9 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
     <small>Según el servidor</small>
    </div>
    <div>
-    <span>Neto contable</span>
-    <strong>{verifiedFinance?pesos(verifiedFinance.net_payable):'—'}</strong>
-    <small>Sin conciliar para retiros</small>
+    <span>Comisiones registradas</span>
+    <strong>{verifiedFinance?pesos(verifiedFinance.commission):'—'}</strong>
+    <small>Según el servidor · no es un retiro</small>
    </div>
   </section>
   {error&&<div className="mw-notice" role="alert">{error}</div>}
