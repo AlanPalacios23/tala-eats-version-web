@@ -170,7 +170,9 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
        </div>
        <div className="rm-ticket-items">{(o.items??[]).map((i,n)=><p key={n}><strong>{i.quantity}×</strong> {i.name_snapshot}</p>)}</div>
        <span className={'rm-payment-indicator '+(paymentPending?'pending':'')}>
-        {o.payment_method==='cash'?'Efectivo · confirmar al recoger':paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
+        {o.payment_method==='cash'?
+          (o.order_type==='pickup'?'Efectivo · cobrar al recoger':'Efectivo · cobro en entrega'):
+          paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
        </span>
        {paymentPending&&<div className="rm-ticket-warning"><AlertTriangle size={15}/> Sin pago conciliado. No preparar ni volver a cobrar.</div>}
        {next&&<button disabled={busy} className="rp-btn primary small"
