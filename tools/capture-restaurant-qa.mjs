@@ -107,7 +107,8 @@ for(const width of widths){
  page.on('pageerror',err=>{console.error('MERCANTE PAGE ERROR:',err.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-app="true"]').waitFor();
- await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
+ if(width<=850)await page.getByRole('heading',{name:'Inicio',exact:true}).waitFor({timeout:12000});
+ else await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
  if(BASE.endsWith('4174')){
   await page.locator('[data-merchant-standalone="true"]').waitFor();
   const foreign=await page.evaluate(()=>[...document.querySelectorAll('script[src]')].some(node=>node.getAttribute('src')?.includes('main.tsx')));
