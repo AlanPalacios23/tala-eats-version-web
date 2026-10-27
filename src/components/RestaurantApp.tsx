@@ -661,9 +661,18 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  const [category,setCategory]=useState('General'),[description,setDescription]=useState('');
  const [search,setSearch]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todos');
  const [editingId,setEditingId]=useState<number|null>(null),[showAddForm,setShowAddForm]=useState(false);
- const categories=['Todos',...Array.from(new Set((restaurant.menu_items??[]).map(i=>i.category||'General')))];
- const shown=(restaurant.menu_items??[]).filter(i=>(selectedCategory==='Todos'||(i.category||'General')===selectedCategory)
-  &&(i.name+' '+(i.description??'')).toLocaleLowerCase('es-MX').includes(search.trim().toLocaleLowerCase('es-MX')));
+ const products=restaurant.menu_items??[];
+ const categories=Array.from(new Set(products.map(i=>i.category||'General')))
+  .sort((a,b)=>a.localeCompare(b,'es-MX'));
+ // Flutter's StockLevel.low includes exactly 10 remaining units.
+ const needsAttention=(i:MenuItem)=>!i.is_available||i.stock<=10;
+ const reviewCount=products.filter(needsAttention).length;
+ const availableCount=products.filter(i=>i.is_available&&i.stock>0).length;
+ const shown=products.filter(i=>(selectedCategory==='Todos'||
+   (selectedCategory==='__review__'?needsAttention(i):(i.category||'General')===selectedCategory))
+  &&(i.name+' '+(i.description??'')+' '+(i.category??'')).toLocaleLowerCase('es-MX')
+   .includes(search.trim().toLocaleLowerCase('es-MX')));
+ const grouped=selectedCategory==='Todos'&&!search.trim()&&categories.length>1;
  const nameGood=name.trim().length>=2;
  const priceGood=/^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,2})?$/.test(price)&&Number(price)>0;
  const stockGood=Number.isInteger(stock)&&stock>=0&&stock<=100000;
@@ -676,16 +685,19 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  }
  return <section className="rp-catalog">
   <div className="rp-heading-row rp-catalog-heading">
-   <div><h2>Menú</h2></div>
-   <div className="rp-catalog-heading-actions"><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span>
+   <div><h2>Menú</h2><p className="rp-catalog-subtitle">{products.length} productos · {availableCount} disponibles</p></div>
+   <div className="rp-catalog-heading-actions">
     <button className="rp-btn primary" type="button" onClick={()=>{setShowAddForm(p=>!p);setEditingId(null);}}>
      <Plus size={17}/>{showAddForm?'Cerrar formulario':'Nuevo producto'}</button></div>
   </div>
   <div className="rp-order-controls rp-menu-controls">
-   <label><SearchIcon size={18}/><input aria-label="Buscar productos" placeholder="Buscar por nombre o descripción"
+   <label><SearchIcon size={18}/><input aria-label="Buscar productos" placeholder="Buscar en tu menú"
      value={search} onChange={e=>setSearch(e.target.value)}/></label>
    <div className="rp-order-filters" aria-label="Filtrar categorías">
-    {categories.map(cat=><button type="button" key={cat} className={selectedCategory===cat?'selected':''}
+    {reviewCount>0&&<button type="button" className={selectedCategory==='__review__'?'selected':''}
+     aria-pressed={selectedCategory==='__review__'} onClick={()=>setSelectedCategory('__review__')}>
+     Revisar · {reviewCount}</button>}
+    {['Todos',...categories].map(cat=><button type="button" key={cat} className={selectedCategory===cat?'selected':''}
      aria-pressed={selectedCategory===cat} onClick={()=>setSelectedCategory(cat)}>{cat}</button>)}
    </div>
   </div>
@@ -708,15 +720,30 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
     </div>
    </form>
   </section>}
-  {shown.length>0?<div className="rp-menu-grid rp-catalog-grid">
-   {shown.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}
-    editing={editingId===item.id}
-    onEdit={()=>{setEditingId(v=>v===item.id?null:item.id);setShowAddForm(false);}}
-    onClose={()=>setEditingId(null)}/>)}
-  </div>:<div className="rp-panel-card rp-catalog-empty">
-   <h3>{(restaurant.menu_items??[]).length?'Sin coincidencias':'Tu menú está vacío'}</h3>
-   <p>{(restaurant.menu_items??[]).length?'Prueba otra búsqueda o categoría.':'Agrega tu primer producto para que aparezca en el catálogo.'}</p>
-   {search&&<button className="rp-btn outline small" onClick={()=>{setSearch('');setSelectedCategory('Todos');}}>Limpiar filtros</button>}
+  {shown.length>0?(grouped?
+   <div className="rp-catalog-groups">
+    {categories.map(cat=>{
+     const rows=shown.filter(item=>(item.category||'General')===cat);
+     return <section className="rp-catalog-category" key={cat} aria-label={'Categoría '+cat}>
+      <h3>{cat}<span>{rows.length}</span></h3>
+      <div className="rp-menu-grid rp-catalog-grid">
+       {rows.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}
+        editing={editingId===item.id}
+        onEdit={()=>{setEditingId(v=>v===item.id?null:item.id);setShowAddForm(false);}}
+        onClose={()=>setEditingId(null)}/>)}
+      </div>
+     </section>;
+    })}
+   </div>:
+   <div className="rp-menu-grid rp-catalog-grid">
+    {shown.map(item=><MenuRow key={item.id} item={item} busy={busy} run={run}
+     editing={editingId===item.id}
+     onEdit={()=>{setEditingId(v=>v===item.id?null:item.id);setShowAddForm(false);}}
+     onClose={()=>setEditingId(null)}/>)}
+   </div>):<div className="rp-panel-card rp-catalog-empty">
+   <h3>{products.length?'Sin coincidencias':'Tu menú está vacío'}</h3>
+   <p>{products.length?'Prueba otra búsqueda o categoría.':'Agrega tu primer producto para que aparezca en el catálogo.'}</p>
+   {(search||selectedCategory!=='Todos')&&<button className="rp-btn outline small" onClick={()=>{setSearch('');setSelectedCategory('Todos');}}>Limpiar filtros</button>}
   </div>}
  </section>;
 }
