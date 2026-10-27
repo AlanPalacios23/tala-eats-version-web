@@ -376,3 +376,81 @@
  .rp-layout .rp-order-controls.rp-menu-controls{min-width:0;width:100%;max-width:100%}
  .rp-layout .rp-menu-controls .rp-order-filters{min-width:0;max-width:100%}
 }
+
+/* Final kitchen: cashier-safe, readable from an actual prep station. */
+.rp-layout .rm-kitchen-toolbar{
+ display:flex;align-items:center;justify-content:space-between;gap:16px;
+ padding:14px 18px;background:#fff;border:1px solid #e6eae2;
+ border-radius:16px;min-width:0;flex-wrap:wrap;
+ box-shadow:0 4px 20px rgba(14,31,17,.025);
+}
+.rm-kitchen-filter-pills{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.rm-kitchen-filter-pills button{display:inline-flex;align-items:center;gap:9px;border:1px solid transparent;
+ border-radius:11px;background:transparent;color:#69756a;padding:10px 12px;font-size:12px;font-weight:760;min-height:42px}
+.rm-kitchen-filter-pills button:hover{background:#f4f6f2}
+.rm-kitchen-filter-pills button.selected{background:#222d24;color:#fff;border-color:#222d24}
+.rm-kitchen-filter-pills b{font-size:11px;border-radius:7px;padding:4px 7px;background:#edf1ec;color:#647464}
+.rm-kitchen-filter-pills .selected b{background:#ffffff24;color:#fff}
+.rp-layout .rm-kitchen-toolbar>span{color:#8b958b;font-size:11px;line-height:1.45;
+ display:flex;align-items:center;gap:7px;max-width:335px}
+.rp-layout .rm-kitchen-toolbar>span svg{flex-shrink:0}
+.rm-kitchen-empty-state{border-radius:18px;border:1px dashed #cbd7c9;background:#fafcf9;
+ min-height:240px;padding:40px 22px;display:grid;place-content:center;justify-items:center;gap:9px;text-align:center}
+.rm-kitchen-empty-state svg{color:#6eac87}
+.rm-kitchen-empty-state h3{margin:0;font-size:19px;font-weight:800;color:#2e4534}
+.rm-kitchen-empty-state p{margin:0;color:#8b968a;font-size:12px;line-height:1.55;max-width:350px}
+.rp-layout .rm-kitchen-lane{min-height:210px}
+.rp-layout .rm-kitchen-lane>header strong{font-size:12px;letter-spacing:.1px;color:#424e45}
+.rp-layout .rm-ticket{gap:12px;border:1px solid #e3e9e1}
+.rm-ticket-top .rm-ticket-elapsed{font-size:10px;color:#778779;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.rm-ticket-meta{display:flex;align-items:center;gap:8px;justify-content:space-between;min-width:0;flex-wrap:wrap}
+.rm-ticket-meta b{font-size:17px;letter-spacing:-.4px;color:#2c352c;white-space:nowrap}
+.rm-ticket-type{display:inline-flex;align-items:center;font-size:10px;background:#eaf2fc;color:#3b6b9d;
+ border-radius:8px;padding:7px 9px;font-weight:780;min-height:29px}
+.rm-ticket-type.pickup{background:#fff2e9;color:#ce652b}
+.rp-layout .rm-ticket-items{border-top:1px solid #edf0ea;border-bottom:1px solid #edf0ea;
+ display:grid;gap:4px;padding:10px 0}
+.rp-layout .rm-ticket-items p{color:#4b574e;font-size:12px;line-height:1.5;margin:1px 0}
+.rm-ticket-items p strong{color:#ce6327;font-weight:850}
+.rm-payment-indicator{font-size:10px;font-weight:720;color:#57836a;line-height:1.5}
+.rm-payment-indicator.pending{color:#a66b33}
+.rm-ticket-warning{border-radius:10px;background:#fff7e8;color:#92612c;border:1px solid #f8e1c6;
+ display:flex;align-items:flex-start;gap:7px;font-size:11px;line-height:1.5;padding:10px}
+.rm-ticket-warning svg{flex-shrink:0}
+.rm-kitchen-delivery-note{display:block;background:#f3f6f2;border:1px solid #e4ebe0;
+ color:#667a67;border-radius:10px;padding:11px;font-size:11px;line-height:1.5;font-weight:700}
+.rm-kitchen-footnote{font-size:11px;color:#8a9889;line-height:1.65;margin:0}
+.rm-kitchen-grid.compact .rm-ticket-items{display:none}
+.rp-layout .rm-kitchen-grid.compact .rm-ticket{gap:8px;padding:11px}
+
+/* Clear order filtering, conciliation banner and truthfully bounded history. */
+.rp-layout .rp-pending-payment-note{display:flex;align-items:flex-start;gap:12px;
+ padding:15px 18px;border:1px solid #f0d6b8;border-radius:13px;background:#fff7ed;
+ color:#9d6330;margin:0 0 20px}
+.rp-pending-payment-note>svg{flex-shrink:0;margin-top:2px}
+.rp-pending-payment-note strong,.rp-pending-payment-note small{display:block}
+.rp-pending-payment-note strong{font-size:13px;font-weight:790}
+.rp-pending-payment-note small{font-size:11px;color:#ab845c;margin-top:3px;line-height:1.55}
+.rp-layout .rp-search-empty{display:grid;justify-items:center;gap:10px;text-align:center;
+ padding:34px 20px;margin:12px 0;color:#869289}
+.rp-layout .rp-search-empty svg{color:#f27c3e}
+.rp-layout .rp-search-empty strong{font-size:13px;color:#3d4b40}
+.rp-layout .rp-search-empty span{font-size:12px;color:#89948b}
+.rp-layout .rp-history{padding:25px}
+.rp-history-head{display:flex;align-items:center;justify-content:space-between;gap:14px;
+ border-bottom:1px solid #edf1eb;padding-bottom:17px;margin-bottom:5px}
+.rp-layout .rp-history-head h3{font-size:18px;letter-spacing:-.25px;margin:6px 0 0}
+.rp-history-head>span{font-size:10px;color:#91a092;text-align:right}
+.rp-layout .rp-history-row{padding:14px 0;align-items:center;gap:10px}
+.rp-history-date{font-size:11px;color:#98a397;margin-left:auto}
+.rp-layout .rp-history-row>strong{color:#283b2d;font-size:13px;white-space:nowrap}
+@media(max-width:690px){
+ .rp-layout .rm-kitchen-toolbar{padding:12px;align-items:stretch}
+ .rm-kitchen-filter-pills{width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+ .rm-kitchen-filter-pills button{white-space:nowrap;padding:10px 9px;font-size:11px;flex-shrink:0}
+ .rp-layout .rm-kitchen-toolbar>span{font-size:10px}
+ .rp-layout .rp-history{padding:19px 16px}
+ .rp-history-head{align-items:flex-start;flex-direction:column}
+ .rp-history-head>span{text-align:left}
+ .rp-history-date{display:none}
+}
