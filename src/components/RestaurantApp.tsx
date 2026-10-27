@@ -503,6 +503,9 @@ export function RestaurantWorkspace(){
     </div>
    </header>
    <main className="rp-content">
+    <div className="rp-mobile-order-alerts" aria-label="Notificaciones de pedidos">
+     <RestaurantOrderAlerts orders={orders} live={syncHealthy} onOpenOrders={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}/>
+    </div>
     {syncHealthy&&incomingCount>0&&!['inicio','pedidos','cocina'].includes(tab)&&<button
      type="button" className="flutter-incoming-banner" onClick={()=>{setOrderFilter('received');setOrderQuery('');setTab('pedidos');}}>
      <span>{incomingCount===1?'1 pedido nuevo espera respuesta':incomingCount+' pedidos nuevos esperan respuesta'}</span>
