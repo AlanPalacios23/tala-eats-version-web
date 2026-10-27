@@ -112,8 +112,14 @@ for(const width of widths){
  await openTab(page,width,'menu');
  await page.getByRole('textbox',{name:'Buscar productos'}).fill('Quesabirria');
  await page.waitForFunction(()=>document.querySelectorAll('.rp-menu-item').length===1,{},{timeout:12000});
- const visibleProduct=await page.locator('.rp-menu-item input').first().inputValue();
- if(visibleProduct!=='Quesabirria')throw Error('Category/search functionality failed at '+width+': '+visibleProduct);
+ await page.locator('.rp-catalog-item').filter({hasText:'Quesabirria'}).waitFor({timeout:12000});
+ if(await page.locator('.rp-catalog-item').count()!==1)throw Error('Category/search functionality failed at '+width);
+ if(await page.locator('.rp-catalog-editor').count())throw Error('Menu editors must be collapsed until requested');
+ await page.getByRole('button',{name:'Editar',exact:true}).click();
+ await page.locator('#rp-product-editor-22').waitFor({timeout:12000});
+ if(width===390)await page.screenshot({path:`${dir}/390-producto-editor.png`,fullPage:true});
+ await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+ if(await page.locator('.rp-catalog-editor').count())throw Error('Cancel did not close the product editor');
  await ctx.close();
 }
 {
