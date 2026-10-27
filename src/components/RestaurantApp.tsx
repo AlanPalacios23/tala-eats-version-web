@@ -31,6 +31,23 @@ const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
 ];
 const bottomTabs=allTabs.filter(t=>['inicio','pedidos','cocina','menu','mas'].includes(t.id));
 function MerchantBrand(){return <Link className="rp-brand" to={mainTalaEatsPortalHref(window.location.hostname)} aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
+function MerchantLoadingSkeleton(){
+ return <div className="rp-skeleton-layout" role="status" aria-label="Preparando el panel de tu restaurante">
+  <div className="rp-skeleton-heading" aria-hidden="true">
+   <span className="rp-skeleton-bar short"/><span className="rp-skeleton-bar heading"/><span className="rp-skeleton-bar long"/>
+  </div>
+  <div className="rp-skeleton-kpis" aria-hidden="true">
+   {Array.from({length:4},(_,i)=><div className="rp-skeleton-card" key={i}>
+    <span className="rp-skeleton-bar label"/><span className="rp-skeleton-bar metric"/><span className="rp-skeleton-bar label short"/>
+   </div>)}
+  </div>
+  <div className="rp-skeleton-body" aria-hidden="true">
+   <div className="rp-skeleton-panel"><span className="rp-skeleton-bar heading"/><span className="rp-skeleton-bar long"/><span className="rp-skeleton-bar long"/></div>
+   <div className="rp-skeleton-panel"><span className="rp-skeleton-bar heading"/><span className="rp-skeleton-bar long"/><span className="rp-skeleton-bar long"/></div>
+  </div>
+  <span className="rp-skeleton-status"><RefreshCw size={17} className="rp-spin"/> Sincronizando pedidos y negocio de forma segura…</span>
+ </div>;
+}
 function Notice({message,kind='info'}:{message:string;kind?:'info'|'error'|'success'}){
  return <div role={kind==='error'?'alert':'status'} className={'rp-notice '+kind}>
    {kind==='error'?<AlertCircle size={19}/>:<ShieldCheck size={19}/>}<span>{message}</span>
@@ -471,7 +488,7 @@ export function RestaurantWorkspace(){
      <div><AlertCircle size={22}/><span><strong>Conexión no confirmada</strong><small>Los cambios están bloqueados para proteger tus pedidos. Reintenta la sincronización.</small></span></div>
      <button className="rp-btn outline small" disabled={refreshing} onClick={()=>void refresh()}><RefreshCw size={16}/> Reintentar</button>
     </section>}
-    {loading?<div className="rp-loading"><RefreshCw className="rp-spin" size={24}/> Consultando información del backend LIVE…</div>:
+    {loading?<MerchantLoadingSkeleton/>:
     !syncHealthy?<section className="rp-panel-card"><h2>No podemos verificar el estado del restaurante</h2><p>No se muestran pedidos antiguos ni se habilitan cambios hasta recuperar la conexión.</p><button className="rp-btn outline" disabled={refreshing} onClick={()=>void refresh()}>Reintentar conexión</button></section>:
     !restaurant?<section className="rp-panel-card"><h2>No tienes un restaurante asignado</h2><p>Solicita el alta y aprobación administrativa. Ninguna cuenta recibe permisos de comercio automáticamente.</p>
      <Link to="/restaurante/alta" className="rp-btn primary">Ver activación <ArrowRight size={18}/></Link></section>:
