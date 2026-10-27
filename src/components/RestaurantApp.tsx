@@ -428,7 +428,8 @@ export function RestaurantWorkspace(){
   void doAction(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),
    'Preferencia de recogida actualizada en el servidor.');
  }
- const activeOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
+ const activeOrders=orders.filter(o=>['received','confirmed','preparing','ready'].includes(o.status));
+ const waitingPayment=orders.filter(o=>o.status==='awaiting_payment'||(o.status==='received'&&o.payment_method==='stripe'&&o.payment_status!=='paid'));
  const incomingCount=activeOrders.filter(o=>o.status==='received').length;
  const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
    (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
@@ -436,7 +437,9 @@ export function RestaurantWorkspace(){
   orderFilter==='kitchen'&&['confirmed','preparing'].includes(o.status)||
   orderFilter==='ready'&&o.status==='ready'));
 
- const completedOrders=orders.filter(o=>['delivered','cancelled'].includes(o.status)).slice(0,12);
+ const completedOrders=orders.filter(o=>['delivered','cancelled'].includes(o.status))
+  .sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,30);
+ const matchingCompletedOrders=completedOrders.filter(matchesOrder);
  const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
  const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
  return <div className="rp-layout" data-restaurant-app="true">
@@ -518,6 +521,16 @@ export function RestaurantWorkspace(){
         ['all','Todos'],['received','Nuevos'],['kitchen','En cocina'],['ready','Listos'],['history','Historial']
        ] as const).map(([id,label])=><button key={id} className={orderFilter===id?'selected':''} onClick={()=>setOrderFilter(id)} aria-pressed={orderFilter===id}>{label}</button>)}</div>
       </div>
+      {waitingPayment.length>0&&orderFilter!=='history'&&<div className="rp-pending-payment-note" role="status">
+       <AlertCircle size={19}/>
+       <span><strong>{waitingPayment.length} pedido(s) requieren revisión de pago</strong>
+        <small>Los pedidos de tarjeta pendientes de conciliación no se preparan ni se cobran nuevamente desde este panel.</small></span>
+      </div>}
+      {orderFilter!=='history'&&visibleOrders.length===0&&orderQuery.trim()&&<div className="rp-search-empty" role="status">
+       <SearchIcon size={20}/><strong>No se encontraron pedidos activos</strong>
+       <span>Prueba otro número, producto o filtro.</span>
+       <button className="rp-btn outline small" onClick={()=>{setOrderQuery('');setOrderFilter('all');}}>Limpiar búsqueda</button>
+      </div>}
       {orderFilter!=='history'&&<div className="rp-lane-grid">
        {(['received','confirmed','preparing','ready'] as const).map(state=>{
         const lane=visibleOrders.filter(o=>o.status===state);
@@ -557,11 +570,20 @@ export function RestaurantWorkspace(){
         </section>;
        })}
       </div>}
-      <section className="rp-history"><h3>Últimos pedidos finalizados</h3>
-       {completedOrders.length===0?<p className="rp-muted">Aún no hay pedidos finalizados.</p>:
-        completedOrders.filter(matchesOrder).map(o=><div className="rp-history-row" key={o.id}>
-         <span>#{o.id} · {merchantStateLabel(o.status)}</span><strong>{pesos(o.total)}</strong>
-        </div>)}</section>
+      {(orderFilter==='all'||orderFilter==='history')&&<section className="rp-history">
+       <div className="rp-history-head"><div><span className="rp-eyebrow">REGISTRO CONSULTADO</span><h3>Últimos pedidos finalizados</h3></div>
+        <span>{matchingCompletedOrders.length} de {completedOrders.length} registros recientes</span></div>
+       {matchingCompletedOrders.length===0?<div className="rp-search-empty">
+        <PackageCheck size={21}/><strong>{completedOrders.length?'No hay resultados en este historial':'Aún no hay pedidos finalizados'}</strong>
+        <span>El historial mostrado corresponde a los registros recientes recibidos del backend.</span>
+       </div>:
+        matchingCompletedOrders.map(o=><div className="rp-history-row" key={o.id}>
+         <span>#{o.id} · {merchantStateLabel(o.status)}</span>
+         <span className="rp-history-date">{new Date(o.created_at).toLocaleDateString('es-MX')}</span>
+         <strong>{pesos(o.total)}</strong>
+        </div>)}
+       {completedOrders.length>=30&&<p className="rp-legal">Historial reciente limitado a 30 registros de los pedidos consultados, no es el libro contable completo.</p>}
+      </section>}
      </>}
      {tab==='menu'&&<MerchantMenu restaurant={restaurant} busy={busy} run={doAction}/>}
      {tab==='activacion'&&<>
