@@ -142,6 +142,16 @@ for(const width of widths){
      throw Error('Missing native Flutter store status or KDS entry');
    }
   }
+  if(name==='mas'){
+   await page.locator('.flutter-signout').waitFor({timeout:12000});
+   await page.locator('.flutter-incoming-banner').waitFor({timeout:12000});
+   if(width===390){
+    page.once('dialog',dialog=>void dialog.dismiss());
+    await page.locator('.flutter-signout').click();
+    if(await page.locator('[data-restaurant-app="true"]').count()!==1)
+     throw Error('Cancel sign-out unexpectedly left the merchant app');
+   }
+  }
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
   if(name==='finanzas'){
    await page.locator('[data-merchant-wallet="true"]').waitFor();
