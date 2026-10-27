@@ -226,7 +226,7 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
  return <div className="rm-experience">
   <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes"/></div>
   <div className="rm-mobile-more-shortcuts">
-   <button type="button" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
+   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
    <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>{connect?.owner_approved?'Cuenta vinculada':'Verificar tu comercio'}</small></span><ArrowRight size={18}/></button>
   </div>
   <div className="rm-duo rm-more-duo">
