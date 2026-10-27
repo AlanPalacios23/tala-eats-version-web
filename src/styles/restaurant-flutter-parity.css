@@ -504,3 +504,70 @@
 .rp-layout[data-kitchen-open="true"] .flutter-kds-footnote,
 .rp-layout[data-kitchen-open="true"] .rm-kitchen-footnote{
  overflow-wrap:anywhere;width:auto;white-space:normal}
+
+/* Flutter MoreScreen parity: identity 16:7 photo + grouped navigation rows.
+   All operations remain bound to the authorized merchant's existing API. */
+.rp-layout .rm-flutter-identity,.rp-layout .rm-flutter-settings{
+ width:100%;max-width:640px;margin-inline:auto;min-width:0}
+.rp-layout .rm-flutter-identity{background:#fff;border:1px solid var(--fl-line);
+ border-radius:18px;overflow:hidden}
+.rp-layout .rm-flutter-cover{width:100%;aspect-ratio:16/7;
+ background:var(--fl-sunken);display:grid;place-items:center;color:var(--fl-soft);overflow:hidden}
+.rp-layout .rm-flutter-cover img{height:100%;width:100%;object-fit:cover}
+.rp-layout .rm-flutter-identity-body{display:flex;align-items:flex-start;gap:8px;
+ padding:15px 12px 16px 16px}
+.rp-layout .rm-flutter-identity-body>div{flex:1;min-width:0}
+.rp-layout .rm-flutter-identity-body h3{font-size:20px;margin:0 0 4px;
+ font-weight:800;color:var(--fl-ink)}
+.rp-layout .rm-flutter-identity-body p{color:var(--fl-soft);
+ margin:0 0 7px;font-size:13px;line-height:1.4}
+.rp-layout .rm-flutter-identity-body .rm-flutter-description{
+ font-size:14px;margin:7px 0 10px;display:-webkit-box;
+ -webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.rp-layout .rm-flutter-open{display:inline-flex;border-radius:999px;
+ background:var(--fl-sunken);color:var(--fl-soft);padding:5px 10px;
+ font-size:12px;font-weight:730}
+.rp-layout .rm-flutter-open.open{background:var(--fl-green-tint);color:var(--fl-green)}
+.rp-layout .rm-flutter-identity-body>.rp-btn{flex-shrink:0;min-height:42px}
+.rp-layout .rm-flutter-settings{display:grid;gap:0}
+.rp-layout .rm-flutter-settings>h3{margin:22px 0 11px;color:var(--fl-ink);
+ font-size:17px;font-weight:800}
+.rp-layout .rm-flutter-settings-group{overflow:hidden;border-radius:16px;
+ background:#fff;border:1px solid var(--fl-line)}
+.rp-layout .rm-flutter-settings-group>button,
+.rp-layout .rm-flutter-settings-group>div{
+ width:100%;display:flex;align-items:center;gap:12px;
+ border:0;border-bottom:1px solid var(--fl-line);background:#fff;
+ padding:14px 15px;min-height:65px;text-align:left;color:var(--fl-ink)}
+.rp-layout .rm-flutter-settings-group>:last-child{border-bottom:0}
+.rp-layout .rm-flutter-settings-group>button>svg:first-child,
+.rp-layout .rm-flutter-settings-group>div>svg:first-child{
+ color:var(--fl-soft);flex:0 0 22px}
+.rp-layout .rm-flutter-settings-group>button>svg:last-child{
+ flex-shrink:0;color:var(--fl-faint)}
+.rp-layout .rm-flutter-settings-group>button>span,
+.rp-layout .rm-flutter-settings-group>div>span{flex:1;min-width:0;display:grid;gap:3px}
+.rp-layout .rm-flutter-settings-group strong{font-weight:750;font-size:14px;color:var(--fl-ink)}
+.rp-layout .rm-flutter-settings-group small{font-size:12px;line-height:1.35;color:var(--fl-soft)}
+.rp-layout .rm-flutter-switch-row>.rp-btn{margin-left:auto;
+ min-height:42px;flex-shrink:0;font-size:12px}
+.rp-layout .rm-flutter-settings-group>button:focus-visible{
+ outline-offset:-4px!important}
+.rp-layout .rm-flutter-settings-group>button:hover{background:#f9faf8}
+.rp-layout .rm-more-profile,.rp-layout .rm-team-fold{scroll-margin-top:22px}
+@media(max-width:839px){
+ .rp-layout .rm-flutter-settings,.rp-layout .rm-flutter-identity{max-width:640px}
+ .rp-layout .rm-mobile-more-shortcuts{display:none!important}
+ .rp-layout .rm-more-column{display:none!important}
+ .rp-layout .rm-more-duo{display:block!important}
+ .rp-layout .rm-more-profile:not([open]){display:none!important}
+ .rp-layout .rm-team-fold:not([open]){display:none!important}
+ .rp-layout .rm-flutter-identity-body>.rp-btn{padding-inline:10px}
+}
+@media(min-width:840px){
+ .rp-layout .rm-flutter-settings,.rp-layout .rm-flutter-identity{display:none}
+}
+@media(max-width:360px){
+ .rp-layout .rm-flutter-switch-row{gap:7px!important;padding-inline:10px!important}
+ .rp-layout .rm-flutter-switch-row>.rp-btn{padding-inline:8px;font-size:11px}
+}
