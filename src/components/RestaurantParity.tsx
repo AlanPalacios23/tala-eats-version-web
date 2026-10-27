@@ -2,7 +2,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowLeft,ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
- MapPin,PackageCheck,RefreshCw,Settings2,Wallet,Edit3,ChevronRight,
+ MapPin,PackageCheck,RefreshCw,Settings2,Wallet,Edit3,ChevronRight,Info,X,ShieldCheck,
  ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
@@ -21,7 +21,7 @@ export type MerchantExperienceProps={
  go:(tab:MerchantTab)=>void;
  onSignOut?:()=>Promise<void>;
  onRefresh?:()=>Promise<void>;
- accountName?:string;accountEmail?:string;
+ accountName?:string;accountEmail?:string;accountTwoFactorEnabled?:boolean;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="rm-title"><span className="rp-eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;
@@ -222,7 +222,7 @@ function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean
   </form>
  </section>;
 }
-export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountName,accountEmail}:MerchantExperienceProps){
+export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountName,accountEmail,accountTwoFactorEnabled}:MerchantExperienceProps){
  const profileRef=useRef<HTMLDetailsElement>(null),teamRef=useRef<HTMLDetailsElement>(null);
  const openSection=(ref:{current:HTMLDetailsElement|null})=>{
   if(!ref.current)return;
@@ -234,6 +234,32 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
  const [lat,setLat]=useState(restaurant.lat==null?'':String(restaurant.lat)),[lng,setLng]=useState(restaurant.lng==null?'':String(restaurant.lng));
  const [locationError,setLocationError]=useState('');
  const [cover,setCover]=useState<File|null>(null),[uploadBusy,setUploadBusy]=useState(false);
+ const [aboutOpen,setAboutOpen]=useState(false);
+ const aboutRef=useRef<HTMLElement>(null),aboutTrigger=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{
+  if(!aboutOpen)return;
+  const before=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  aboutRef.current?.querySelector<HTMLButtonElement>('.rm-about-close')?.focus();
+  const onKey=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'){event.preventDefault();setAboutOpen(false);return;}
+   if(event.key!=='Tab')return;
+   const buttons=Array.from(aboutRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')??[]);
+   const first=buttons[0],last=buttons[buttons.length-1];
+   if(!first||!last)return;
+   if(!aboutRef.current?.contains(document.activeElement)){event.preventDefault();first.focus();}
+   else if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener('keydown',onKey);
+  return()=>{
+   document.removeEventListener('keydown',onKey);
+   document.body.style.overflow=previousOverflow;
+   const target=aboutTrigger.current?.isConnected?aboutTrigger.current:before;
+   if(target?.isConnected)target.focus({preventScroll:true});
+  };
+ },[aboutOpen]);
  useEffect(()=>{setName(restaurant.name);setDescription(restaurant.description??'');setCuisine(restaurant.cuisine??'');setEta(restaurant.eta_min??30);setAddress(restaurant.address??'');setLat(restaurant.lat==null?'':String(restaurant.lat));setLng(restaurant.lng==null?'':String(restaurant.lng));},[restaurant.id,restaurant.name,restaurant.description,restaurant.cuisine,restaurant.eta_min,restaurant.address,restaurant.lat,restaurant.lng]);
  function captureLocation(){
   setLocationError('');
@@ -310,8 +336,11 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
    <div className="rm-flutter-settings-group rm-flutter-account">
     <div><Users size={20}/><span><strong>{accountName||'Propietario'}</strong>
      <small>{accountEmail||'Cuenta de restaurante'}</small></span></div>
-    <div><Settings2 size={20}/><span><strong>Acerca de la app</strong>
-     <small>Versión web · conectada al backend Tala Eats</small></span></div>
+    {accountTwoFactorEnabled&&<div><ShieldCheck size={20}/><span><strong>Verificación en dos pasos</strong>
+     <small>Activa en tu cuenta</small></span></div>}
+    <button type="button" ref={aboutTrigger} onClick={()=>setAboutOpen(true)}><Info size={20}/><span>
+     <strong>Acerca de la app</strong>
+     <small>Versión web · Tala Eats Restaurante</small></span><ChevronRight size={18}/></button>
    </div>
   </div>
   <div className="rm-mobile-more-shortcuts">
@@ -358,6 +387,19 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
    <summary><strong>Equipo</strong><ArrowRight size={16}/></summary>
    <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
   </details>
+  {aboutOpen&&<div className="rm-about-backdrop" onClick={()=>setAboutOpen(false)}>
+   <section ref={aboutRef} className="rm-about-sheet" role="dialog" aria-modal="true"
+    aria-labelledby="rm-about-title" aria-describedby="rm-about-description"
+    onClick={e=>e.stopPropagation()}>
+    <button type="button" className="rm-about-close" aria-label="Cerrar información de la aplicación"
+     onClick={()=>setAboutOpen(false)}><X size={20}/></button>
+    <div className="rm-about-mark"><Store size={34}/></div>
+    <h3 id="rm-about-title">Tala Eats Restaurante</h3>
+    <p id="rm-about-description">Panel para restaurantes · Versión Web</p>
+    <p className="rm-about-detail">La aplicación usa tu cuenta de comercio y las operaciones requieren autorización del servidor.</p>
+    <button type="button" className="rp-btn primary" onClick={()=>setAboutOpen(false)}>Entendido</button>
+   </section>
+  </div>}
   {onSignOut&&<button type="button" className="flutter-signout" disabled={busy}
    onClick={()=>{if(window.confirm('¿Cerrar sesión? Para volver a administrar el negocio necesitarás iniciar sesión.'))void onSignOut();}}>
    Cerrar sesión
