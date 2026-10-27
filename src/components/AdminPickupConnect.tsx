@@ -70,6 +70,7 @@ export function AdminPickupConnect(){
    </div>}
    <p className="fineprint">No uses la cuenta Connect de la plataforma para un restaurante ni vincules la cuenta de otro comerciante. El backend rechazará incompatibilidades verificadas con Stripe.</p>
   </section>
+  <p><Link to="/admin/solicitudes-restaurantes">Revisar y aprobar solicitudes de restaurantes</Link></p>
   <p><Link to="/">Regresar al inicio</Link></p>
  </div>;
 }

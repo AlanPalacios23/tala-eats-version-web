@@ -4,7 +4,7 @@ import { LEGAL_LINKS } from '../src/lib/legal-links';
 
 const source=readFileSync(new URL('../src/App.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/main.css',import.meta.url),'utf8');
-const portal=source.split('function PortalLanding(){')[1]?.split('function Protected(')[0]??'';
+const portal=source.split('function PortalLanding(){')[1]?.split('function RestaurantEntry(){')[0]??'';
 const portalFooter=portal.split('<footer className="gateway-footer"')[1]?.split('</footer>')[0]??'';
 
 describe('portada / del portal Tala Eats: exactamente tres apps y dos links legales',()=>{
@@ -15,7 +15,8 @@ describe('portada / del portal Tala Eats: exactamente tres apps y dos links lega
   expect(portal).toContain("path:'/iniciar',number:'01'");
   expect(portal).toContain("path:'/restaurante',number:'02'");
   expect(portal).toContain("path:'/repartidor',number:'03'");
-  expect(source).toContain('path="/restaurante" element={<Protected role="restaurant">');
+  expect(source).toContain('path="/restaurante" element={<RestaurantEntry/>}');
+  expect(source).toContain("if(user?.role==='restaurant')return <RestaurantWorkspace/>");
   expect(source).toContain('path="/repartidor" element={<Protected role="driver">');
  });
  it('mantiene solo el nombre Tala Eats arriba, en su posición original',()=>{
@@ -31,7 +32,8 @@ describe('portada / del portal Tala Eats: exactamente tres apps y dos links lega
   for(const name of ["title:'Pedir comida'","title:'Restaurantes'","title:'Repartidores'"]){
    expect(portal).toContain(name);
   }
-  expect(portal).toContain('className="gateway-portal" to={item.path}');
+  expect(portal).toContain('className="gateway-portal"');
+  expect(portal).toContain('restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL)');
   expect(portal).toContain('aria-label="Acceso a las aplicaciones de Tala Eats"');
  });
  it('muestra exactamente dos enlaces finales, a términos y eliminación de cuenta',()=>{

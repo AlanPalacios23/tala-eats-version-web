@@ -7,6 +7,12 @@ import { PREVIEW_READONLY } from './lib/preview';
 import App from './App';
 import {CustomerPwaInstallNotice} from './components/CustomerPwaInstall';
 import './styles/main.css';
+/* The customer artwork belongs to Pedir comida. Merchant and admin routes must
+   never flash the customer onboarding while React initializes. */
+if (/^\/(?:restaurante(?:\/|$)|admin\/)/.test(window.location.pathname)) {
+ document.getElementById('tala-first-paint')?.remove();
+}
+
 
 // Four app identities share one vetted frontend and one LIVE backend.
 // Changing the manifest changes only the installable shell, never auth roles
