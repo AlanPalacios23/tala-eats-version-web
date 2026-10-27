@@ -46,6 +46,11 @@ const data=new Map([
  ['/api/v1/owner/orders',orders],
  ['/api/v1/owner/analytics',{orders:5,delivered:1,gross_sales:100,inventory_low:1}],
  ['/api/v1/owner/finance',finance],
+ ['/api/v1/owner/finance/earnings/11',{
+  restaurant_id:11,currency:'MXN',unit:'centavos',
+  earnings_by_status:[{state:'held',total_minor:'8500',orders:'2'},{state:'reserved',total_minor:'2500',orders:'1'}],
+  physical_cash_due_to_platform:[],transfer_not_executed:true
+ }],
  ['/api/v1/owner/finance/connect/11/status',connect],
  ['/api/v1/owner/employees',[
   {id:1,user_id:22,name:'Miembro de caja',email:'caja@example.test',role:'cashier'}
@@ -84,7 +89,7 @@ async function openTab(page,width,label){
   const nav=page.locator('.rp-mobile-tabs');
   if(label==='finanzas'||label==='activacion'){
    await nav.getByRole('button',{name:'Más',exact:true}).click();
-   if(label==='finanzas')await page.getByRole('button',{name:/Consultar finanzas/}).click();
+   if(label==='finanzas')await page.getByRole('button',{name:/Abrir Wallet/}).click();
    else await page.getByRole('button',{name:/Ver activación/}).click();
   }else{
    const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio'}[label];
@@ -116,7 +121,7 @@ for(const width of widths){
   ['cocina','Comandas en preparación'],
   ['menu','Mi menú'],
   ['mas','Más y ajustes'],
-  ['finanzas','Finanzas'],
+  ['finanzas','Wallet'],
   ['activacion','Activación del restaurante']
  ];
  for(const [name,title] of scenes){
@@ -124,6 +129,18 @@ for(const width of widths){
   if(title)await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:12000});
   await checkViewport(page,width,name);
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
+  if(name==='finanzas'){
+   await page.locator('[data-merchant-wallet="true"]').waitFor();
+   await page.getByText('Ganancias registradas',{exact:true}).waitFor();
+   await page.getByRole('button',{name:/Retirar ganancias/}).click();
+   const dialog=page.getByRole('dialog',{name:'Retirar ganancias'});
+   await dialog.waitFor();
+   await dialog.getByText('Los retiros bancarios aún no están habilitados').waitFor();
+   if(await dialog.getByText('Transferencia bancaria').count()!==1)
+    throw Error('Wallet withdrawal disclaimer missing at '+width);
+   await dialog.getByRole('button',{name:'Entendido'}).click();
+   if(await dialog.count())throw Error('Wallet withdrawal modal did not close');
+  }
   if(name==='pedidos'){
    const group=page.locator('.rp-order-filters').first();
    await group.getByRole('button',{name:'Historial',exact:true}).click();
