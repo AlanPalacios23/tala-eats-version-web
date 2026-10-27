@@ -29,7 +29,7 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
  const live=orders.filter(o=>!['cancelled','delivered'].includes(o.status));
  const incoming=live.filter(o=>o.status==='received');
  const ready=live.filter(o=>o.status==='ready');
- const lowStock=(restaurant.menu_items??[]).filter(i=>i.is_available&&i.stock>0&&i.stock<10);
+ const lowStock=(restaurant.menu_items??[]).filter(i=>i.is_available&&i.stock>0&&i.stock<=10);
  const soldOut=(restaurant.menu_items??[]).filter(i=>i.stock===0||!i.is_available);
  const notPaid=live.filter(i=>i.payment_method==='stripe'&&i.payment_status!=='paid');
  const attention=[
