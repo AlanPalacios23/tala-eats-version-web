@@ -360,6 +360,21 @@
  .rp-layout .flutter-signout{transition:none!important}
 }
 
+/* Mobile merchant alerts stay one-tap accessible while the desktop toolbar
+   is hidden. There is no marketing bar; just one compact functional bell. */
+.rp-layout .rp-mobile-order-alerts{display:none}
+@media(max-width:839px){
+ .rp-layout .rp-mobile-order-alerts{display:flex;justify-content:flex-end;
+  min-height:42px;margin:-4px 0 10px}
+ .rp-layout .rp-mobile-order-alerts .rp-alert-toggle{width:42px;min-height:42px;
+  padding:8px;justify-content:center;border-radius:13px;
+  color:var(--fl-ink);background:var(--fl-surface);border:1px solid var(--fl-line)}
+ .rp-layout .rp-mobile-order-alerts .rp-alert-toggle-label{display:none}
+ .rp-layout .rp-mobile-order-alerts .rp-order-toast,
+ .rp-layout .rp-mobile-order-alerts .rp-alert-error{
+  left:auto;right:0;max-width:min(290px,calc(100vw - 32px))}
+ .rp-layout[data-kitchen-open="true"] .rp-mobile-order-alerts{display:none}
+}
 /* Keep exactly one Flutter NavigationDestination active. Earlier web CSS
    added an orange top border and hover states that looked like a second tab. */
 @media(max-width:839px){
