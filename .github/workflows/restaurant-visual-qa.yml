@@ -13,6 +13,12 @@ on:
       - 'deploy/talaeats-restaurantes-pwa.service'
       - 'src/lib/api.ts'
       - 'tools/capture-restaurant-qa.mjs'
+      - 'tools/serve-merchant-only-qa.mjs'
+      - 'src/RestaurantStandalone.tsx'
+      - 'src/main-restaurantes.tsx'
+      - 'src/styles/restaurant-standalone.css'
+      - 'restaurantes.html'
+      - 'vite.restaurante.config.ts'
       - '.github/workflows/restaurant-visual-qa.yml'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -50,11 +56,27 @@ jobs:
           exit 1
       - name: Synthetic restaurant UI 320–1280 px (zero writes)
         run: node tools/capture-restaurant-qa.mjs
+      - name: Start merchant-only production bundle on isolated loopback
+        run: |
+          node tools/serve-merchant-only-qa.mjs > /tmp/tala-restaurants-standalone.log 2>&1 &
+          for i in $(seq 1 35); do
+            if curl -fsS http://127.0.0.1:4174/restaurante > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/tala-restaurants-standalone.log
+          exit 1
+      - name: QA real independent merchant bundle 320–1280 px
+        env:
+          RESTAURANT_QA_ORIGIN: http://127.0.0.1:4174
+          RESTAURANT_QA_DIR: artifacts/restaurant-standalone
+        run: node tools/capture-restaurant-qa.mjs
       - name: Upload QA screenshots (synthetic only)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: restaurante-web-visual-matrix
-          path: artifacts/restaurant-visual/*.png
+          path: |
+            artifacts/restaurant-visual/*.png
+            artifacts/restaurant-standalone/*.png
           if-no-files-found: warn
           retention-days: 14
