@@ -1,8 +1,8 @@
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowLeft,ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
- MapPin,PackageCheck,RefreshCw,Settings2,
+ MapPin,PackageCheck,RefreshCw,Settings2,Wallet,Edit3,ChevronRight,
  ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
@@ -21,6 +21,7 @@ export type MerchantExperienceProps={
  go:(tab:MerchantTab)=>void;
  onSignOut?:()=>Promise<void>;
  onRefresh?:()=>Promise<void>;
+ accountName?:string;accountEmail?:string;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="rm-title"><span className="rp-eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;
@@ -221,7 +222,12 @@ function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean
   </form>
  </section>;
 }
-export function MerchantMore({restaurant,connect,busy,run,go,onSignOut}:MerchantExperienceProps){
+export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountName,accountEmail}:MerchantExperienceProps){
+ const profileRef=useRef<HTMLDetailsElement>(null),teamRef=useRef<HTMLDetailsElement>(null);
+ const openSection=(ref:{current:HTMLDetailsElement|null})=>{
+  if(!ref.current)return;
+  ref.current.open=true;ref.current.scrollIntoView({behavior:'smooth',block:'start'});
+ };
  const [name,setName]=useState(restaurant.name),[description,setDescription]=useState(restaurant.description??'');
  const [cuisine,setCuisine]=useState(restaurant.cuisine??''),[eta,setEta]=useState(restaurant.eta_min??30);
  const [address,setAddress]=useState(restaurant.address??'');
@@ -260,12 +266,60 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut}:Merchant
  }
  return <div className="rm-experience">
   <div className="rm-heading-row"><h2>Más</h2></div>
+  <section className="rm-flutter-identity" aria-label="Perfil de tu restaurante">
+   <div className="rm-flutter-cover">{safeImage(restaurant.cover_image_url)?
+    <img src={safeImage(restaurant.cover_image_url)??undefined} alt={'Foto de '+restaurant.name} loading="lazy"/>:
+    <Store size={34} aria-hidden="true"/>}</div>
+   <div className="rm-flutter-identity-body">
+    <div><h3>{restaurant.name}</h3><p>{restaurant.cuisine||'Restaurante'}</p>
+     {restaurant.description&&<p className="rm-flutter-description">{restaurant.description}</p>}
+     <span className={'rm-flutter-open '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
+    </div>
+    <button type="button" className="rp-btn outline small" onClick={()=>openSection(profileRef)}>
+     <Edit3 size={16}/> Editar</button>
+   </div>
+  </section>
+  <div className="rm-flutter-settings" aria-label="Opciones del restaurante">
+   <h3>Operación</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>go('cocina')}><ChefHat size={21}/>
+     <span><strong>Modo cocina</strong><small>Comandas en pantalla completa</small></span><ChevronRight size={18}/></button>
+    <button type="button" onClick={()=>openSection(profileRef)}><MapPin size={21}/>
+     <span><strong>Ubicación del establecimiento</strong><small>Dirección y punto GPS para calcular envíos</small></span><ChevronRight size={18}/></button>
+    <div className="rm-flutter-switch-row"><PackageCheck size={21}/>
+     <span><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></span>
+     <button type="button" className="rp-btn outline small" disabled={busy}
+      onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>
+      {restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
+    <button type="button" onClick={()=>openSection(profileRef)}><Settings2 size={21}/>
+     <span><strong>Preparación y entrega</strong><small>{restaurant.eta_min??30} min de preparación · envío calculado por Tala Eats</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Pagos</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>go('finanzas')}><Wallet size={21}/>
+     <span><strong>Retiros y cuenta bancaria</strong><small>Wallet, ganancias y movimientos</small></span><ChevronRight size={18}/></button>
+    <button type="button" onClick={()=>go('activacion')}><RefreshCw size={21}/>
+     <span><strong>Activación de pagos</strong><small>{connect?.owner_approved?'Consultar Stripe Connect':'Requisitos pendientes'}</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Equipo</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>openSection(teamRef)}><Users size={21}/>
+     <span><strong>Equipo y permisos</strong><small>Gerentes, caja y cocina</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Cuenta</h3>
+   <div className="rm-flutter-settings-group rm-flutter-account">
+    <div><Users size={20}/><span><strong>{accountName||'Propietario'}</strong>
+     <small>{accountEmail||'Cuenta de restaurante'}</small></span></div>
+    <div><Settings2 size={20}/><span><strong>Acerca de la app</strong>
+     <small>Versión web · conectada al backend Tala Eats</small></span></div>
+   </div>
+  </div>
   <div className="rm-mobile-more-shortcuts">
    <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><span><strong>Wallet</strong></span></button>
    <button type="button" onClick={()=>go('activacion')}><span><strong>Activación</strong>{!connect?.owner_approved&&<small>Pendiente</small>}</span></button>
   </div>
   <div className="rm-duo rm-more-duo">
-   <details className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
+   <details ref={profileRef} className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
     <summary><strong>Perfil del negocio</strong><ArrowRight size={16}/></summary>
     <form onSubmit={e=>void saveProfile(e)} className="rm-settings-form">
      <label>Nombre<input value={name} required minLength={2} maxLength={150} onChange={e=>setName(e.target.value)}/></label>
@@ -300,7 +354,7 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut}:Merchant
     </section>
    </div>
   </div>
-  <details className="rm-team-fold" data-merchant-accordion="team">
+  <details ref={teamRef} className="rm-team-fold" data-merchant-accordion="team">
    <summary><strong>Equipo</strong><ArrowRight size={16}/></summary>
    <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
   </details>
