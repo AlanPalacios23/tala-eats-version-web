@@ -137,6 +137,14 @@ for(const width of widths){
   if(width<=430){
    const navButtons=await page.locator('.rp-mobile-tabs button').count();
    if(navButtons!==5)throw Error('Flutter bottom NavigationBar requires 5 destinations');
+   if(name!=='cocina'){
+    const selected=page.locator('.rp-mobile-tabs button.selected');
+    if(await selected.count()!==1)throw Error('Flutter NavigationBar must select exactly one destination: '+name);
+    const selectedText=(await selected.innerText()).trim();
+    const expected=name==='activacion'?'Más':name==='finanzas'?'Wallet':
+     ({inicio:'Inicio',pedidos:'Pedidos',menu:'Menú',mas:'Más'})[name];
+    if(selectedText!==expected)throw Error('Incorrect Flutter selected destination '+selectedText+' for '+name);
+   }
    if(name==='inicio'){
     if(await page.locator('.flutter-open-card').count()!==1||await page.locator('.flutter-kitchen-entry').count()!==1)
      throw Error('Missing native Flutter store status or KDS entry');
