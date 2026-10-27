@@ -2,20 +2,22 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {ArrowRight,RefreshCw,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {MerchantEarnings,MerchantFinance} from '../lib/api';
+import type {Order} from '../lib/types';
+import {MerchantFinanceActivity} from './RestaurantParity';
 import {merchantEarningTotals,merchantWithdrawalEnabled} from '../lib/merchant-wallet';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant-mobile-wallet.css';
 
 type Props={
  restaurantId:number;finance:MerchantFinance|null;connect:MerchantConnectStatus|null;
- go:(tab:MerchantTab)=>void;
+ orders:Order[];go:(tab:MerchantTab)=>void;
 };
 const money=(minor:number)=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(minor/100);
 const statusLabel=(state:string):string=>({
  held:'En revisión',reserved:'Reservadas',pending:'Pendientes',
  approved:'Aprobadas',settled:'Liquidadas',transferred:'Transferidas'
 } as Record<string,string>)[state]??'Registro: '+state.replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,40);
-export function MerchantWallet({restaurantId,finance,connect,go}:Props){
+export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
  const [earnings,setEarnings]=useState<MerchantEarnings|null>(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
@@ -84,7 +86,7 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
   connect?.payouts_enabled&&connect?.details_submitted);
  return <div className="mw-screen" data-merchant-wallet="true">
   <header className="mw-heading">
-   <div><h2>Wallet</h2></div>
+   <div><h2>Wallet</h2><p>Ventas e ingreso de tu restaurante</p></div>
    <button type="button" className="mw-refresh" aria-label="Actualizar Wallet"
     onClick={()=>void refresh()} disabled={loading}><RefreshCw size={19}/></button>
   </header>
@@ -132,6 +134,7 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
     </div>)}</div>
    </>:null}
   </section>
+  <MerchantFinanceActivity orders={orders}/>
   
   {withdrawOpen&&<div className="mw-modal-backdrop" onClick={()=>setWithdrawOpen(false)}>
    <section ref={withdrawalDialog} className="mw-modal" role="dialog" aria-modal="true"
