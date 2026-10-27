@@ -153,7 +153,7 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
-  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes" description="Perfil, preparación, equipo y opciones financieras como en la app Flutter."/>
+  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes" description="Actualiza la información del negocio, organiza a tu equipo y revisa tu cuenta."/>
    <button className="rp-btn outline small" onClick={()=>go('activacion')}><ShieldCheck size={16}/> Ver activación</button></div>
   <div className="rm-duo rm-more-duo">
    <section className="rp-panel-card"><h3><Store size={19}/> Perfil del restaurante</h3>
