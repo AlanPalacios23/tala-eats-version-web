@@ -180,7 +180,7 @@
  .flutter-kds-header>h2{margin:0;color:white;font-family:Bricolage,system-ui,sans-serif;font-size:28px;flex:1}
 .flutter-kds-header button{min-height:44px;border-radius:12px;background:#2D302B;
  border:1px solid #3C4039;color:white;padding:10px}
-.flutter-kds-header button:first-child svg{transform:rotate(180deg)}
+/* ArrowLeft already points back: no forced rotation. */
 .flutter-kds-header button.flutter-kds-view{font-size:12px;font-weight:750}
 .rp-layout[data-kitchen-open="true"] .rm-kitchen-toolbar{
  margin:0 16px;background:var(--fl-kds-rail)!important;border:1px solid #2E312D!important;
@@ -297,7 +297,7 @@
  .rp-layout .rp-mobile-tabs{display:none}
  .rp-layout .rm-mobile-home{display:grid!important;max-width:680px;margin:auto}
  .rp-layout .rm-desktop-home{display:none!important}
- .rp-layout[data-kitchen-open="true"] .rp-layout .rp-content{padding:0}
+
 }
 @media(max-width:360px){
  .rp-layout .rp-content{padding-inline:16px!important}
