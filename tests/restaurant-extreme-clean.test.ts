@@ -36,7 +36,7 @@ describe('Restaurantes premium clean | mobile priority without removing operatio
   expect(wallet).toContain('Retirar ganancias');
   expect(wallet).toContain('Los retiros bancarios aún no están habilitados');
   expect(wallet).toContain('Disponible para retirar');
-  expect(wallet).toContain('transferencia bancaria');
+  expect(wallet).toContain('Transferencia bancaria');
   expect(wallet).not.toContain('TALA EATS WALLET</span>');
   expect(wallet).not.toMatch(/api\.[A-Za-z]*(Withdraw|Transfer|Payout)/);
  });
