@@ -4,7 +4,8 @@ import {api,pesos} from '../lib/api';
 import type {MerchantEarnings,MerchantFinance} from '../lib/api';
 import type {Order} from '../lib/types';
 import {MerchantFinanceActivity} from './RestaurantParity';
-import {merchantEarningTotals,merchantWithdrawalEnabled} from '../lib/merchant-wallet';
+import {merchantEarningTotals} from '../lib/merchant-wallet';
+import {merchantConnectStage} from '../lib/merchant-connect';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant-mobile-wallet.css';
 
@@ -81,9 +82,8 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
  const currentEarnings=earnings?.restaurant_id===restaurantId?earnings:null;
  const verifiedFinance=finance?.restaurant_id===restaurantId?finance:null;
  const totals=merchantEarningTotals(currentEarnings);
- const enabled=merchantWithdrawalEnabled(currentEarnings);
- const connected=Boolean(connect?.owner_approved&&connect?.transfers_active&&
-  connect?.payouts_enabled&&connect?.details_submitted);
+ const connectStage=merchantConnectStage(connect);
+ const connected=connectStage==='ready';
  return <div className="mw-screen" data-merchant-wallet="true">
   <header className="mw-heading">
    <div><h2>Wallet</h2><p>Ventas e ingreso de tu restaurante</p></div>
@@ -115,8 +115,12 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
   </section>
   {error&&<div className="mw-notice" role="alert">{error}</div>}
   {!connected&&<button type="button" className="mw-connect" onClick={()=>go('activacion')}>
-   <span><strong>Activar cuenta de pagos</strong></span><ArrowRight size={16}/>
-  </button>}
+   <span><strong>{connectStage==='review'?'Verificar estado de Stripe Connect':'Activar cuenta de pagos'}</strong>
+    <small>{connectStage==='owner'?'Confirma la titularidad de tu comercio':
+     connectStage==='stripe'?'Completa la verificación en Stripe':
+     connectStage==='review'?'El servidor todavía no autoriza la operación':
+     'Revisa los pasos pendientes de activación'}</small></span><ArrowRight size={16}/>
+  </button>
   <section className="mw-activity">
    <div className="mw-activity-heading"><h3>Movimientos</h3></div>
    {loading?<p className="mw-empty" role="status">Consultando movimientos…</p>:
@@ -145,8 +149,7 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
      onClick={()=>setWithdrawOpen(false)}><X size={21}/></button>
     
     <h3 id="mw-modal-title">Retirar ganancias</h3>
-    <p id="mw-modal-description">{enabled?'Confirma el retiro con el servidor.':
-     'Los retiros bancarios aún no están habilitados en Tala Eats Restaurantes.'}</p>
+    <p id="mw-modal-description">Los retiros bancarios aún no están habilitados en Tala Eats Restaurantes.</p>
     <div className="mw-modal-facts">
      <span>Saldo retirable confirmado <strong>No disponible</strong></span>
      <span>Transferencia bancaria <strong>No iniciada</strong></span>
