@@ -74,8 +74,12 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
    if(target?.isConnected)target.focus({preventScroll:true});
   };
  },[withdrawOpen]);
- const totals=merchantEarningTotals(earnings);
- const enabled=merchantWithdrawalEnabled(earnings);
+ // Render guards run before effects: never display the previous restaurant's
+ // financial snapshot, even for one frame when the merchant identity changes.
+ const currentEarnings=earnings?.restaurant_id===restaurantId?earnings:null;
+ const verifiedFinance=finance?.restaurant_id===restaurantId?finance:null;
+ const totals=merchantEarningTotals(currentEarnings);
+ const enabled=merchantWithdrawalEnabled(currentEarnings);
  const connected=Boolean(connect?.owner_approved&&connect?.transfers_active&&
   connect?.payouts_enabled&&connect?.details_submitted);
  return <div className="mw-screen" data-merchant-wallet="true">
@@ -101,7 +105,7 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
    </div>
    <div>
     <span>Neto contable</span>
-    <strong>{finance?pesos(finance.net_payable):'—'}</strong>
+    <strong>{verifiedFinance?pesos(verifiedFinance.net_payable):'—'}</strong>
     <small>Sin conciliar para retiros</small>
    </div>
   </section>
@@ -119,9 +123,9 @@ export function MerchantWallet({restaurantId,finance,connect,go}:Props){
      <b>{money(row.amountMinor)}</b>
     </div>)}</div>:
     <p className="mw-empty">No hay ganancias verificadas disponibles en esta consulta.</p>}
-   {finance?.payouts?.length?<>
+   {verifiedFinance?.payouts?.length?<>
     <h4>Liquidaciones reportadas</h4>
-    <div className="mw-entries">{finance.payouts.map(p=><div className="mw-entry" key={p.id}>
+    <div className="mw-entries">{verifiedFinance.payouts.map(p=><div className="mw-entry" key={p.id}>
      
      <span className="mw-entry-copy"><strong>Registro #{p.id}</strong><small>Estado: {p.status}</small></span>
      <b>{pesos(p.amount)}</b>
