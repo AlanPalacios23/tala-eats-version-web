@@ -90,7 +90,7 @@ async function openTab(page,width,label){
   if(label==='finanzas'||label==='activacion'){
    await nav.getByRole('button',{name:'Más',exact:true}).click();
    if(label==='finanzas')await page.getByRole('button',{name:/Abrir Wallet/}).click();
-   else await page.getByRole('button',{name:/Ver activación/}).click();
+   else await page.locator('.rm-mobile-more-shortcuts').getByRole('button',{name:/Activación/}).click();
   }else{
    const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio'}[label];
    await nav.getByRole('button',{name,exact:true}).click();
