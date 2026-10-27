@@ -359,3 +359,30 @@
 @media(prefers-reduced-motion:reduce){
  .rp-layout .flutter-signout{transition:none!important}
 }
+
+/* Keep exactly one Flutter NavigationDestination active. Earlier web CSS
+   added an orange top border and hover states that looked like a second tab. */
+@media(max-width:839px){
+ .rp-layout .rp-mobile-tabs button{
+  box-shadow:none!important;border:0!important;text-decoration:none!important;
+ }
+ .rp-layout .rp-mobile-tabs button:hover:not(.selected),
+ .rp-layout .rp-mobile-tabs button:focus:not(.selected){
+  background:transparent!important;color:var(--fl-soft)!important;
+ }
+ .rp-layout .rp-mobile-tabs button:not(.selected):hover svg{
+  color:var(--fl-soft)!important;background:transparent!important;
+  box-shadow:none!important;
+ }
+ .rp-layout .rm-mobile-more-shortcuts{
+  border:0!important;background:transparent!important;padding:0!important;
+  box-shadow:none!important;overflow:visible!important;gap:10px!important;
+ }
+ .rp-layout .rm-mobile-more-shortcuts button{
+  border:1px solid var(--fl-line)!important;border-radius:14px!important;
+  background:#fff!important;padding:16px!important;min-height:58px!important;
+ }
+ .rp-layout .rm-mobile-more-shortcuts button+button{
+  border-top:1px solid var(--fl-line)!important;
+ }
+}
