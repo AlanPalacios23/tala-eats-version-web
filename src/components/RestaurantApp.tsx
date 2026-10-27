@@ -716,8 +716,9 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
  }
  return <article className={'rp-menu-item rp-catalog-item '+(editing?'is-editing':'')} data-product-id={item.id}>
   <div className="rp-catalog-topline">
-   <div className="rp-menu-visual">{safePhoto&&!imageBroken?
-    <img src={safePhoto} alt="" loading="lazy" onError={()=>setImageBroken(true)}/>:<ChefHat size={30}/>}</div>
+   {safePhoto&&!imageBroken&&<div className="rp-menu-visual">
+    <img src={safePhoto} alt="" loading="lazy" onError={()=>setImageBroken(true)}/>
+   </div>}
    <div className="rp-catalog-product">
     <strong>{item.name}</strong><small>{item.category||'General'}</small>
     <b className="rp-catalog-price">{pesos(item.price)}</b>
