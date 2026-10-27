@@ -16,6 +16,7 @@ import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant.css';
 import '../styles/restaurant-polish.css';
 import {MerchantOverview,MerchantKitchen,MerchantMore,MerchantFinanceActivity} from './RestaurantParity';
+import {RestaurantOrderAlerts} from './RestaurantOrderAlerts';
 import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
 
 const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -449,6 +450,7 @@ export function RestaurantWorkspace(){
      </div>
     </div>
     <div className="rp-top-actions">
+     <RestaurantOrderAlerts orders={orders} live={syncHealthy} onOpenOrders={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}/>
      {incomingCount>0&&<button type="button" className="rp-new-orders"
        onClick={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}>
       <ShoppingBag size={16}/><strong>{incomingCount}</strong><span>{incomingCount===1?'nuevo':'nuevos'}</span>
