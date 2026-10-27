@@ -549,18 +549,30 @@ export function RestaurantWorkspace(){
        <div><span>Pedidos históricos</span><strong>{stats?.orders??'—'}</strong><small>Desde el servidor</small></div>
        <div><span>Activos</span><strong>{activeOrders.length}</strong><small>En espera o preparación</small></div>
        <div><span>Entregados</span><strong>{stats?.delivered??'—'}</strong><small>Recogidas y entregas</small></div>
-       <div><span>Stock bajo</span><strong>{stats?.inventory_low??'—'}</strong><small>Productos bajo 10 uds.</small></div>
+       <div><span>Stock bajo</span><strong>{stats?.inventory_low??'—'}</strong><small>Productos con 10 uds. o menos</small></div>
       </div>
       {!connectComplete&&<section className="rp-activation-banner">
        <LockKeyhole size={24}/><div><strong>Falta completar la activación LIVE</strong>
         <p>Los pedidos reales se habilitan cuando el propietario confirma su cuenta Stripe Connect y el servidor valida la configuración.</p></div>
        <button className="rp-btn small dark" onClick={()=>setTab('activacion')}>Ver activación <ArrowRight size={16}/></button>
       </section>}
-      <div className="rp-order-controls">
-       <label><SearchIcon size={18}/><input aria-label="Buscar pedidos por número o producto" placeholder="Buscar número o producto" value={orderQuery} onChange={e=>setOrderQuery(e.target.value)}/></label>
+      <div className="rp-order-controls rp-flutter-filter-controls">
        <div className="rp-order-filters" aria-label="Filtrar pedidos">{([
-        ['all','Todos'],['received','Nuevos'],['kitchen','En cocina'],['ready','Listos'],['history','Historial']
-       ] as const).map(([id,label])=><button key={id} className={orderFilter===id?'selected':''} onClick={()=>setOrderFilter(id)} aria-pressed={orderFilter===id}>{label}</button>)}</div>
+        ['all','Activos',activeOrders.length],['received','Nuevos',incomingCount],
+        ['kitchen','En cocina',activeOrders.filter(o=>o.status==='confirmed'||o.status==='preparing').length],
+        ['ready','Listos',activeOrders.filter(o=>o.status==='ready').length],
+        ['history','Historial',completedOrders.length]
+       ] as const).map(([id,label,count])=><button key={id} type="button"
+        className={orderFilter===id?'selected':''}
+        onClick={()=>{setOrderFilter(id);setOrderQuery('');}} aria-pressed={orderFilter===id}
+        aria-label={id!=='history'&&count>0?label+', '+count:label}>{label}
+        {id!=='history'&&count>0&&<span className="rp-filter-count" aria-hidden="true">{count}</span>}
+       </button>)}</div>
+       <label className="rp-flutter-orders-search"><SearchIcon size={18}/>
+        <input aria-label="Buscar pedidos por número o producto" placeholder="Buscar por folio o producto"
+         value={orderQuery} onChange={e=>setOrderQuery(e.target.value.replace(/^#/,''))}/>
+        {orderQuery&&<button type="button" aria-label="Limpiar búsqueda" onClick={()=>setOrderQuery('')}>×</button>}
+       </label>
       </div>
       {waitingPayment.length>0&&orderFilter!=='history'&&<div className="rp-pending-payment-note" role="status">
        <AlertCircle size={19}/>
@@ -572,11 +584,18 @@ export function RestaurantWorkspace(){
        <span>Prueba otro número, producto o filtro.</span>
        <button className="rp-btn outline small" onClick={()=>{setOrderQuery('');setOrderFilter('all');}}>Limpiar búsqueda</button>
       </div>}
+      {orderFilter!=='history'&&visibleOrders.length===0&&!orderQuery.trim()&&
+       <div className="rp-flutter-empty-orders" role="status">
+        <PackageCheck size={30}/><strong>{orderFilter==='received'?'No hay pedidos nuevos':
+         orderFilter==='kitchen'?'No hay pedidos en cocina':
+         orderFilter==='ready'?'No hay pedidos listos':'Sin pedidos activos'}</strong>
+        <p>Los pedidos autorizados aparecerán aquí cuando estén disponibles.</p>
+       </div>}
       {orderFilter!=='history'&&<div className="rp-lane-grid">
        {(['received','kitchen','ready'] as const).map(state=>{
         const lane=visibleOrders.filter(o=>state==='kitchen'?
          o.status==='confirmed'||o.status==='preparing':o.status===state);
-        return <section className={'rp-order-lane '+(lane.length===0?'rp-lane-empty':'')} key={state}>
+        return <section className={'rp-order-lane '+(lane.length===0?'rp-lane-empty':'')} key={state} data-orders-lane={state}>
          <div className="rp-lane-title"><span className={'rp-lane-indicator '+state}/>
           <h3>{state==='received'?'Nuevos':state==='kitchen'?'En cocina':'Listos para entregar'}</h3><span>{lane.length}</span></div>
          {lane.length===0?<div className="rp-empty-lane"><PackageCheck size={29}/><p>Sin pedidos en esta etapa</p></div>:
@@ -613,7 +632,7 @@ export function RestaurantWorkspace(){
         </section>;
        })}
       </div>}
-      {(orderFilter==='all'||orderFilter==='history')&&<section className="rp-history">
+      {(orderFilter==='all'||orderFilter==='history')&&<section className={'rp-history '+(orderFilter==='all'?'rp-history-secondary':'')}>
        <div className="rp-history-head"><div><span className="rp-eyebrow">REGISTRO CONSULTADO</span><h3>Últimos pedidos finalizados</h3></div>
         <span>{matchingCompletedOrders.length} de {completedOrders.length} registros recientes</span></div>
        {matchingCompletedOrders.length===0?<div className="rp-search-empty">
