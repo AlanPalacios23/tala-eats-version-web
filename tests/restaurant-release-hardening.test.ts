@@ -34,6 +34,9 @@ describe('Restaurant web release: fail-closed operations and consistent UX',()=>
   expect(app).toContain("o.order_type==='pickup'?'Efectivo · cobro al recoger':'Efectivo · cobro en entrega'");
   expect(kitchen).toContain("o.order_type==='pickup'?'Efectivo · cobrar al recoger':'Efectivo · cobro en entrega'");
   expect(app).toContain('Descripción<textarea maxLength={1000}');
+  expect(app).toContain('rp-mobile-order-alerts');
+  const mobileCSS=read('../src/styles/restaurant-flutter-parity.css');
+  expect(mobileCSS).toContain('data-kitchen-open="true"] .rp-mobile-order-alerts{display:none}');
  });
  it('keeps bank withdrawal execution entirely on the server',()=>{
   expect(wallet).toContain('Saldo retirable confirmado');
