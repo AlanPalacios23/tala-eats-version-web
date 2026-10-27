@@ -8,7 +8,7 @@ const css=read('../src/styles/restaurant-mobile-wallet.css');
 describe('Restaurantes premium clean | mobile priority without removing operations',()=>{
  it('keeps the business title, real order operations and the five main navigation destinations',()=>{
   expect(shell).toContain("<h1>{restaurant?.name||'Restaurantes'}</h1>");
-  expect(shell).toContain("['inicio','pedidos','cocina','menu','mas']");
+  expect(shell).toContain("['inicio','pedidos','menu','finanzas','mas']");
   expect(shell).toContain("aria-label=\"Navegación móvil de restaurantes\"");
   expect(parity).toContain("aria-label=\"Inicio rápido del restaurante\"");
   expect(parity).toContain("go('cocina')");
@@ -22,13 +22,13 @@ describe('Restaurantes premium clean | mobile priority without removing operatio
   expect(shell).not.toContain('new Date().toLocaleDateString');
   expect(shell).not.toContain('className=\"rp-new-orders\"');
   expect(css).toContain('.rp-layout .rp-sidebar{display:none!important}');
-  expect(css).toContain('.rp-layout .rp-mobile-tabs button svg{display:none}');
+  expect(shell).toContain('restaurant-flutter-parity.css');
  });
  it('removes unnecessary icons in mobile operational shortcuts and bogus image placeholders',()=>{
   expect(parity).not.toContain('<ChefHat size={19}/>');
   expect(parity).not.toContain('<PackageCheck size={19}/>');
   expect(parity).toContain('<strong>Wallet</strong>');
-  expect(parity).toContain('<strong>Equipo</strong>');
+  expect(parity).toContain('Equipo y permisos');
   expect(shell).not.toContain('<ChefHat size={30}/>');
   expect(shell).toContain('safePhoto&&!imageBroken&&<div');
  });
