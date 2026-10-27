@@ -84,15 +84,20 @@ async function checkViewport(page,width,label){
  }
 }
 async function openTab(page,width,label){
- const isMobile=width<=850;
+ const isMobile=width<840;
+ if(await page.locator('[data-kitchen-open="true"]').count()){
+  await page.getByRole('button',{name:'Volver a Inicio'}).click();
+ }
  if(isMobile){
   const nav=page.locator('.rp-mobile-tabs');
-  if(label==='finanzas'||label==='activacion'){
+  if(label==='cocina'){
+   await nav.getByRole('button',{name:'Inicio',exact:true}).click();
+   await page.getByRole('button',{name:/Modo cocina/}).click();
+  }else if(label==='activacion'){
    await nav.getByRole('button',{name:'Más',exact:true}).click();
-   if(label==='finanzas')await page.getByRole('button',{name:/Abrir Wallet/}).click();
-   else await page.locator('.rm-mobile-more-shortcuts').getByRole('button',{name:/Activación/}).click();
+   await page.locator('.rm-mobile-more-shortcuts').getByRole('button',{name:/Activación/}).click();
   }else{
-   const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio'}[label];
+   const name={pedidos:'Pedidos',menu:'Menú',mas:'Más',inicio:'Inicio',finanzas:'Wallet'}[label];
    await nav.getByRole('button',{name,exact:true}).click();
   }
  }else{
@@ -107,7 +112,7 @@ for(const width of widths){
  page.on('pageerror',err=>{console.error('MERCANTE PAGE ERROR:',err.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-app="true"]').waitFor();
- if(width<=850)await page.getByRole('heading',{name:'Inicio',exact:true}).waitFor({timeout:12000});
+ if(width<840)await page.locator('.flutter-store-heading h2').waitFor({timeout:12000});
  else await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
  if(BASE.endsWith('4174')){
   await page.locator('[data-merchant-standalone="true"]').waitFor();
@@ -119,7 +124,7 @@ for(const width of widths){
  const scenes=[
   ['inicio',null],
   ['pedidos','Pedidos'],
-  ['cocina','Comandas en preparación'],
+  ['cocina','Cocina'],
   ['menu','Menú'],
   ['mas','Más'],
   ['finanzas','Wallet'],
@@ -130,8 +135,12 @@ for(const width of widths){
   if(title)await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:12000});
   await checkViewport(page,width,name);
   if(width<=430){
-   const brandHeight=await page.locator('.rp-sidebar').evaluate(node=>node.getBoundingClientRect().height);
-   if(brandHeight>76)throw Error('Oversized mobile brand/header: '+brandHeight+' at '+width+' '+name);
+   const navButtons=await page.locator('.rp-mobile-tabs button').count();
+   if(navButtons!==5)throw Error('Flutter bottom NavigationBar requires 5 destinations');
+   if(name==='inicio'){
+    if(await page.locator('.flutter-open-card').count()!==1||await page.locator('.flutter-kitchen-entry').count()!==1)
+     throw Error('Missing native Flutter store status or KDS entry');
+   }
   }
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
   if(name==='finanzas'){
