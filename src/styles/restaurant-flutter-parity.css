@@ -177,7 +177,7 @@
  min-height:100dvh;max-width:none;padding:0 0 28px;gap:12px}
 .rp-layout .flutter-kds-header{display:flex;align-items:center;gap:14px;padding:20px;
  background:var(--fl-kds);border-bottom:1px solid #2E312D}
-.flutter-kds-header>strong{color:white;font-family:Bricolage,system-ui,sans-serif;font-size:28px;flex:1}
+ .flutter-kds-header>h2{margin:0;color:white;font-family:Bricolage,system-ui,sans-serif;font-size:28px;flex:1}
 .flutter-kds-header button{min-height:44px;border-radius:12px;background:#2D302B;
  border:1px solid #3C4039;color:white;padding:10px}
 .flutter-kds-header button:first-child svg{transform:rotate(180deg)}
@@ -233,7 +233,7 @@
   gap:3px!important;align-items:center;border-radius:12px!important;color:var(--fl-soft)!important;
   background:transparent!important}
  .rp-layout .rp-mobile-tabs button span{font-size:11px!important;font-weight:650!important;color:inherit}
- .rp-layout .rp-mobile-tabs button svg{width:23px;height:23px;flex-shrink:0}
+ .rp-layout .rp-mobile-tabs button svg{display:block!important;width:23px;height:23px;flex-shrink:0}
  .rp-layout .rp-mobile-tabs button.selected{background:transparent!important;color:var(--fl-ink)!important}
  .rp-layout .rp-mobile-tabs button.selected svg{color:var(--fl-orange-text)!important;
   background:var(--fl-orange-tint)!important;border-radius:16px!important;
