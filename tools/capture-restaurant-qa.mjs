@@ -96,7 +96,7 @@ async function openTab(page,width,label){
    await nav.getByRole('button',{name,exact:true}).click();
   }
  }else{
-  const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio',finanzas:'Finanzas',activacion:'Activación'}[label];
+  const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio',finanzas:'Wallet',activacion:'Activación'}[label];
   await page.locator('.rp-nav').getByRole('button',{name,exact:false}).click();
  }
 }
