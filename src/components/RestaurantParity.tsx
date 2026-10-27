@@ -5,7 +5,7 @@ import {
  CreditCard,MapPin,PackageCheck,Settings2,ShieldCheck,
  ShoppingBag,Store,Users,Wallet
 } from 'lucide-react';
-import {api,pesos} from '../lib/api';
+import {api,pesos,safeImage} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
 import {nextMerchantState} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
@@ -148,8 +148,9 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
  async function uploadCover(){
   if(!cover||busy||uploadBusy)return;
   setUploadBusy(true);
-  try{await run(()=>api.ownerUploadCover(cover),'Foto de portada publicada por el backend.');setCover(null);}
-  finally{setUploadBusy(false);}
+  try{const ok=await run(()=>api.ownerUploadCover(cover),'Foto de portada publicada por el backend.');
+   if(ok)setCover(null);
+  }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
   <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes" description="Perfil, preparación, equipo y opciones financieras como en la app Flutter."/>
@@ -172,6 +173,7 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
      <button className="rp-btn primary" disabled={busy||!Number.isInteger(eta)||eta<5||eta>180||name.trim().length<2}>Guardar perfil</button>
     </form>
     <div className="rm-cover-uploader"><strong>Foto de portada</strong>
+     {safeImage(restaurant.cover_image_url)&&<img className="rm-cover-preview" src={safeImage(restaurant.cover_image_url)??undefined} alt={'Portada de '+restaurant.name} loading="lazy"/>}
      <p>Sube una foto original del negocio para el catálogo, verificada y almacenada en el backend.</p>
      <input aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
      <button className="rp-btn outline small" disabled={!cover||busy||uploadBusy} onClick={()=>void uploadCover()}>Publicar portada</button>
