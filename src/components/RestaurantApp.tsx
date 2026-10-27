@@ -475,6 +475,11 @@ export function RestaurantWorkspace(){
     </div>
    </header>
    <main className="rp-content">
+    {syncHealthy&&incomingCount>0&&!['inicio','pedidos','cocina'].includes(tab)&&<button
+     type="button" className="flutter-incoming-banner" onClick={()=>{setOrderFilter('received');setOrderQuery('');setTab('pedidos');}}>
+     <span>{incomingCount===1?'1 pedido nuevo espera respuesta':incomingCount+' pedidos nuevos esperan respuesta'}</span>
+     <ArrowRight size={17}/>
+    </button>}
     {PREVIEW_READONLY&&<Notice message="Vista previa: se puede explorar el diseño, pero las acciones de administración y cobro están bloqueadas."/>}
     {error&&<Notice kind="error" message={error}/>}
     {notice&&<Notice kind="success" message={notice}/>}
@@ -489,7 +494,7 @@ export function RestaurantWorkspace(){
     <>
      {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
      {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
-     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
+     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut}/>}
      {tab==='pedidos'&&<>
       <div className="rp-heading-row"><div><h2>Pedidos</h2></div>
        <span className="rp-last-sync"><Clock3 size={16}/> {lastSync?'Actualizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Sin sincronizar'} · Cada 20 s</span>
