@@ -61,6 +61,25 @@ Resultado requerido: `RESTAURANTES_INSTALL=PASS_LOCAL_ONLY`. Copia solo `dist-re
 
 Arranca un Nginx propio bajo `www-data` y prueba rutas/local API. Falla si hay colisión, puerto ocupado o backend inapropiado. Intenta rollback de estos recursos nuevos en caso de fallo. **No reinicia el Nginx de Clientes, Node, PM2, Redis, Postgres, Stripe ni Cloudflared**.
 
+## Diagnóstico de primer arranque: directorio PID de Nginx
+
+Si `nginx -t` informa `open() "/run/talaeats-restaurantes-pwa/nginx.pid" failed (2: No such file or directory)`,
+la sintaxis de Nginx puede ser correcta, pero systemd **todavía no creó** `RuntimeDirectory=`
+porque el servicio no ha iniciado. El instalador corregido crea este directorio exclusivo
+con propietario `www-data` **después del modo --plan y antes de `nginx -t`**;
+si la instalación falla, limpia ese directorio únicamente cuando el propio instalador lo creó.
+
+Para un checkout inmutable **anterior** a la corrección, SIN editar el script ni ensuciar el SHA:
+
+```bash
+sudo install -d -o www-data -g www-data -m 0755 /run/talaeats-restaurantes-pwa
+# Repetir el comando --apply aprobado para el mismo SHA ya compilado.
+```
+
+Esto no reinicia Clientes `18195` ni backend `18190`. `/run` es almacenamiento
+volátil; systemd administra el directorio en arranques posteriores. No publicar Cloudflare
+hasta `RESTAURANTES_INSTALL=PASS_LOCAL_ONLY` y smoke checks GET aprobados.
+
 ## III. Darle un dominio real en Cloudflare
 
 **Solo después de que la instalación local pase:** crear un nuevo hostname del mismo túnel:
