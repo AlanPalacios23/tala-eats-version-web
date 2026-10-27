@@ -154,3 +154,30 @@
  .rp-layout .rp-mobile-tabs button span{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.mw-screen *, .rm-mobile-home *{transition:none!important;animation:none!important}}
+
+/* Merchant entrance: one clear action, not a desktop marketing landing. */
+@media(max-width:850px){
+ .rp-auth-page .rp-intro{
+  min-height:98px;max-height:104px;padding:55px 18px 12px;
+  background:#202923;
+ }
+ .rp-auth-page .rp-intro .rp-brand{top:30px;left:20px;font-size:26px}
+ .rp-auth-page .rp-intro .rp-eyebrow,
+ .rp-auth-page .rp-intro h1,
+ .rp-auth-page .rp-intro>p,
+ .rp-auth-page .rp-intro-points,
+ .rp-auth-page .rp-intro-caption{display:none}
+ .rp-auth-page .rp-access-card{padding:24px 20px 38px;border:0}
+ .rp-auth-page .rp-muted-link{margin-bottom:18px}
+ .rp-auth-page .rp-access-card h2{font-size:27px}
+ .rp-auth-page .rp-access-card>p{font-size:12px}
+ .rp-auth-page .rp-form{margin:21px 0 15px;gap:13px}
+ .rp-onboarding .rp-activation-track{margin:17px 0}
+ .rb-welcome .rb-hero{padding-top:35px;padding-bottom:35px;min-height:auto}
+ .rb-welcome .rb-hero-demo,
+ .rb-welcome .rb-features,
+ .rb-welcome .rb-activation,
+ .rb-welcome .rb-final-cta{display:none}
+ .rb-welcome .rb-hero-copy h1{font-size:clamp(34px,8vw,47px);line-height:1.1}
+ .rb-welcome .rb-hero-copy p{font-size:13px;line-height:1.6}
+}
