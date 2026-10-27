@@ -62,8 +62,12 @@ async function checkViewport(page,width,label){
   documentWidth:document.documentElement.scrollWidth,
   bodyWidth:document.body.scrollWidth
  }));
- if(Math.max(measured.documentWidth,measured.bodyWidth)>measured.windowWidth+2)
-  throw new Error('Desbordamiento horizontal '+label+' '+width+': '+JSON.stringify(measured));
+ if(Math.max(measured.documentWidth,measured.bodyWidth)>measured.windowWidth+2){
+  const offenders=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{
+   const rect=e.getBoundingClientRect();return rect.width&&rect.right>window.innerWidth+1
+  }).slice(0,16).map(e=>({tag:e.tagName,cls:typeof e.className==='string'?e.className.slice(0,80):'',text:(e.textContent??'').trim().slice(0,45),right:Math.round(e.getBoundingClientRect().right*10)/10})));
+  throw new Error('Desbordamiento horizontal '+label+' '+width+': '+JSON.stringify({...measured,offenders}));
+ }
 }
 async function openTab(page,width,label){
  const isMobile=width<=850;
