@@ -40,24 +40,23 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
  return <div className="rm-experience">
   <section className="rm-mobile-home" aria-label="Inicio rápido del restaurante">
    <div className="rm-mobile-home-header">
-    <div><span>HOY EN TU NEGOCIO</span><h2>Inicio</h2></div>
+    <div><h2>Inicio</h2></div>
     <span className={'rm-mobile-business-status '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
    </div>
    <button className="rm-mobile-primary-task" onClick={()=>go('pedidos')}>
-    <span><small>Pedidos nuevos</small><strong>{incoming.length}</strong><em>{incoming.length?'Por aceptar':'Todo al día'}</em></span>
-    <ArrowRight size={22}/>
+    <span><small>Pedidos nuevos</small><strong>{incoming.length}</strong></span>
    </button>
    <div className="rm-mobile-tasks">
-    <button onClick={()=>go('cocina')}><ChefHat size={19}/><span><b>{live.filter(o=>o.status==='confirmed'||o.status==='preparing').length}</b><small>En cocina</small></span><ArrowRight size={16}/></button>
-    <button onClick={()=>go('pedidos')}><PackageCheck size={19}/><span><b>{ready.length}</b><small>Listos</small></span><ArrowRight size={16}/></button>
+    <button onClick={()=>go('cocina')}><span><b>{live.filter(o=>o.status==='confirmed'||o.status==='preparing').length}</b><small>En cocina</small></span></button>
+    <button onClick={()=>go('pedidos')}><span><b>{ready.length}</b><small>Listos</small></span></button>
    </div>
    {notPaid.length>0&&<p className="rm-mobile-payment-warning"><AlertTriangle size={17}/>{notPaid.length} pago(s) pendientes de verificar. No preparar.</p>}
-   {lowStock.length>0&&<button className="rm-mobile-stock" onClick={()=>go('menu')}>Stock bajo · {lowStock.length} producto(s)<ArrowRight size={17}/></button>}
+   {lowStock.length>0&&<button className="rm-mobile-stock" onClick={()=>go('menu')}>Stock bajo · {lowStock.length} producto(s)</button>}
    <button className="rm-mobile-open-toggle" disabled={busy}
     onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar nuevos pedidos?'))return;
       void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),
         restaurant.is_open?'Restaurante cerrado.':'Restaurante abierto según el backend.');}}>
-    <span>{restaurant.is_open?'Pausar nuevos pedidos':'Abrir restaurante'}</span><ArrowRight size={18}/>
+    <span>{restaurant.is_open?'Pausar pedidos':'Abrir restaurante'}</span>
    </button>
   </section>
   <div className="rm-desktop-home">
@@ -224,14 +223,14 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
-  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes"/></div>
+  <div className="rm-heading-row"><h2>Más</h2></div>
   <div className="rm-mobile-more-shortcuts">
-   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
-   <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>{connect?.owner_approved?'Cuenta vinculada':'Verificar tu comercio'}</small></span><ArrowRight size={18}/></button>
+   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><span><strong>Wallet</strong></span></button>
+   <button type="button" onClick={()=>go('activacion')}><span><strong>Activación</strong>{!connect?.owner_approved&&<small>Pendiente</small>}</span></button>
   </div>
   <div className="rm-duo rm-more-duo">
    <details className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
-    <summary><Store size={19}/><strong>Perfil del restaurante</strong><ArrowRight size={17}/></summary>
+    <summary><strong>Perfil del negocio</strong><ArrowRight size={16}/></summary>
     <form onSubmit={e=>void saveProfile(e)} className="rm-settings-form">
      <label>Nombre<input value={name} required minLength={2} maxLength={150} onChange={e=>setName(e.target.value)}/></label>
      <label>Tipo de comida<input maxLength={100} value={cuisine} onChange={e=>setCuisine(e.target.value)} placeholder="Mexicana, hamburguesas, tacos…"/></label>
@@ -255,15 +254,15 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
     </div>
    </details>
    <div className="rm-more-column">
-    <section className="rp-panel-card"><h3><Settings2 size={19}/> Preparación y entrega</h3>
+    <section className="rp-panel-card"><h3>Operación</h3>
      <div className="rp-setting"><div><strong>Recibir nuevos pedidos</strong><small>{restaurant.is_open?'Abierto':'Cerrado'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar pedidos nuevos?'))return;void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),'Disponibilidad actualizada.');}}>{restaurant.is_open?'Pausar':'Abrir'}</button></div>
      <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
-     <p className="rp-legal">El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
+     
     </section>
    </div>
   </div>
   <details className="rm-team-fold" data-merchant-accordion="team">
-   <summary><Users size={19}/><strong>Equipo y permisos</strong><ArrowRight size={17}/></summary>
+   <summary><strong>Equipo</strong><ArrowRight size={16}/></summary>
    <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
   </details>
  </div>;
