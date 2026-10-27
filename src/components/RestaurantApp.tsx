@@ -100,8 +100,9 @@ export function RestaurantAccess(){
  const [mode,setMode]=useState<'login'|'register'>(()=>new URLSearchParams(window.location.search).get('mode')==='register'?'register':'login');
  const [name,setName]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[otp,setOtp]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [needsOtp,setNeedsOtp]=useState(false);
  const allowed=AUTH_EMAIL.test(email.trim())&&password.length>0&&
-   (mode==='login'||(name.trim().length>=2&&password.length>=8));
+   (mode==='login'?(!needsOtp||/^\d{6}$/.test(otp)):(name.trim().length>=2&&password.length>=8));
  useEffect(()=>{
   if(user?.role==='restaurant')navigate('/restaurante',{replace:true});
   else if(user?.role==='admin')navigate('/admin/solicitudes-restaurantes',{replace:true});
@@ -116,7 +117,12 @@ export function RestaurantAccess(){
    const verified=await api.me();
    navigate(verified.role==='restaurant'?'/restaurante':
      verified.role==='admin'?'/admin/solicitudes-restaurantes':'/restaurante/alta',{replace:true});
-  }catch(e){setError(e instanceof Error?e.message:'No se pudo verificar tu cuenta.');}
+   }catch(e){
+    const reason=e instanceof Error?e.message:'No se pudo verificar tu cuenta.';
+    if(mode==='login'&&/(2fa|2.f[aá]ctor|two.factor|autenticador|verificaci[oó]n|totp|otp)/i.test(reason))
+     setNeedsOtp(true);
+    setError(reason);
+   }
   finally{setBusy(false);}
  }
  return <div className="rp-auth-page"><MerchantIntro title="Tu negocio, en movimiento."
@@ -130,31 +136,34 @@ export function RestaurantAccess(){
     <Link to="/restaurante/alta" className="rp-btn primary">Ir a mi solicitud <ArrowRight size={18}/></Link>
     <button type="button" className="rp-btn quiet" onClick={()=>void logout()}>Entrar con otra cuenta</button>
    </>:<>
-    <span className="rp-eyebrow">ACCESO EMPRESARIAL</span>
-    <h2>{mode==='login'?'Bienvenido de nuevo':'Comienza con tu comercio'}</h2>
-    <p>{mode==='login'?'Inicia sesión con tu cuenta autorizada de restaurante.':
+    <span className="rp-eyebrow">RESTAURANTES</span>
+    <h2>{mode==='login'?'Bienvenido de vuelta':'Comienza con tu comercio'}</h2>
+    <p>{mode==='login'?'Entra para atender pedidos, cocina y menú de tu restaurante.':
       'Primero crea una cuenta personal. El restaurante se activa únicamente después de la revisión administrativa.'}</p>
     <form onSubmit={e=>void enter(e)} className="rp-form">
      {mode==='register'&&<label>Nombre del titular
       <input autoComplete="name" required minLength={2} maxLength={120} value={name} disabled={busy}
        onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/></label>}
-     <label>Correo electrónico
+     <label>Correo
       <input type="email" autoComplete="email" required value={email} maxLength={254}
-       disabled={busy} onChange={e=>setEmail(e.target.value)} placeholder="tu@restaurante.com"/></label>
+       disabled={busy} onChange={e=>{setEmail(e.target.value);setNeedsOtp(false);setOtp('');setError('');}} placeholder="nombre@correo.com"/></label>
      <label>Contraseña
       <input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required
-       minLength={8} value={password} disabled={busy} onChange={e=>setPassword(e.target.value)}
-       placeholder="Mínimo 8 caracteres"/></label>
-     {mode==='login'&&<label>Código 2FA (si tu cuenta lo tiene)
-      <input autoComplete="one-time-code" inputMode="numeric" maxLength={12}
-       value={otp} disabled={busy} onChange={e=>setOtp(e.target.value)} placeholder="Código de 6 dígitos"/></label>}
+       minLength={mode==='register'?8:undefined} value={password} disabled={busy}
+       onChange={e=>{setPassword(e.target.value);setNeedsOtp(false);setOtp('');setError('');}}
+       placeholder="Contraseña"/></label>
+     {mode==='login'&&needsOtp&&<label>Código de verificación
+      <input autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+       required value={otp} disabled={busy} onChange={e=>setOtp(e.target.value.replace(/\D/g,'').slice(0,6))}
+       placeholder="000000"/>
+      <small>Escribe los 6 dígitos de tu autenticador.</small></label>
      {error&&<Notice kind="error" message={error}/>}
      <button type="submit" className="rp-btn primary" disabled={!allowed||busy}>
-       {busy?'Verificando…':mode==='login'?'Entrar a mi restaurante':'Crear cuenta y solicitar alta'}
+       {busy?'Verificando…':mode==='login'?(needsOtp?'Verificar e iniciar sesión':'Iniciar sesión'):'Crear cuenta y solicitar alta'}
        <ArrowRight size={19}/>
      </button>
     </form>
-    <button type="button" className="rp-switch" disabled={busy} onClick={()=>{setError('');setMode(v=>v==='login'?'register':'login');}}>
+    <button type="button" className="rp-switch" disabled={busy} onClick={()=>{setError('');setNeedsOtp(false);setOtp('');setMode(v=>v==='login'?'register':'login');}}>
      {mode==='login'?'¿Aún no tienes cuenta? Registra tu negocio':'¿Ya tienes una cuenta? Inicia sesión'}
     </button>
     <p className="rp-legal">El registro no habilita automáticamente cobros ni asigna el rol Restaurante.</p>
