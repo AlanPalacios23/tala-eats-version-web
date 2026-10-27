@@ -343,3 +343,21 @@
 @media(max-width:980px){.rp-skeleton-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-skeleton-body{grid-template-columns:1fr}}
 @media(max-width:590px){.rp-skeleton-kpis{gap:9px}.rp-skeleton-card{min-height:130px;padding:16px}.rp-skeleton-panel{min-height:175px}.rp-skeleton-bar.heading{max-width:70%}.rp-skeleton-bar.long{max-width:90%}}
 @media(prefers-reduced-motion:reduce){.rp-skeleton-bar{animation:none}}
+
+/* Isolated merchant shell: mobile catalog heading must stack instead of
+   extending the flex min-content width beyond 320px. */
+@media(max-width:590px){
+ .rp-layout .rp-heading-row.rp-catalog-heading{
+  display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0;width:100%;
+ }
+ .rp-layout .rp-heading-row.rp-catalog-heading>div{
+  width:100%;min-width:0;max-width:100%;
+ }
+ .rp-layout .rp-catalog-heading-actions{
+  width:100%;min-width:0;max-width:100%;
+  justify-content:space-between;flex-wrap:wrap;
+ }
+ .rp-layout .rp-catalog-heading h2,.rp-layout .rp-catalog-heading p{
+  overflow-wrap:anywhere;max-width:100%;
+ }
+}
