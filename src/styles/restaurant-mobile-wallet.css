@@ -53,6 +53,8 @@
 .rm-mobile-home,.rm-mobile-more-shortcuts{display:none}
 @media(min-width:851px){.mw-modal-backdrop{align-items:center;padding:25px}.mw-modal{border-radius:22px}}
 @media(max-width:850px){
+ /* Grid auto rows used to stretch the brand bar when Inicio has little content. */
+ .rp-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:max-content minmax(0,1fr)}
  .rm-desktop-home{display:none}
  .rm-mobile-home{display:grid;gap:12px}
  .rm-mobile-home-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
