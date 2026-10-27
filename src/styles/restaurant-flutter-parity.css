@@ -1,3 +1,12 @@
+/* Native Flutter families, self-hosted from Google Fonts under OFL.
+   No third-party font request. Licenses: /fonts/restaurante/OFL-*.txt. */
+@font-face{font-family:'Figtree';font-style:normal;font-weight:400 800;font-display:swap;
+ src:url('/fonts/restaurante/Figtree-VF.ttf') format('truetype')}
+@font-face{font-family:'Bricolage';font-style:normal;font-weight:600 800;font-display:swap;
+ src:url('/fonts/restaurante/BricolageGrotesque-VF.ttf') format('truetype')}
+.rb-flutter-welcome,.rp-auth-page{font-family:Figtree,system-ui,sans-serif}
+.rb-flutter-content>h1,.rp-auth-page .rp-access-card h2{
+ font-family:Bricolage,Figtree,system-ui,sans-serif}
 /* TALA EATS RESTAURANTE - Flutter 0.7.6+46 visual-parity sheet.
    Source: tala-eats-mobile/main/tala-eats-restaurante/app/lib/core/theme.dart.
    Matching neutral "kitchen steel" surfaces, layout, nav, status, and KDS.

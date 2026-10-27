@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync,statSync} from 'node:fs';
 
 const read=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
 const view=read('../src/components/RestaurantApp.tsx');
@@ -67,6 +67,23 @@ describe('Restaurantes Web: fidelity to Flutter v0.7.6 merchant mobile contract'
   expect(parity).toContain('Muestra de hasta 200 pedidos recientes');
   expect(wallet).toContain('Saldo retirable confirmado');
   expect(wallet).not.toMatch(/api\.[A-Za-z]*(Withdraw|Transfer|Payout)/);
+ });
+ it('uses local exact Flutter font families and licensed static paths',()=>{
+  const css=read('../src/styles/restaurant-flutter-parity.css');
+  expect(css).toContain("font-family:'Figtree'");
+  expect(css).toContain("font-family:'Bricolage'");
+  expect(css).toContain('/fonts/restaurante/Figtree-VF.ttf');
+  expect(css).toContain('/fonts/restaurante/BricolageGrotesque-VF.ttf');
+  for(const filename of ['Figtree-VF.ttf','BricolageGrotesque-VF.ttf',
+    'OFL-Figtree.txt','OFL-BricolageGrotesque.txt']){
+   const url=new URL('../public/fonts/restaurante/'+filename,import.meta.url);
+   expect(existsSync(url)).toBe(true);
+   expect(statSync(url).size).toBeGreaterThan(1000);
+  }
+  const nginx=read('../deploy/nginx-restaurantes-isolated-server.conf');
+  expect(nginx).toContain('location ^~ /fonts/restaurante/');
+  const sw=read('../public/sw-restaurante.js');
+  expect(sw).toContain("url.pathname.startsWith('/fonts/restaurante/')");
  });
  it('preserves isolation and does not install the merchant PWA over Clients',()=>{
   const vite=read('../vite.restaurante.config.ts');
