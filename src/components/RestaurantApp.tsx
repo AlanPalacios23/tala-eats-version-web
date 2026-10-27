@@ -726,8 +726,7 @@ export function RestaurantWorkspace(){
          onClick={()=>void refresh()}><RefreshCw size={16}/> Verificar estado de nuevo</button>
         <p className="rp-legal">Las transferencias automáticas no se activan desde esta aplicación. Stripe Connect requiere verificación real del comercio y confirmación del servidor; no genera pagos en esta pantalla.</p>
        </section>
-      </div>
-      <section className="rp-panel-card"><div className="rp-card-top"><Store size={22}/><h3>Disponibilidad</h3></div>
+      <section className="rp-panel-card rp-connect-availability"><div className="rp-card-top"><Store size={22}/><h3>Disponibilidad</h3></div>
        <p className="rp-muted">{restaurant.name}</p><p>{restaurant.address||'Agrega la dirección completa para que te encuentren.'}</p>
        <div className="rp-setting"><div><strong>Comercio</strong><small>{restaurant.is_open?'Abierto para recibir pedidos autorizados':'Cerrado temporalmente'}</small></div>
         <button className="rp-btn outline small" disabled={busy} onClick={openToggle}>{restaurant.is_open?'Cerrar':'Abrir'}</button></div>
