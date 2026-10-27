@@ -6,6 +6,11 @@ on:
       - 'src/components/Restaurant*.tsx'
       - 'src/styles/restaurant*.css'
       - 'src/lib/restaurant-state.ts'
+      - 'src/lib/restaurant-alerts.ts'
+      - 'src/lib/restaurant-host.ts'
+      - 'deploy/kali-*restaurantes*.sh'
+      - 'deploy/nginx-restaurantes-*.conf'
+      - 'deploy/talaeats-restaurantes-pwa.service'
       - 'src/lib/api.ts'
       - 'tools/capture-restaurant-qa.mjs'
       - '.github/workflows/restaurant-visual-qa.yml'
@@ -24,6 +29,11 @@ jobs:
         with:
           node-version: '20'
       - run: npm install --no-package-lock
+      - name: Verify Kali isolated deploy scripts parse without executing
+        run: |
+          bash -n deploy/kali-install-restaurantes-isolated.sh
+          bash -n deploy/kali-update-restaurantes-isolated.sh
+          bash -n deploy/kali-audit-restaurantes-public.sh
       - run: npm run check
       - name: Browser dependencies
         run: |
