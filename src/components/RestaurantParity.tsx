@@ -134,7 +134,7 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
  return <div className="rm-experience rm-kitchen">
   <header className="flutter-kds-header">
    <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowRight size={20}/></button>
-   <strong>Cocina</strong>
+   <h2>Cocina</h2>
    <button type="button" className="flutter-kds-view" onClick={()=>setExpanded(p=>!p)} aria-pressed={!expanded}>{expanded?'Compacta':'Ampliada'}</button>
   </header>
   <section className="rm-kitchen-toolbar" aria-label="Filtrar comandas por modalidad">
