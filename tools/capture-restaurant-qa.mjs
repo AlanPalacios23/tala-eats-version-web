@@ -26,6 +26,8 @@ const orders=[
  order(8102,'confirmed','stripe','paid'),
  order(8103,'preparing','cash','pending'),
  order(8104,'ready','stripe','paid'),
+ order(8105,'ready','stripe','paid','delivery'),
+ order(8106,'received','stripe','pending'),
  order(8099,'delivered','stripe','paid'),
 ];
 const owner={id:12,name:'Comerciante QA',email:'merchant@example.test',role:'restaurant'};
@@ -115,6 +117,29 @@ for(const width of widths){
   if(title)await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:12000});
   await checkViewport(page,width,name);
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
+  if(name==='pedidos'){
+   const group=page.locator('.rp-order-filters').first();
+   await group.getByRole('button',{name:'Historial',exact:true}).click();
+   if(await page.locator('.rp-lane-grid').count()!==0||await page.locator('.rp-history').count()!==1)
+    throw new Error('Historial must hide active lanes at '+width);
+   await group.getByRole('button',{name:'Nuevos',exact:true}).click();
+   if(await page.locator('.rp-history').count()!==0)
+    throw new Error('New-order filter must not show historical records at '+width);
+   await group.getByRole('button',{name:'Todos',exact:true}).click();
+  }
+  if(name==='cocina'){
+   const types=page.locator('.rm-kitchen-filter-pills');
+   await types.getByRole('button',{name:/A domicilio/}).click();
+   if(await page.locator('.rm-ticket').count()!==1)
+    throw new Error('Delivery kitchen filter did not limit tickets at '+width);
+   await page.getByText('Esperando reparto autorizado. No confirmar la entrega desde cocina.').waitFor();
+   if(await page.getByRole('button',{name:/Confirmar recogida con PIN/}).count()>0)
+    throw new Error('Driver dispatch was confused with customer pickup');
+   await types.getByRole('button',{name:/Recoger en tienda/}).click();
+   if(await page.locator('.rm-ticket-warning').count()!==1)
+    throw new Error('Unpaid Stripe order needs a visible kitchen warning');
+   await types.getByRole('button',{name:/Todas/}).click();
+  }
  }
  // Search is a real client-side control: the filtered product view must
  // reflect the requested item, not simply show an inert text field.
