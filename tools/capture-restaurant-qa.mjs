@@ -244,6 +244,17 @@ for(const width of widths){
  // Search is a real client-side control: the filtered product view must
  // reflect the requested item, not simply show an inert text field.
  await openTab(page,width,'menu');
+ // Flutter Menu: categories are grouped only with "Todos" and no query.
+ if(await page.locator('.rp-catalog-category').count()!==3)
+  throw Error('Menu did not group Tacos, Bebidas and Combos as in Flutter');
+ const review=page.locator('.rp-order-filters').getByRole('button',{name:/Revisar · 2/});
+ await review.click();
+ if(await page.locator('.rp-catalog-item').count()!==2||
+    await page.locator('.rp-catalog-category').count()!==0)
+  throw Error('Revisar filter must show only paused, sold-out and low-stock products');
+ await page.locator('.rp-order-filters').getByRole('button',{name:'Todos',exact:true}).click();
+ if(await page.locator('.rp-catalog-category').count()!==3)
+  throw Error('Todos filter did not restore Flutter category groups');
  await page.getByRole('textbox',{name:'Buscar productos'}).fill('Quesabirria');
  await page.waitForFunction(()=>document.querySelectorAll('.rp-menu-item').length===1,{},{timeout:12000});
  await page.locator('.rp-catalog-item').filter({hasText:'Quesabirria'}).waitFor({timeout:12000});
