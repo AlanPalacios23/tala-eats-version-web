@@ -410,6 +410,7 @@ export function RestaurantWorkspace(){
    'Preferencia de recogida actualizada en el servidor.');
  }
  const activeOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
+ const incomingCount=activeOrders.filter(o=>o.status==='received').length;
  const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
    (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
  const visibleOrders=activeOrders.filter(o=>matchesOrder(o)&&(orderFilter==='all'||orderFilter==='received'&&o.status==='received'||
@@ -447,9 +448,9 @@ export function RestaurantWorkspace(){
      </div>
     </div>
     <div className="rp-top-actions">
-     {orders.some(o=>o.status==='received')&&<button type="button" className="rp-new-orders"
+     {incomingCount>0&&<button type="button" className="rp-new-orders"
        onClick={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}>
-      <ShoppingBag size={16}/><strong>{orders.filter(o=>o.status==='received').length}</strong><span>Nuevo(s)</span>
+      <ShoppingBag size={16}/><strong>{incomingCount}</strong><span>{incomingCount===1?'nuevo':'nuevos'}</span>
      </button>}
      <MerchantInstallButton/>
      <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
