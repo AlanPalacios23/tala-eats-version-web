@@ -17,6 +17,8 @@ UNIT='talaeats-restaurantes-pwa.service'
 ROOT='/srv/talaeats-restaurantes-pwa'
 CONFIG='/etc/talaeats-restaurantes-pwa'
 SYSUNIT='/etc/systemd/system/talaeats-restaurantes-pwa.service'
+RUNTIME='/run/talaeats-restaurantes-pwa'
+RUNTIME_CREATED=no
 SOURCE="/home/tala-node-stage/tala-eats-web-releases/$SHA"
 DIST="$SOURCE/dist-restaurantes"
 DEST="$ROOT/releases/$SHA"
@@ -114,6 +116,7 @@ rollback(){
   rmdir -- "$CONFIG" >/dev/null 2>&1 || true
   rm -f -- "$ROOT/current"
   rm -rf -- "$DEST"
+  if [[ "$RUNTIME_CREATED" == yes ]];then rmdir -- "$RUNTIME" >/dev/null 2>&1 || true;fi
   echo 'RESTAURANTES_INSTALL_ROLLBACK=NEW_RESOURCES_REVERTED'
  fi
  exit "$exit_code"
@@ -132,6 +135,12 @@ install -d -m 755 "$CONFIG"
 install -m 644 "$SOURCE/deploy/nginx-restaurantes-isolated-main.conf" "$CONFIG/nginx.conf"
 install -m 644 "$SOURCE/deploy/nginx-restaurantes-isolated-server.conf" "$CONFIG/server.conf"
 install -m 644 "$SOURCE/deploy/talaeats-restaurantes-pwa.service" "$SYSUNIT"
+# nginx -t inspects the configured PID location BEFORE systemd's
+# RuntimeDirectory= is created on first service start.
+# Create only this dedicated /run directory; systemd will manage it after start.
+[[ ! -L "$RUNTIME" ]] || { echo 'RESTAURANTES_INSTALL_ABORT=RUNTIME_SYMLINK';exit 1; }
+if [[ ! -d "$RUNTIME" ]];then RUNTIME_CREATED=yes;fi
+install -d -o www-data -g www-data -m 0755 "$RUNTIME"
 nginx -t -c "$CONFIG/nginx.conf" || {
  echo 'RESTAURANTES_INSTALL_ABORT=NGINX_CONFIG_INVALID';exit 1;
 }
