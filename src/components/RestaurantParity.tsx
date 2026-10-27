@@ -1,8 +1,8 @@
 import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
- ArrowRight,AlertTriangle,CheckCircle2,ChefHat,ClipboardList,Clock3,
- CreditCard,MapPin,PackageCheck,Settings2,ShieldCheck,
+ ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
+ MapPin,PackageCheck,Settings2,ShieldCheck,
  ShoppingBag,Store,Users,Wallet
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
@@ -38,6 +38,29 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
   {label:'Productos agotados o pausados',count:soldOut.length,detail:'Revisar disponibilidad del menú',tab:'menu' as MerchantTab},
  ];
  return <div className="rm-experience">
+  <section className="rm-mobile-home" aria-label="Inicio rápido del restaurante">
+   <div className="rm-mobile-home-header">
+    <div><span>HOY EN TU NEGOCIO</span><h2>Inicio</h2></div>
+    <span className={'rm-mobile-business-status '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
+   </div>
+   <button className="rm-mobile-primary-task" onClick={()=>go('pedidos')}>
+    <span><small>Pedidos nuevos</small><strong>{incoming.length}</strong><em>{incoming.length?'Por aceptar':'Todo al día'}</em></span>
+    <ArrowRight size={22}/>
+   </button>
+   <div className="rm-mobile-tasks">
+    <button onClick={()=>go('cocina')}><ChefHat size={19}/><span><b>{live.filter(o=>o.status==='confirmed'||o.status==='preparing').length}</b><small>En cocina</small></span><ArrowRight size={16}/></button>
+    <button onClick={()=>go('pedidos')}><PackageCheck size={19}/><span><b>{ready.length}</b><small>Listos</small></span><ArrowRight size={16}/></button>
+   </div>
+   {notPaid.length>0&&<p className="rm-mobile-payment-warning"><AlertTriangle size={17}/>{notPaid.length} pago(s) pendientes de verificar. No preparar.</p>}
+   {lowStock.length>0&&<button className="rm-mobile-stock" onClick={()=>go('menu')}>Stock bajo · {lowStock.length} producto(s)<ArrowRight size={17}/></button>}
+   <button className="rm-mobile-open-toggle" disabled={busy}
+    onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar nuevos pedidos?'))return;
+      void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),
+        restaurant.is_open?'Restaurante cerrado.':'Restaurante abierto según el backend.');}}>
+    <span>{restaurant.is_open?'Pausar nuevos pedidos':'Abrir restaurante'}</span><ArrowRight size={18}/>
+   </button>
+  </section>
+  <div className="rm-desktop-home">
   <div className="rm-heading-row"><CardTitle eyebrow="CENTRO DE OPERACIONES" title="Así va tu restaurante" description="Estado real del comercio y los pedidos recuperados del servidor."/>
    <span className={'rp-open-badge '+(restaurant.is_open?'open':'closed')}><span/>{restaurant.is_open?'Abierto':'Cerrado'}</span>
   </div>
@@ -65,6 +88,7 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
     <button onClick={()=>go('menu')}><ClipboardList size={20}/><span>Actualizar menú</span><ArrowRight size={16}/></button>
     <button onClick={()=>go('mas')}><Settings2 size={20}/><span>Configuración</span><ArrowRight size={16}/></button>
    </div></section>
+  </div>
   </div>
  </div>;
 }
@@ -108,7 +132,7 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
   </div>}
   {visible.length>0&&<div className={'rm-kitchen-grid '+(expanded?'':'compact')}>{lanes.map(lane=>{
     const list=visible.filter(o=>o.status===lane.id);
-    return <section className="rm-kitchen-lane" key={lane.id} aria-label={lane.label}>
+    return <section className={'rm-kitchen-lane '+(list.length===0?'rm-kitchen-lane-empty':'')} key={lane.id} aria-label={lane.label}>
      <header><span className={'rm-lane-dot '+lane.id}/><strong>{lane.label}</strong><b>{list.length}</b></header>
      {list.length===0?<div className="rm-kitchen-empty"><PackageCheck size={25}/> Sin comandas</div>:list.map(o=>{
       const next=nextMerchantState(o);
@@ -200,10 +224,14 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
-  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes" description="Actualiza la información del negocio, organiza a tu equipo y revisa tu cuenta."/>
-   <button className="rp-btn outline small" onClick={()=>go('activacion')}><ShieldCheck size={16}/> Ver activación</button></div>
+  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes"/></div>
+  <div className="rm-mobile-more-shortcuts">
+   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
+   <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>{connect?.owner_approved?'Cuenta vinculada':'Verificar tu comercio'}</small></span><ArrowRight size={18}/></button>
+  </div>
   <div className="rm-duo rm-more-duo">
-   <section className="rp-panel-card"><h3><Store size={19}/> Perfil del restaurante</h3>
+   <details className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
+    <summary><Store size={19}/><strong>Perfil del restaurante</strong><ArrowRight size={17}/></summary>
     <form onSubmit={e=>void saveProfile(e)} className="rm-settings-form">
      <label>Nombre<input value={name} required minLength={2} maxLength={150} onChange={e=>setName(e.target.value)}/></label>
      <label>Tipo de comida<input maxLength={100} value={cuisine} onChange={e=>setCuisine(e.target.value)} placeholder="Mexicana, hamburguesas, tacos…"/></label>
@@ -225,22 +253,19 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
      <input aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
      <button className="rp-btn outline small" disabled={!cover||busy||uploadBusy} onClick={()=>void uploadCover()}>Publicar portada</button>
     </div>
-   </section>
+   </details>
    <div className="rm-more-column">
     <section className="rp-panel-card"><h3><Settings2 size={19}/> Preparación y entrega</h3>
      <div className="rp-setting"><div><strong>Recibir nuevos pedidos</strong><small>{restaurant.is_open?'Abierto':'Cerrado'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar pedidos nuevos?'))return;void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),'Disponibilidad actualizada.');}}>{restaurant.is_open?'Pausar':'Abrir'}</button></div>
      <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
      <p className="rp-legal">El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
     </section>
-    <section className="rp-panel-card"><h3><Wallet size={19}/> Retiros y cuenta bancaria</h3>
-     <p className="rp-muted">Saldo contable del comercio: {finance?pesos(finance.net_payable):'No disponible'}. No representa un saldo bancario disponible para retirar.</p>
-     <div className="rm-connect-status">{connect?.owner_approved?<><CheckCircle2 size={18}/> Cuenta Connect reconocida por el titular.</>:<><AlertTriangle size={18}/> Falta confirmación de la cuenta Connect.</>}</div>
-     <button className="rp-btn outline" onClick={()=>go('finanzas')}><CreditCard size={17}/> Consultar finanzas <ArrowRight size={16}/></button>
-     <p className="rp-legal">No se solicitan retiros ni transferencias automáticas desde esta vista hasta que estén habilitados y conciliados por el backend LIVE.</p>
-    </section>
    </div>
   </div>
-  <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
+  <details className="rm-team-fold" data-merchant-accordion="team">
+   <summary><Users size={19}/><strong>Equipo y permisos</strong><ArrowRight size={17}/></summary>
+   <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
+  </details>
  </div>;
 }
 
