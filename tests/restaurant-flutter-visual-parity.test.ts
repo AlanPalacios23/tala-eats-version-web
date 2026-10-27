@@ -27,6 +27,16 @@ describe('Flutter Restaurante v0.7.6+46 -> isolated web appearance parity',()=>{
   expect(views).toContain('restaurant.is_open');
   expect(views).not.toContain('fake_payout');
  });
+ it('matches Flutter More sign-out and conditional new-order attention without adding visual clutter',()=>{
+  expect(views).toContain('onSignOut?:()=>Promise<void>');
+  expect(views).toContain('flutter-signout');
+  expect(views).toContain('¿Cerrar sesión?');
+  expect(app).toContain('onSignOut={signOut}');
+  expect(app).toContain('flutter-incoming-banner');
+  expect(app).toContain("!['inicio','pedidos','cocina'].includes(tab)");
+  expect(css).toContain('.rp-layout .flutter-incoming-banner');
+  expect(css).toContain('.rp-layout .flutter-signout');
+ });
  it('keeps Flutter product toggle server-backed and wallet withdrawals fail-closed',()=>{
   expect(app).toContain('role="switch"');
   expect(app).toContain('api.ownerUpdateItem(item.id,{is_available:available})');
