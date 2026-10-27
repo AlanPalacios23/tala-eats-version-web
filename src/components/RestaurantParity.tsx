@@ -2,7 +2,7 @@ import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowRight,AlertTriangle,CheckCircle2,ChefHat,ClipboardList,Clock3,
- CreditCard,MapPin,PackageCheck,Settings2,ShieldCheck,
+ MapPin,PackageCheck,Settings2,ShieldCheck,
  ShoppingBag,Store,Users,Wallet
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
