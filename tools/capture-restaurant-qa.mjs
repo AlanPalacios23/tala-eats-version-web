@@ -164,12 +164,29 @@ for(const width of widths){
   if(name==='finanzas'){
    await page.locator('[data-merchant-wallet="true"]').waitFor();
    await page.getByText('Ganancias registradas',{exact:true}).waitFor();
-   await page.getByRole('button',{name:/Retirar ganancias/}).click();
+   const withdrawTrigger=page.getByRole('button',{name:/Retirar ganancias/});
+   await withdrawTrigger.click();
    const dialog=page.getByRole('dialog',{name:'Retirar ganancias'});
    await dialog.waitFor();
    await dialog.getByText('Los retiros bancarios aún no están habilitados').waitFor();
    if(await dialog.getByText('Transferencia bancaria').count()!==1)
     throw Error('Wallet withdrawal disclaimer missing at '+width);
+   if(width===390){
+    // Trap focus in the financial modal and restore it after closing.
+    const close=dialog.getByRole('button',{name:'Cerrar información de retiro'});
+    const done=dialog.getByRole('button',{name:'Entendido'});
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Cerrar información de retiro');
+    await page.keyboard.press('Shift+Tab');
+    if(!await done.evaluate(el=>el===document.activeElement))throw Error('Wallet modal Shift+Tab did not wrap');
+    await page.keyboard.press('Tab');
+    if(!await close.evaluate(el=>el===document.activeElement))throw Error('Wallet modal Tab did not wrap');
+    await page.keyboard.press('Escape');
+    if(await dialog.count())throw Error('Wallet Escape did not close the modal');
+    if(!await withdrawTrigger.evaluate(el=>el===document.activeElement))
+     throw Error('Wallet did not restore keyboard focus');
+    await withdrawTrigger.click();
+    await dialog.waitFor();
+   }
    await dialog.getByRole('button',{name:'Entendido'}).click();
    if(await dialog.count())throw Error('Wallet withdrawal modal did not close');
   }
