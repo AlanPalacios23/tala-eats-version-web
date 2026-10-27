@@ -9,6 +9,7 @@ import type {MerchantApplication,MerchantFinance} from '../lib/api';
 import {useSession} from '../lib/session';
 import type {Order,Restaurant,MenuItem} from '../lib/types';
 import {PREVIEW_READONLY} from '../lib/preview';
+import {mainTalaEatsPortalHref} from '../lib/restaurant-host';
 import {normalizePickupPin} from '../lib/pickup-handoff';
 import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
@@ -28,7 +29,7 @@ const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
  {id:'mas',label:'Más',Icon:SlidersHorizontal},
 ];
 const bottomTabs=allTabs.filter(t=>['inicio','pedidos','cocina','menu','mas'].includes(t.id));
-function MerchantBrand(){return <Link className="rp-brand" to="/" aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
+function MerchantBrand(){return <Link className="rp-brand" to={mainTalaEatsPortalHref(window.location.hostname)} aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
 function Notice({message,kind='info'}:{message:string;kind?:'info'|'error'|'success'}){
  return <div role={kind==='error'?'alert':'status'} className={'rp-notice '+kind}>
    {kind==='error'?<AlertCircle size={19}/>:<ShieldCheck size={19}/>}<span>{message}</span>
@@ -101,7 +102,7 @@ export function RestaurantAccess(){
  return <div className="rp-auth-page"><MerchantIntro title="Tu negocio, en movimiento."
   subtitle="Recibe y prepara pedidos, administra tus productos y activa los pagos para recoger desde un solo espacio."/>
   <section className="rp-access-card" aria-label="Acceso de restaurantes">
-   <Link to="/" className="rp-muted-link"><ArrowLeft size={16}/> Volver a Tala Eats</Link>
+   <Link to={mainTalaEatsPortalHref(window.location.hostname)} className="rp-muted-link"><ArrowLeft size={16}/> Volver a Tala Eats</Link>
    {user?.role==='customer'?<>
     <span className="rp-eyebrow">CUENTA EXISTENTE</span>
     <h2>Solicita activar tu comercio</h2>
@@ -159,7 +160,7 @@ export function RestaurantOnboarding(){
  if(loading)return <div className="rp-loading"><RefreshCw className="rp-spin"/> Verificando sesión…</div>;
  if(!user)return <RestaurantAccess/>;
  if(user.role==='restaurant')return <div className="rp-standalone"><MerchantBrand/><h1>Tu restaurante ya está asignado</h1><Link className="rp-btn primary" to="/restaurante">Entrar al panel <ArrowRight size={18}/></Link></div>;
- if(user.role!=='customer')return <div className="rp-standalone"><MerchantBrand/><h1>Tu cuenta no puede solicitar este alta</h1><Link to="/">Volver al inicio</Link></div>;
+ if(user.role!=='customer')return <div className="rp-standalone"><MerchantBrand/><h1>Tu cuenta no puede solicitar este alta</h1><Link to={mainTalaEatsPortalHref(window.location.hostname)}>Volver al inicio</Link></div>;
  const latest=requests?.slice().sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at))[0];
  const waiting=latest?.status==='pending'||latest?.status==='approved';
  async function submit(event:FormEvent){
@@ -256,7 +257,7 @@ export function RestaurantAdminActivation(){
   <Link className="rp-btn outline" to="/admin/conectar-restaurante">Vincular Stripe Connect <ArrowRight size={18}/></Link>
  </div>
   <div className="rp-action-row"><button className="rp-btn outline" onClick={()=>void refresh()}><RefreshCw size={16}/> Actualizar solicitudes</button>
-   <Link className="rp-muted-link" to="/">Volver a Tala Eats</Link></div>
+   <Link className="rp-muted-link" to={mainTalaEatsPortalHref(window.location.hostname)}>Volver a Tala Eats</Link></div>
   {error&&<Notice kind="error" message={error}/>}
   {notice&&<Notice kind="success" message={notice}/>}
   {requests===null?<p>Consultando backend administrativo…</p>:
