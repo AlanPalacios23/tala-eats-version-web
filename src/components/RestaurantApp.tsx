@@ -18,19 +18,20 @@ import '../styles/restaurant-polish.css';
 import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
 import {MerchantWallet} from './MerchantWallet';
 import {RestaurantOrderAlerts} from './RestaurantOrderAlerts';
-import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
+import {Home as HomeIcon,MoreHorizontal,ReceiptText,Search as SearchIcon} from 'lucide-react';
+import '../styles/restaurant-flutter-parity.css';
 
 const AUTH_EMAIL=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
- {id:'inicio',label:'Inicio',Icon:LayoutDashboard},
- {id:'pedidos',label:'Pedidos',Icon:ShoppingBag},
- {id:'cocina',label:'Cocina',Icon:ChefHat},
+ {id:'inicio',label:'Inicio',Icon:HomeIcon},
+ {id:'pedidos',label:'Pedidos',Icon:ReceiptText},
  {id:'menu',label:'Menú',Icon:UtensilsCrossed},
  {id:'finanzas',label:'Wallet',Icon:Wallet},
+ {id:'mas',label:'Más',Icon:MoreHorizontal},
+ {id:'cocina',label:'Cocina',Icon:ChefHat},
  {id:'activacion',label:'Activación',Icon:BadgeCheck},
- {id:'mas',label:'Más',Icon:SlidersHorizontal},
 ];
-const bottomTabs=allTabs.filter(t=>['inicio','pedidos','cocina','menu','mas'].includes(t.id));
+const bottomTabs=allTabs.filter(t=>['inicio','pedidos','menu','finanzas','mas'].includes(t.id));
 function MerchantBrand(){return <Link className="rp-brand" to={mainTalaEatsPortalHref(window.location.hostname)} aria-label="Tala Eats inicio">Tala<span>Eats.</span><small>RESTAURANTES</small></Link>;}
 function MerchantLoadingSkeleton(){
  return <div className="rp-skeleton-layout" role="status" aria-label="Preparando el panel de tu restaurante">
@@ -442,7 +443,7 @@ export function RestaurantWorkspace(){
  const matchingCompletedOrders=completedOrders.filter(matchesOrder);
  const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
  const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
- return <div className="rp-layout" data-restaurant-app="true">
+ return <div className="rp-layout" data-restaurant-app="true" data-kitchen-open={tab==='cocina'?'true':'false'} data-current-tab={tab}>
   <aside className="rp-sidebar"><span className="rp-sidebar-label">Restaurantes</span>
    <nav className="rp-nav" aria-label="Secciones del restaurante">
     {allTabs.map(({id,label,Icon})=><button key={id} type="button"
