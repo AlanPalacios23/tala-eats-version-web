@@ -431,7 +431,6 @@ export function RestaurantWorkspace(){
  }
  const activeOrders=orders.filter(o=>['received','confirmed','preparing','ready'].includes(o.status));
  const waitingPayment=orders.filter(o=>o.status==='awaiting_payment'||(o.status==='received'&&o.payment_method==='stripe'&&o.payment_status!=='paid'));
- const incomingCount=activeOrders.filter(o=>o.status==='received').length;
  const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
    (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
  const visibleOrders=activeOrders.filter(o=>matchesOrder(o)&&(orderFilter==='all'||orderFilter==='received'&&o.status==='received'||
