@@ -213,17 +213,32 @@ for(const width of widths){
   if(name==='cocina'){
    if(width===390&&await page.locator('.rp-mobile-order-alerts').isVisible())
     throw Error('Alert button should not cover the cooking station');
-   const types=page.locator('.rm-kitchen-filter-pills');
-   await types.getByRole('button',{name:/A domicilio/}).click();
-   if(await page.locator('.rm-ticket').count()!==1)
-    throw new Error('Delivery kitchen filter did not limit tickets at '+width);
-   await page.getByText('Esperando reparto autorizado. No confirmar la entrega desde cocina.').waitFor();
-   if(await page.getByRole('button',{name:/Confirmar recogida con PIN/}).count()>0)
-    throw new Error('Driver dispatch was confused with customer pickup');
-   await types.getByRole('button',{name:/Recoger en tienda/}).click();
-   if(await page.locator('.rm-ticket-warning').count()!==1)
-    throw new Error('Unpaid Stripe order needs a visible kitchen warning');
-   await types.getByRole('button',{name:/Todas/}).click();
+   const columns=page.locator('[data-kds-lane]');
+   if(await columns.count()!==3)
+    throw Error('Flutter Cocina requires 3 lanes: Nuevos, Preparando, Listos');
+   const selector=page.locator('.flutter-kds-lane-tabs');
+   const narrow=width<1024;
+   if(narrow){
+    if(!await selector.isVisible())throw Error('Missing 3-lane Flutter KDS mobile selector');
+    if(await selector.getByRole('button').count()!==3)
+     throw Error('Mobile KDS must have exactly three lane tabs');
+    await selector.getByRole('button',{name:/Listos/}).click();
+    const visible=columns.filter({visible:true});
+    if(await visible.count()!==1||await visible.getAttribute('data-kds-lane')!=='ready')
+     throw Error('KDS mobile should display only its selected Listos lane');
+   }else if(await columns.filter({visible:true}).count()!==3){
+    throw Error('KDS desktop must display its three Flutter columns');
+   }
+   const ready=page.locator('[data-kds-lane="ready"]');
+   const delivery=ready.locator('.rm-ticket').filter({hasText:/domicilio/i});
+   await delivery.getByText('Esperando reparto autorizado. No confirmar la entrega desde cocina.').waitFor();
+   if(await delivery.getByRole('button',{name:/Confirmar recogida con PIN/}).count()>0)
+    throw Error('Driver dispatch was confused with customer pickup');
+   if(narrow)await selector.getByRole('button',{name:/Nuevos/}).click();
+   const newLane=page.locator('[data-kds-lane="received"]');
+   await newLane.locator('.rm-ticket-warning').waitFor();
+   await page.getByRole('button',{name:'Actualizar Cocina'}).click();
+   await page.locator('.flutter-kds-clock').waitFor();
   }
  }
  // Search is a real client-side control: the filtered product view must
