@@ -794,8 +794,8 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
     <b className="rp-catalog-price">{pesos(item.price)}</b>
    </div>
    <div className="rp-catalog-product-actions">
-    <span className={'rp-catalog-stock '+(!item.is_available||item.stock===0?'paused':item.stock<10?'low':'')}>
-     {!item.is_available?'Pausado':item.stock===0?'Agotado':item.stock<10?'Stock bajo: '+item.stock:'Stock: '+item.stock}</span>
+    <span className={'rp-catalog-stock '+(!item.is_available||item.stock===0?'paused':item.stock<=10?'low':'')}>
+     {!item.is_available?'Pausado':item.stock===0?'Agotado':item.stock<=10?'Stock bajo: '+item.stock:'Stock: '+item.stock}</span>
     <label className="flutter-product-toggle">
      <input type="checkbox" role="switch" checked={item.is_available} disabled={busy||editing}
       aria-label={item.name+': disponible para clientes'}
