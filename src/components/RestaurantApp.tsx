@@ -662,22 +662,71 @@ export function RestaurantWorkspace(){
      </>}
      {tab==='menu'&&<MerchantMenu restaurant={restaurant} busy={busy} run={doAction}/>}
      {tab==='activacion'&&<>
-      <div className="rp-heading-row"><div><h2>Activación</h2>
-       <p>Verificación del negocio, recogida y cuenta Stripe Connect del propietario.</p></div>
-       <span className={'rp-pill '+(connectComplete?'approved':'pending')}>{connectComplete?'Requisitos revisados':'Configuración pendiente'}</span></div>
-      <div className="rp-activation-grid"><section className="rp-panel-card"><div className="rp-card-top"><BadgeCheck size={22}/><h3>Lista de activación</h3></div>
-       <div className="rp-steps">{connectSteps.map((step,i)=><div key={step.id} className={step.complete?'done':''}>
-        <span>{step.complete?<Check size={16}/>:String(i+1).padStart(2,'0')}</span><p>{step.label}</p></div>)}</div>
-       {connectError&&<Notice kind="info" message={connectError}/>}
-       {!connect&&<p className="rp-muted">Si no existe una asociación Connect, administración debe verificar el negocio y registrar la cuenta correcta.</p>}
-       {connect&&!connect.owner_approved&&<button className="rp-btn primary" disabled={busy} onClick={confirmOwner}>
-        <KeyRound size={17}/> Confirmar mi titularidad</button>}
-       {connect?.owner_approved&&!(connect.details_submitted&&connect.transfers_active&&connect.payouts_enabled)&&
-        <button className="rp-btn primary" disabled={busy} onClick={()=>void onboardingLink()}>
-         Completar verificación con Stripe <ArrowRight size={17}/></button>}
-       <button className="rp-btn outline small" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={16}/> Verificar de nuevo</button>
-       <p className="rp-legal">El panel nunca crea una cuenta Connect por su cuenta ni promete pagos automáticos. El checkout confirma cada habilitación directamente en el backend.</p>
-      </section>
+      <div className="rp-connect-page" aria-label="Activación segura con Stripe Connect">
+       <header className="rp-connect-heading">
+        <div><span className="rp-connect-eyebrow">TALA EATS · PAGOS SEGUROS</span>
+         <h2>Activación</h2>
+         <p>Conecta la cuenta verificada de tu restaurante para comenzar a aceptar pagos autorizados.</p></div>
+        <span className={'rp-connect-state '+(connectComplete?'ready':connectStage)}
+         role="status">{connectComplete?'Verificado':connectStage==='unlinked'?'Vinculación pendiente':
+          connectStage==='owner'?'Requiere autorización':connectStage==='stripe'?'Verificación en Stripe':
+          'Validación pendiente'}</span>
+       </header>
+       <section className="rp-connect-hero" aria-label="Estado de Stripe Connect">
+        <div className="rp-connect-hero-top"><div className="rp-connect-mark"><ShieldCheck size={25}/></div>
+         <span>Stripe Connect</span></div>
+        <h3>{connectComplete?'Tu conexión está verificada':
+         connectStage==='unlinked'?'Primero vinculamos tu negocio':
+         connectStage==='owner'?'Autoriza tu cuenta de cobro':
+         connectStage==='stripe'?'Completa tu verificación':
+         'Estamos validando los requisitos'}</h3>
+        <p>{connectComplete?'Los requisitos reportados por el servidor están completos. Cada pedido y cobro todavía requiere verificación individual.':
+         connectStage==='unlinked'?'Administración debe confirmar tu restaurante y vincular la cuenta Stripe Connect que realmente te pertenece.':
+         connectStage==='owner'?'Antes de autorizar, confirma con administración que la cuenta vinculada corresponde a tu negocio.':
+         connectStage==='stripe'?'Stripe te solicitará los datos de identidad y cobro necesarios en su propia página segura.':
+         'La información está presentada, pero el backend aún no ha confirmado que la cuenta esté lista para operar.'}</p>
+        <div className="rp-connect-progress"><div className="rp-connect-progress-label">
+         <span>Configuración del comercio</span><strong>{connectDone} de {connectSteps.length} pasos</strong>
+        </div><div className="rp-connect-progress-track" role="progressbar"
+         aria-valuenow={connectDone} aria-valuemin={0} aria-valuemax={connectSteps.length}
+         aria-label="Progreso de activación Stripe Connect">
+         <span style={{width:connectSteps.length?Math.round(connectDone/connectSteps.length*100)+'%':'0%'}}/></div>
+        </div>
+       </section>
+       <section className="rp-connect-guide" aria-label="Pasos de activación">
+        <h3>Tu configuración</h3>
+        <ol className="rp-connect-steps">{connectSteps.map((step,i)=><li key={step.id} className={step.complete?'done':'pending'}>
+         <span className="rp-connect-step-icon">{step.complete?<Check size={16}/>:i+1}</span>
+         <span><strong>{step.label}</strong><small>{step.complete?'Completado según el servidor':'Pendiente de validación'}</small></span>
+        </li>)}</ol>
+        {connectError&&<Notice kind="info" message={connectError}/>}
+        {connectStage==='unlinked'&&<div className="rp-connect-help">
+         <strong>Tu cuenta todavía no aparece vinculada</strong>
+         <p>Solicita a administración que revise la cuenta de cobro de tu negocio. Si ya la vinculó, vuelve a verificar aquí. No introduzcas contraseñas ni claves de Stripe en Tala Eats.</p>
+        </div>}
+        {connectStage==='owner'&&<div className="rp-connect-consent">
+         <strong>Autoriza únicamente una cuenta que reconozcas</strong>
+         <label><input type="checkbox" checked={ownerConnectAcknowledged}
+          disabled={busy||PREVIEW_READONLY} onChange={e=>setOwnerConnectAcknowledged(e.target.checked)}/>
+          <span>Soy el titular del restaurante y confirmé directamente con administración que la cuenta Stripe Connect vinculada es la mía.</span></label>
+         <button type="button" className="rp-btn primary" disabled={busy||!syncHealthy||!ownerConnectAcknowledged||PREVIEW_READONLY}
+          onClick={confirmOwner}><KeyRound size={17}/> Confirmar mi titularidad</button>
+        </div>}
+        {connectStage==='stripe'&&<div className="rp-connect-cta">
+         <p>Se abrirá <strong>connect.stripe.com</strong>. Tala Eats no recopila tus contraseñas ni los números de tu cuenta bancaria.</p>
+         <button type="button" className="rp-btn primary"
+          disabled={busy||!syncHealthy||PREVIEW_READONLY} onClick={()=>void onboardingLink()}>
+          Continuar de forma segura en Stripe <ArrowRight size={18}/></button>
+        </div>}
+        {connectStage==='review'&&<p className="rp-connect-pending" role="status">
+         La cuenta tiene los datos necesarios, pero el servidor no ha confirmado la autorización final. No se habilitan cobros por esta pantalla.</p>}
+        {connectComplete&&<p className="rp-connect-approved" role="status"><BadgeCheck size={17}/>
+         La conexión está lista según la última respuesta del backend. Los permisos para operar se comprueban al crear cada pedido.</p>}
+        <button type="button" className="rp-btn outline rp-connect-refresh" disabled={busy||refreshing}
+         onClick={()=>void refresh()}><RefreshCw size={16}/> Verificar estado de nuevo</button>
+        <p className="rp-legal">Las transferencias automáticas no se activan desde esta aplicación. Stripe Connect requiere verificación real del comercio y confirmación del servidor; no genera pagos en esta pantalla.</p>
+       </section>
+      </div>
       <section className="rp-panel-card"><div className="rp-card-top"><Store size={22}/><h3>Disponibilidad</h3></div>
        <p className="rp-muted">{restaurant.name}</p><p>{restaurant.address||'Agrega la dirección completa para que te encuentren.'}</p>
        <div className="rp-setting"><div><strong>Comercio</strong><small>{restaurant.is_open?'Abierto para recibir pedidos autorizados':'Cerrado temporalmente'}</small></div>
