@@ -444,8 +444,7 @@ export function RestaurantWorkspace(){
  const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
  const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
  return <div className="rp-layout" data-restaurant-app="true">
-  <aside className="rp-sidebar"><MerchantBrand/>
-   <span className="rp-side-caption">GESTIÓN DEL COMERCIO</span>
+  <aside className="rp-sidebar"><span className="rp-sidebar-label">Restaurantes</span>
    <nav className="rp-nav" aria-label="Secciones del restaurante">
     {allTabs.map(({id,label,Icon})=><button key={id} type="button"
       className={'rp-nav-item '+(tab===id?'selected':'')} aria-current={tab===id?'page':undefined}
@@ -458,24 +457,15 @@ export function RestaurantWorkspace(){
     <div><strong>{user?.name||'Restaurante'}</strong><small>Cuenta del comercio</small></div>
     <button type="button" title="Cerrar sesión" aria-label="Cerrar sesión" onClick={()=>void signOut()}><LogOut size={18}/></button>
    </div>
-   <span className="rp-sidebar-footnote">Tala Eats <b>Business</b> · Jalisco</span>
   </aside>
   <div className="rp-workspace">
    <header className="rp-topbar">
-    <div className="rp-top-identity"><span className="rp-eyebrow">TALA EATS RESTAURANTES</span>
-     <h1>{restaurant?.name||'Panel de restaurante'}</h1>
-     <p>{restaurant?.address||'Gestiona tu restaurante desde un solo lugar'}</p>
-     <div className="rp-top-meta"><span><Clock3 size={14}/>{new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Mexico_City'})}</span>
-      <span className="rp-sync-meta"><span className={'rp-sync-dot '+(syncHealthy?'healthy':'disconnected')}/>
-       {syncHealthy?(lastSync?'Sincronizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'}):'Sincronizado'):'Conexión pendiente'}</span>
-     </div>
+    <div className="rp-top-identity">
+     <h1>{restaurant?.name||'Restaurantes'}</h1>
+     {!syncHealthy&&<span className="rp-sync-meta" role="status">Sin conexión</span>}
     </div>
     <div className="rp-top-actions">
      <RestaurantOrderAlerts orders={orders} live={syncHealthy} onOpenOrders={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}/>
-     {incomingCount>0&&<button type="button" className="rp-new-orders"
-       onClick={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}>
-      <ShoppingBag size={16}/><strong>{incomingCount}</strong><span>{incomingCount===1?'nuevo':'nuevos'}</span>
-     </button>}
      <MerchantInstallButton/>
      <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
        {restaurant?.is_open?'Abierto':'Cerrado'}</span>
@@ -501,8 +491,7 @@ export function RestaurantWorkspace(){
      {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
      {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
      {tab==='pedidos'&&<>
-      <div className="rp-heading-row"><div><span className="rp-eyebrow">OPERACIÓN EN TIEMPO REAL</span><h2>Pedidos</h2>
-       <p>Recibe, prepara y entrega solo pedidos autorizados por el backend.</p></div>
+      <div className="rp-heading-row"><div><h2>Pedidos</h2></div>
        <span className="rp-last-sync"><Clock3 size={16}/> {lastSync?'Actualizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Sin sincronizar'} · Cada 20 s</span>
       </div>
       <div className="rp-stats">
@@ -588,7 +577,7 @@ export function RestaurantWorkspace(){
      </>}
      {tab==='menu'&&<MerchantMenu restaurant={restaurant} busy={busy} run={doAction}/>}
      {tab==='activacion'&&<>
-      <div className="rp-heading-row"><div><span className="rp-eyebrow">MI COMERCIO</span><h2>Activación del restaurante</h2>
+      <div className="rp-heading-row"><div><h2>Activación</h2>
        <p>Verificación del negocio, recogida y cuenta Stripe Connect del propietario.</p></div>
        <span className={'rp-pill '+(connectComplete?'approved':'pending')}>{connectComplete?'Requisitos revisados':'Configuración pendiente'}</span></div>
       <div className="rp-activation-grid"><section className="rp-panel-card"><div className="rp-card-top"><BadgeCheck size={22}/><h3>Lista de activación</h3></div>
@@ -645,8 +634,7 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
  }
  return <section className="rp-catalog">
   <div className="rp-heading-row rp-catalog-heading">
-   <div><span className="rp-eyebrow">CATÁLOGO DEL COMERCIO</span><h2>Mi menú</h2>
-    <p>Productos, precios y existencias sincronizados con el servidor.</p></div>
+   <div><h2>Menú</h2></div>
    <div className="rp-catalog-heading-actions"><span className="rp-menu-count">{restaurant.menu_items?.length??0} productos</span>
     <button className="rp-btn primary" type="button" onClick={()=>{setShowAddForm(p=>!p);setEditingId(null);}}>
      <Plus size={17}/>{showAddForm?'Cerrar formulario':'Nuevo producto'}</button></div>
@@ -660,8 +648,8 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
    </div>
   </div>
   {showAddForm&&<section className="rp-panel-card rp-menu-new">
-   <div className="rp-card-top"><Plus size={22}/><h3>Nuevo producto</h3></div>
-   <p className="rp-muted">Registra tu producto con precio y stock reales. Puedes subir su fotografía después de crearlo.</p>
+   <div className="rp-card-top"><h3>Nuevo producto</h3></div>
+   
    <form className="rp-form rp-product-form" onSubmit={e=>void add(e)}>
     <label>Nombre<input required minLength={2} maxLength={150} value={name}
       onChange={e=>setName(e.target.value)} placeholder="Hamburguesa clásica"/></label>
@@ -684,7 +672,7 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
     onEdit={()=>{setEditingId(v=>v===item.id?null:item.id);setShowAddForm(false);}}
     onClose={()=>setEditingId(null)}/>)}
   </div>:<div className="rp-panel-card rp-catalog-empty">
-   <UtensilsCrossed size={30}/><h3>{(restaurant.menu_items??[]).length?'Sin coincidencias':'Tu menú está vacío'}</h3>
+   <h3>{(restaurant.menu_items??[]).length?'Sin coincidencias':'Tu menú está vacío'}</h3>
    <p>{(restaurant.menu_items??[]).length?'Prueba otra búsqueda o categoría.':'Agrega tu primer producto para que aparezca en el catálogo.'}</p>
    {search&&<button className="rp-btn outline small" onClick={()=>{setSearch('');setSelectedCategory('Todos');}}>Limpiar filtros</button>}
   </div>}
