@@ -167,6 +167,7 @@ export function RestaurantOnboarding(){
  const [requests,setRequests]=useState<MerchantApplication[]|null>(null);
  const [businessName,setBusinessName]=useState(''),[taxId,setTaxId]=useState('');
  const [documents,setDocuments]=useState<File[]>([]);
+ const [documentsInvalid,setDocumentsInvalid]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[note,setNote]=useState('');
  const refresh=useCallback(async()=>{
   setError('');setRequests(null);
@@ -186,7 +187,7 @@ export function RestaurantOnboarding(){
  const latest=requests?.slice().sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at))[0];
  const waiting=latest?.status==='pending'||latest?.status==='approved';
  async function submit(event:FormEvent){
-  event.preventDefault();if(busy||businessName.trim().length<3)return;
+  event.preventDefault();if(busy||businessName.trim().length<3||documentsInvalid)return;
   if(documents.length>3||documents.some(f=>!f.size||f.size>5*1024*1024||
     !['image/jpeg','image/png','image/webp','application/pdf'].includes(f.type))){
    setError('Solo se aceptan 3 archivos JPG, PNG, WEBP o PDF de máximo 5 MB cada uno.');return;
@@ -200,7 +201,7 @@ export function RestaurantOnboarding(){
    }
    const result=await api.restaurantOnboardingSubmit(businessName.trim(),taxId.trim(),uploaded);
    setRequests(v=>[result,...(v??[]).filter(x=>x.id!==result.id)]);
-   setDocuments([]);
+   setDocuments([]);setDocumentsInvalid(false);
    setNote('Solicitud y referencias de documentos enviadas al backend. Administración deberá verificar tu negocio antes de activar el acceso.');
   }catch(e){setError(e instanceof Error?e.message:'No se pudo guardar la solicitud.');}
   finally{setBusy(false);}
@@ -245,17 +246,17 @@ export function RestaurantOnboarding(){
        onChange={e=>{
         const files=Array.from(e.target.files??[]);
         if(files.length>3){
-         setDocuments([]);
+         setDocuments([]);setDocumentsInvalid(true);
          setError('Selecciona como máximo 3 documentos. No se enviará ninguno hasta corregir la selección.');
          e.target.value='';
          return;
         }
-        setDocuments(files);setError('');
+        setDocuments(files);setDocumentsInvalid(false);setError('');
        }}/>
       <span className="rp-legal">{documents.length?documents.length+' archivo(s) seleccionado(s). ':' '}JPG, PNG, WEBP o PDF; máximo 5 MB por archivo. Solo el titular y administración pueden acceder a documentos asociados.</span>
      </label>
      <p className="rp-legal">Administración puede solicitar información adicional. No cargues contraseñas ni claves de Stripe. Los documentos se guardan en almacenamiento privado del backend.</p>
-     <button type="submit" className="rp-btn primary" disabled={busy||businessName.trim().length<3}>Enviar solicitud <ArrowRight size={18}/></button>
+     <button type="submit" className="rp-btn primary" disabled={busy||businessName.trim().length<3||documentsInvalid}>Enviar solicitud <ArrowRight size={18}/></button>
     </form>
    </section>}
   <p className="rp-legal">Tu cuenta seguirá siendo Cliente hasta que administración autorice el cambio. Ninguna solicitud crea por sí sola pagos Stripe LIVE.</p>
