@@ -566,10 +566,11 @@ export function RestaurantWorkspace(){
             <small>{new Date(o.created_at).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</small></div>
             <b>{pesos(o.total)}</b></div>
            <div className="rp-payment-tag"><CreditCard size={16}/>
-            {o.payment_method==='cash'?'Efectivo al recoger':
+            {o.payment_method==='cash'?
+             (o.order_type==='pickup'?'Efectivo · cobro al recoger':'Efectivo · cobro en entrega'):
              o.payment_status==='paid'?'Tarjeta · Confirmada por servidor':'Tarjeta · Pendiente de conciliación'}</div>
            <div className="rp-order-items">{(o.items??[]).map((item,i)=><p key={i}>{item.quantity} × {item.name_snapshot}</p>)}</div>
-           <p className="rp-muted">{o.order_type==='pickup'?'Recoger en el local':'Entrega a domicilio'}</p>
+           <p className="rp-muted">{o.order_type==='pickup'?'Recoger en el local':o.order_type==='delivery'?'Entrega a domicilio':'Modalidad sin confirmar'}</p>
            {nextMerchantState(o)&&<button className="rp-btn primary small" disabled={busy}
              onClick={()=>statusAction(o)}>{state==='received'?'Aceptar pedido':state==='confirmed'?'Comenzar preparación':'Marcar listo'} <ArrowRight size={16}/></button>}
            {state==='ready'&&o.order_type==='pickup'&&<div className="rp-handoff">
@@ -695,7 +696,7 @@ function MerchantMenu({restaurant,busy,run}:{restaurant:Restaurant;busy:boolean;
     <label>Stock<input required type="number" min={0} max={100000} step={1}
       value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
     <label>Categoría<input maxLength={100} value={category} onChange={e=>setCategory(e.target.value)}/></label>
-    <label className="rp-product-wide">Descripción<textarea value={description} rows={3}
+    <label className="rp-product-wide">Descripción<textarea maxLength={1000} value={description} rows={3}
       onChange={e=>setDescription(e.target.value)} placeholder="Ingredientes y detalles"/></label>
     <div className="rp-product-wide rp-product-cta">
      <button className="rp-btn primary" type="submit" disabled={busy||!nameGood||!priceGood||!stockGood}><Plus size={16}/> Publicar producto</button>
@@ -765,7 +766,7 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
     <span className={'rp-catalog-stock '+(!item.is_available||item.stock===0?'paused':item.stock<10?'low':'')}>
      {!item.is_available?'Pausado':item.stock===0?'Agotado':item.stock<10?'Stock bajo: '+item.stock:'Stock: '+item.stock}</span>
     <label className="flutter-product-toggle">
-     <input type="checkbox" role="switch" checked={item.is_available} disabled={busy}
+     <input type="checkbox" role="switch" checked={item.is_available} disabled={busy||editing}
       aria-label={item.name+': disponible para clientes'}
       onChange={event=>{const available=event.target.checked;
        void run(()=>api.ownerUpdateItem(item.id,{is_available:available}),
