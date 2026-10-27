@@ -120,7 +120,7 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
      connectStage==='stripe'?'Completa la verificación en Stripe':
      connectStage==='review'?'El servidor todavía no autoriza la operación':
      'Revisa los pasos pendientes de activación'}</small></span><ArrowRight size={16}/>
-  </button>
+  </button>}
   <section className="mw-activity">
    <div className="mw-activity-heading"><h3>Movimientos</h3></div>
    {loading?<p className="mw-empty" role="status">Consultando movimientos…</p>:
