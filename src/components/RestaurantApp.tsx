@@ -431,6 +431,7 @@ export function RestaurantWorkspace(){
    'Preferencia de recogida actualizada en el servidor.');
  }
  const activeOrders=orders.filter(o=>['received','confirmed','preparing','ready'].includes(o.status));
+ const incomingCount=activeOrders.filter(o=>o.status==='received').length;
  const waitingPayment=orders.filter(o=>o.status==='awaiting_payment'||(o.status==='received'&&o.payment_method==='stripe'&&o.payment_status!=='paid'));
  const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
    (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
