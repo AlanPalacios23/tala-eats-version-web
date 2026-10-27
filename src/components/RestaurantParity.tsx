@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
- ArrowRight,AlertTriangle,CheckCircle2,ChefHat,ClipboardList,Clock3,
+ ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
  MapPin,PackageCheck,Settings2,ShieldCheck,
  ShoppingBag,Store,Users,Wallet
 } from 'lucide-react';
@@ -224,14 +224,14 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
-  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes" description="Actualiza la información del negocio, organiza a tu equipo y revisa tu cuenta."/>
-   <button className="rp-btn outline small" onClick={()=>go('activacion')}><ShieldCheck size={16}/> Ver activación</button></div>
+  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes"/></div>
   <div className="rm-mobile-more-shortcuts">
-   <button type="button" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>Ganancias y retiros</small></span><ArrowRight size={18}/></button>
-   <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>Verificación del comercio</small></span><ArrowRight size={18}/></button>
+   <button type="button" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
+   <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>{connect?.owner_approved?'Cuenta vinculada':'Verificar tu comercio'}</small></span><ArrowRight size={18}/></button>
   </div>
   <div className="rm-duo rm-more-duo">
-   <section className="rp-panel-card"><h3><Store size={19}/> Perfil del restaurante</h3>
+   <details className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
+    <summary><Store size={19}/><strong>Perfil del restaurante</strong><ArrowRight size={17}/></summary>
     <form onSubmit={e=>void saveProfile(e)} className="rm-settings-form">
      <label>Nombre<input value={name} required minLength={2} maxLength={150} onChange={e=>setName(e.target.value)}/></label>
      <label>Tipo de comida<input maxLength={100} value={cuisine} onChange={e=>setCuisine(e.target.value)} placeholder="Mexicana, hamburguesas, tacos…"/></label>
@@ -253,22 +253,19 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
      <input aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
      <button className="rp-btn outline small" disabled={!cover||busy||uploadBusy} onClick={()=>void uploadCover()}>Publicar portada</button>
     </div>
-   </section>
+   </details>
    <div className="rm-more-column">
     <section className="rp-panel-card"><h3><Settings2 size={19}/> Preparación y entrega</h3>
      <div className="rp-setting"><div><strong>Recibir nuevos pedidos</strong><small>{restaurant.is_open?'Abierto':'Cerrado'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar pedidos nuevos?'))return;void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),'Disponibilidad actualizada.');}}>{restaurant.is_open?'Pausar':'Abrir'}</button></div>
      <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
      <p className="rp-legal">El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
     </section>
-    <section className="rp-panel-card"><h3><Wallet size={19}/> Retiros y cuenta bancaria</h3>
-     <p className="rp-muted">Saldo contable del comercio: {finance?pesos(finance.net_payable):'No disponible'}. No representa un saldo bancario disponible para retirar.</p>
-     <div className="rm-connect-status">{connect?.owner_approved?<><CheckCircle2 size={18}/> Cuenta Connect reconocida por el titular.</>:<><AlertTriangle size={18}/> Falta confirmación de la cuenta Connect.</>}</div>
-     <button className="rp-btn outline" onClick={()=>go('finanzas')}><Wallet size={17}/> Abrir Wallet <ArrowRight size={16}/></button>
-     <p className="rp-legal">No se solicitan retiros ni transferencias automáticas desde esta vista hasta que estén habilitados y conciliados por el backend LIVE.</p>
-    </section>
    </div>
   </div>
-  <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
+  <details className="rm-team-fold" data-merchant-accordion="team">
+   <summary><Users size={19}/><strong>Equipo y permisos</strong><ArrowRight size={17}/></summary>
+   <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
+  </details>
  </div>;
 }
 
