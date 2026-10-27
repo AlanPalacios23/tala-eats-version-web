@@ -169,9 +169,11 @@ export function RestaurantOnboarding(){
  const [documents,setDocuments]=useState<File[]>([]);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[note,setNote]=useState('');
  const refresh=useCallback(async()=>{
+  setError('');setRequests(null);
   try{
-   const mine=(await api.restaurantOnboardingMine()).filter(a=>a.entity_type==='restaurant');
-   setRequests(mine);
+   const data=await api.restaurantOnboardingMine();
+   if(!Array.isArray(data))throw new Error('El servidor no devolvió una lista válida de solicitudes.');
+   setRequests(data.filter(a=>a.entity_type==='restaurant'));
   }catch(e){setError(e instanceof ApiError&&e.status===401?
     'Tu sesión venció o los permisos fueron actualizados. Vuelve a iniciar sesión para activar tu panel.':
     e instanceof Error?e.message:'No se pudo consultar tu solicitud.');}
@@ -214,7 +216,11 @@ export function RestaurantOnboarding(){
   {error&&<Notice kind="error" message={error}/>}
   {error.includes('sesión venció')&&<a className="rp-btn outline" href="/restaurante/acceso">Volver a iniciar sesión</a>}
   {note&&<Notice kind="success" message={note}/>}
-  {requests===null?<p>Consultando estado de tu alta…</p>:
+  {requests===null?<section className="rp-panel-card" role="status">
+    <p>{error?'No se pudo consultar el estado de tu solicitud.':'Consultando estado de tu alta…'}</p>
+    {error&&<button type="button" className="rp-btn outline" onClick={()=>void refresh()}>
+     <RefreshCw size={17}/> Reintentar consulta</button>}
+   </section>:
    latest&&waiting?<section className="rp-panel-card"><span className="rp-eyebrow">SOLICITUD #{latest.id}</span>
     <h2>{latest.status==='approved'?'Solicitud aprobada':'Tu solicitud está en revisión'}</h2>
     <p>{latest.business_name}</p>
@@ -237,7 +243,13 @@ export function RestaurantOnboarding(){
      <label>Documentos del negocio (opcional, máximo 3)
       <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple disabled={busy}
        onChange={e=>{
-        const files=Array.from(e.target.files??[]).slice(0,3);
+        const files=Array.from(e.target.files??[]);
+        if(files.length>3){
+         setDocuments([]);
+         setError('Selecciona como máximo 3 documentos. No se enviará ninguno hasta corregir la selección.');
+         e.target.value='';
+         return;
+        }
         setDocuments(files);setError('');
        }}/>
       <span className="rp-legal">{documents.length?documents.length+' archivo(s) seleccionado(s). ':' '}JPG, PNG, WEBP o PDF; máximo 5 MB por archivo. Solo el titular y administración pueden acceder a documentos asociados.</span>
@@ -377,7 +389,11 @@ export function RestaurantWorkspace(){
   }
   busyRef.current=true;setBusy(true);setError('');setNotice('');
   try{await work();setNotice(message);await refresh();return true;}
-  catch(e){setError(e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.');await refresh();return false;}
+  catch(e){
+   // A successful refresh clears setError: report the failed write *after* resync.
+   const reason=e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.';
+   await refresh();setError(reason);return false;
+  }
   finally{busyRef.current=false;setBusy(false);}
  };
  async function signOut(){
