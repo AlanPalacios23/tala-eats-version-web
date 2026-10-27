@@ -454,3 +454,153 @@
  .rp-history-head>span{text-align:left}
  .rp-history-date{display:none}
 }
+
+/* Final finishing pass: merchant access, activation, finance and admin.
+   All selectors live under Restaurante. Customer PWA remains unchanged. */
+.rp-auth-page{
+ background:radial-gradient(ellipse at 24% 35%,#344037 0%,#1b2420 39%,#141917 75%);
+}
+.rp-auth-page .rp-intro{
+ background:linear-gradient(155deg,transparent 20%,#4a351f21 100%);
+ position:relative;overflow:hidden;isolation:isolate;min-width:0;
+}
+.rp-auth-page .rp-intro:before{
+ content:"";position:absolute;z-index:-1;width:470px;height:470px;max-width:80vw;
+ border:1px solid #a9b4a71c;border-radius:50%;right:-170px;bottom:-180px;
+ box-shadow:0 0 0 60px #a9b4a708,0 0 0 140px #a9b4a705;
+ pointer-events:none;
+}
+.rp-auth-page .rp-intro .rp-eyebrow{
+ font-size:11px;letter-spacing:2.5px;color:#ffb18a;
+}
+.rp-auth-page .rp-intro h1{
+ font-size:clamp(46px,5.4vw,80px);font-weight:790;letter-spacing:-.058em;
+ line-height:1.08;max-width:680px;margin:20px 0 21px;
+ text-wrap:balance;
+}
+.rp-auth-page .rp-intro>p{
+ color:#c4d0c5;font-size:clamp(14px,1.4vw,18px);line-height:1.65;
+}
+.rp-auth-page .rp-intro-points{gap:10px}
+.rp-auth-page .rp-intro-points span{
+ border:1px solid #ffffff21;background:#ffffff0c;border-radius:11px;
+ padding:13px;font-size:12px;color:#e0e8e0;
+}
+.rp-auth-page .rp-access-card{
+ background:#fbfcfa;
+ padding:clamp(31px,5vw,90px);
+ border-left:1px solid #dfe6dd;
+ min-width:0;
+}
+.rp-auth-page .rp-access-card .rp-eyebrow{letter-spacing:1.7px;font-size:11px}
+.rp-auth-page .rp-access-card h2{
+ letter-spacing:-1px;font-weight:820;font-size:clamp(30px,3.2vw,44px);
+ color:#293229;line-height:1.15;
+}
+.rp-auth-page .rp-access-card>p{line-height:1.6;color:#7b897d;max-width:440px}
+.rp-auth-page .rp-form{margin:28px 0 18px;gap:17px}
+.rp-auth-page .rp-form label{font-size:12px;gap:9px;color:#515e53}
+.rp-auth-page .rp-form input{
+ border-radius:12px;border:1px solid #dce4d9;
+ background:#fff;min-height:51px;padding:14px 16px;
+ transition:border-color .16s ease,box-shadow .16s ease;
+}
+.rp-auth-page .rp-form input:focus-visible{
+ outline:0;border-color:#f28a4c;box-shadow:0 0 0 3px #ff843128;
+}
+.rp-auth-page .rp-form .rp-btn.primary{
+ min-height:53px;font-size:13px;border-radius:12px;
+ background:linear-gradient(120deg,#ff7939,#e46023);
+ box-shadow:0 10px 24px #e662231c;
+}
+.rp-auth-page .rp-form .rp-btn.primary:hover:not(:disabled){background:#d95c1f}
+.rp-auth-page .rp-switch{font-size:12px}
+.rp-onboarding{
+ background:radial-gradient(ellipse at 0% 10%,#fff5e9 0%,#f8faf6 50%);
+ color:#273229;
+}
+.rp-onboarding .rp-onboard-wrap{max-width:790px}
+.rp-onboarding .rp-onboard-wrap>.rp-brand{
+ display:inline-flex;background:#202923;
+ box-shadow:0 8px 25px #1f2d1f12;border-radius:13px;
+}
+.rp-onboarding .rp-onboard-wrap h1{
+ letter-spacing:-1.5px;font-weight:800;line-height:1.13;
+ margin-top:12px;color:#232c23;
+}
+.rp-onboarding .rp-onboard-wrap>p{line-height:1.65;color:#788678}
+.rp-onboarding .rp-activation-track{
+ border-radius:14px;gap:3px;background:#e4e9e1;
+ padding:4px;margin:31px 0;
+}
+.rp-onboarding .rp-activation-track span{
+ border-radius:10px;background:#f4f6f1;font-size:11px;color:#8a998a;
+ line-height:1.45;
+}
+.rp-onboarding .rp-activation-track span.active{
+ background:linear-gradient(115deg,#fa843f,#ef662a);
+ color:#fff;
+}
+.rp-onboarding .rp-panel-card{
+ border:1px solid #e0e8df;background:#fff;border-radius:19px;
+ box-shadow:0 14px 37px #1b321b0c;padding:clamp(20px,4vw,35px);
+}
+.rp-onboarding .rp-panel-card>h2{
+ font-size:clamp(23px,3vw,29px);letter-spacing:-.65px;margin:0 0 10px;
+}
+.rp-onboarding .rp-form input,.rp-onboarding .rp-form textarea{
+ border:1px solid #dce5db;border-radius:12px;
+ min-height:47px;
+}
+.rp-onboarding .rp-form input:focus-visible,.rp-onboarding .rp-form textarea:focus-visible{
+ outline:0;border-color:#e98d51;box-shadow:0 0 0 3px #f4975126;
+}
+.rp-admin-page{
+ background:linear-gradient(145deg,#f5f8f3,#fafbf8);
+}
+.rp-admin-page .rp-admin-title h1{
+ font-weight:810;letter-spacing:-1.4px;color:#29362d;
+}
+.rp-admin-page .rp-admin-title p{line-height:1.65}
+.rp-admin-page .rp-panel-card{
+ border:1px solid #e3e9e0;border-radius:19px;padding:clamp(20px,3vw,29px);
+ box-shadow:0 7px 22px #2037200a;background:#fff;
+}
+.rp-admin-page .rp-admin-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.rp-admin-page .rp-panel-card h2{font-size:22px;letter-spacing:-.4px}
+.rp-admin-page .rp-review-note textarea{
+ border:1px solid #dce5da;border-radius:11px;min-height:88px;
+}
+.rp-admin-page .rp-review-note textarea:focus-visible{
+ border-color:#ed8c53;outline:3px solid #ed8c5324;
+}
+.rp-layout .rp-finance-stats>div{border-radius:17px;border-color:#e2e9e2}
+.rp-layout .rp-finance-stats strong{font-weight:820}
+.rp-layout .rm-finance-activity{border-radius:19px}
+.rp-layout .rm-finance-activity-summary{
+ background:linear-gradient(110deg,#f4f8f2,#fff9f1);
+ border:1px solid #ecf0e8;
+}
+@media(max-width:850px){
+ .rp-auth-page .rp-intro{padding:92px 30px 26px}
+ .rp-auth-page .rp-intro h1{font-size:clamp(34px,5vw,45px);max-width:600px}
+ .rp-auth-page .rp-access-card{border-left:0;border-top:1px solid #dee7dc}
+}
+@media(max-width:590px){
+ .rp-auth-page .rp-intro{padding:78px 23px 18px}
+ .rp-auth-page .rp-intro h1{font-size:38px;line-height:1.04}
+ .rp-auth-page .rp-access-card{padding:29px 23px 50px}
+ .rp-auth-page .rp-access-card h2{font-size:31px}
+ .rp-onboarding{padding:28px 16px 55px}
+ .rp-onboarding .rp-activation-track{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rp-admin-page{padding:28px 16px}
+ .rp-admin-page .rp-admin-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:360px){
+ .rp-auth-page .rp-intro{padding:76px 17px 13px}
+ .rp-auth-page .rp-access-card{padding:25px 17px 38px}
+ .rp-onboarding{padding:23px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rp-auth-page .rp-form input{transition:none}
+}
