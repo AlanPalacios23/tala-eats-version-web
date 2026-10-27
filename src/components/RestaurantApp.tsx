@@ -528,8 +528,12 @@ export function RestaurantWorkspace(){
      {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onRefresh={refresh}/>}
      {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut} accountName={user?.name} accountEmail={user?.email}/>}
      {tab==='pedidos'&&<>
-      <div className="rp-heading-row"><div><h2>Pedidos</h2></div>
-       <span className="rp-last-sync"><Clock3 size={16}/> {lastSync?'Actualizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Sin sincronizar'} · Cada 20 s</span>
+      <div className="rp-heading-row rp-flutter-orders-heading">
+       <div><h2>Pedidos</h2>
+        <p>{activeOrders.length===0?'Sin pedidos activos':activeOrders.length===1?'1 pedido activo':activeOrders.length+' pedidos activos'}
+         {lastSync?' · actualizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):''}</p></div>
+       <button type="button" className="rp-btn outline small" aria-label="Abrir modo cocina"
+        onClick={()=>setTab('cocina')}><ChefHat size={20}/></button>
       </div>
       <div className="rp-stats">
        <div><span>Pedidos históricos</span><strong>{stats?.orders??'—'}</strong><small>Desde el servidor</small></div>
@@ -559,11 +563,12 @@ export function RestaurantWorkspace(){
        <button className="rp-btn outline small" onClick={()=>{setOrderQuery('');setOrderFilter('all');}}>Limpiar búsqueda</button>
       </div>}
       {orderFilter!=='history'&&<div className="rp-lane-grid">
-       {(['received','confirmed','preparing','ready'] as const).map(state=>{
-        const lane=visibleOrders.filter(o=>o.status===state);
+       {(['received','kitchen','ready'] as const).map(state=>{
+        const lane=visibleOrders.filter(o=>state==='kitchen'?
+         o.status==='confirmed'||o.status==='preparing':o.status===state);
         return <section className={'rp-order-lane '+(lane.length===0?'rp-lane-empty':'')} key={state}>
          <div className="rp-lane-title"><span className={'rp-lane-indicator '+state}/>
-          <h3>{merchantStateLabel(state)}</h3><span>{lane.length}</span></div>
+          <h3>{state==='received'?'Nuevos':state==='kitchen'?'En cocina':'Listos para entregar'}</h3><span>{lane.length}</span></div>
          {lane.length===0?<div className="rp-empty-lane"><PackageCheck size={29}/><p>Sin pedidos en esta etapa</p></div>:
           lane.map(o=><article className="rp-order-card" key={o.id}>
            <div className="rp-order-head"><div><strong>Pedido #{o.id}</strong>
@@ -576,7 +581,7 @@ export function RestaurantWorkspace(){
            <div className="rp-order-items">{(o.items??[]).map((item,i)=><p key={i}>{item.quantity} × {item.name_snapshot}</p>)}</div>
            <p className="rp-muted">{o.order_type==='pickup'?'Recoger en el local':o.order_type==='delivery'?'Entrega a domicilio':'Modalidad sin confirmar'}</p>
            {nextMerchantState(o)&&<button className="rp-btn primary small" disabled={busy}
-             onClick={()=>statusAction(o)}>{state==='received'?'Aceptar pedido':state==='confirmed'?'Comenzar preparación':'Marcar listo'} <ArrowRight size={16}/></button>}
+             onClick={()=>statusAction(o)}>{o.status==='received'?'Aceptar pedido':o.status==='confirmed'?'Comenzar preparación':'Marcar listo'} <ArrowRight size={16}/></button>}
            {state==='ready'&&o.order_type==='pickup'&&<div className="rp-handoff">
             <label>PIN del cliente
              <input type="password" inputMode="numeric" autoComplete="off" maxLength={4}
