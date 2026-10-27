@@ -128,6 +128,7 @@ export function RestaurantAccess(){
  return <div className="rp-auth-page"><MerchantIntro title="Tu negocio, en movimiento."
   subtitle="Recibe y prepara pedidos, administra tus productos y activa los pagos para recoger desde un solo espacio."/>
   <section className="rp-access-card" aria-label="Acceso de restaurantes">
+   <div className="rp-flutter-login-brand"><MerchantBrand/></div>
    <Link to={mainTalaEatsPortalHref(window.location.hostname)} className="rp-muted-link"><ArrowLeft size={16}/> Volver a Tala Eats</Link>
    {user?.role==='customer'?<>
     <span className="rp-eyebrow">CUENTA EXISTENTE</span>
