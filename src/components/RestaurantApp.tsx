@@ -641,7 +641,7 @@ export function RestaurantWorkspace(){
       </section></div>
      </>}
      {tab==='finanzas'&&<MerchantWallet restaurantId={restaurant.id}
-      finance={finance} connect={connect} go={setTab}/>} 
+      finance={finance} connect={connect} orders={orders} go={setTab}/>} 
     </>}
    </main>
    <nav className="rp-mobile-tabs" aria-label="Navegación móvil de restaurantes">
