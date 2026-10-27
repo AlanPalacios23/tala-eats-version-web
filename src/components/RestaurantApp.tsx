@@ -606,8 +606,12 @@ export function RestaurantWorkspace(){
     </>}
    </main>
    <nav className="rp-mobile-tabs" aria-label="Navegación móvil de restaurantes">
-    {bottomTabs.map(({id,label,Icon})=><button key={id} className={tab===id?'selected':''}
-      aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}><Icon size={21}/><span>{label}</span></button>)}
+    {bottomTabs.map(({id,label,Icon})=>{
+      const selected=tab===id||(id==='mas'&&(tab==='finanzas'||tab==='activacion'));
+      return <button key={id} className={selected?'selected':''}
+       aria-current={selected?'page':undefined} onClick={()=>setTab(id)}
+       ><Icon size={21}/><span>{label}</span></button>;
+     })}
    </nav>
   </div>
  </div>;
