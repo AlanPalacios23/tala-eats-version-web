@@ -111,8 +111,9 @@ for(const width of widths){
  // reflect the requested item, not simply show an inert text field.
  await openTab(page,width,'menu');
  await page.getByRole('textbox',{name:'Buscar productos'}).fill('Quesabirria');
- await page.locator('.rp-menu-item').filter({hasText:'Quesabirria'}).waitFor();
- if(await page.locator('.rp-menu-item').count()!==1)throw Error('Category/search functionality failed at '+width);
+ await page.waitForFunction(()=>document.querySelectorAll('.rp-menu-item').length===1,{},{timeout:12000});
+ const visibleProduct=await page.locator('.rp-menu-item input').first().inputValue();
+ if(visibleProduct!=='Quesabirria')throw Error('Category/search functionality failed at '+width+': '+visibleProduct);
  await ctx.close();
 }
 {
