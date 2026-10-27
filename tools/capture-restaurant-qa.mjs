@@ -95,7 +95,7 @@ async function openTab(page,width,label){
    await page.getByRole('button',{name:/Modo cocina/}).click();
   }else if(label==='activacion'){
    await nav.getByRole('button',{name:'Más',exact:true}).click();
-   await page.locator('.rm-mobile-more-shortcuts').getByRole('button',{name:/Activación/}).click();
+   await page.locator('.rm-flutter-settings').getByRole('button',{name:/Activación de pagos/}).click();
   }else{
    const name={pedidos:'Pedidos',menu:'Menú',mas:'Más',inicio:'Inicio',finanzas:'Wallet'}[label];
    await nav.getByRole('button',{name,exact:true}).click();
