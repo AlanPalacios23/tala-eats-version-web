@@ -13,6 +13,7 @@ import {mainTalaEatsPortalHref} from '../lib/restaurant-host';
 import {normalizePickupPin} from '../lib/pickup-handoff';
 import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
+import {checkedOwnerConnectStatus,merchantConnectStage,trustedStripeConnectLink} from '../lib/merchant-connect';
 import '../styles/restaurant.css';
 import '../styles/restaurant-polish.css';
 import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
@@ -336,6 +337,7 @@ export function RestaurantWorkspace(){
  const [stats,setStats]=useState<Stats|null>(null),[finance,setFinance]=useState<MerchantFinance|null>(null);
  const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
  const [connectError,setConnectError]=useState('');
+ const [ownerConnectAcknowledged,setOwnerConnectAcknowledged]=useState(false);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [syncHealthy,setSyncHealthy]=useState(false),[refreshing,setRefreshing]=useState(false);
 
@@ -359,6 +361,7 @@ export function RestaurantWorkspace(){
     // Discard approvals and balances belonging to the previous merchant.
     currentRestaurantId.current=r.id;
     setStats(null);setFinance(null);setConnect(null);setConnectError('');
+    setOwnerConnectAcknowledged(false);
     setPins({});setCashConfirmed({});
    }
    setRestaurant(r);setOrders(o);setError('');setSyncHealthy(true);
@@ -368,8 +371,10 @@ export function RestaurantWorkspace(){
    ]);
    if(!mounted.current||version!==requestVersion.current)return;
    setStats(a.status==='fulfilled'?a.value:null);
-   if(c.status==='fulfilled'){setConnect(c.value);setConnectError('');}
-   else {setConnect(null);setConnectError('No hay una cuenta Connect autorizada o no se pudo consultar.');}
+   if(c.status==='fulfilled'){
+    try{setConnect(checkedOwnerConnectStatus(c.value,r.id));setConnectError('');}
+    catch(e){setConnect(null);setConnectError(e instanceof Error?e.message:'El estado Connect no pudo validarse.');}
+   }else {setConnect(null);setConnectError('No hay una cuenta Connect autorizada o no se pudo consultar.');}
    setFinance(f.status==='fulfilled'?f.value:null);
   }catch(e){
    if(mounted.current&&version===requestVersion.current){
@@ -377,6 +382,7 @@ export function RestaurantWorkspace(){
     if(e instanceof ApiError&&e.status===404){
      currentRestaurantId.current=null;
      setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
+     setOwnerConnectAcknowledged(false);
      setPins({});setCashConfirmed({});
      setSyncHealthy(true);setError('');
     }else{
@@ -424,19 +430,24 @@ export function RestaurantWorkspace(){
   catch(e){setError(e instanceof Error?e.message:'No se pudo cerrar sesión.');}
  }
  function confirmOwner(){
-  if(!restaurant||!connect||connect.owner_approved)return;
-  if(!window.confirm('Confirma SOLO si eres el titular legal del restaurante y reconoces como propia la cuenta Stripe Connect que administración vinculó. ¿Autorizar esta asociación?'))return;
-  void doAction(()=>api.ownerConfirmConnect(restaurant.id),'Titularidad registrada. Stripe y el backend verificarán los requisitos antes de aceptar pagos.');
+  if(!restaurant||!connect||connect.owner_approved||!ownerConnectAcknowledged||busyRef.current)return;
+  if(!window.confirm('Confirmo que soy el titular del comercio y reconocí con administración la cuenta Stripe Connect vinculada. La autorización quedará registrada en el servidor. ¿Continuar?'))return;
+  void doAction(async()=>{
+   const result=await api.ownerConfirmConnect(restaurant.id);
+   if(result?.owner_confirmed!==true)
+    throw new Error('El servidor no confirmó tu autorización Stripe Connect.');
+   setOwnerConnectAcknowledged(false);
+  },'Autorización registrada. El backend verificará los requisitos de Stripe antes de habilitar pedidos.');
  }
  async function onboardingLink(){
-  if(!restaurant||!connect?.owner_approved||busyRef.current)return;
-  busyRef.current=true;setBusy(true);setError('');
+  if(!restaurant||!connect?.owner_approved||busyRef.current||PREVIEW_READONLY)return;
+  busyRef.current=true;setBusy(true);setError('');setNotice('');
   try{
+   // A fresh, one-time Account Link is generated only after a real click.
+   // Reject expired links and unexpected origins before leaving Tala Eats.
    const result=await api.ownerConnectOnboardingLink(restaurant.id);
-   const url=new URL(result.url);
-   if(url.protocol!=='https:'||url.hostname!=='connect.stripe.com')
-    throw new Error('Stripe Connect devolvió un enlace no autorizado.');
-   window.location.assign(url.href);
+   const url=trustedStripeConnectLink(result);
+   window.location.assign(url);
   }catch(e){setError(e instanceof Error?e.message:'No fue posible continuar a Stripe Connect.');}
   finally{busyRef.current=false;setBusy(false);}
  }
@@ -481,7 +492,9 @@ export function RestaurantWorkspace(){
   .sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,30);
  const matchingCompletedOrders=completedOrders.filter(matchesOrder);
  const connectSteps=restaurant?merchantConnectSteps(restaurant,connect):[];
- const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete);
+ const connectStage=merchantConnectStage(connect);
+ const connectComplete=connectSteps.length>0&&connectSteps.every(x=>x.complete)&&connectStage==='ready';
+ const connectDone=connectSteps.filter(step=>step.complete).length;
  return <div className="rp-layout" data-restaurant-app="true" data-kitchen-open={tab==='cocina'?'true':'false'} data-current-tab={tab}>
   <aside className="rp-sidebar"><span className="rp-sidebar-label">Restaurantes</span>
    <nav className="rp-nav" aria-label="Secciones del restaurante">
