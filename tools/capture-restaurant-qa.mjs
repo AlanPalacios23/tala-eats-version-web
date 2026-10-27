@@ -129,6 +129,10 @@ for(const width of widths){
   if(name!=='inicio')await openTab(page,width,name);
   if(title)await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:12000});
   await checkViewport(page,width,name);
+  if(width<=430){
+   const brandHeight=await page.locator('.rp-sidebar').evaluate(node=>node.getBoundingClientRect().height);
+   if(brandHeight>76)throw Error('Oversized mobile brand/header: '+brandHeight+' at '+width+' '+name);
+  }
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
   if(name==='finanzas'){
    await page.locator('[data-merchant-wallet="true"]').waitFor();
