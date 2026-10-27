@@ -401,3 +401,64 @@
   border-top:1px solid var(--fl-line)!important;
  }
 }
+
+/* KDS parity, Flutter Restaurant v0.7.6:
+   3 lanes desktop >=1024; exactly one selectable lane on phones/tablets.
+   No fourth "Confirmados" lane or mode-specific toolbar. */
+.rp-layout[data-kitchen-open="true"] .flutter-kds-header{
+ min-height:81px;padding:9px 12px 12px;gap:13px;border-bottom:0}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-title{flex:1;min-width:0;display:grid;gap:2px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-title h2{
+ margin:0;color:#fff;font-size:24px;line-height:1.2;letter-spacing:-.45px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-title small{
+ color:#abb0a8;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-clock{
+ font-size:22px;font-weight:760;color:#fff;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-refresh{display:grid;place-items:center;min-width:44px;padding:8px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-refresh:disabled{opacity:.46;cursor:not-allowed}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs{
+ display:none;margin:0 12px;padding:4px;background:var(--fl-kds-rail);
+ border-radius:16px;min-width:0;gap:4px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs button{
+ display:flex;justify-content:center;align-items:center;gap:7px;flex:1;min-width:0;
+ min-height:52px;background:transparent;border:0;border-radius:12px;
+ font-weight:680;font-size:14px;color:#fff;padding:6px 4px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs button.selected{
+ background:var(--fl-kds-paper);color:var(--fl-ink)}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs button b{
+ font-variant-numeric:tabular-nums;color:inherit;font-size:13px}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs .rm-lane-dot{
+ display:inline-block;width:8px;height:8px;min-width:8px;border-radius:50%;
+ background:var(--fl-orange-text)}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs .rm-lane-dot.kitchen{background:#e2a33b}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs .rm-lane-dot.ready{background:#3fb97a}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-grid{
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:start}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane-empty{
+ display:grid!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane{align-content:start}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane>header{
+ position:sticky;top:0;z-index:1;background:var(--fl-kds-rail);padding:3px 0}
+@media(max-width:1023px){
+ .rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs{display:flex}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-grid{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  margin-inline:12px!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane:not(.is-selected){
+  display:none!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane.is-selected{
+  display:grid!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane.is-selected>header{
+  display:none}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane.is-selected.rm-kitchen-lane-empty{
+  min-height:210px;align-content:center}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane.is-selected.rm-kitchen-lane-empty
+ .rm-kitchen-empty{text-align:center;color:#adb4aa}
+}
+@media(max-width:360px){
+ .rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs button{
+  font-size:12px;gap:5px}
+ .rp-layout[data-kitchen-open="true"] .flutter-kds-title small{font-size:11px}
+ .rp-layout[data-kitchen-open="true"] .flutter-kds-clock{font-size:18px}
+ .rp-layout[data-kitchen-open="true"] .flutter-kds-header{gap:8px}
+}
