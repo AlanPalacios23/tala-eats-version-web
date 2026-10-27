@@ -257,6 +257,9 @@ export function MerchantMore({restaurant,connect,busy,run,go}:MerchantExperience
     <section className="rp-panel-card"><h3>Operación</h3>
      <div className="rp-setting"><div><strong>Recibir nuevos pedidos</strong><small>{restaurant.is_open?'Abierto':'Cerrado'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar pedidos nuevos?'))return;void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),'Disponibilidad actualizada.');}}>{restaurant.is_open?'Pausar':'Abrir'}</button></div>
      <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
+    <details className="rm-technical-note"><summary>Sobre las entregas</summary>
+     <p>El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
+    </details>
      
     </section>
    </div>
