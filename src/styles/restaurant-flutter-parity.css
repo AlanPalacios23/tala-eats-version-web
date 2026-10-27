@@ -332,3 +332,30 @@
 @media(prefers-reduced-motion:reduce){
  .flutter-product-toggle span,.flutter-product-toggle span:after{transition:none}
 }
+
+/* Flutter MoreScreen includes a clear sign-out action; it must not disappear
+   when the desktop-only account sidebar is hidden on phones. */
+.rp-layout .flutter-signout{
+ width:100%;min-height:52px;padding:13px 18px;text-align:left;
+ color:var(--fl-red)!important;background:var(--fl-surface)!important;
+ border:1px solid var(--fl-line)!important;border-radius:14px!important;
+ font-size:15px;font-weight:750;box-shadow:none!important;
+}
+.rp-layout .flutter-signout:hover:not(:disabled){background:#FBE6E3!important}
+.rp-layout .flutter-signout:disabled{opacity:.55;cursor:not-allowed}
+/* Only show this real-order CTA away from Inicio and Pedidos, matching
+   Flutter's conditional _IncomingBanner. Never invent a new-order count. */
+.rp-layout .flutter-incoming-banner{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ width:100%;min-height:50px;border:1px solid #FFCAAE;border-radius:14px;
+ padding:12px 16px;margin-bottom:17px;color:#7E3417;
+ background:var(--fl-orange-tint);font-size:13px;font-weight:760;text-align:left;
+}
+.rp-layout .flutter-incoming-banner svg{flex-shrink:0;color:var(--fl-orange-text)}
+@media(max-width:839px){
+ .rp-layout .flutter-signout{margin-top:4px}
+ .rp-layout .flutter-incoming-banner{margin:0 0 17px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rp-layout .flutter-signout{transition:none!important}
+}
