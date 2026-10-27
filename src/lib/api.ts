@@ -140,6 +140,12 @@ export interface MerchantApplication {
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
   notes:string;created_at:string;updated_at:string;
 }
+export interface MerchantEarnings {
+  restaurant_id:number;currency:'MXN';unit:'centavos';
+  earnings_by_status:Array<{state:string;total_minor:string;orders:string}>;
+  physical_cash_due_to_platform:Array<{status:string;due_minor:string;orders:string}>;
+  transfer_not_executed:true;
+}
 export interface MerchantFinance {
   restaurant_id:number;commercial_plan:string;commission_rate:string;
   gross_food_sales:string;commission:string;net_payable:string;orders:number;
@@ -214,6 +220,7 @@ export const api = {
   adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
   ownerFinance: () => request<MerchantFinance>('/owner/finance'),
+  ownerEarnings: (restaurantId:number) => request<MerchantEarnings>(`/owner/finance/earnings/${restaurantId}`),
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=200&offset=0'),
   ownerEmployees: () => request<MerchantStaff[]>('/owner/employees'),
