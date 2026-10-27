@@ -181,3 +181,31 @@
  .rb-welcome .rb-hero-copy h1{font-size:clamp(34px,8vw,47px);line-height:1.1}
  .rb-welcome .rb-hero-copy p{font-size:13px;line-height:1.6}
 }
+
+/* Settings are accessible but not permanently expanded on small screens. */
+.rm-more-profile>summary,.rm-team-fold>summary{
+ cursor:pointer;list-style:none;display:flex;align-items:center;gap:11px;
+ color:#27382b;font-weight:780;font-size:13px;min-height:43px;
+}
+.rm-more-profile>summary::-webkit-details-marker,.rm-team-fold>summary::-webkit-details-marker{display:none}
+.rm-more-profile>summary>svg:first-child,.rm-team-fold>summary>svg:first-child{color:#db6e33}
+.rm-more-profile>summary>svg:last-child,.rm-team-fold>summary>svg:last-child{
+ color:#9daa9e;margin-left:auto;transition:transform .15s ease}
+.rm-more-profile[open]>summary>svg:last-child,.rm-team-fold[open]>summary>svg:last-child{transform:rotate(90deg)}
+.rm-more-profile[open]>.rm-settings-form{padding-top:17px;margin-top:7px;border-top:1px solid #edf0ec}
+.rm-team-fold{padding:16px;background:#fff;border:1px solid #e8ece7;border-radius:13px}
+.rm-team-fold>.rp-panel-card{border:0;box-shadow:none;padding:12px 0 0;background:transparent}
+.rm-team-fold>.rp-panel-card>h3{display:none}
+@media(max-width:850px){
+ .rp-layout .rm-more-duo{display:flex;flex-direction:column;gap:11px}
+ .rp-layout .rm-more-duo>.rm-more-column{order:0}
+ .rp-layout .rm-more-duo>.rm-more-profile{order:1}
+ .rp-layout .rm-more-profile{padding:12px 15px}
+ .rp-layout .rm-team-fold{padding:12px 15px}
+ .rp-layout .rm-more-column>.rp-panel-card{padding:14px 15px}
+ .rp-layout .rm-more-column>.rp-panel-card>h3{font-size:14px}
+ .rp-layout .rm-more-column .rp-setting{padding:12px 0}
+ .rp-layout .rm-more-column .rp-setting>div strong{font-size:12px}
+ .rp-layout .rm-more-column .rp-setting .rp-btn{min-height:42px}
+ .rp-layout .rm-more-column .rp-legal{font-size:10px}
+}
