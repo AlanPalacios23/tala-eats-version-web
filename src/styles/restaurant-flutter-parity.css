@@ -657,16 +657,18 @@
  .rp-layout .rp-flutter-orders-heading>button{min-width:46px;
   width:46px;height:46px;display:grid;place-items:center;border-radius:14px}
  .rp-layout .rp-flutter-filter-controls{display:flex;flex-direction:column;
-  align-items:stretch;gap:8px!important;margin:5px -20px 16px!important}
+  align-items:stretch;gap:8px!important;margin:5px 0 16px!important;
+  width:100%!important;max-width:100%!important;min-width:0;box-sizing:border-box}
  .rp-layout .rp-flutter-filter-controls .rp-order-filters{
-  display:flex;gap:8px!important;width:100%;padding:6px 20px!important;
+  display:flex;gap:8px!important;width:100%;min-width:0;max-width:100%;
+  box-sizing:border-box;padding:6px 0!important;
   min-height:60px;overflow-x:auto;overscroll-behavior-x:contain;
   scrollbar-width:none}
  .rp-layout .rp-flutter-filter-controls .rp-order-filters::-webkit-scrollbar{display:none}
  .rp-layout .rp-flutter-filter-controls .rp-order-filters button{
   min-height:48px!important;font-size:14px!important;padding:9px 14px!important}
  .rp-layout .rp-flutter-filter-controls>.rp-flutter-orders-search{
-  display:none;min-width:0;margin:0 20px!important;
+  display:none;min-width:0;margin:0!important;
   border-radius:14px!important;min-height:52px;padding:4px 10px!important;
   align-items:center}
  .rp-layout .rp-flutter-filter-controls[data-filter="history"]>.rp-flutter-orders-search{
