@@ -20,6 +20,7 @@ export type MerchantExperienceProps={
  restaurant:Restaurant;orders:Order[];stats:Stats|null;finance:MerchantFinance|null;
  connect:MerchantConnectStatus|null;busy:boolean;run:MerchantAction;
  go:(tab:MerchantTab)=>void;
+ onSignOut?:()=>Promise<void>;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="rm-title"><span className="rp-eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;
@@ -207,7 +208,7 @@ function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean
   </form>
  </section>;
 }
-export function MerchantMore({restaurant,connect,busy,run,go}:MerchantExperienceProps){
+export function MerchantMore({restaurant,connect,busy,run,go,onSignOut}:MerchantExperienceProps){
  const [name,setName]=useState(restaurant.name),[description,setDescription]=useState(restaurant.description??'');
  const [cuisine,setCuisine]=useState(restaurant.cuisine??''),[eta,setEta]=useState(restaurant.eta_min??30);
  const [address,setAddress]=useState(restaurant.address??'');
@@ -290,6 +291,10 @@ export function MerchantMore({restaurant,connect,busy,run,go}:MerchantExperience
    <summary><strong>Equipo</strong><ArrowRight size={16}/></summary>
    <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
   </details>
+  {onSignOut&&<button type="button" className="flutter-signout" disabled={busy}
+   onClick={()=>{if(window.confirm('¿Cerrar sesión? Para volver a administrar el negocio necesitarás iniciar sesión.'))void onSignOut();}}>
+   Cerrar sesión
+  </button>}
  </div>;
 }
 
