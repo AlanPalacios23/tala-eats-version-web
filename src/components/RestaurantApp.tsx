@@ -15,7 +15,8 @@ import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPick
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant.css';
 import '../styles/restaurant-polish.css';
-import {MerchantOverview,MerchantKitchen,MerchantMore,MerchantFinanceActivity} from './RestaurantParity';
+import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
+import {MerchantWallet} from './MerchantWallet';
 import {RestaurantOrderAlerts} from './RestaurantOrderAlerts';
 import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
 
@@ -25,7 +26,7 @@ const allTabs: {id:MerchantTab;label:string;Icon:typeof ShoppingBag}[]=[
  {id:'pedidos',label:'Pedidos',Icon:ShoppingBag},
  {id:'cocina',label:'Cocina',Icon:ChefHat},
  {id:'menu',label:'Menú',Icon:UtensilsCrossed},
- {id:'finanzas',label:'Finanzas',Icon:Wallet},
+ {id:'finanzas',label:'Wallet',Icon:Wallet},
  {id:'activacion',label:'Activación',Icon:BadgeCheck},
  {id:'mas',label:'Más',Icon:SlidersHorizontal},
 ];
@@ -461,7 +462,7 @@ export function RestaurantWorkspace(){
   </aside>
   <div className="rp-workspace">
    <header className="rp-topbar">
-    <div className="rp-top-identity"><span className="rp-eyebrow">TALA EATS <span aria-hidden="true">/</span> PANEL DE NEGOCIOS</span>
+    <div className="rp-top-identity"><span className="rp-eyebrow">TALA EATS RESTAURANTES</span>
      <h1>{restaurant?.name||'Panel de restaurante'}</h1>
      <p>{restaurant?.address||'Gestiona tu restaurante desde un solo lugar'}</p>
      <div className="rp-top-meta"><span><Clock3 size={14}/>{new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Mexico_City'})}</span>
@@ -612,25 +613,8 @@ export function RestaurantWorkspace(){
        <p className="rp-legal">Abrir el comercio no sustituye la aprobación administrativa, la verificación del titular ni la conciliación de Stripe.</p>
       </section></div>
      </>}
-     {tab==='finanzas'&&<>
-      <div className="rp-heading-row"><div><span className="rp-eyebrow">CONTABILIDAD DEL COMERCIO</span><h2>Finanzas</h2>
-       <p>Importes reportados por el servidor; ninguna cifra implica una transferencia bancaria ejecutada.</p></div>
-      </div>
-      <MerchantFinanceActivity orders={orders}/>
-      {!finance?<Notice kind="info" message="El resumen financiero del servidor no está disponible. Actualiza o contacta administración; no se mostrarán importes inventados."/>:
-       <><div className="rp-stats rp-finance-stats">
-        <div><span>Venta bruta productos</span><strong>{pesos(finance.gross_food_sales)}</strong></div>
-        <div><span>Comisión de plataforma</span><strong>{pesos(finance.commission)}</strong></div>
-        <div><span>Neto contable estimado</span><strong>{pesos(finance.net_payable)}</strong></div>
-        <div><span>Pedidos entregados</span><strong>{finance.orders}</strong></div>
-       </div><section className="rp-panel-card"><h3>Movimientos registrados</h3>
-        {finance.payouts.length===0?<p className="rp-muted">No hay transferencias registradas por el servidor.</p>:
-         finance.payouts.map(p=><div key={p.id} className="rp-history-row">
-          <span>Movimiento #{p.id} · {p.status}</span><strong>{pesos(p.amount)}</strong>
-         </div>)}
-        <p className="rp-legal">Efectivo recogido por el comercio no equivale a dinero capturado por Stripe. Las liquidaciones y transferencias automáticas no están activadas.</p>
-       </section></>}
-     </>}
+     {tab==='finanzas'&&<MerchantWallet restaurantId={restaurant.id}
+      finance={finance} connect={connect} go={setTab}/>} 
     </>}
    </main>
    <nav className="rp-mobile-tabs" aria-label="Navegación móvil de restaurantes">
