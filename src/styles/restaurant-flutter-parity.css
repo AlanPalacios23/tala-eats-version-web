@@ -462,3 +462,24 @@
  .rp-layout[data-kitchen-open="true"] .flutter-kds-clock{font-size:18px}
  .rp-layout[data-kitchen-open="true"] .flutter-kds-header{gap:8px}
 }
+
+/* Flutter Menu: group products by category only when the "Todos" view is
+   unfiltered; filters and search remain a flat list for fast scanning. */
+.rp-layout .rp-catalog-groups{display:grid;gap:22px;min-width:0}
+.rp-layout .rp-catalog-category{display:grid;gap:11px;min-width:0}
+.rp-layout .rp-catalog-category>h3{display:flex;gap:9px;align-items:center;
+ margin:0!important;font-size:18px;line-height:1.3;font-weight:800;
+ color:var(--fl-ink)}
+.rp-layout .rp-catalog-category>h3 span{font-size:13px;color:var(--fl-faint);
+ font-variant-numeric:tabular-nums;font-weight:650}
+.rp-layout .rp-catalog-subtitle{font-size:13px;color:var(--fl-soft);
+ margin:4px 0 0!important;line-height:1.4}
+.rp-layout .rp-catalog-category .rp-catalog-grid{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));
+ gap:10px}
+@media(max-width:839px){
+ .rp-layout .rp-catalog-groups{gap:20px}
+ .rp-layout .rp-catalog-category .rp-catalog-grid{
+  grid-template-columns:minmax(0,1fr)!important}
+ .rp-layout .rp-catalog-subtitle{display:block!important}
+}
