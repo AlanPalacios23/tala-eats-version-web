@@ -2,14 +2,13 @@ import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowLeft,ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
- MapPin,PackageCheck,Settings2,
+ MapPin,PackageCheck,RefreshCw,Settings2,
  ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
 import {nextMerchantState} from '../lib/restaurant-state';
 import {kitchenOrders,orderElapsedLabel,kitchenOrderTypeLabel} from '../lib/merchant-kitchen';
-import type {KitchenOrderFilter} from '../lib/merchant-kitchen';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import type {Order,Restaurant} from '../lib/types';
 import '../styles/restaurant-parity.css';
@@ -21,6 +20,7 @@ export type MerchantExperienceProps={
  connect:MerchantConnectStatus|null;busy:boolean;run:MerchantAction;
  go:(tab:MerchantTab)=>void;
  onSignOut?:()=>Promise<void>;
+ onRefresh?:()=>Promise<void>;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="rm-title"><span className="rp-eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;
@@ -115,46 +115,57 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
   </div>
  </div>;
 }
-export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
- const lanes=[{id:'received',label:'Por aceptar'},{id:'confirmed',label:'Confirmados'},{id:'preparing',label:'En preparación'},{id:'ready',label:'Listos'}] as const;
- const [expanded,setExpanded]=useState(true);
- const [mode,setMode]=useState<KitchenOrderFilter>('all');
+export function MerchantKitchen({orders,busy,run,go,onRefresh}:MerchantExperienceProps){
+ // Flutter v0.7.6: three KDS lanes. Confirmed and preparing are the same
+ // operational column; on narrow screens only the selected column is visible.
+ const lanes=[
+  {id:'received',label:'Nuevos',states:['received']},
+  {id:'kitchen',label:'Preparando',states:['confirmed','preparing']},
+  {id:'ready',label:'Listos',states:['ready']}
+ ] as const;
+ type LaneId=(typeof lanes)[number]['id'];
+ const [selectedLane,setSelectedLane]=useState<LaneId>('received');
  const [now,setNow]=useState(()=>Date.now());
  useEffect(()=>{
-  // Clock is for elapsed time since the server placed an order; never an ETA.
-  const interval=window.setInterval(()=>{if(document.visibilityState==='visible')setNow(Date.now());},30000);
-  return()=>window.clearInterval(interval);
+  const tick=()=>{if(document.visibilityState==='visible')setNow(Date.now());};
+  const interval=window.setInterval(tick,30000);
+  document.addEventListener('visibilitychange',tick);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',tick);};
  },[]);
  const allActive=kitchenOrders(orders);
- const visible=kitchenOrders(orders,mode);
- const filters=([
-  {id:'all',label:'Todas',count:allActive.length},
-  {id:'pickup',label:'Recoger en tienda',count:allActive.filter(o=>o.order_type==='pickup').length},
-  {id:'delivery',label:'A domicilio',count:allActive.filter(o=>o.order_type==='delivery').length}
- ] as const);
+ const inProgress=allActive.filter(o=>o.status==='confirmed'||o.status==='preparing');
+ const oldest=inProgress.reduce<Order|null>((prev,o)=>{
+  const t=Date.parse(o.created_at);
+  return Number.isFinite(t)&&(!prev||t<Date.parse(prev.created_at))?o:prev;
+ },null);
+ const subtitle=oldest?'Más antiguo en cocina: '+orderElapsedLabel(oldest.created_at,now):'Sin pedidos en preparación';
+ const timeLabel=new Date(now).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'});
  return <div className="rm-experience rm-kitchen">
   <header className="flutter-kds-header">
    <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowLeft size={20}/></button>
-   <h2>Cocina</h2>
-   <button type="button" className="flutter-kds-view" onClick={()=>setExpanded(p=>!p)} aria-pressed={!expanded}>{expanded?'Compacta':'Ampliada'}</button>
+   <div className="flutter-kds-title"><h2>Cocina</h2><small>{subtitle}</small></div>
+   <time className="flutter-kds-clock" aria-label={'Hora actual '+timeLabel}>{timeLabel}</time>
+   <button type="button" className="flutter-kds-refresh" aria-label="Actualizar Cocina"
+    disabled={busy||!onRefresh} onClick={()=>void onRefresh?.()}><RefreshCw size={20}/></button>
   </header>
-  <section className="rm-kitchen-toolbar" aria-label="Filtrar comandas por modalidad">
-   <div className="rm-kitchen-filter-pills">{filters.map(filter=><button type="button" key={filter.id}
-    aria-pressed={mode===filter.id} className={mode===filter.id?'selected':''}
-    onClick={()=>setMode(filter.id)}>{filter.label}<b>{filter.count}</b></button>)}</div>
-   <span><Clock3 size={16}/> {visible.length} comandas · Actualización automática cada 20 s cuando esta vista está abierta</span>
-  </section>
+  <nav className="flutter-kds-lane-tabs" aria-label="Carriles de Cocina">
+   {lanes.map(lane=>{
+    const count=allActive.filter(o=>(lane.states as readonly string[]).includes(o.status)).length;
+    return <button key={lane.id} type="button" className={selectedLane===lane.id?'selected':''}
+     aria-pressed={selectedLane===lane.id} onClick={()=>setSelectedLane(lane.id)}>
+     <span className={'rm-lane-dot '+lane.id}/><span>{lane.label}</span><b>{count}</b>
+    </button>;
+   })}
+  </nav>
   {allActive.length===0&&<div className="rm-kitchen-empty-state">
    <PackageCheck size={36}/><h3>Todo al día en cocina</h3>
    <p>Cuando llegue un pedido autorizado aparecerá aquí sin tener que recargar la aplicación.</p>
   </div>}
-  {allActive.length>0&&visible.length===0&&<div className="rm-kitchen-empty-state">
-   <PackageCheck size={32}/><h3>Sin comandas en esta modalidad</h3>
-   <p>Prueba la pestaña Todas para revisar el resto de tus pedidos.</p>
-  </div>}
-  {visible.length>0&&<div className={'rm-kitchen-grid '+(expanded?'':'compact')}>{lanes.map(lane=>{
-    const list=visible.filter(o=>o.status===lane.id);
-    return <section className={'rm-kitchen-lane '+(list.length===0?'rm-kitchen-lane-empty':'')} key={lane.id} aria-label={lane.label}>
+  {allActive.length>0&&<div className="rm-kitchen-grid">{lanes.map(lane=>{
+    const list=allActive.filter(o=>(lane.states as readonly string[]).includes(o.status));
+    return <section className={'rm-kitchen-lane '+(selectedLane===lane.id?'is-selected ':'')+
+     (list.length===0?'rm-kitchen-lane-empty':'')} key={lane.id}
+     data-kds-lane={lane.id} aria-label={lane.label}>
      <header><span className={'rm-lane-dot '+lane.id}/><strong>{lane.label}</strong><b>{list.length}</b></header>
      {list.length===0?<div className="rm-kitchen-empty"><PackageCheck size={25}/> Sin comandas</div>:list.map(o=>{
       const next=nextMerchantState(o);
