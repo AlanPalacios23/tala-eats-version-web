@@ -173,6 +173,16 @@ for(const width of widths){
     await page.locator('.rm-flutter-settings').getByRole('button',{name:/Equipo y permisos/}).click();
     if(!await page.locator('.rm-team-fold').evaluate(el=>el.open))
      throw Error('Equipo y permisos did not open the team editor');
+    await page.locator('.rm-team-fold>summary').click();
+    const about=page.locator('.rm-flutter-account').getByRole('button',{name:/Acerca de la app/});
+    await about.click();
+    const dialog=page.getByRole('dialog',{name:'Tala Eats Restaurante'});
+    await dialog.waitFor();
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Cerrar información de la aplicación');
+    await page.keyboard.press('Escape');
+    if(await dialog.count())throw Error('Native More Acerca dialog did not dismiss on Escape');
+    if(!await about.evaluate(el=>el===document.activeElement))
+     throw Error('Native More Acerca did not restore focus');
    }
    await page.locator('.flutter-incoming-banner').waitFor({timeout:12000});
    if(width===390){
