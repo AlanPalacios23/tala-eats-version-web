@@ -114,6 +114,16 @@ for(const width of widths){
  await page.locator('[data-restaurant-app="true"]').waitFor();
  // Flutter uses the same Inicio hierarchy on phone and on the wider shell.
  await page.locator('.flutter-store-heading h2').waitFor({timeout:12000});
+ // Mobile merchant controls must not disappear with the hidden desktop toolbar.
+ if(width===390){
+  const bell=page.locator('.rp-mobile-order-alerts .rp-alert-toggle');
+  if(!await bell.isVisible())throw Error('Merchant phone has no alert toggle');
+  if(await page.locator('.rp-topbar').isVisible())throw Error('Desktop toolbar leaked into merchant phone');
+  await bell.click();
+  const pressed=await bell.getAttribute('aria-pressed');
+  if(pressed!=='true'&&!await page.locator('.rp-mobile-order-alerts .rp-alert-error').isVisible())
+   throw Error('New-order sound toggle did not respond to mobile gesture');
+ }
  if(BASE.endsWith('4174')){
   await page.locator('[data-merchant-standalone="true"]').waitFor();
   const foreign=await page.evaluate(()=>[...document.querySelectorAll('script[src]')].some(node=>node.getAttribute('src')?.includes('main.tsx')));
@@ -201,6 +211,8 @@ for(const width of widths){
    await group.getByRole('button',{name:'Todos',exact:true}).click();
   }
   if(name==='cocina'){
+   if(width===390&&await page.locator('.rp-mobile-order-alerts').isVisible())
+    throw Error('Alert button should not cover the cooking station');
    const types=page.locator('.rm-kitchen-filter-pills');
    await types.getByRole('button',{name:/A domicilio/}).click();
    if(await page.locator('.rm-ticket').count()!==1)
