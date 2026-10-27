@@ -38,26 +38,49 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
   {label:'Productos agotados o pausados',count:soldOut.length,detail:'Revisar disponibilidad del menú',tab:'menu' as MerchantTab},
  ];
  return <div className="rm-experience">
-  <section className="rm-mobile-home" aria-label="Inicio rápido del restaurante">
-   <div className="rm-mobile-home-header">
-    <div><h2>Inicio</h2></div>
-    <span className={'rm-mobile-business-status '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
-   </div>
-   <button className="rm-mobile-primary-task" onClick={()=>go('pedidos')}>
-    <span><small>Pedidos nuevos</small><strong>{incoming.length}</strong></span>
+  <section className="rm-mobile-home flutter-home" aria-label="Inicio rápido del restaurante">
+   <header className="flutter-store-heading"><div className="flutter-store-thumb">{safeImage(restaurant.cover_image_url)?
+    <img src={safeImage(restaurant.cover_image_url)??undefined} alt="" loading="lazy"/>:<Store size={24}/>}</div>
+    <div><span>Tu negocio</span><h2>{restaurant.name}</h2></div></header>
+   <section className={'flutter-open-card '+(restaurant.is_open?'is-open':'')} aria-label="Estado del restaurante">
+    <span className="flutter-open-dot" aria-hidden="true"/>
+    <div><strong>{restaurant.is_open?'Abierto':'Cerrado'}</strong>
+     <small>{restaurant.is_open?'Recibiendo pedidos':'Pedidos nuevos en pausa'}</small></div>
+    <label className="flutter-switch"><input type="checkbox" checked={restaurant.is_open} disabled={busy}
+     aria-label="Recibir pedidos nuevos" onChange={event=>{
+      if(!event.target.checked&&!window.confirm('¿Pausar pedidos? Los pedidos activos no se afectan.'))return;
+      void run(()=>api.ownerUpdateRestaurant({is_open:event.target.checked}),
+       event.target.checked?'Restaurante abierto.':'Pedidos pausados.');
+     }}/><span aria-hidden="true"/></label>
+   </section>
+   <h3 className="flutter-section-heading">Requiere atención</h3>
+   <section className="flutter-attention" aria-label="Pendientes de atención">
+    {incoming.length===0&&ready.length===0&&lowStock.length===0&&soldOut.length===0?
+     <p className="flutter-all-clear">Todo al día</p>:<>
+     {incoming.length>0&&<button type="button" onClick={()=>go('pedidos')}><span>Pedidos nuevos</span><b>{incoming.length}</b><ArrowRight size={17}/></button>}
+     {ready.length>0&&<button type="button" onClick={()=>go('pedidos')}><span>Pedidos listos</span><b>{ready.length}</b><ArrowRight size={17}/></button>}
+     {lowStock.length>0&&<button type="button" onClick={()=>go('menu')}><span>Stock bajo</span><b>{lowStock.length}</b><ArrowRight size={17}/></button>}
+     {soldOut.length>0&&<button type="button" onClick={()=>go('menu')}><span>Agotados o pausados</span><b>{soldOut.length}</b><ArrowRight size={17}/></button>}
+    </>}
+   </section>
+   {notPaid.length>0&&<p className="rm-mobile-payment-warning" role="status"><AlertTriangle size={16}/>{notPaid.length} pago(s) sin conciliar; no preparar.</p>}
+   <button type="button" className="flutter-kitchen-entry" onClick={()=>go('cocina')}>
+    <span className="flutter-kitchen-symbol"><ChefHat size={23}/></span>
+    <span className="flutter-kitchen-copy"><strong>Modo cocina</strong>
+     <small>{incoming.length} nuevos · {live.filter(o=>o.status==='confirmed'||o.status==='preparing').length} en preparación · {ready.length} listos</small></span>
+    <ArrowRight size={19}/>
    </button>
-   <div className="rm-mobile-tasks">
-    <button onClick={()=>go('cocina')}><span><b>{live.filter(o=>o.status==='confirmed'||o.status==='preparing').length}</b><small>En cocina</small></span></button>
-    <button onClick={()=>go('pedidos')}><span><b>{ready.length}</b><small>Listos</small></span></button>
+   <div className="flutter-section-row"><h3 className="flutter-section-heading">En curso</h3>
+    {live.length>0&&<button type="button" onClick={()=>go('pedidos')}>Ver pedidos</button>}</div>
+   <div className="flutter-current-orders">
+    {live.length===0?<p>No hay pedidos en curso</p>:live.slice(0,5).map(o=>
+     <button key={o.id} type="button" onClick={()=>go('pedidos')}>
+      <span><b>#{o.id}</b><small>{o.items?.map(i=>i.name_snapshot).slice(0,2).join(', ')||'Pedido'}</small></span>
+      <strong>{pesos(o.total)}</strong></button>)}
    </div>
-   {notPaid.length>0&&<p className="rm-mobile-payment-warning"><AlertTriangle size={17}/>{notPaid.length} pago(s) pendientes de verificar. No preparar.</p>}
-   {lowStock.length>0&&<button className="rm-mobile-stock" onClick={()=>go('menu')}>Stock bajo · {lowStock.length} producto(s)</button>}
-   <button className="rm-mobile-open-toggle" disabled={busy}
-    onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar nuevos pedidos?'))return;
-      void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),
-        restaurant.is_open?'Restaurante cerrado.':'Restaurante abierto según el backend.');}}>
-    <span>{restaurant.is_open?'Pausar pedidos':'Abrir restaurante'}</span>
-   </button>
+   <h3 className="flutter-section-heading">Resumen</h3>
+   <div className="flutter-summary"><div><span>Pedidos activos</span><strong>{live.length}</strong></div>
+    <div><span>Entregados registrados</span><strong>{stats?.delivered??'—'}</strong></div></div>
   </section>
   <div className="rm-desktop-home">
   <div className="rm-heading-row"><CardTitle eyebrow="CENTRO DE OPERACIONES" title="Así va tu restaurante" description="Estado real del comercio y los pedidos recuperados del servidor."/>
@@ -109,12 +132,11 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
   {id:'delivery',label:'A domicilio',count:allActive.filter(o=>o.order_type==='delivery').length}
  ] as const);
  return <div className="rm-experience rm-kitchen">
-  <div className="rm-heading-row">
-   <CardTitle eyebrow="MODO COCINA · KDS" title="Comandas en preparación"
-    description="Vista priorizada por hora de creación, con pedidos y pagos confirmados por el servidor."/>
-   <button type="button" className="rp-btn outline small" onClick={()=>setExpanded(p=>!p)}
-    aria-pressed={!expanded}>{expanded?'Vista compacta':'Vista ampliada'}</button>
-  </div>
+  <header className="flutter-kds-header">
+   <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowRight size={20}/></button>
+   <strong>Cocina</strong>
+   <button type="button" className="flutter-kds-view" onClick={()=>setExpanded(p=>!p)} aria-pressed={!expanded}>{expanded?'Compacta':'Ampliada'}</button>
+  </header>
   <section className="rm-kitchen-toolbar" aria-label="Filtrar comandas por modalidad">
    <div className="rm-kitchen-filter-pills">{filters.map(filter=><button type="button" key={filter.id}
     aria-pressed={mode===filter.id} className={mode===filter.id?'selected':''}
