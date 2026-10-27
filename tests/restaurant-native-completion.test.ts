@@ -41,6 +41,24 @@ describe('Restaurantes Web: fidelity to Flutter v0.7.6 merchant mobile contract'
   expect(view).toContain("api.ownerCompletePickup(order.id,pin)");
   expect(view).toContain('aria-label="Abrir modo cocina"');
  });
+ it('keeps native Orders as vertical groups with tappable counts and history-only search',()=>{
+  expect(view).toContain("(['received','kitchen','ready'] as const).map");
+  expect(view).toContain("['all','Activos',activeOrders.length]");
+  expect(view).toContain('className="rp-order-controls rp-flutter-filter-controls" data-filter={orderFilter}');
+  expect(view).toContain('rp-filter-count');
+  expect(view).toContain("setOrderFilter(id);setOrderQuery('');");
+  expect(css).toContain('data-filter="history"]>.rp-flutter-orders-search');
+  expect(css).toContain('.rp-history-secondary{display:none!important}');
+  expect(css).toContain('min-height:48px!important');
+ });
+ it('makes native More app information actionable and keyboard accessible',()=>{
+  expect(parity).toContain('accountTwoFactorEnabled');
+  expect(parity).toContain('className="rm-about-backdrop"');
+  expect(parity).toContain('role="dialog" aria-modal="true"');
+  expect(parity).toContain("if(event.key==='Escape')");
+  expect(parity).toContain('target.focus({preventScroll:true})');
+  expect(view).toContain('accountTwoFactorEnabled={user?.two_factor_enabled===true}');
+ });
  it('exposes native period selector in Wallet without presenting a fake withdrawable balance',()=>{
   expect(wallet).toContain('<MerchantFinanceActivity orders={orders}/>');
   expect(parity).toContain("['today','Hoy']");
