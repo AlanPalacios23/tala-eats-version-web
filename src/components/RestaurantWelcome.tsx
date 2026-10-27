@@ -54,6 +54,27 @@ export function RestaurantWelcome({existingCustomer=false}:Props){
  const registerTo=existingCustomer?'/restaurante/alta':'/restaurante/acceso?mode=register';
  return <div className="rb-welcome" data-restaurant-welcome="true">
   <a className="rb-skip-link" href="#rb-main">Saltar al contenido de Restaurantes</a>
+  <main className="rb-flutter-welcome" aria-label="Bienvenida de Tala Eats Restaurante">
+   <div className="rb-flutter-content">
+    <MerchantWordmark/>
+    <h1>Bienvenido a<br/>Tala Eats Restaurante</h1>
+    <p>Da de alta tu negocio, publica tu primer producto y empieza a recibir pedidos desde un solo panel.</p>
+    {existingCustomer&&<div className="rb-flutter-existing">Tu cuenta de cliente puede solicitar activar un comercio.</div>}
+    <section className="rb-flutter-ticket" aria-labelledby="rb-flutter-ticket-title">
+     <div className="rb-flutter-ticket-head"><h2 id="rb-flutter-ticket-title">Tu alta</h2><span>3 pasos</span></div>
+     <div className="rb-flutter-ticket-steps">
+      <div><b>1</b><span><strong>Tu cuenta</strong><small>Nombre, correo y datos del propietario.</small></span></div>
+      <div><b>2</b><span><strong>Tu restaurante</strong><small>Datos del negocio y solicitud de verificación.</small></span></div>
+      <div><b>3</b><span><strong>Tu primer producto</strong><small>Foto, precio y stock, después de la aprobación.</small></span></div>
+     </div>
+     <div className="rb-flutter-ticket-foot"><Store size={17}/><span>Administración revisa tu solicitud antes de activar el restaurante.</span></div>
+    </section>
+   </div>
+   <div className="rb-flutter-actions">
+    <Link className="rb-flutter-primary" to={registerTo}>{existingCustomer?'Solicitar activación':'Crear mi restaurante'}</Link>
+    <Link className="rb-flutter-secondary" to="/restaurante/acceso">Ya tengo cuenta</Link>
+   </div>
+  </main>
   <header className="rb-header">
    <Link to={portalHref} className="rb-brand-link" aria-label="Volver al selector Tala Eats"><MerchantWordmark/></Link>
    <nav className="rb-header-actions" aria-label="Acciones de Restaurante">
