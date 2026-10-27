@@ -1,0 +1,313 @@
+/* TALA EATS RESTAURANTE - Flutter 0.7.6+46 visual-parity sheet.
+   Source: tala-eats-mobile/main/tala-eats-restaurante/app/lib/core/theme.dart.
+   Matching neutral "kitchen steel" surfaces, layout, nav, status, and KDS.
+   Merchant component scoped; customer app 18195 not changed. */
+.rp-layout{
+ --fl-canvas:#F1F2EF;--fl-surface:#FFFFFF;--fl-sunken:#E7E9E4;
+ --fl-ink:#1C1D1B;--fl-soft:#525750;--fl-faint:#696E67;
+ --fl-line:#E0E2DC;--fl-line-strong:#C9CCC5;
+ --fl-orange:#FF5A1F;--fl-orange-pressed:#F04C12;--fl-orange-text:#B53B0A;
+ --fl-orange-tint:#FFEDE4;--fl-green:#127A47;--fl-green-tint:#E2F1E8;
+ --fl-amber:#8A5000;--fl-amber-tint:#FBEED2;--fl-red:#B3261E;
+ --fl-kds:#131412;--fl-kds-rail:#1D1F1C;--fl-kds-paper:#F8F7F2;
+ background:var(--fl-canvas)!important;color:var(--fl-ink);
+ font-family:Figtree,Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+.rp-layout :is(button,a,input,textarea,select){font-family:inherit}
+.rp-layout button{cursor:pointer}
+.rp-layout :focus-visible{outline:3px solid var(--fl-orange)!important;outline-offset:2px}
+.rp-layout .rp-workspace{background:var(--fl-canvas)}
+.rp-layout .rp-content{max-width:1250px}
+.rp-layout .rp-sidebar{
+ background:var(--fl-surface)!important;color:var(--fl-ink)!important;
+ border-right:1px solid var(--fl-line)!important;box-shadow:none!important
+}
+.rp-layout .rp-sidebar-label{display:block;font-weight:800;letter-spacing:-.35px;color:var(--fl-ink);font-size:17px;padding:13px 15px 30px}
+.rp-layout .rp-side-caption,.rp-layout .rp-sidebar-footnote{display:none!important}
+.rp-layout .rp-nav-item{color:var(--fl-soft)!important;border-radius:14px!important}
+.rp-layout .rp-nav-item.selected{color:var(--fl-ink)!important;background:var(--fl-orange-tint)!important;box-shadow:none!important;border:none!important}
+.rp-layout .rp-nav-item.selected:before{display:none!important}
+.rp-layout .rp-nav-item svg{color:var(--fl-faint)!important;opacity:1!important}
+.rp-layout .rp-nav-item.selected svg{color:var(--fl-orange-text)!important}
+.rp-layout .rp-nav-item em{background:var(--fl-orange)!important;color:var(--fl-ink)!important}
+.rp-layout .rp-topbar{background:var(--fl-canvas)!important;border-bottom:1px solid var(--fl-line)!important}
+.rp-layout .rp-topbar h1{color:var(--fl-ink)!important;letter-spacing:-.45px}
+.rp-layout .rp-open-badge.open{color:var(--fl-green)!important;background:var(--fl-green-tint)!important}
+.rp-layout .rp-open-badge.closed{color:var(--fl-soft)!important;background:var(--fl-sunken)!important}
+.rp-layout :is(.rp-heading-row h2,.rm-title h2,.rm-mobile-home-header h2,.mw-heading h2){
+ color:var(--fl-ink)!important;font-family:Bricolage,Figtree,system-ui,sans-serif!important;
+ font-weight:800!important;letter-spacing:-.6px!important
+}
+.rp-layout :is(.rp-panel-card,.rp-history,.rp-menu-item,.rp-order-card,.rm-more-profile,.rm-team-fold){
+ background:var(--fl-surface)!important;border:1px solid var(--fl-line)!important;
+ box-shadow:none!important;border-radius:14px!important
+}
+.rp-layout :is(.rp-panel-card p,.rp-muted){color:var(--fl-soft)}
+.rp-layout .rp-panel-card h3{color:var(--fl-ink)!important}
+.rp-layout :is(.rp-order-filters button,.rm-kitchen-filter-pills button){font-weight:700}
+.rp-layout .rp-order-filters button.selected{background:var(--fl-ink)!important;color:white!important;border-color:var(--fl-ink)!important}
+.rp-layout :is(.rp-btn.primary,.mw-withdraw,.mw-modal-done){background:var(--fl-orange)!important;color:var(--fl-ink)!important;
+ border-color:var(--fl-orange)!important;box-shadow:none!important}
+.rp-layout .rp-btn.primary:hover:not(:disabled){background:var(--fl-orange-pressed)!important}
+.rp-layout :is(.rp-btn.outline,.rp-btn.quiet){background:var(--fl-surface)!important;color:var(--fl-ink)!important;border-color:var(--fl-line-strong)!important}
+.rp-layout .rp-order-card,.rp-layout .rm-ticket{transform:none!important;animation:none}
+.rp-layout .rp-stats>div:before,.rp-layout .rm-metrics>div:before{display:none!important}
+.rp-layout .rp-catalog-price{color:var(--fl-ink)!important;font-variant-numeric:tabular-nums}
+.rp-layout .rp-catalog-stock{border:0!important;background:var(--fl-sunken)!important;color:var(--fl-soft)!important}
+.rp-layout .rp-catalog-stock.low{background:var(--fl-amber-tint)!important;color:var(--fl-amber)!important}
+.rp-layout .rp-catalog-stock.paused{background:#FBE6E3!important;color:var(--fl-red)!important}
+.rp-layout .rp-order-lane{background:transparent!important;box-shadow:none!important}
+.rp-layout .rp-history-date{color:var(--fl-faint)}
+.rp-layout .rp-activation-banner{border-color:var(--fl-line)!important;background:var(--fl-surface)!important}
+.rp-layout .rp-activation-banner strong{color:var(--fl-ink)!important}
+.rp-layout :is(.rp-order-controls input,.rp-form input,.rp-form textarea,.rm-settings-form input,.rm-settings-form textarea){
+ background:var(--fl-surface)!important;border-color:var(--fl-line)!important;border-radius:14px!important;color:var(--fl-ink)!important
+}
+.rp-layout .rp-catalog-empty{padding:24px!important}
+
+/* Flutter home: shop thumbnail 52, greeting/name, opening card 18px,
+   attention list 1px dividers, dark KDS entry, compact active orders. */
+.flutter-home{display:grid;gap:0!important}
+.flutter-store-heading{display:flex;align-items:center;gap:14px;margin-bottom:20px;min-width:0}
+.flutter-store-thumb{width:52px;height:52px;flex:0 0 52px;display:grid;place-items:center;
+ overflow:hidden;border-radius:16px;background:var(--fl-sunken);color:var(--fl-ink)}
+.flutter-store-thumb img{width:100%;height:100%;object-fit:cover}
+.flutter-store-heading>div:last-child{min-width:0}
+.flutter-store-heading>div:last-child>span{color:var(--fl-soft);font-size:13px}
+.flutter-store-heading h2{font-family:Bricolage,Figtree,system-ui,sans-serif!important;
+ font-size:25px!important;line-height:1.12!important;letter-spacing:-.5px!important;
+ margin:2px 0 0!important;word-wrap:break-word;color:var(--fl-ink)}
+.flutter-open-card{display:flex;align-items:center;gap:14px;background:var(--fl-surface);
+ border:1px solid var(--fl-line);border-radius:20px;padding:16px 12px 16px 18px;
+ margin-bottom:21px;min-height:85px}
+.flutter-open-card.is-open{background:var(--fl-green-tint);border-color:#127A4740}
+.flutter-open-dot{width:12px;height:12px;border-radius:50%;background:var(--fl-faint);flex:0 0 12px}
+.flutter-open-card.is-open .flutter-open-dot{background:var(--fl-green)}
+.flutter-open-card>div{flex:1;display:grid;gap:2px;min-width:0}
+.flutter-open-card strong{font-family:Bricolage,Figtree,system-ui,sans-serif;
+ font-size:23px;line-height:1.13;color:var(--fl-ink)}
+.flutter-open-card small{color:var(--fl-soft);font-size:13px;font-weight:600}
+.flutter-open-card.is-open small{color:var(--fl-green)}
+.flutter-switch{position:relative;display:block;width:52px;height:32px;flex:0 0 52px}
+.flutter-switch input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.flutter-switch span{position:absolute;inset:0;background:var(--fl-line-strong);border-radius:30px;pointer-events:none;transition:background .15s ease}
+.flutter-switch span:after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s ease}
+.flutter-switch input:checked+span{background:var(--fl-green)}
+.flutter-switch input:checked+span:after{transform:translateX(20px)}
+.flutter-switch input:focus-visible+span{outline:3px solid var(--fl-orange);outline-offset:3px}
+.flutter-switch input:disabled+span{opacity:.55}
+.flutter-section-heading{font-family:Figtree,system-ui,sans-serif;font-weight:800;color:var(--fl-ink);
+ font-size:18px;letter-spacing:-.15px;margin:0 0 12px}
+.flutter-attention{display:grid;gap:0;background:#fff;border:1px solid var(--fl-line);
+ border-radius:14px;overflow:hidden;margin-bottom:22px}
+.flutter-attention button{border:0;border-bottom:1px solid var(--fl-line);background:white;
+ display:flex;align-items:center;gap:12px;padding:14px 15px;width:100%;min-height:53px;
+ color:var(--fl-ink);text-align:left;font-size:14px;font-weight:650}
+.flutter-attention button:last-child{border-bottom:0}
+.flutter-attention button>span{flex:1}
+.flutter-attention button>b{background:var(--fl-orange-tint);color:var(--fl-orange-text);
+ border-radius:999px;padding:4px 8px;min-width:29px;text-align:center;font-size:12px}
+.flutter-attention button>svg{color:var(--fl-faint)}
+.flutter-all-clear{margin:0;padding:22px 16px;text-align:center;font-size:14px;color:var(--fl-green)}
+.flutter-kitchen-entry{width:100%;border:1px solid var(--fl-ink);border-radius:20px;
+ background:var(--fl-ink);color:white;display:flex;align-items:center;gap:14px;padding:16px;
+ min-height:80px;text-align:left;margin:0 0 27px}
+.flutter-kitchen-symbol{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;
+ border-radius:12px;background:#ffffff1a;color:#fff}
+.flutter-kitchen-copy{min-width:0;flex:1;display:grid;gap:4px}
+.flutter-kitchen-copy strong{font-size:16px;color:#fff;font-weight:750}
+.flutter-kitchen-copy small{font-size:12px;color:#ffffffbd;line-height:1.4}
+.flutter-kitchen-entry>svg:last-child{color:white;flex-shrink:0}
+.flutter-section-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.flutter-section-row button{border:0;background:none;padding:8px;color:var(--fl-orange-text);
+ font-size:13px;font-weight:750;min-height:42px}
+.flutter-current-orders{background:#fff;border:1px solid var(--fl-line);
+ border-radius:14px;overflow:hidden;margin:0 0 23px}
+.flutter-current-orders>p{font-size:13px;color:var(--fl-faint);margin:0;padding:26px 16px;text-align:center}
+.flutter-current-orders>button{border:0;border-bottom:1px solid var(--fl-line);background:#fff;
+ min-height:65px;padding:12px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center;text-align:left;width:100%}
+.flutter-current-orders>button:last-child{border-bottom:0}
+.flutter-current-orders>button>span{min-width:0;flex:1;display:grid;gap:3px}
+.flutter-current-orders>button b{font-family:Bricolage,system-ui,sans-serif;font-size:18px;color:var(--fl-ink)}
+.flutter-current-orders>button small{font-size:12px;color:var(--fl-soft);text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.flutter-current-orders>button>strong{font-size:13px;color:var(--fl-ink);flex-shrink:0}
+.flutter-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.flutter-summary>div{display:grid;gap:11px;background:#fff;border:1px solid var(--fl-line);
+ border-radius:14px;padding:16px;min-width:0}
+.flutter-summary span{color:var(--fl-soft);font-size:12px}
+.flutter-summary strong{font-family:Bricolage,system-ui,sans-serif;color:var(--fl-ink);
+ font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+
+/* Wallet mirrors Flutter finance's charcoal sales hero, while its values
+   stay strictly linked to Node LIVE read-only earnings. */
+.rp-layout .mw-balance{background:linear-gradient(140deg,#1C1D1B,#2A221E)!important;
+ border-radius:20px!important;padding:21px 20px!important}
+.rp-layout .mw-balance>p{color:#ffffffbd!important;font-size:14px;margin:0}
+.rp-layout .mw-balance>strong{font-family:Bricolage,Figtree,system-ui,sans-serif;
+ font-size:40px;font-weight:800;letter-spacing:-1px}
+.rp-layout .mw-balance-note{color:#ffffffb3;font-size:11px}
+.rp-layout .mw-summary>div{background:#fff!important;border:1px solid var(--fl-line)!important;border-radius:14px}
+.rp-layout .mw-summary strong,.rp-layout .mw-entry>b{color:var(--fl-ink)!important}
+.rp-layout .mw-entry-icon{background:var(--fl-sunken)!important;color:var(--fl-faint)!important}
+.rp-layout .mw-entries{border-color:var(--fl-line)!important}
+.rp-layout .mw-connect{background:var(--fl-orange-tint)!important;border-color:#FFD1BD!important;color:var(--fl-orange-text)!important}
+.rp-layout .mw-disclaimer{color:var(--fl-soft)}
+.rp-layout .mw-heading h2{font-size:28px!important}
+.rp-layout .mw-withdraw{margin-top:12px;border-radius:14px!important;color:#1C1D1B!important}
+.rp-layout .mw-modal h3{font-family:Bricolage,Figtree,sans-serif}
+
+/* Neutral more/settings, no duplicated brand or irrelevant badges. */
+.rp-layout .rm-mobile-more-shortcuts button{border:1px solid var(--fl-line)!important;
+ background:#fff!important;color:var(--fl-ink)!important;border-radius:14px!important;box-shadow:none!important}
+.rp-layout .rm-mobile-more-shortcuts svg:first-child{color:var(--fl-ink)!important}
+.rp-layout .rm-mobile-more-shortcuts strong{color:var(--fl-ink)!important}
+.rp-layout .rm-mobile-more-shortcuts small{color:var(--fl-faint)!important}
+.rp-layout .rm-more-column .rp-panel-card,.rp-layout .rm-more-profile,.rp-layout .rm-team-fold{
+ border:1px solid var(--fl-line)!important;border-radius:14px!important}
+.rp-layout :is(.rm-more-profile>summary,.rm-team-fold>summary){color:var(--fl-ink)}
+.rp-layout :is(.rm-more-profile>summary svg:first-child,.rm-team-fold>summary svg:first-child){color:var(--fl-ink)}
+
+/* KDS is a separate full-screen charcoal cooking station, as in Flutter. */
+.rp-layout[data-kitchen-open="true"]{background:var(--fl-kds)!important}
+.rp-layout[data-kitchen-open="true"] .rp-workspace{background:var(--fl-kds)!important}
+.rp-layout[data-kitchen-open="true"] .rp-content{max-width:none!important;
+ background:var(--fl-kds)!important;padding:0!important}
+.rp-layout[data-kitchen-open="true"] :is(.rp-sidebar,.rp-topbar,.rp-mobile-tabs){display:none!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen{background:var(--fl-kds);color:white;
+ min-height:100dvh;max-width:none;padding:0 0 28px;gap:12px}
+.rp-layout .flutter-kds-header{display:flex;align-items:center;gap:14px;padding:20px;
+ background:var(--fl-kds);border-bottom:1px solid #2E312D}
+.flutter-kds-header>strong{color:white;font-family:Bricolage,system-ui,sans-serif;font-size:28px;flex:1}
+.flutter-kds-header button{min-height:44px;border-radius:12px;background:#2D302B;
+ border:1px solid #3C4039;color:white;padding:10px}
+.flutter-kds-header button:first-child svg{transform:rotate(180deg)}
+.flutter-kds-header button.flutter-kds-view{font-size:12px;font-weight:750}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-toolbar{
+ margin:0 16px;background:var(--fl-kds-rail)!important;border:1px solid #2E312D!important;
+ color:#fff!important;border-radius:14px!important;box-shadow:none!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills button{color:#A6ABA3!important;
+ background:transparent!important;border:0!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills button.selected{color:var(--fl-ink)!important;
+ background:var(--fl-kds-paper)!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills button b{background:#363935!important;color:white!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills button.selected b{background:#E7E9E4!important;color:var(--fl-ink)!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-grid{margin:0 16px;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane{
+ background:var(--fl-kds-rail)!important;border:1px solid #2E312D!important;
+ border-radius:14px!important;padding:12px!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane>header{color:var(--fl-kds-paper)}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane>header strong{color:white!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-lane>header>b{color:#fff;background:#333631!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket{
+ background:var(--fl-kds-paper)!important;color:var(--fl-ink)!important;
+ border:0!important;box-shadow:none!important;border-radius:12px!important;padding:15px!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket-top strong{color:var(--fl-ink)!important;font-size:18px}
+.rp-layout[data-kitchen-open="true"] .rm-ticket-elapsed{color:var(--fl-soft)!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket-items{border-color:#E0E2DC!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket-items p{color:var(--fl-ink)!important;font-size:14px!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket-items strong{color:var(--fl-ink)!important}
+.rp-layout[data-kitchen-open="true"] .rm-ticket .rp-btn.primary{color:var(--fl-ink)!important;min-height:49px}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-empty-state{background:var(--fl-kds-rail)!important;
+ color:white!important;border-color:#2E312D!important;margin:0 16px}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-empty-state h3{color:white!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-empty-state p,.rp-layout[data-kitchen-open="true"] .rm-kitchen-footnote{color:#A6ABA3!important}
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-footnote{padding:0 20px}
+
+/* Flutter mobile shell: 20px gutters, 68px material bottom bar,
+   orange-tinted active pill, no web dashboard sidebar or redundant header. */
+@media(max-width:839px){
+ .rp-layout{display:block!important;min-height:100dvh!important}
+ .rp-layout .rp-sidebar,.rp-layout .rp-topbar{display:none!important}
+ .rp-layout .rp-workspace{min-height:100dvh;background:var(--fl-canvas)!important}
+ .rp-layout .rp-content{max-width:680px!important;margin:0 auto!important;
+  padding:16px 20px calc(100px + env(safe-area-inset-bottom))!important;
+  background:var(--fl-canvas)!important}
+ .rp-layout .rp-mobile-tabs{display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  position:fixed!important;bottom:0;left:0;right:0;z-index:35;
+  background:white!important;border-top:1px solid var(--fl-line)!important;
+  padding:6px 5px max(7px,env(safe-area-inset-bottom))!important;
+  box-shadow:none!important;backdrop-filter:none!important}
+ .rp-layout .rp-mobile-tabs button{font-size:12px!important;font-weight:600!important;
+  min-height:61px!important;display:flex!important;flex-direction:column;justify-content:center;
+  gap:3px!important;align-items:center;border-radius:12px!important;color:var(--fl-soft)!important;
+  background:transparent!important}
+ .rp-layout .rp-mobile-tabs button span{font-size:11px!important;font-weight:650!important;color:inherit}
+ .rp-layout .rp-mobile-tabs button svg{width:23px;height:23px;flex-shrink:0}
+ .rp-layout .rp-mobile-tabs button.selected{background:transparent!important;color:var(--fl-ink)!important}
+ .rp-layout .rp-mobile-tabs button.selected svg{color:var(--fl-orange-text)!important;
+  background:var(--fl-orange-tint)!important;border-radius:16px!important;
+  box-sizing:content-box;padding:5px 18px;margin:-5px -18px}
+ .rp-layout .rp-mobile-tabs button.selected span{font-weight:800!important}
+ .rp-layout .rm-mobile-home{display:grid!important}
+ .rp-layout .rm-desktop-home{display:none!important}
+ .rp-layout .rm-experience{gap:14px!important}
+ .rp-layout .rp-heading-row{margin:0 0 15px!important}
+ .rp-layout .rp-heading-row h2,.rp-layout .rm-title h2{font-size:28px!important}
+ .rp-layout .rp-heading-row p{display:none!important}
+ .rp-layout .rp-last-sync{display:none!important}
+ .rp-layout .rp-stats:not(.rp-finance-stats){display:none!important}
+ .rp-layout .rp-order-lane.rp-lane-empty{display:none!important}
+ .rp-layout .rp-lane-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+ .rp-layout .rp-order-controls{margin:10px 0 15px!important}
+ .rp-layout .rp-order-controls input{min-height:49px}
+ .rp-layout .rp-order-filters{display:flex;flex-wrap:nowrap!important;overflow-x:auto;gap:8px!important;max-width:100%}
+ .rp-layout .rp-order-filters button{white-space:nowrap;min-height:42px;border-radius:999px!important;
+  padding:9px 15px!important;font-size:12px!important;flex-shrink:0}
+ .rp-layout .rp-order-card{padding:14px!important}
+ .rp-layout .rp-order-card .rp-btn{min-height:46px}
+ .rp-layout .rp-heading-row .rp-eyebrow,.rp-layout .rm-title .rp-eyebrow{display:none!important}
+ .rp-layout .rp-catalog-heading{align-items:center!important;flex-direction:row!important}
+ .rp-layout .rp-catalog-heading h2{font-size:28px!important}
+ .rp-layout .rp-catalog-heading p{display:block!important;font-size:12px!important;
+  margin-top:3px!important;color:var(--fl-faint)!important}
+ .rp-layout .rp-catalog-heading .rp-btn.primary{min-height:42px!important;padding:10px 13px!important;white-space:nowrap}
+ .rp-layout .rp-catalog-heading .rp-btn.primary svg{width:16px}
+ .rp-layout .rp-catalog-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ .rp-layout .rp-catalog-item{padding:10px!important;min-height:99px!important}
+ .rp-layout .rp-catalog-topline{display:flex!important;align-items:center!important;gap:12px!important}
+ .rp-layout .rp-menu-visual{width:70px!important;height:73px!important;min-width:70px!important;border-radius:11px!important;
+  background:var(--fl-sunken)!important}
+ .rp-layout .rp-catalog-product{min-width:0!important;flex:1!important;gap:5px!important}
+ .rp-layout .rp-catalog-product strong{font-size:15px!important;font-weight:780!important;color:var(--fl-ink)!important}
+ .rp-layout .rp-catalog-price{font-size:14px!important;font-weight:750!important;letter-spacing:0!important}
+ .rp-layout .rp-catalog-product-actions{margin-left:auto!important;gap:7px!important;align-items:flex-end!important}
+ .rp-layout .rp-catalog-product-actions .rp-btn{min-height:37px!important}
+ .rp-layout .rp-catalog-stock{font-size:10px!important;padding:4px 6px!important;white-space:nowrap}
+ .rp-layout .rm-more-duo{display:flex!important;flex-direction:column!important;gap:10px!important}
+ .rp-layout .rm-more-column>.rp-panel-card{background:#fff!important}
+ .rp-layout .rm-mobile-more-shortcuts{display:grid!important;gap:9px!important}
+ .rp-layout .rm-mobile-more-shortcuts button{min-height:66px}
+ .rp-layout .mw-screen{gap:14px!important}
+ .rp-layout .mw-heading h2{font-size:28px!important}
+ .rp-layout .mw-balance{border-radius:20px!important}
+ .rp-layout .mw-summary>div{border-radius:14px!important}
+ .rp-layout[data-kitchen-open="true"] .rp-content{max-width:none!important;padding:0!important;background:var(--fl-kds)!important}
+ .rp-layout[data-kitchen-open="true"] .rp-mobile-tabs{display:none!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen{min-height:100dvh!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-grid{grid-template-columns:minmax(0,1fr)!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane-empty{display:none!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-toolbar>span{display:none!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills{overflow-x:auto;flex-wrap:nowrap!important}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-filter-pills button{flex-shrink:0}
+ .rp-layout[data-kitchen-open="true"] .rm-kitchen-lane{padding:11px!important}
+ .rp-layout[data-kitchen-open="true"] .rm-ticket{padding:16px!important}
+}
+@media(min-width:840px){
+ .rp-layout .rp-mobile-tabs{display:none}
+ .rp-layout .rm-mobile-home{display:grid!important;max-width:680px;margin:auto}
+ .rp-layout .rm-desktop-home{display:none!important}
+ .rp-layout[data-kitchen-open="true"] .rp-layout .rp-content{padding:0}
+}
+@media(max-width:360px){
+ .rp-layout .rp-content{padding-inline:16px!important}
+ .flutter-kitchen-entry{padding:13px;gap:10px}
+ .flutter-kitchen-symbol{width:40px;height:40px;flex-basis:40px}
+ .flutter-kitchen-copy small{font-size:11px}
+ .flutter-store-heading h2{font-size:22px!important}
+ .rp-layout .rp-mobile-tabs button span{font-size:10px!important}
+ .rp-layout .rp-catalog-heading .rp-btn.primary{font-size:11px!important;padding:9px 10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .rp-layout .flutter-switch span,.rp-layout .flutter-switch span:after{transition:none}
+}
