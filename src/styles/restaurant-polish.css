@@ -289,3 +289,13 @@
  .rp-catalog-topline{align-items:center;gap:8px}
  .rp-catalog-product-actions{max-width:92px}
 }
+
+/* Optical typography finishing pass at small scales */
+.rp-layout .rp-topbar h1{letter-spacing:-.55px;font-weight:790}
+.rp-layout .rp-heading-row h2,.rp-layout .rm-title h2{letter-spacing:-.5px;font-weight:790}
+.rp-layout .rp-panel-card h3{letter-spacing:-.2px;font-weight:770}
+.rp-layout .rm-status-card h3,.rp-layout .rp-catalog-product>strong{letter-spacing:-.2px;font-weight:790}
+@media(max-width:590px){
+ .rp-layout .rp-topbar h1{letter-spacing:-.4px}
+ .rp-layout .rp-heading-row h2,.rp-layout .rm-title h2{letter-spacing:-.35px}
+}
