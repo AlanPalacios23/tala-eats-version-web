@@ -292,38 +292,64 @@ export function RestaurantWorkspace(){
  const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
  const [connectError,setConnectError]=useState('');
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [syncHealthy,setSyncHealthy]=useState(false),[refreshing,setRefreshing]=useState(false);
+ const refreshLock=useRef(false);
  const [busy,setBusy]=useState(false),[lastSync,setLastSync]=useState<Date|null>(null);
  const [pins,setPins]=useState<Record<number,string>>({}),[cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const mounted=useRef(true),requestVersion=useRef(0),busyRef=useRef(false);
  const refresh=useCallback(async()=>{
+  if(refreshLock.current)return;
+  refreshLock.current=true;
   const version=++requestVersion.current;
+  setRefreshing(true);
   try{
-   const [r,o,a]=await Promise.all([api.ownerRestaurant(),api.ownerOrders(),api.ownerAnalytics()]);
+   // Order operations are the critical path: optional finance/analytics must
+   // never keep the merchant staring at an empty dashboard.
+   const [r,o]=await Promise.all([api.ownerRestaurant(),api.ownerOrders()]);
    if(!mounted.current||version!==requestVersion.current)return;
-   if(!Array.isArray(o))throw Error('El backend no devolvió pedidos válidos.');
-   setRestaurant(r);setOrders(o);setStats(a);setError('');setLastSync(new Date());
-   const [c,f]=await Promise.allSettled([api.ownerConnectStatus(r.id),api.ownerFinance()]);
+   if(!r||!Number.isSafeInteger(r.id)||!Array.isArray(o))
+    throw new Error('El backend no devolvió los datos válidos del restaurante.');
+   setRestaurant(r);setOrders(o);setError('');setSyncHealthy(true);
+   setLoading(false);setLastSync(new Date());
+   const [a,c,f]=await Promise.allSettled([
+    api.ownerAnalytics(),api.ownerConnectStatus(r.id),api.ownerFinance()
+   ]);
    if(!mounted.current||version!==requestVersion.current)return;
+   setStats(a.status==='fulfilled'?a.value:null);
    if(c.status==='fulfilled'){setConnect(c.value);setConnectError('');}
    else {setConnect(null);setConnectError('No hay una cuenta Connect autorizada o no se pudo consultar.');}
    setFinance(f.status==='fulfilled'?f.value:null);
   }catch(e){
-   if(mounted.current&&version===requestVersion.current)
+   if(mounted.current&&version===requestVersion.current){
+    // Do not allow actions against stale orders after a server/session failure.
+    setSyncHealthy(false);
     setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
+   }
   }finally{
-   if(mounted.current&&version===requestVersion.current)setLoading(false);
+   refreshLock.current=false;
+   if(mounted.current&&version===requestVersion.current){setLoading(false);setRefreshing(false);}
   }
  },[]);
+ // Edit forms are never replaced by a background timer. Order-focused views
+ // keep polling only while visible, and get a fresh snapshot on returning.
  useEffect(()=>{
   mounted.current=true;
   void refresh();
-  const poll=window.setInterval(()=>{
-   if(document.visibilityState==='visible'&&!busyRef.current)void refresh();
-  },20000);
-  return()=>{mounted.current=false;window.clearInterval(poll);requestVersion.current++;};
+  return()=>{mounted.current=false;requestVersion.current++;};
  },[refresh]);
+ useEffect(()=>{
+  if(!['inicio','pedidos','cocina'].includes(tab))return;
+  const onResume=()=>{if(document.visibilityState==='visible'&&!busyRef.current)void refresh();};
+  const poll=window.setInterval(onResume,20000);
+  document.addEventListener('visibilitychange',onResume);
+  window.addEventListener('online',onResume);
+  return()=>{window.clearInterval(poll);document.removeEventListener('visibilitychange',onResume);window.removeEventListener('online',onResume);};
+ },[refresh,tab]);
  const doAction=async(work:()=>Promise<unknown>,message:string)=>{
-  if(busyRef.current)return false;
+  if(busyRef.current||!syncHealthy||PREVIEW_READONLY){
+   setError(PREVIEW_READONLY?'Vista previa: cambios bloqueados.':'Sin conexión confirmada. Actualiza el panel antes de realizar cambios.');
+   return false;
+  }
   busyRef.current=true;setBusy(true);setError('');setNotice('');
   try{await work();setNotice(message);await refresh();return true;}
   catch(e){setError(e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.');await refresh();return false;}
@@ -412,20 +438,27 @@ export function RestaurantWorkspace(){
     <div className="rp-top-actions"><MerchantInstallButton/>
      <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
        {restaurant?.is_open?'Abierto':'Cerrado'}</span>
-     <button type="button" className="rp-icon-btn" aria-label="Actualizar pedidos y negocio" onClick={()=>void refresh()}><RefreshCw size={20}/></button>
+     <button type="button" className="rp-icon-btn" aria-label="Actualizar pedidos y negocio"
+      title="Actualizar desde el servidor" disabled={refreshing||busy}
+      onClick={()=>void refresh()}><RefreshCw size={20} className={refreshing?'rp-spin':undefined}/></button>
     </div>
    </header>
    <main className="rp-content">
     {PREVIEW_READONLY&&<Notice message="Vista previa: se puede explorar el diseño, pero las acciones de administración y cobro están bloqueadas."/>}
     {error&&<Notice kind="error" message={error}/>}
     {notice&&<Notice kind="success" message={notice}/>}
+    {!loading&&!syncHealthy&&<section className="rp-outage" role="status">
+     <div><AlertCircle size={22}/><span><strong>Conexión no confirmada</strong><small>Los cambios están bloqueados para proteger tus pedidos. Reintenta la sincronización.</small></span></div>
+     <button className="rp-btn outline small" disabled={refreshing} onClick={()=>void refresh()}><RefreshCw size={16}/> Reintentar</button>
+    </section>}
     {loading?<div className="rp-loading"><RefreshCw className="rp-spin" size={24}/> Consultando información del backend LIVE…</div>:
+    !syncHealthy?<section className="rp-panel-card"><h2>No podemos verificar el estado del restaurante</h2><p>No se muestran pedidos antiguos ni se habilitan cambios hasta recuperar la conexión.</p><button className="rp-btn outline" disabled={refreshing} onClick={()=>void refresh()}>Reintentar conexión</button></section>:
     !restaurant?<section className="rp-panel-card"><h2>No tienes un restaurante asignado</h2><p>Solicita el alta y aprobación administrativa. Ninguna cuenta recibe permisos de comercio automáticamente.</p>
      <Link to="/restaurante/alta" className="rp-btn primary">Ver activación <ArrowRight size={18}/></Link></section>:
     <>
-     {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
-     {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
-     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy,run:doAction,go:setTab}}/>}
+     {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
+     {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
+     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
      {tab==='pedidos'&&<>
       <div className="rp-heading-row"><div><span className="rp-eyebrow">OPERACIÓN EN TIEMPO REAL</span><h2>Pedidos</h2>
        <p>Recibe, prepara y entrega solo pedidos autorizados por el backend.</p></div>
