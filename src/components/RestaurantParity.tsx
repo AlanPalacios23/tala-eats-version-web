@@ -2,8 +2,8 @@ import {useCallback,useEffect,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
  ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
- MapPin,PackageCheck,Settings2,ShieldCheck,
- ShoppingBag,Store,Users,Wallet
+ MapPin,PackageCheck,Settings2,
+ ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
@@ -185,7 +185,7 @@ function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean
   </form>
  </section>;
 }
-export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantExperienceProps){
+export function MerchantMore({restaurant,connect,busy,run,go}:MerchantExperienceProps){
  const [name,setName]=useState(restaurant.name),[description,setDescription]=useState(restaurant.description??'');
  const [cuisine,setCuisine]=useState(restaurant.cuisine??''),[eta,setEta]=useState(restaurant.eta_min??30);
  const [address,setAddress]=useState(restaurant.address??'');
