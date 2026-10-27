@@ -483,3 +483,24 @@
   grid-template-columns:minmax(0,1fr)!important}
  .rp-layout .rp-catalog-subtitle{display:block!important}
 }
+
+/* 320dp standalone merchant-bundle correction. A CSS-grid item defaults to
+   min-width:auto and can expand the entire KDS to the min-content width of
+   its header/clock. The merchant-only host has different shell containment
+   than the customer preview; both must fit exactly within the viewport. */
+.rp-layout[data-kitchen-open="true"] .rm-kitchen{
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+ min-width:0!important;max-width:100%!important;width:100%!important;
+ box-sizing:border-box;overflow-x:clip}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-header,
+.rp-layout[data-kitchen-open="true"] .flutter-kds-lane-tabs,
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-grid,
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-footnote{
+ min-width:0;max-width:100%;box-sizing:border-box}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-header{width:100%}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-header button{flex-shrink:0}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-title{
+ min-width:0;overflow:hidden}
+.rp-layout[data-kitchen-open="true"] .flutter-kds-footnote,
+.rp-layout[data-kitchen-open="true"] .rm-kitchen-footnote{
+ overflow-wrap:anywhere;width:auto;white-space:normal}
