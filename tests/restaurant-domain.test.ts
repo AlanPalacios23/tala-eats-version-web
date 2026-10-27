@@ -26,6 +26,9 @@ describe('Merchant isolated domain security + routing',()=>{
   expect(nginx).toContain('server_name restaurantes-talaeats.alan-palacios-dev.com;');
   expect(nginx).toContain('proxy_pass http://127.0.0.1:18190;');
   expect(nginx).toContain('location ^~ /restaurante/');
+  expect(nginx).toContain('try_files $uri /restaurantes.html;');
+  expect(nginx).toContain('location = /sw-restaurante.js');
+  expect(nginx).toContain('location = /sw.js { return 404; }');
   expect(nginx).toContain('return 302 /restaurante;');
   expect(nginx).not.toContain('api-stage-talaeats');
   expect(nginx).not.toContain('127.0.0.1:18195');
