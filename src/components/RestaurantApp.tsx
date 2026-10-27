@@ -535,7 +535,7 @@ export function RestaurantWorkspace(){
       {orderFilter!=='history'&&<div className="rp-lane-grid">
        {(['received','confirmed','preparing','ready'] as const).map(state=>{
         const lane=visibleOrders.filter(o=>o.status===state);
-        return <section className="rp-order-lane" key={state}>
+        return <section className={'rp-order-lane '+(lane.length===0?'rp-lane-empty':'')} key={state}>
          <div className="rp-lane-title"><span className={'rp-lane-indicator '+state}/>
           <h3>{merchantStateLabel(state)}</h3><span>{lane.length}</span></div>
          {lane.length===0?<div className="rp-empty-lane"><PackageCheck size={29}/><p>Sin pedidos en esta etapa</p></div>:
