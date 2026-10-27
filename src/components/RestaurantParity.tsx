@@ -8,6 +8,8 @@ import {
 import {api,pesos,safeImage} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
 import {nextMerchantState} from '../lib/restaurant-state';
+import {kitchenOrders,orderElapsedLabel,kitchenOrderTypeLabel} from '../lib/merchant-kitchen';
+import type {KitchenOrderFilter} from '../lib/merchant-kitchen';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import type {Order,Restaurant} from '../lib/types';
 import '../styles/restaurant-parity.css';
@@ -68,30 +70,75 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
 }
 export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
  const lanes=[{id:'received',label:'Por aceptar'},{id:'confirmed',label:'Confirmados'},{id:'preparing',label:'En preparación'},{id:'ready',label:'Listos'}] as const;
- const visible=orders.filter(o=>lanes.some(l=>l.id===o.status));
  const [expanded,setExpanded]=useState(true);
+ const [mode,setMode]=useState<KitchenOrderFilter>('all');
+ const [now,setNow]=useState(()=>Date.now());
+ useEffect(()=>{
+  // Clock is for elapsed time since the server placed an order; never an ETA.
+  const interval=window.setInterval(()=>{if(document.visibilityState==='visible')setNow(Date.now());},30000);
+  return()=>window.clearInterval(interval);
+ },[]);
+ const allActive=kitchenOrders(orders);
+ const visible=kitchenOrders(orders,mode);
+ const filters=([
+  {id:'all',label:'Todas',count:allActive.length},
+  {id:'pickup',label:'Recoger en tienda',count:allActive.filter(o=>o.order_type==='pickup').length},
+  {id:'delivery',label:'A domicilio',count:allActive.filter(o=>o.order_type==='delivery').length}
+ ] as const);
  return <div className="rm-experience rm-kitchen">
   <div className="rm-heading-row">
-   <CardTitle eyebrow="MODO COCINA · KDS" title="Comandas en preparación" description="Pedidos auténticos; nunca confirmar tarjetas sin conciliación del backend."/>
-   <button className="rp-btn outline small" onClick={()=>setExpanded(p=>!p)}>{expanded?'Vista compacta':'Vista ampliada'}</button>
+   <CardTitle eyebrow="MODO COCINA · KDS" title="Comandas en preparación"
+    description="Vista priorizada por hora de creación, con pedidos y pagos confirmados por el servidor."/>
+   <button type="button" className="rp-btn outline small" onClick={()=>setExpanded(p=>!p)}
+    aria-pressed={!expanded}>{expanded?'Vista compacta':'Vista ampliada'}</button>
   </div>
-  <div className="rm-kitchen-status"><Clock3 size={18}/>{visible.length} comandas activas · Actualización automática desde el panel cada 20 segundos cuando está visible.</div>
-  <div className={'rm-kitchen-grid '+(expanded?'':'compact')}>{lanes.map(lane=>{
+  <section className="rm-kitchen-toolbar" aria-label="Filtrar comandas por modalidad">
+   <div className="rm-kitchen-filter-pills">{filters.map(filter=><button type="button" key={filter.id}
+    aria-pressed={mode===filter.id} className={mode===filter.id?'selected':''}
+    onClick={()=>setMode(filter.id)}>{filter.label}<b>{filter.count}</b></button>)}</div>
+   <span><Clock3 size={16}/> {visible.length} comandas · Actualización automática cada 20 s cuando esta vista está abierta</span>
+  </section>
+  {allActive.length===0&&<div className="rm-kitchen-empty-state">
+   <PackageCheck size={36}/><h3>Todo al día en cocina</h3>
+   <p>Cuando llegue un pedido autorizado aparecerá aquí sin tener que recargar la aplicación.</p>
+  </div>}
+  {allActive.length>0&&visible.length===0&&<div className="rm-kitchen-empty-state">
+   <PackageCheck size={32}/><h3>Sin comandas en esta modalidad</h3>
+   <p>Prueba la pestaña Todas para revisar el resto de tus pedidos.</p>
+  </div>}
+  {visible.length>0&&<div className={'rm-kitchen-grid '+(expanded?'':'compact')}>{lanes.map(lane=>{
     const list=visible.filter(o=>o.status===lane.id);
-    return <section className="rm-kitchen-lane" key={lane.id}><header><span className={'rm-lane-dot '+lane.id}/><strong>{lane.label}</strong><b>{list.length}</b></header>
+    return <section className="rm-kitchen-lane" key={lane.id} aria-label={lane.label}>
+     <header><span className={'rm-lane-dot '+lane.id}/><strong>{lane.label}</strong><b>{list.length}</b></header>
      {list.length===0?<div className="rm-kitchen-empty"><PackageCheck size={25}/> Sin comandas</div>:list.map(o=>{
       const next=nextMerchantState(o);
+      const paymentPending=o.payment_method==='stripe'&&o.payment_status!=='paid';
       return <article className="rm-ticket" key={o.id}>
-       <div className="rm-ticket-top"><strong>#{o.id}</strong><span>{new Date(o.created_at).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</span></div>
-       <b>{pesos(o.total)}</b>
-       <div className="rm-ticket-items">{(o.items??[]).map((i,n)=><p key={n}>{i.quantity} × {i.name_snapshot}</p>)}</div>
-       <small>{o.order_type==='pickup'?'Recoge el cliente':'Entrega a domicilio'} · {o.payment_method==='cash'?'Efectivo':o.payment_status==='paid'?'Tarjeta verificada':'Tarjeta pendiente'}</small>
-       {next&&<button disabled={busy} className="rp-btn primary small" onClick={()=>void run(()=>api.ownerUpdateStatus(o.id,next),'Pedido #'+o.id+' actualizado en el servidor.')}>{next==='confirmed'?'Aceptar':next==='preparing'?'Iniciar preparación':'Marcar listo'} <ArrowRight size={15}/></button>}
-       {lane.id==='ready'&&<button className="rp-btn outline small" onClick={()=>go('pedidos')}>Ver recogida y PIN <ArrowRight size={15}/></button>}
+       <div className="rm-ticket-top">
+        <strong>Pedido #{o.id}</strong>
+        <span className="rm-ticket-elapsed" title="Tiempo transcurrido desde la creación del pedido"><Clock3 size={13}/>{orderElapsedLabel(o.created_at,now)}</span>
+       </div>
+       <div className="rm-ticket-meta">
+        <span className={'rm-ticket-type '+(o.order_type==='pickup'?'pickup':'')}>{kitchenOrderTypeLabel(o.order_type)}</span>
+        <b>{pesos(o.total)}</b>
+       </div>
+       <div className="rm-ticket-items">{(o.items??[]).map((i,n)=><p key={n}><strong>{i.quantity}×</strong> {i.name_snapshot}</p>)}</div>
+       <span className={'rm-payment-indicator '+(paymentPending?'pending':'')}>
+        {o.payment_method==='cash'?'Efectivo · confirmar al recoger':paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
+       </span>
+       {paymentPending&&<div className="rm-ticket-warning"><AlertTriangle size={15}/> Sin pago conciliado. No preparar ni volver a cobrar.</div>}
+       {next&&<button disabled={busy} className="rp-btn primary small"
+        onClick={()=>void run(()=>api.ownerUpdateStatus(o.id,next),'Pedido #'+o.id+' actualizado en el servidor.')}>
+        {next==='confirmed'?'Aceptar pedido':next==='preparing'?'Iniciar preparación':'Marcar listo'} <ArrowRight size={15}/></button>}
+       {lane.id==='ready'&&o.order_type==='pickup'&&<button className="rp-btn outline small" onClick={()=>go('pedidos')}>
+        Confirmar recogida con PIN <ArrowRight size={15}/></button>}
+       {lane.id==='ready'&&o.order_type==='delivery'&&<span className="rm-kitchen-delivery-note">Esperando reparto autorizado. No confirmar la entrega desde cocina.</span>}
+       {lane.id==='ready'&&o.order_type!=='pickup'&&o.order_type!=='delivery'&&<span className="rm-kitchen-delivery-note">Modalidad pendiente de confirmar en el servidor.</span>}
       </article>;
      })}</section>;
-   })}</div>
-  </div>;
+   })}</div>}
+  <p className="rm-kitchen-footnote">Los tiempos indican antigüedad, no un plazo prometido de entrega. Los cobros, PIN y asignación de repartidor se validan fuera de este tablero por el backend LIVE.</p>
+ </div>;
 }
 type Staff={id:number;user_id:number;name:string;email:string;role:'manager'|'cashier'|'kitchen'|'owner'|string};
 function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean;run:MerchantAction}){
