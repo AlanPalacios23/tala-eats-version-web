@@ -1,0 +1,50 @@
+name: Restaurantes Web — QA visual y navegación
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/components/Restaurant*.tsx'
+      - 'src/styles/restaurant*.css'
+      - 'src/lib/restaurant-state.ts'
+      - 'src/lib/api.ts'
+      - 'tools/capture-restaurant-qa.mjs'
+      - '.github/workflows/restaurant-visual-qa.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  restaurant-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-package-lock
+      - run: npm run check
+      - name: Browser dependencies
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Run PWA isolated on loopback only
+        run: |
+          npm run preview -- --host 127.0.0.1 > /tmp/tala-restaurants-visual.log 2>&1 &
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:4173/restaurante > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/tala-restaurants-visual.log
+          exit 1
+      - name: Synthetic restaurant UI 320–1280 px (zero writes)
+        run: node tools/capture-restaurant-qa.mjs
+      - name: Upload QA screenshots (synthetic only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restaurante-web-visual-matrix
+          path: artifacts/restaurant-visual/*.png
+          if-no-files-found: warn
+          retention-days: 14
