@@ -5,6 +5,7 @@ import {
  ShieldCheck, ShoppingBag, Store, UtensilsCrossed
 } from 'lucide-react';
 import '../styles/restaurant-welcome.css';
+import {mainTalaEatsPortalHref} from '../lib/restaurant-host';
 
 type Props={existingCustomer?:boolean};
 const FEATURES=[
@@ -49,13 +50,14 @@ function WorkflowSample(){
  </div>;
 }
 export function RestaurantWelcome({existingCustomer=false}:Props){
+ const portalHref=mainTalaEatsPortalHref(window.location.hostname);
  const registerTo=existingCustomer?'/restaurante/alta':'/restaurante/acceso?mode=register';
  return <div className="rb-welcome" data-restaurant-welcome="true">
   <a className="rb-skip-link" href="#rb-main">Saltar al contenido de Restaurantes</a>
   <header className="rb-header">
-   <Link to="/" className="rb-brand-link" aria-label="Volver al selector Tala Eats"><MerchantWordmark/></Link>
+   <Link to={portalHref} className="rb-brand-link" aria-label="Volver al selector Tala Eats"><MerchantWordmark/></Link>
    <nav className="rb-header-actions" aria-label="Acciones de Restaurante">
-    <Link to="/" className="rb-back">Volver a Tala Eats</Link>
+    <Link to={portalHref} className="rb-back">Volver a Tala Eats</Link>
     <Link className="rb-header-access" to={existingCustomer?'/restaurante/alta':'/restaurante/acceso'}>{existingCustomer?'Mi solicitud':'Iniciar sesión'} <ArrowRight size={16}/></Link>
    </nav>
   </header>
@@ -88,6 +90,6 @@ export function RestaurantWelcome({existingCustomer=false}:Props){
    </section>
    <section className="rb-final-cta" aria-label="Acceso al panel de Restaurantes"><div><span className="rb-section-kicker">TALA EATS RESTAURANTES</span><h2>El siguiente pedido comienza aquí.</h2><p>Una experiencia separada de Pedir comida, conectada a tu comercio.</p></div><Link to="/restaurante/acceso" className="rb-btn rb-btn-light">Entrar a Restaurantes <ArrowRight size={18}/></Link></section>
   </div>
-  <footer className="rb-footer"><MerchantWordmark/><span>© Tala Eats · Gestión de restaurantes</span><Link to="/">Volver al selector de aplicaciones</Link></footer>
+  <footer className="rb-footer"><MerchantWordmark/><span>© Tala Eats · Gestión de restaurantes</span><Link to={portalHref}>Volver al selector de aplicaciones</Link></footer>
  </div>;
 }
