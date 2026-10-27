@@ -131,6 +131,23 @@ for(const width of widths){
  }
  const manifest=await page.locator('link[rel="manifest"]').getAttribute('href');
  if(manifest!=='/manifest-restaurante.webmanifest')throw Error('Merchant installed identity mismatched: '+manifest);
+ if(width===390){
+  // Flutter's OFL families must be served by this independent origin, not via
+  // a Google Fonts request or a browser fallback font.
+  for(const file of ['Figtree-VF.ttf','BricolageGrotesque-VF.ttf']){
+   const response=await page.request.get(BASE+'/fonts/restaurante/'+file);
+   if(response.status()!==200)throw Error('Local Flutter font unavailable: '+file+' HTTP '+response.status());
+  }
+  const loaded=await page.evaluate(async()=>{
+   const results=await Promise.all([
+    document.fonts.load('500 16px Figtree'),
+    document.fonts.load('700 20px Bricolage')
+   ]);
+   return results.every(group=>group.length>0)&&
+    document.fonts.check('500 16px Figtree')&&document.fonts.check('700 20px Bricolage');
+  });
+  if(!loaded)throw Error('Native Flutter Figtree/Bricolage did not load in Chromium');
+ }
  const scenes=[
   ['inicio',null],
   ['pedidos','Pedidos'],
