@@ -693,3 +693,28 @@
 @media(min-width:840px) and (max-width:1150px){
  .rp-layout .rp-lane-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* Native Flutter More > Acerca de: bottom sheet (focus is trapped in React).
+   Kept outside financial actions; no transfer or billing writes. */
+.rp-layout .rm-about-backdrop{position:fixed;inset:0;z-index:140;
+ background:#111915aa;display:flex;align-items:flex-end;justify-content:center;
+ padding:0;overscroll-behavior:contain}
+.rp-layout .rm-about-sheet{position:relative;width:100%;max-width:520px;
+ max-height:90dvh;overflow-y:auto;border-radius:20px 20px 0 0;
+ background:var(--fl-surface);padding:30px 24px max(32px,env(safe-area-inset-bottom));
+ display:grid;justify-items:center;gap:11px;text-align:center;
+ border:1px solid var(--fl-line)}
+.rp-layout .rm-about-sheet .rm-about-close{position:absolute;right:14px;top:12px;
+ width:44px;height:44px;display:grid;place-items:center;border:0;
+ background:var(--fl-sunken);border-radius:12px;color:var(--fl-ink)}
+.rp-layout .rm-about-mark{margin:16px 0 0;color:var(--fl-orange-text)}
+.rp-layout .rm-about-sheet h3{font-size:24px;color:var(--fl-ink);
+ letter-spacing:-.5px;margin:0}
+.rp-layout .rm-about-sheet p{font-size:14px;color:var(--fl-soft);margin:0}
+.rp-layout .rm-about-sheet .rm-about-detail{font-size:12px;line-height:1.5;margin:8px 0}
+.rp-layout .rm-about-sheet>.rp-btn{width:100%;min-height:48px}
+@media(min-width:840px){
+ .rp-layout .rm-about-backdrop{align-items:center;padding:20px}
+ .rp-layout .rm-about-sheet{border-radius:20px}
+}
