@@ -222,3 +222,70 @@
  .rp-layout .rp-menu-inputs input{transition:none}
  .rp-layout .rp-nav-item:hover,.rp-layout .rm-quick button:hover{transform:none}
 }
+
+/* Catalog v2: a scannable list instead of dozens of always-open forms. */
+.rp-layout .rp-catalog{display:grid;gap:18px}
+.rp-layout .rp-catalog-heading{margin-bottom:0}
+.rp-catalog-heading-actions{display:flex;align-items:center;gap:15px;flex-wrap:wrap;justify-content:flex-end}
+.rp-catalog-heading-actions .rp-menu-count{margin:0}
+.rp-layout .rp-menu-controls{margin:0}
+.rp-layout .rp-catalog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(370px,1fr));gap:13px;margin:0}
+.rp-layout .rp-catalog-item{display:block;border-radius:16px;padding:15px 18px;min-width:0;overflow:hidden}
+.rp-catalog-topline{display:flex;align-items:center;gap:16px;min-width:0}
+.rp-layout .rp-catalog-item .rp-menu-visual{
+ height:83px;width:83px;min-width:83px;border-radius:12px;background:#fff2e6;
+}
+.rp-catalog-product{min-width:0;display:grid;align-content:center;gap:5px;flex:1}
+.rp-catalog-product>strong{font-size:15px;font-weight:850;line-height:1.3;color:#2b342d;overflow-wrap:anywhere}
+.rp-catalog-product>small{font-size:11px;color:#8b938a}
+.rp-catalog-price{font-size:17px;font-family:'Outfit',system-ui,sans-serif;color:#e36a28;letter-spacing:-.3px}
+.rp-catalog-product-actions{display:flex;flex-direction:column;gap:11px;align-items:flex-end;min-width:0}
+.rp-catalog-stock{font-size:10px;font-weight:850;white-space:nowrap;border-radius:8px;padding:7px 9px;background:#eff7ef;color:#327b50}
+.rp-catalog-stock.low{background:#fff4e2;color:#c47b18}
+.rp-catalog-stock.paused{background:#f3f2ef;color:#8b938b}
+.rp-catalog-product-actions .rp-btn{padding:9px 16px}
+.rp-catalog-editor{border-top:1px solid #ebeee9;margin-top:17px;padding-top:18px;display:grid;gap:17px}
+.rp-catalog-form{display:grid;gap:13px}
+.rp-layout .rp-catalog-editor .rp-menu-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.rp-layout .rp-catalog-editor .rp-menu-inputs label{font-size:11px;font-weight:750;display:grid;gap:2px;color:#717c71}
+.rp-layout .rp-catalog-editor .rp-menu-edit-label{margin:0;font-size:11px;gap:8px}
+.rp-layout .rp-catalog-save{justify-content:flex-start;gap:10px;flex-wrap:wrap}
+.rp-layout .rp-catalog-save .rp-btn.quiet{margin-left:auto;color:#a34e46}
+.rp-layout .rp-catalog-editor .rp-menu-photo{margin:0;padding:15px;background:#f9faf7;border:1px solid #e9ede5;border-radius:13px;display:grid;gap:10px}
+.rp-layout .rp-catalog-editor .rp-menu-photo small{font-size:11px}
+.rp-layout .rp-menu-new{margin-bottom:0;padding:25px}
+.rp-layout .rp-menu-new .rp-card-top{margin-bottom:8px}
+.rp-product-cta{display:flex;gap:10px;flex-wrap:wrap}
+.rp-layout .rp-catalog-empty{text-align:center;display:grid;place-items:center;gap:11px;padding:50px 20px}
+.rp-layout .rp-catalog-empty>svg{color:#e77530}
+.rp-layout .rp-catalog-empty h3{margin:0}
+.rp-layout .rp-catalog-empty p{margin:0;font-size:12px}
+.rp-layout .rp-catalog-heading-actions .rp-btn{white-space:nowrap}
+.rm-cover-preview{display:block;width:100%;height:140px;object-fit:cover;border:1px solid #e3e7de;border-radius:11px}
+@media(max-width:960px){
+ .rp-layout .rp-catalog-grid{grid-template-columns:1fr}
+}
+@media(max-width:590px){
+ .rp-layout .rp-catalog-heading{align-items:flex-start}
+ .rp-catalog-heading-actions{width:100%;justify-content:space-between}
+ .rp-catalog-heading-actions .rp-btn{font-size:12px}
+ .rp-layout .rp-catalog-item{padding:13px;flex-direction:initial}
+ .rp-catalog-topline{gap:9px}
+ .rp-layout .rp-catalog-item .rp-menu-visual{width:66px;min-width:66px;height:71px}
+ .rp-catalog-product>strong{font-size:13px}
+ .rp-catalog-product>small{font-size:10px}
+ .rp-catalog-price{font-size:15px}
+ .rp-catalog-stock{font-size:9px;padding:5px 7px}
+ .rp-catalog-product-actions{gap:6px}
+ .rp-catalog-product-actions .rp-btn{padding:8px 10px;font-size:11px;min-height:33px}
+ .rp-layout .rp-catalog-editor .rp-menu-inputs{gap:9px}
+ .rp-layout .rp-catalog-save .rp-btn{flex:1}
+ .rp-layout .rp-catalog-save .rp-btn.quiet{margin-left:0}
+ .rp-layout .rp-menu-new .rp-product-cta .rp-btn{flex:1}
+}
+@media(max-width:360px){
+ .rp-layout .rp-catalog-item .rp-menu-visual{width:57px;min-width:57px;height:65px}
+ .rp-catalog-stock{white-space:normal;text-align:right}
+ .rp-catalog-topline{align-items:center;gap:8px}
+ .rp-catalog-product-actions{max-width:92px}
+}
