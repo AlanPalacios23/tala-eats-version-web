@@ -223,14 +223,29 @@ for(const width of widths){
    if(await page.locator('.rp-order-lane').count()!==3)
     throw Error('Flutter Pedidos must group Nuevos, En cocina and Listos');
    await page.getByRole('button',{name:'Abrir modo cocina'}).waitFor();
-   const group=page.locator('.rp-order-filters').first();
+   const group=page.locator('.rp-flutter-filter-controls .rp-order-filters');
+   const search=page.locator('.rp-flutter-orders-search');
+   if(width<840&&await search.isVisible())
+    throw Error('Native Flutter only shows order search in Historial');
+   const subtitle=page.locator('.rp-flutter-orders-heading p');
+   if(width<840&&!await subtitle.isVisible())
+    throw Error('Mobile Pedidos must show Flutter active count under header');
    await group.getByRole('button',{name:'Historial',exact:true}).click();
    if(await page.locator('.rp-lane-grid').count()!==0||await page.locator('.rp-history').count()!==1)
     throw new Error('Historial must hide active lanes at '+width);
-   await group.getByRole('button',{name:'Nuevos',exact:true}).click();
+   if(width<840){
+    if(!await search.isVisible())throw Error('Native history search missing');
+    await search.getByRole('textbox').fill('1842');
+    if(!await search.getByRole('button',{name:'Limpiar búsqueda'}).isVisible())
+     throw Error('Native history clear-search control missing');
+    await search.getByRole('button',{name:'Limpiar búsqueda'}).click();
+   }
+   await group.getByRole('button',{name:/^Nuevos(?:, \d+)?$/}).click();
    if(await page.locator('.rp-history').count()!==0)
     throw new Error('New-order filter must not show historical records at '+width);
-   await group.getByRole('button',{name:'Todos',exact:true}).click();
+   await group.getByRole('button',{name:/^Activos(?:, \d+)?$/}).click();
+   if(width<840&&await page.locator('.rp-history-secondary').isVisible())
+    throw Error('Flutter mobile Activos must not show history section');
   }
   if(name==='cocina'){
    if(width===390&&await page.locator('.rp-mobile-order-alerts').isVisible())
