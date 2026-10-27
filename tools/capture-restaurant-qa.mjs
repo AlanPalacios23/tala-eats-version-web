@@ -1,9 +1,9 @@
 import {chromium} from 'playwright';
 import fs from 'node:fs';
 
-const BASE='http://127.0.0.1:4173';
+const BASE=process.env.RESTAURANT_QA_ORIGIN||'http://127.0.0.1:4173';
 const widths=[320,390,768,1280];
-const dir='artifacts/restaurant-visual';
+const dir=process.env.RESTAURANT_QA_DIR||'artifacts/restaurant-visual';
 fs.mkdirSync(dir,{recursive:true});
 const shop={
  id:11,name:'Antojitos La Terraza',description:'Sabores de nuestra región',cuisine:'Comida mexicana',
@@ -90,6 +90,11 @@ for(const width of widths){
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-app="true"]').waitFor();
  await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
+ if(BASE.endsWith('4174')){
+  await page.locator('[data-merchant-standalone="true"]').waitFor();
+  const foreign=await page.evaluate(()=>[...document.querySelectorAll('script[src]')].some(node=>node.getAttribute('src')?.includes('main.tsx')));
+  if(foreign)throw Error('Customer app entry leaked into restaurant origin');
+ }
  const manifest=await page.locator('link[rel="manifest"]').getAttribute('href');
  if(manifest!=='/manifest-restaurante.webmanifest')throw Error('Merchant installed identity mismatched: '+manifest);
  const scenes=[
@@ -137,6 +142,12 @@ for(const width of widths){
  if(await page.locator('[data-mobile-screen="splash"]').count())throw Error('Merchant login leaked customer splash');
  await checkViewport(page,390,'acceso');
  await page.screenshot({path:`${dir}/390-acceso.png`,fullPage:true});
+ if(BASE.endsWith('4174')){
+  const other=await page.goto(BASE+'/iniciar',{waitUntil:'domcontentloaded'});
+  if(other?.status()!==404)throw new Error('Merchant origin served customer page');
+  const worker=await page.request.get(BASE+'/sw.js');
+  if(worker.status()!==404)throw new Error('Customer service worker leaked');
+ }
  await ctx.close();
 }
 if(writeRequests>0)throw new Error('Se intentó escribir en el servidor durante el QA visual: '+writeRequests);
