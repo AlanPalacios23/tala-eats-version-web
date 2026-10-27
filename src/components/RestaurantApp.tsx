@@ -13,6 +13,7 @@ import {normalizePickupPin} from '../lib/pickup-handoff';
 import {merchantConnectSteps,merchantStateLabel,nextMerchantState,canHandoffPickup} from '../lib/restaurant-state';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import '../styles/restaurant.css';
+import '../styles/restaurant-polish.css';
 import {MerchantOverview,MerchantKitchen,MerchantMore,MerchantFinanceActivity} from './RestaurantParity';
 import {LayoutDashboard,SlidersHorizontal,Search as SearchIcon} from 'lucide-react';
 
@@ -433,17 +434,29 @@ export function RestaurantWorkspace(){
     <div><strong>{user?.name||'Restaurante'}</strong><small>Cuenta del comercio</small></div>
     <button type="button" title="Cerrar sesión" aria-label="Cerrar sesión" onClick={()=>void signOut()}><LogOut size={18}/></button>
    </div>
+   <span className="rp-sidebar-footnote">Tala Eats <b>Business</b> · Jalisco</span>
   </aside>
   <div className="rp-workspace">
-   <header className="rp-topbar"><div><span className="rp-eyebrow">TALA EATS / RESTAURANTES</span>
-    <h1>{restaurant?.name||'Panel de restaurante'}</h1>
-    <p>{restaurant?.address||'Gestión operativa de tu comercio'}</p></div>
-    <div className="rp-top-actions"><MerchantInstallButton/>
+   <header className="rp-topbar">
+    <div className="rp-top-identity"><span className="rp-eyebrow">TALA EATS <span aria-hidden="true">/</span> PANEL DE NEGOCIOS</span>
+     <h1>{restaurant?.name||'Panel de restaurante'}</h1>
+     <p>{restaurant?.address||'Gestiona tu restaurante desde un solo lugar'}</p>
+     <div className="rp-top-meta"><span><Clock3 size={14}/>{new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Mexico_City'})}</span>
+      <span className="rp-sync-meta"><span className={'rp-sync-dot '+(syncHealthy?'healthy':'disconnected')}/>
+       {syncHealthy?(lastSync?'Sincronizado '+lastSync.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'}):'Sincronizado'):'Conexión pendiente'}</span>
+     </div>
+    </div>
+    <div className="rp-top-actions">
+     {orders.some(o=>o.status==='received')&&<button type="button" className="rp-new-orders"
+       onClick={()=>{setTab('pedidos');setOrderFilter('received');setOrderQuery('');}}>
+      <ShoppingBag size={16}/><strong>{orders.filter(o=>o.status==='received').length}</strong><span>Nuevo(s)</span>
+     </button>}
+     <MerchantInstallButton/>
      <span className={'rp-open-badge '+(restaurant?.is_open?'open':'closed')}><span/>
        {restaurant?.is_open?'Abierto':'Cerrado'}</span>
      <button type="button" className="rp-icon-btn" aria-label="Actualizar pedidos y negocio"
       title="Actualizar desde el servidor" disabled={refreshing||busy}
-      onClick={()=>void refresh()}><RefreshCw size={20} className={refreshing?'rp-spin':undefined}/></button>
+      onClick={()=>void refresh()}><RefreshCw size={19} className={refreshing?'rp-spin':undefined}/></button>
     </div>
    </header>
    <main className="rp-content">
