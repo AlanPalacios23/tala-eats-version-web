@@ -1,0 +1,22 @@
+[Unit]
+Description=Tala Eats Repartidores — dedicated independent Nginx PWA (18199)
+After=network.target
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+RuntimeDirectory=talaeats-repartidores-pwa
+RuntimeDirectoryMode=0755
+ExecStart=/usr/sbin/nginx -c /etc/talaeats-repartidores-pwa/nginx.conf -g 'daemon off;'
+ExecReload=/usr/sbin/nginx -c /etc/talaeats-repartidores-pwa/nginx.conf -s reload
+Restart=on-failure
+RestartSec=4s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/run/talaeats-repartidores-pwa
+CapabilityBoundingSet=
+AmbientCapabilities=
+[Install]
+WantedBy=multi-user.target
