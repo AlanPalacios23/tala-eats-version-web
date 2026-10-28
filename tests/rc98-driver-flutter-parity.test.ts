@@ -23,6 +23,24 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(app).toContain('path="/repartidor/registro"');
   expect(app).toContain('<Protected role="driver"><Driver/></Protected>');
  });
+ it('follows native Material 3 composition, official Flutter logo and thumb-zone action',()=>{
+  const mark=readFileSync(new URL('../public/branding/tala-eats-driver-official.png',import.meta.url));
+  expect(mark.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(mark.readUInt32BE(16)).toBe(418);
+  expect(mark.readUInt32BE(20)).toBe(418);
+  expect(signup).toContain('tala-eats-driver-official.png');
+  expect(signup).toContain('className="df-brand-type"');
+  expect(styles).toContain('height:calc(70px + env(safe-area-inset-bottom))');
+  expect(styles).toContain('background:#fff0e9');
+  expect(styles).toContain('.df-home-action{position:fixed');
+  expect(pwa).toContain("label:'Conectarme'");
+  expect(pwa).toContain("label:'Validar entrega con PIN'");
+  expect(pwa).toContain('className="df-proof-sheet"');
+  expect(pwa).toContain('className="df-no-earnings"');
+  expect(pwa).toContain('className="df-week-selected"');
+  expect(pwa).toContain('onClick={()=>setSelectedDay(d.date)}');
+  expect(styles).toContain('@media(max-width:389px)');
+ });
  it('requires genuine plate for motorcycle and car but no plate for bicycle',()=>{
   expect(normalizeDriverPlate('ab-c 123x')).toBe('AB-C 123X');
   expect(driverPlateIsValid('Motocicleta','ABC-1234')).toBe(true);
@@ -57,7 +75,8 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(calls.some(c=>c.path.includes('driver/availability')||c.path.includes('stripe'))).toBe(false);
  });
  it('does not fake wallet, delivery PIN, payout or documents status',()=>{
-  expect(pwa).toContain('Retiro no disponible');
+  expect(pwa).toContain('Configurar cuenta bancaria');
+  expect(pwa).toContain('disabled>Configurar cuenta bancaria</button>');
   expect(pwa).toContain("dashboard?.today?");
   expect(pwa).toContain('api.driverComplete(o.id,pin[o.id]');
   expect(pwa).toContain('driverCanProgressExistingDelivery');
