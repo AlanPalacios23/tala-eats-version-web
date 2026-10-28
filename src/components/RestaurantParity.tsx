@@ -272,18 +272,32 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
   );
  }
  async function saveProfile(e:FormEvent){
-  e.preventDefault();if(name.trim().length<2||address.trim().length>0&&address.trim().length<5)return;
-  const hasLat=lat.trim()!=='';const hasLng=lng.trim()!=='';
-  const latitude=Number(lat),longitude=Number(lng);
-  if(hasLat!==hasLng||hasLat&&(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude< -90||latitude>90||longitude< -180||longitude>180)){
-   setLocationError('Escribe una latitud y longitud válidas, juntas.');return;
+   e.preventDefault();
+   if(name.trim().length<2||!Number.isInteger(eta)||eta<5||eta>180||
+    (address.trim().length>0&&address.trim().length<5)){
+    setLocationError('Verifica el nombre, la dirección y un tiempo de preparación entre 5 y 180 minutos.');
+    return;
+   }
+   const hasLat=lat.trim()!=='';const hasLng=lng.trim()!=='';
+   const latitude=Number(lat),longitude=Number(lng);
+   if(hasLat!==hasLng||hasLat&&(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude< -90||latitude>90||longitude< -180||longitude>180)){
+    setLocationError('Escribe una latitud y longitud válidas, juntas.');return;
+   }
+   const locationChanged=lat!==(restaurant.lat==null?'':String(restaurant.lat))||
+    lng!==(restaurant.lng==null?'':String(restaurant.lng));
+   if(locationChanged){
+    const warning=hasLat?
+     '¿Confirmas que este punto GPS corresponde exactamente a la puerta del restaurante? Afectará futuras cotizaciones de domicilio.':
+     '¿Quitar el punto GPS del restaurante? La entrega a domicilio puede quedar suspendida hasta configurar uno nuevo.';
+    if(!window.confirm(warning))return;
+   }
+   const updated={name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,
+    address:address.trim()};
+   const locationPatch=locationChanged?(hasLat?{lat:latitude,lng:longitude}:{lat:null,lng:null}):{};
+   const ok=await run(()=>api.ownerUpdateRestaurant({...updated,...locationPatch}),'Perfil actualizado desde el backend.');
+   if(ok)setLocationError('');
   }
-  const locationChanged=lat!==(restaurant.lat==null?'':String(restaurant.lat))||lng!==(restaurant.lng==null?'':String(restaurant.lng));
-  if(locationChanged&&hasLat&&!window.confirm('¿Confirmas que este punto GPS corresponde exactamente a la puerta del restaurante? Afectará las futuras cotizaciones de domicilio cuando estén habilitadas.'))return;
-  const updated={name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,...(address.trim()?{address:address.trim()}:{})};
-  await run(()=>api.ownerUpdateRestaurant({...updated,...(locationChanged&&hasLat?{lat:latitude,lng:longitude}:{})}),'Perfil actualizado desde el backend.');
- }
- async function uploadCover(){
+  async function uploadCover(){
   if(!cover||busy||uploadBusy)return;
   setUploadBusy(true);
   try{const ok=await run(()=>api.ownerUploadCover(cover),'Foto de portada publicada por el backend.');
