@@ -35,7 +35,7 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(styles).toContain('.df-home-action{position:fixed');
   expect(pwa).toContain("label:'Conectarme'");
   expect(pwa).toContain("label:'Validar entrega con PIN'");
-  expect(pwa).toContain('className="df-proof-sheet"');
+  expect(pwa).toContain('className="df-sheet df-proof-sheet"');
   expect(pwa).toContain('className="df-no-earnings"');
   expect(pwa).toContain('className="df-week-selected"');
   expect(pwa).toContain('onClick={()=>setSelectedDay(d.date)}');
