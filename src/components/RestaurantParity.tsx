@@ -20,7 +20,7 @@ export type MerchantExperienceProps={
  connect:MerchantConnectStatus|null;busy:boolean;run:MerchantAction;
  go:(tab:MerchantTab)=>void;
  onSignOut?:()=>Promise<void>;
- onRefresh?:()=>Promise<void>;
+ onRefresh?:()=>Promise<boolean>;
  accountName?:string;accountEmail?:string;accountTwoFactorEnabled?:boolean;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
