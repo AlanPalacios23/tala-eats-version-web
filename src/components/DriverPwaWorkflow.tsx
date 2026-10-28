@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {Link} from 'react-router-dom';
 import '../styles/driver-pwa.css';
 import {Bike,CheckCircle2,Clock3,MapPin,RefreshCw,ShieldCheck,Truck,WifiOff} from 'lucide-react';
 import {api,pesos} from '../lib/api';
@@ -132,7 +133,7 @@ export function DriverPwaWorkflow(){
  }
  return <div className="container page dashboard driver-pwa" data-driver-pwa="true">
   <div className="dashboard-heading">
-   <div><span className="eyebrow">TALA EATS · REPARTIDOR</span>
+   <div><Link to="/" className="driver-pwa-home">Tala Eats</Link><span className="eyebrow">REPARTIDOR</span>
     <h1>Mis entregas</h1><p>Tu conexión y cada entrega se confirman con el servidor.</p></div>
    <button className="btn outline small" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={16}/> Actualizar</button>
   </div>

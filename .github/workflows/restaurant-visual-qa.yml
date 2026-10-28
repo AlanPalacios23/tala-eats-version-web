@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      # Routing/manifest changes can break merchant pages even if merchant JSX is untouched.
+      - 'src/App.tsx'
+      - 'src/main.tsx'
       - 'src/components/Restaurant*.tsx'
       - 'src/styles/restaurant*.css'
       - 'src/lib/restaurant-state.ts'
