@@ -3,6 +3,7 @@ import { resolveCustomerImage } from './customer-media';
 import { PREVIEW_READONLY, previewRequestAllowed } from './preview';
 import type { StripeTestConfig, StripeIntentReply } from './stripe-test';
 import { normalizeCustomerAddress } from './customer-checkout';
+import type { DriverPresenceReadiness } from './driver-presence';
 import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
 import type { MarketCode } from './markets';
 import type { AuthResponse, DriverProfile, MenuItem, Order, PaymentOptions, Quote, Restaurant, User } from './types';
@@ -256,6 +257,8 @@ export const api = {
   driverMine: () => request<Order[]>('/driver/mine?limit=100'),
   driverAvailable: () => request<Order[]>('/driver/available?limit=25'),
   driverSetAvailability: (is_online:boolean) => request<DriverProfile>('/driver/availability',json('PATCH',{is_online})),
+  driverLocation: (lat:number,lng:number) => request<DriverProfile>('/driver/location',json('PATCH',{lat,lng})),
+  driverPresenceReadiness: () => request<DriverPresenceReadiness>('/driver/presence-readiness'),
   driverAccept: (id:number) => request<Order>(`/driver/orders/${id}/accept`,json('POST')),
   driverStatus: (id:number,status:'picked_up'|'on_the_way') => request<Order>(`/driver/orders/${id}/status`,json('PATCH',{status})),
   driverComplete: (id:number,pin:string) => request<Order>(`/driver/orders/${id}/complete`,json('POST',{pin,photo_url:''})),

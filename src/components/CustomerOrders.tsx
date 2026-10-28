@@ -29,6 +29,22 @@ function useOrders(){
   api.myOrders().then(value=>{if(active)setOrders(value);}).catch(err=>{if(active)setError(err instanceof Error?err.message:'No se pudo cargar el historial');}).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false};
  },[refreshIndex]);
+ // Keep the order list fresh while the PWA is in the foreground. A polling
+ // error must never turn a previously confirmed payment into a fake failure.
+ useEffect(()=>{
+  let active=true,inFlight=false;
+  const poll=async()=>{
+   if(!active||inFlight||document.visibilityState==='hidden')return;
+   inFlight=true;
+   try{const value=await api.myOrders();if(active){setOrders(value);setError('');}}
+   catch(e){if(active)setError(e instanceof Error?e.message:'No se pudo actualizar el estado');}
+   finally{inFlight=false;}
+  };
+  const timer=window.setInterval(()=>void poll(),15000);
+  const resume=()=>{if(document.visibilityState==='visible')void poll();};
+  document.addEventListener('visibilitychange',resume);
+  return()=>{active=false;window.clearInterval(timer);document.removeEventListener('visibilitychange',resume);};
+ },[]);
  return {orders,loading,error,refresh};
 }
 function OrderImage(){return <div className="mobile-order-image" aria-hidden="true"><ShoppingBag size={23}/></div>;}
