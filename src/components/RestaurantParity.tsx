@@ -234,6 +234,7 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
  const [lat,setLat]=useState(restaurant.lat==null?'':String(restaurant.lat)),[lng,setLng]=useState(restaurant.lng==null?'':String(restaurant.lng));
  const [locationError,setLocationError]=useState('');
  const [cover,setCover]=useState<File|null>(null),[uploadBusy,setUploadBusy]=useState(false);
+ const coverInput=useRef<HTMLInputElement>(null);
  const [aboutOpen,setAboutOpen]=useState(false);
  const aboutRef=useRef<HTMLElement>(null),aboutTrigger=useRef<HTMLButtonElement>(null);
  useEffect(()=>{
@@ -301,7 +302,7 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
   if(!cover||busy||uploadBusy)return;
   setUploadBusy(true);
   try{const ok=await run(()=>api.ownerUploadCover(cover),'Foto de portada publicada por el backend.');
-   if(ok)setCover(null);
+   if(ok){setCover(null);if(coverInput.current)coverInput.current.value='';}
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
@@ -382,7 +383,7 @@ export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountNa
     <div className="rm-cover-uploader"><strong>Foto de portada</strong>
      {safeImage(restaurant.cover_image_url)&&<img className="rm-cover-preview" src={safeImage(restaurant.cover_image_url)??undefined} alt={'Portada de '+restaurant.name} loading="lazy"/>}
      <p>Sube una foto original del negocio para el catálogo, verificada y almacenada en el backend.</p>
-     <input aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
+     <input ref={coverInput} aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
      <button className="rp-btn outline small" disabled={!cover||busy||uploadBusy} onClick={()=>void uploadCover()}>Publicar portada</button>
     </div>
    </details>
