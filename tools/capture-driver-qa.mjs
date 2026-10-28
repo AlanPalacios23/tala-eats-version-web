@@ -44,7 +44,7 @@ try{
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'horizontal overflow at '+width);
   await page.screenshot({path:`${dir}/home-${width}.png`,fullPage:true});captures++;
   for(const [label,heading] of [['Entregas','Entregas'],['Ganancias','Ganancias'],['Perfil','Perfil']]){
-   await page.getByRole('button',{name:label,exact:true}).click();
+   await page.locator('.df-bottom-nav button').nth(label==='Entregas'?1:label==='Ganancias'?2:3).click();
    await page.getByRole('heading',{name:heading,exact:true}).waitFor();
    if(label==='Ganancias'){
     assert.equal(await page.locator('.df-week-chart .df-week-day').count(),7);
