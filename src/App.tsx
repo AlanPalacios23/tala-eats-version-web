@@ -33,24 +33,8 @@ function ExternalLegalRedirect({href}:{href:string}){
  useEffect(()=>{window.location.replace(href)},[href]);
  return <div role="status" className="mobile-status">Abriendo el documento oficial de Tala Eats… <a href={href}>Abrir documento</a></div>;
 }
-type AsyncState<T>={value:T|null;loading:boolean;error:string};
-function useLoad<T>(load:()=>Promise<T>,dependencies:unknown[]):AsyncState<T>&{refresh:()=>void} {
- const [tick,setTick]=useState(0); const [state,setState]=useState<AsyncState<T>>({value:null,loading:true,error:''});
- const refresh=()=>setTick(x=>x+1);
- // eslint-disable-next-line react-hooks/exhaustive-deps
- useEffect(()=>{let active=true;setState(s=>({...s,loading:true,error:''}));load().then(value=>{
-  if(active)setState({value,loading:false,error:''});
- }).catch(err=>{if(active)setState({value:null,loading:false,error:err instanceof Error?err.message:'Error de conexión'});});
- return()=>{active=false;};
- // eslint-disable-next-line react-hooks/exhaustive-deps
- },[tick,...dependencies]);
- return {...state,refresh};
-}
-function Alert({children,kind='error'}:{children:ReactNode;kind?:'error'|'info'|'success'}) {return <div role="status" className={'alert '+kind}>{children}</div>;}
 function Spinner(){return <div className="loading"><RefreshCw className="spin" size={20}/> Cargando información del servidor...</div>;}
-function SectionTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){return <div className="section-title"><span className="eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;}
 function EmptyState({icon,title,description,action}:{icon:ReactNode;title:string;description:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{description}</p>{action}</div>;}
-function StateTag({state}:{state:string}){const tags:Record<string,string>={received:'Recibido',confirmed:'Confirmado',preparing:'Preparando',ready:'Listo',assigned:'Asignado',picked_up:'Recogido',on_the_way:'En camino',delivered:'Entregado',cancelled:'Cancelado',awaiting_payment:'Esperando pago'};return <span className={'status status-'+state}>{tags[state]??state}</span>;}
 function AppHeader({count}:{count:number}){
  const session=useSession();const [menuOpen,setMenuOpen]=useState(false);const location=useLocation();
  useEffect(()=>setMenuOpen(false),[location.pathname]);
