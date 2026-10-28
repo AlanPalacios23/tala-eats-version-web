@@ -31,11 +31,27 @@ try{
   assert.equal(await page.getByRole('navigation',{name:'Navegación de repartidor'}).count(),1);
   assert.equal(await page.locator('.header-cart').count(),0);
   assert.equal(await page.locator('.df-bottom-nav button').count(),4);
+  const homeAction=page.locator('.df-home-action');
+  assert.equal(await homeAction.count(),1,'Flutter Home fixed action missing at '+width);
+  assert.equal(await homeAction.getByRole('button',{name:'Conectarme'}).count(),1);
+  const dock=await page.evaluate(()=>{
+   const action=document.querySelector('.df-home-action')?.getBoundingClientRect();
+   const nav=document.querySelector('.df-bottom-nav')?.getBoundingClientRect();
+   return {ctaBottom:action?.bottom,navTop:nav?.top};
+  });
+  assert.ok(Math.abs(dock.ctaBottom-dock.navTop)<=2,'thumb CTA must touch navigation at '+width);
+
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'horizontal overflow at '+width);
   await page.screenshot({path:`${dir}/home-${width}.png`,fullPage:true});captures++;
   for(const [label,heading] of [['Entregas','Entregas'],['Ganancias','Ganancias'],['Perfil','Perfil']]){
    await page.getByRole('button',{name:label,exact:true}).click();
    await page.getByRole('heading',{name:heading,exact:true}).waitFor();
+   if(label==='Ganancias'){
+    assert.equal(await page.locator('.df-week-chart .df-week-day').count(),7);
+    assert.equal(await page.locator('.df-no-earnings').count(),1);
+    await page.locator('.df-week-day').first().click();
+    assert.equal(await page.locator('.df-week-day').first().getAttribute('aria-pressed'),'true');
+   }
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'overflow '+label+' at '+width);
    await page.screenshot({path:`${dir}/${label.toLowerCase()}-${width}.png`,fullPage:true});captures++;
   }
@@ -54,6 +70,11 @@ try{
   });
   return reply(route,{error:'UNHANDLED_SYNTHETIC_ROUTE'},404);
  });
+ await page.goto(ORIGIN+'/repartidor/acceso');
+ await page.getByRole('heading',{name:'Entra y empieza tu ruta.'}).waitFor();
+ const logo=await page.locator('.df-brand img').evaluate(img=>({w:img.naturalWidth,h:img.naturalHeight,complete:img.complete}));
+ assert.deepEqual(logo,{w:418,h:418,complete:true},'must reuse exact Flutter original logo');
+ await page.screenshot({path:`${dir}/acceso-390.png`,fullPage:true});captures++;
  await page.goto(ORIGIN+'/repartidor/registro');
  await page.getByRole('heading',{name:'Únete a la red de repartidores.'}).waitFor();
  await page.getByText('Número de placas').waitFor();
@@ -62,5 +83,6 @@ try{
  await context.close();
  console.log('DRIVER_FLUTTER_VISUAL_QA=PASS');
  console.log('DRIVER_VIEWS=4 SIZES=320,360,390,430 SCREENSHOTS='+captures);
+ console.log('DRIVER_LOGO_ORIGINAL=PASS CTA_DOCKED=PASS WEEK_INTERACTIVE=PASS');
  console.log('DRIVER_MOCK_ONLY=YES LIVE_TRANSACTIONS=0');
 }finally{await browser.close();}
