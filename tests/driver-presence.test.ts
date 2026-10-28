@@ -1,5 +1,5 @@
 import {describe,it,expect,vi,afterEach} from 'vitest';
-import {currentDriverPosition,DRIVER_GPS_HEARTBEAT_MS,verifiedOnlinePresence,driverActionsAvailable,validDriverCoordinates} from '../src/lib/driver-presence';
+import {currentDriverPosition,DRIVER_GPS_HEARTBEAT_MS,verifiedOnlinePresence,driverActionsAvailable,driverCanProgressExistingDelivery,validDriverCoordinates} from '../src/lib/driver-presence';
 import type {DriverPresenceReadiness} from '../src/lib/driver-presence';
 
 const online:DriverPresenceReadiness={
@@ -21,6 +21,15 @@ describe('RC9.5 web driver presence',()=>{
    {...online,presence_enabled:false},
   ])expect(verifiedOnlinePresence(unsafe)).toBe(false);
   expect(verifiedOnlinePresence(null)).toBe(false);
+ });
+ it('an assigned staging order can progress to PIN if GPS temporarily expires, but cannot accept NEW work',()=>{
+  const stale={...online,environment:'staging' as const,fresh_gps:false,ready_for_dispatch:false};
+  expect(driverActionsAvailable(stale,true)).toBe(false);
+  expect(driverCanProgressExistingDelivery(stale,true)).toBe(true);
+  expect(driverCanProgressExistingDelivery({...stale,online:false},true)).toBe(false);
+  expect(driverCanProgressExistingDelivery({...stale,admin_verified:false},true)).toBe(false);
+  expect(driverCanProgressExistingDelivery({...stale,environment:'production'},true)).toBe(false);
+  expect(driverCanProgressExistingDelivery(stale,false)).toBe(false);
  });
  it('heartbeats before the backend TTL of 120s, only valid coordinates',()=>{
   expect(DRIVER_GPS_HEARTBEAT_MS).toBe(45000);
