@@ -20,6 +20,16 @@ export function verifiedOnlinePresence(p:DriverPresenceReadiness|null):boolean{
 export function driverActionsAvailable(p:DriverPresenceReadiness|null,uiEnabled:boolean):boolean{
  return uiEnabled&&verifiedOnlinePresence(p)&&p?.ready_for_dispatch===true;
 }
+/**
+ * An already assigned STAGING delivery may continue to PIN despite GPS
+ * temporarily expiring; it must never grant a NEW claim. LIVE still needs an
+ * independent server authorization contract before it can progress orders.
+ */
+export function driverCanProgressExistingDelivery(
+ p:DriverPresenceReadiness|null,uiEnabled:boolean):boolean{
+ return Boolean(uiEnabled&&p?.environment==='staging'&&p?.presence_enabled&&
+   p?.admin_verified&&p?.online);
+}
 export interface BrowserDriverPosition {lat:number;lng:number}
 export function validDriverCoordinates(value:BrowserDriverPosition):boolean{
  return Number.isFinite(value.lat)&&Math.abs(value.lat)<=90&&
