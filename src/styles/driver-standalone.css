@@ -1,0 +1,17 @@
+/* Isolated driver origin: no storefront header, cart, restaurant CSS or third-party fonts. */
+*,*::before,*::after{box-sizing:border-box}
+html,body,#root{min-height:100%;margin:0}
+body{background:#f8f7f5;color:#181614;font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+a{color:inherit;text-decoration:none}
+.dd-standalone{min-height:100dvh}
+.dd-boot{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#6f6a65}
+.dd-boot .df-brand{margin:0}
+.dd-boot p{font-size:13px}
+.dd-preview{padding:10px 16px;background:#fef3db;color:#624311;text-align:center;font-weight:800;font-size:12px}
+.dd-unknown{padding:40px 20px;margin:auto;max-width:550px;min-height:85dvh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px}
+.dd-unknown h1{font-size:28px;margin:0}
+.dd-unknown p{font-size:14px;line-height:1.55;color:#6f6a65}
+.dd-unknown a{display:inline-flex;min-height:44px;align-items:center;color:#b93d0c;font-weight:800}
