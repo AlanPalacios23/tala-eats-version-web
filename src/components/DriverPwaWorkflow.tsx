@@ -3,7 +3,7 @@ import '../styles/driver-pwa.css';
 import {Bike,CheckCircle2,Clock3,MapPin,RefreshCw,ShieldCheck,Truck,WifiOff} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
-import {currentDriverPosition,DRIVER_GPS_HEARTBEAT_MS,driverActionsAvailable,verifiedOnlinePresence} from '../lib/driver-presence';
+import {currentDriverPosition,DRIVER_GPS_HEARTBEAT_MS,driverActionsAvailable,driverCanProgressExistingDelivery,verifiedOnlinePresence} from '../lib/driver-presence';
 import type {DriverPresenceReadiness} from '../lib/driver-presence';
 
 const shipmentStatus:Record<string,string>={
@@ -30,6 +30,7 @@ export function DriverPwaWorkflow(){
  const online=readiness?.online===true;
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
+ const canProgress=driverCanProgressExistingDelivery(readiness,actionOptIn);
  const refresh=useCallback(async()=>{
   try{
    const [p,proof,jobs,offers]=await Promise.all([
@@ -110,8 +111,8 @@ export function DriverPwaWorkflow(){
    if(mounted.current){setBusy(false);await refresh();}
   }
  }
- async function doAction(action:()=>Promise<unknown>,success:string){
-  if(inFlight.current||!actions)return;
+ async function doAction(action:()=>Promise<unknown>,success:string,existing=false){
+  if(inFlight.current||!(existing?canProgress:actions))return;
   inFlight.current=true;setBusy(true);setMessage('');setError('');
   try{await action();if(mounted.current)setMessage(success);}
   catch(e){if(mounted.current)setError(failure(e));}
@@ -143,21 +144,21 @@ export function DriverPwaWorkflow(){
    <p className="driver-pwa-help">Se utiliza GPS real del navegador mientras esta PWA esté abierta y visible. Si cierras la aplicación o el GPS caduca, no se confirma disponibilidad para asignaciones.</p>
   </section>
   {!actions&&<div className="alert info" role="status"><Clock3 size={18}/>
-    La asignación, recogida y entrega todavía no están liberadas para este entorno. Tener GPS activo no autoriza pedidos ni cobros Stripe a domicilio.</div>}
+    {canProgress?'No puedes recibir nuevas asignaciones sin GPS vigente. Si ya tienes una entrega, puedes continuarla.':'La asignación, recogida y entrega todavía no están liberadas para este entorno. Tener GPS activo no autoriza pedidos ni cobros Stripe a domicilio.'}</div>}
   <section className="driver-pwa-jobs"><h2><Truck size={21}/> Mis entregas</h2>
    {!mine.length?<p className="muted">Todavía no tienes entregas asignadas.</p>:mine.map(order=>
    <article className="card padded" key={order.id}>
     <div className="order-top"><h3>Pedido #{order.id}</h3><strong>{shipmentStatus[order.status]||order.status}</strong></div>
     <p>Total del pedido: {pesos(order.total)} · Ganancia estimada: {pesos(order.driver_earning)}</p>
-    {actions&&<div className="driver-pwa-controls">
-     {order.status==='assigned'&&<button className="btn primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(order.id,'picked_up'),'Recogida confirmada por el servidor.')}>Confirmar recogida</button>}
-     {order.status==='picked_up'&&<button className="btn primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(order.id,'on_the_way'),'Ruta al cliente confirmada.')}>En camino al cliente</button>}
+    {canProgress&&<div className="driver-pwa-controls">
+     {order.status==='assigned'&&<button className="btn primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(order.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
+     {order.status==='picked_up'&&<button className="btn primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(order.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>En camino al cliente</button>}
      {order.status==='on_the_way'&&<>
       <input aria-label={'PIN de entrega del pedido '+order.id} inputMode="numeric" pattern="[0-9]{4}" maxLength={4}
        placeholder="PIN de 4 dígitos" value={pin[order.id]??''}
        onChange={e=>setPin(p=>({...p,[order.id]:e.target.value.replace(/\D/g,'').slice(0,4)}))}/>
       <button className="btn primary" disabled={busy||!/^[0-9]{4}$/.test(pin[order.id]??'')}
-       onClick={()=>void doAction(()=>api.driverComplete(order.id,pin[order.id]??''),'Entrega validada con PIN en el servidor.')}>Confirmar entrega</button>
+       onClick={()=>void doAction(()=>api.driverComplete(order.id,pin[order.id]??''),'Entrega validada con PIN en el servidor.',true)}>Confirmar entrega</button>
      </>}
     </div>}
    </article>)}
