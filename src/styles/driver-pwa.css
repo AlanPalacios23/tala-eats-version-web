@@ -26,3 +26,10 @@
  .driver-pwa-controls .btn{flex:1 1 auto}
  .driver-pwa-jobs>.card{padding:16px}
 }
+
+/* Repartidor is an operational PWA, not a storefront: no customer cart/nav. */
+.app.driver-shell{background:#f7f8f6}
+.app.driver-shell>main{width:100%}
+.driver-pwa-home{display:inline-flex;min-height:44px;align-items:center;color:#292b28;font-size:16px;font-weight:850;letter-spacing:-.5px;margin:0 0 7px}
+.driver-pwa-home:hover{color:#e45f1a}
+.driver-pwa-home:focus-visible{outline:3px solid #ff9b56;outline-offset:3px;border-radius:5px}
