@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {Link,Navigate,useNavigate} from 'react-router-dom';
-import {ArrowLeft,Bike,CheckCircle2,FileCheck2,LockKeyhole,ShieldCheck,Smartphone,UploadCloud,UserRound,WifiOff} from 'lucide-react';
+import {ArrowLeft,CheckCircle2,FileCheck2,ShieldCheck,Smartphone,UploadCloud,UserRound,WifiOff} from 'lucide-react';
 import {api,ApiError} from '../lib/api';
 import {useSession} from '../lib/session';
 import {driverPlateIsValid,normalizeDriverPlate} from '../lib/driver-registration';
