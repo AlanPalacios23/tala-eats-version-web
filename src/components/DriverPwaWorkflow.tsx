@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
+import '../styles/driver-pwa.css';
 import {Bike,CheckCircle2,Clock3,MapPin,RefreshCw,ShieldCheck,Truck,WifiOff} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
