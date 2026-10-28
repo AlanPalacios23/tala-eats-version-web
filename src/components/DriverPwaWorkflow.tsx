@@ -184,6 +184,25 @@ export function DriverPwaWorkflow(){
  const jobCard=(o:Order,offer=false)=><article key={o.id} className="df-surface df-job">
    <div className="df-job-head"><span>Pedido #{o.id}</span>
     <strong className="df-chip">{offer?'Disponible':displayStatus(o.status)}</strong></div>
+   {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
+     role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
+    {Array.from({length:5},(_,i)=>{
+     const progress=o.status==='assigned'?0:o.status==='picked_up'?3:o.status==='on_the_way'?4:5;
+     return <span className={i<progress?'filled':''} key={i}/>;
+    })}
+   </div>}
+   {!offer&&deliveryInProgress(o)&&<div className="df-route-stops">
+    <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
+     <div className="df-stop-icon"><Bike size={19}/></div>
+     <div><small>RECOGER</small><strong>Comercio #{o.restaurant_id}</strong>
+      <span>{o.status==='assigned'?'Ahora':'Recogida confirmada'}</span></div>
+    </div>
+    <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
+     <div className="df-stop-icon"><MapPin size={19}/></div>
+     <div><small>ENTREGAR</small><strong>Destino del cliente</strong>
+      <span>{o.address||'Dirección pendiente del servidor'}</span></div>
+    </div>
+   </div>}
    <div className="df-job-meta"><span><MapPin size={16}/>{o.address||'Ubicación disponible al aceptar'}</span>
     <span>{offer?'Ganancia por entrega':'Ganancia estimada'}: <b>{safeAmount(Number(o.driver_earning))}</b></span></div>
    {offer?actions&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
