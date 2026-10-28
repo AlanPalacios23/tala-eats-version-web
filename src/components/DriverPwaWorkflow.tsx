@@ -1,12 +1,10 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {Link} from 'react-router-dom';
 import '../styles/driver-pwa.css';
-import {Bike,CheckCircle2,Clock3,MapPin,RefreshCw,ShieldCheck,Truck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,Navigation,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut} from 'lucide-react';
+import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
-import {DriverBrand} from './DriverRegistration';
 import '../styles/driver-flutter.css';
 type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};
  today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
