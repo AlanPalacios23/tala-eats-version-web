@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - 'src/components/Driver*.tsx'
+      - 'src/DriverStandalone.tsx'
+      - 'src/main-repartidores.tsx'
+      - 'repartidores.html'
+      - 'vite.repartidor.config.ts'
+      - 'deploy/*repartidores*'
       - 'src/styles/driver*.css'
       - 'src/lib/driver-registration.ts'
       - 'src/lib/driver-presence.ts'
@@ -30,9 +35,11 @@ jobs:
         run: |
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
-      - name: Start isolated PWA
+      - name: Syntax-check independent Nginx deployment scripts
+        run: bash -n deploy/kali-install-repartidores-isolated.sh deploy/kali-update-repartidores-isolated.sh
+      - name: Start independent Driver PWA
         run: |
-          npm run preview -- --host 127.0.0.1 > /tmp/tala-driver-qa.log 2>&1 &
+          npx vite preview --config vite.repartidor.config.ts --host 127.0.0.1 --port 4173 --strictPort > /tmp/tala-driver-qa.log 2>&1 &
           for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:4173/repartidor > /dev/null; then exit 0; fi
             sleep 1
