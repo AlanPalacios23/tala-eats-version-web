@@ -6,7 +6,7 @@ import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
-type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};
+type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};recent?:Order[];
  today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
  last_7_days?:Array<{date:string;earnings:number;deliveries:number}>;
  acceptance_rate?:number};
@@ -33,6 +33,9 @@ const failure=(reason:unknown)=>reason instanceof Error?reason.message:'La opera
 export function DriverPwaWorkflow(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
+ const [proofSheet,setProofSheet]=useState(false);
+ const [selectedDay,setSelectedDay]=useState<string|null>(null);
+ const actionCooldown=useRef(0);
  const [sheet,setSheet]=useState<'vehicle'|'documents'|'security'|'help'|null>(null);
  const [dashboard,setDashboard]=useState<DriverDash|null>(null);
  const [dashboardError,setDashboardError]=useState(false);
@@ -154,8 +157,21 @@ export function DriverPwaWorkflow(){
  }
 
  const active=mine.find(deliveryInProgress)??null;
+ const delivered=dashboard?.recent?.filter(o=>o.status==='delivered')??mine.filter(o=>o.status==='delivered');
+ const weekdays=dashboard?.last_7_days??[];
+ const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
+ const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
+ const cannotReceive=readiness?.admin_verified!==true||readiness?.presence_enabled!==true;
+ const cooldown=()=>Date.now()-actionCooldown.current<650;
+ async function guardedAction(action:()=>Promise<unknown>,success:string,existing=false) {
+  if(cooldown()||busy)return;
+  actionCooldown.current=Date.now();
+  await doAction(action,success,existing);
+ }
+
  const doneToday=dashboard?.today?.deliveries;
- const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);};
+ useEffect(()=>{if(!active&&proofSheet)setProofSheet(false);},[active?.id,proofSheet]);
+ const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);setProofSheet(false);};
  const doLogout=async()=>{
   if(active){setError('Termina la entrega en curso antes de cerrar sesión.');return;}
   if(!window.confirm('¿Cerrar sesión? Dejarás de recibir pedidos hasta que vuelvas a entrar.'))return;
@@ -170,20 +186,34 @@ export function DriverPwaWorkflow(){
     <strong className="df-chip">{offer?'Disponible':displayStatus(o.status)}</strong></div>
    <div className="df-job-meta"><span><MapPin size={16}/>{o.address||'Ubicación disponible al aceptar'}</span>
     <span>{offer?'Ganancia por entrega':'Ganancia estimada'}: <b>{safeAmount(Number(o.driver_earning))}</b></span></div>
-   {offer?actions&&<button className="df-primary" disabled={busy} onClick={()=>void doAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
-    canProgress&&<div className="df-job-actions">
-     {o.status==='assigned'&&<button className="df-primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
-     {o.status==='picked_up'&&<button className="df-primary" disabled={busy} onClick={()=>void doAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>En camino al cliente</button>}
+   {offer?actions&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
+    canProgress&&tab!=='inicio'&&<div className="df-job-actions">
+     {o.status==='assigned'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
+     {o.status==='picked_up'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>En camino al cliente</button>}
      {o.status==='on_the_way'&&<div className="df-pin-action">
       <label>PIN del cliente<input inputMode="numeric" pattern="[0-9]{4}" autoComplete="off"
        maxLength={4} placeholder="0000" value={pin[o.id]??''}
        onChange={e=>setPin(p=>({...p,[o.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
       <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[o.id]??'')}
-       onClick={()=>void doAction(()=>api.driverComplete(o.id,pin[o.id]??''),'Entrega validada por el servidor.',true)}>Confirmar entrega</button>
+       onClick={()=>void guardedAction(()=>api.driverComplete(o.id,pin[o.id]??''),'Entrega validada por el servidor.',true)}>Confirmar entrega</button>
       <p className="df-caption">La confirmación requiere el PIN real; el backend determina si la entrega es válida.</p>
      </div>}
     </div>}
   </article>;
+ const homeAction=tab!=='inicio'?null:!online?{
+  label:'Conectarme',
+  disabled:busy||cannotReceive||!!active,
+  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();void setOnline(true);}}
+ }:active?.status==='assigned'&&canProgress?{
+  label:'Confirmar recogida',disabled:busy,
+  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'picked_up'),'Recogida confirmada por el servidor.',true);}
+ }:active?.status==='picked_up'&&canProgress?{
+  label:'En camino al cliente',disabled:busy,
+  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true);}
+ }:active?.status==='on_the_way'&&canProgress?{
+  label:'Validar entrega con PIN',disabled:busy,
+  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();setProofSheet(true);}}
+ }:null;
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
@@ -226,8 +256,8 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Entregas</h1><p>{dashboard?.today?('Hoy · '+metric(doneToday)+' completadas'):'Historial de entregas'}</p></div>
        <button className="df-icon-button" aria-label="Actualizar entregas" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={21}/></button></header>
       {active&&<section className="df-section"><h2>En curso</h2>{jobCard(active)}</section>}
-      <section className="df-section"><div className="df-section-title"><h2>Historial</h2><small>{mine.filter(o=>o.status==='delivered').length} pedidos</small></div>
-       {mine.filter(o=>o.status==='delivered').length?mine.filter(o=>o.status==='delivered').map(o=>jobCard(o)):
+      <section className="df-section"><div className="df-section-title"><h2>Historial</h2><small>{delivered.length} pedidos</small></div>
+       {delivered.length?delivered.map(o=>jobCard(o)):
        <div className="df-empty df-surface"><ReceiptText size={32}/><h2>Aún no hay entregas</h2><p>Las entregas que completes aparecerán aquí.</p></div>}
       </section>
       <section className="df-section"><h2>Pedidos disponibles</h2>
@@ -284,14 +314,33 @@ export function DriverPwaWorkflow(){
      <button aria-label="Cerrar aviso" onClick={()=>{setError('');setMessage('');}}><X size={16}/></button></div>}
     {loading&&<p className="df-caption" role="status">Consultando información real del servidor…</p>}
    </main>
+   {homeAction&&<div className="df-home-action">
+      <button type="button" className="df-primary" disabled={homeAction.disabled} onClick={homeAction.press}>
+       {busy?'Actualizando…':homeAction.label}
+      </button>
+     </div>}
    <nav className="df-bottom-nav" aria-label="Navegación de repartidor">
     {([{key:'inicio',label:'Inicio',Icon:Home},{key:'entregas',label:'Entregas',Icon:ReceiptText},
        {key:'ganancias',label:'Ganancias',Icon:Wallet},{key:'perfil',label:'Perfil',Icon:UserRound}] as const).map(t=>
      <button key={t.key} type="button" className={tab===t.key?'selected':''}
       aria-current={tab===t.key?'page':undefined} onClick={()=>onTab(t.key)}>
-      <t.Icon size={23} strokeWidth={tab===t.key?2.6:2}/><span>{t.label}</span>
+      <span className="df-nav-icon"><t.Icon size={24} strokeWidth={tab===t.key?2.6:1.9}/>{t.key==='inicio'&&active&&tab!=='inicio'&&<i className="df-active-pip"/>}</span><span className="df-nav-label">{t.label}</span>
      </button>)}
    </nav>
+   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setProofSheet(false)}>
+     <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-label="Confirmar entrega" onClick={e=>e.stopPropagation()}>
+      <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setProofSheet(false)}><X size={21}/></button>
+      <h2>Confirmar entrega</h2>
+      <p>Introduce el PIN de 4 dígitos que te dio el cliente. El servidor verificará la entrega.</p>
+      <label>PIN de entrega<input type="text" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}"
+        placeholder="0000" value={pin[active.id]??''}
+        onChange={e=>setPin(p=>({...p,[active.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
+      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> La evidencia fotográfica continúa pendiente de integración; no se simulan fotografías.</div>
+      <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[active.id]??'')}
+       onClick={()=>void guardedAction(()=>api.driverComplete(active.id,pin[active.id]??''),'Entrega validada por el servidor.',true)}>
+       {busy?'Validando…':'Confirmar entrega'}</button>
+     </section>
+    </div>}
    {sheet&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setSheet(null)}>
     <section className="df-sheet" role="dialog" aria-modal="true" aria-label="Detalle de perfil" onClick={e=>e.stopPropagation()}>
      <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setSheet(null)}><X size={21}/></button>
