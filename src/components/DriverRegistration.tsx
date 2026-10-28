@@ -9,7 +9,11 @@ import type {DriverVehicle} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 
 const messageOf=(error:unknown)=>error instanceof Error?error.message:'No pudimos completar la operación. Revisa tu conexión.';
-export function DriverBrand(){return <Link to="/" className="df-brand" aria-label="Tala Eats, portada"><span>Tala<span className="df-brand-orange">Eats.</span></span><small>REPARTIDOR</small></Link>;}
+/** Identical Flutter asset and typographic lockup from widgets/brand.dart. */
+export function DriverBrand(){return <Link to="/" className="df-brand" aria-label="Tala Eats Repartidor, portada">
+ <img src="/branding/tala-eats-driver-official.png" alt="" width={72} height={72} decoding="async"/>
+ <span className="df-brand-type"><strong>TALA EATS</strong><b>Repartidor</b></span>
+ </Link>;}
 
 export function DriverAccess(){
  const session=useSession();
