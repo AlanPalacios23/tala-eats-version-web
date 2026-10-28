@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import '../styles/driver-pwa.css';
-import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut} from 'lucide-react';
+import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
@@ -269,27 +269,39 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Ganancias</h1><p>{todayLabel()}</p></div></header>
       <section className="df-surface df-earnings-main"><span>TU GANANCIA DE HOY</span>
        <strong>{dashboard?.today?safeAmount(dashboard.today.earnings):'—'}</strong><hr/>
-       <div className="df-metrics df-earnings-metrics">
+       {hasEarnings?<div className="df-metrics df-earnings-metrics">
         <div><small>Entregas</small><strong>{metric(doneToday)}</strong></div>
         <div><small>Promedio</small><strong>{dashboard?.today?safeAmount(dashboard.today.average_earning):'—'}</strong></div>
-        <div><small>Distancia</small><strong>{metric(dashboard?.today?.distance_km,' km')}</strong></div>
-       </div></section>
-      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Retirar ganancias</strong></div>
-       <p>Tus retiros estarán disponibles cuando el backend verifique saldo liquidado, cuenta Stripe Connect y autorización.</p>
-       <button className="df-outline" disabled>Retiro no disponible</button></div>
+        <div><small>Km hoy</small><strong>{metric(dashboard?.today?.distance_km,' km')}</strong></div>
+       </div>:<div className="df-no-earnings"><ChartNoAxesCombined size={20}/><span>Aún no tienes ganancias hoy. Se sumarán aquí al completar tu primera entrega.</span></div>}
+       </section>
+      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Configura tus retiros</strong></div>
+       <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
+       <button className="df-outline" disabled>Configurar cuenta bancaria</button>
+       <p className="df-caption">Los retiros reales solo se habilitan con saldo confirmado y autorización de Tala Eats.</p></div>
       <section className="df-section">
        <div className="df-section-title"><h2>Esta semana</h2><strong>{dashboard?.last_7_days?safeAmount(dashboard.last_7_days.reduce((sum,d)=>sum+(Number(d.earnings)||0),0)):'—'}</strong></div>
-       <div className="df-surface df-week-chart" aria-label="Ganancias de los últimos siete días">
-        {(dashboard?.last_7_days??[]).map(d=>{
-         const max=Math.max(1,...(dashboard?.last_7_days??[]).map(x=>Number(x.earnings)||0));
-         return <div key={d.date} title={d.date+' · '+safeAmount(d.earnings)}>
-          <span className="df-week-bar"><span style={{height:(Math.max(0,Number(d.earnings)||0)/max*100)+'%'}}/></span>
-          <small>{new Date(d.date+'T12:00:00').toLocaleDateString('es-MX',{weekday:'short'}).slice(0,2)}</small>
-         </div>;
-        })}
-        {!dashboard?.last_7_days&&<p role="status">No se pudo consultar el historial de ganancias.</p>}
-       </div>
-       <p className="df-caption">Tus cortes y depósitos aparecerán aquí cuando estén disponibles.</p>
+       <div className="df-surface df-week-panel">
+         <div className="df-week-selected" aria-live="polite">
+          <span>{selectedEarningDay?.date===new Date().toISOString().slice(0,10)?'Hoy':selectedEarningDay?.date?
+            new Date(selectedEarningDay.date+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long'}):'Esta semana'}</span>
+          <strong>{selectedEarningDay?safeAmount(selectedEarningDay.earnings):'—'}</strong>
+         </div>
+         <div className="df-week-chart" role="group" aria-label="Ganancias de los últimos siete días">
+          {weekdays.map(d=>{
+           const max=Math.max(1,...weekdays.map(x=>Number(x.earnings)||0));
+           const selected=d.date===selectedEarningDay?.date;
+           return <button key={d.date} className={'df-week-day'+(selected?' selected':'')} type="button"
+            aria-pressed={selected} aria-label={d.date+' · '+safeAmount(d.earnings)}
+            onClick={()=>setSelectedDay(d.date)}>
+            <span className="df-week-bar"><span style={{height:(Math.max(0,Number(d.earnings)||0)/max*100)+'%'}}/></span>
+            <small>{new Date(d.date+'T12:00:00').toLocaleDateString('es-MX',{weekday:'short'}).slice(0,2)}</small>
+           </button>;
+          })}
+          {!dashboard?.last_7_days&&<p role="status">No se pudo consultar el historial de ganancias.</p>}
+         </div>
+        </div>
+        <p className="df-caption">Tus cortes y depósitos aparecerán aquí cuando estén disponibles.</p>
       </section>
     </>}
     {tab==='perfil'&&<>
