@@ -869,6 +869,7 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
  const [category,setCategory]=useState(item.category??'General');
  const [allergens,setAllergens]=useState(item.allergens??''),[isCombo,setIsCombo]=useState(item.is_combo??false);
  const [photo,setPhoto]=useState<File|null>(null),[imageBroken,setImageBroken]=useState(false);
+ const photoInput=useRef<HTMLInputElement>(null);
  const safePhoto=safeImage(item.image_url);
  useEffect(()=>{setImageBroken(false);},[safePhoto]);
  useEffect(()=>{
@@ -895,7 +896,7 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
  async function upload(){
   if(!photo||busy)return;
   const ok=await run(()=>api.ownerUploadItemPhoto(item.id,photo),'Foto del producto publicada desde el backend.');
-  if(ok)setPhoto(null);
+  if(ok){setPhoto(null);if(photoInput.current)photoInput.current.value='';}
  }
  return <article className={'rp-menu-item rp-catalog-item '+(editing?'is-editing':'')} data-product-id={item.id}>
   <div className="rp-catalog-topline">
@@ -950,7 +951,7 @@ function MenuRow({item,busy,run,editing,onEdit,onClose}:{item:MenuItem;busy:bool
    </form>
    <div className="rp-menu-photo">
     <span className="rp-menu-edit-label">Fotografía del producto</span>
-    <input type="file" accept="image/jpeg,image/png,image/webp" aria-label={'Foto para '+item.name}
+    <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label={'Foto para '+item.name}
      onChange={e=>setPhoto(e.target.files?.[0]??null)}/>
     <button type="button" className="rp-btn outline small" disabled={!photo||busy}
      onClick={()=>void upload()}>Subir foto</button>
