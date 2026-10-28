@@ -9,7 +9,7 @@ import {CustomerPwaInstallNotice} from './components/CustomerPwaInstall';
 import './styles/main.css';
 /* The customer artwork belongs to Pedir comida. Merchant and admin routes must
    never flash the customer onboarding while React initializes. */
-if (/^\/(?:restaurante(?:\/|$)|admin\/)/.test(window.location.pathname)) {
+if (/^\/(?:restaurante(?:\/|$)|repartidor(?:\/|$)|admin\/)/.test(window.location.pathname)) {
  document.getElementById('tala-first-paint')?.remove();
 }
 
