@@ -8,8 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "check": "npm run test && npm run build && npm run build:restaurante",
-    "build:restaurante": "tsc --noEmit && vite build --config vite.restaurante.config.ts"
+    "check": "npm run test && npm run build && npm run build:restaurante && npm run build:repartidor",
+    "build:restaurante": "tsc --noEmit && vite build --config vite.restaurante.config.ts",
+    "build:repartidor": "tsc --noEmit && vite build --config vite.repartidor.config.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
