@@ -345,6 +345,28 @@ for(const width of widths){
  if(width===390)await page.screenshot({path:`${dir}/390-producto-editor.png`,fullPage:true});
  await page.getByRole('button',{name:'Cancelar',exact:true}).click();
  if(await page.locator('.rp-catalog-editor').count())throw Error('Cancel did not close the product editor');
+ if(width===390){
+  // Simulate a backend outage without ANY writes or real financial activity.
+  await openTab(page,width,'pedidos');
+  await page.getByRole('heading',{name:'Pedidos',exact:true}).waitFor();
+  await ctx.route('**/api/v1/owner/orders**',route=>route.fulfill({
+   status:503,contentType:'application/json',
+   body:JSON.stringify({detail:'QA synthetic backend unavailable'})
+  }));
+  await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+  await page.locator('.rp-outage').waitFor({timeout:12000});
+  if(await page.locator('.rp-sidebar .rp-nav-item em').count()>0)
+   throw Error('Stale order count leaked while backend failed');
+  if((await page.locator('.rp-top-identity h1').textContent())!=='Restaurantes')
+   throw Error('Stale merchant identity remains after fail-closed sync');
+  if(await page.locator('.rp-order-card').count()>0)
+   throw Error('Stale orders remain after backend outage');
+  await ctx.unroute('**/api/v1/owner/orders**');
+  await page.locator('.rp-outage').getByRole('button',{name:'Reintentar'}).click();
+  await page.getByText('Pedido #8101').waitFor({timeout:12000});
+  if((await page.locator('.rp-top-identity h1').textContent())!=='Antojitos La Terraza')
+   throw Error('Authorized store did not return after successful retry');
+ }
  await ctx.close();
 }
 {
