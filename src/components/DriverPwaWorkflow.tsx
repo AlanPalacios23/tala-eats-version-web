@@ -356,11 +356,27 @@ export function DriverPwaWorkflow(){
    {sheet&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setSheet(null)}>
     <section className="df-sheet" role="dialog" aria-modal="true" aria-label="Detalle de perfil" onClick={e=>e.stopPropagation()}>
      <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setSheet(null)}><X size={21}/></button>
-     <h2>{sheet==='vehicle'?'Mi vehículo':sheet==='documents'?'Mis documentos':sheet==='security'?'Seguridad':'Centro de ayuda'}</h2>
-     {sheet==='vehicle'&&<p>{profile?.vehicle||'Vehículo sin verificar'} · {maskedDriverPlate(profile?.plate)}. Las modificaciones se validan desde ADMIN.</p>}
-     {sheet==='documents'&&<p>Tu documentación se revisa en el proceso de aprobación. Si necesitas actualizarla, contacta al equipo de Tala Eats.</p>}
-     {sheet==='security'&&<p>La autenticación, las sesiones y el 2FA son controlados por el backend. Nunca compartas tus credenciales ni el PIN del cliente.</p>}
-     {sheet==='help'&&<p>Si no puedes recoger o entregar un pedido, evita confirmarlo manualmente. Consulta a soporte y conserva la entrega sin cambios hasta verificarla.</p>}
+     <span className="df-sheet-handle" aria-hidden="true"/><h2>{sheet==='vehicle'?'Mi vehículo':sheet==='documents'?'Mis documentos':sheet==='security'?'Seguridad':'Centro de ayuda'}</h2>
+     {sheet==='vehicle'&&<>
+      <p>Datos registrados para tus entregas.</p>
+      <div className="df-detail-row"><span>Tipo</span><strong>{profile?.vehicle||'No registrado'}</strong></div>
+      <div className="df-detail-row"><span>Placa</span><strong>{maskedDriverPlate(profile?.plate)}</strong></div>
+      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> Para cambiar de vehículo, contacta a soporte de repartidores.</div>
+     </>}
+     {sheet==='documents'&&<>
+      <p>Estado de tu documentación.</p>
+      <div className="df-doc-empty"><FileCheck2 size={30}/><strong>Aún no hay documentos verificados</strong>
+       <span>Cuando Tala Eats confirme tu registro, aquí aparecerá el estado de cada documento.</span></div>
+     </>}
+     {sheet==='security'&&<><p>Acceso y sesión</p>
+      <div className="df-detail-row"><span>Correo</span><strong>{session.user?.email||'No disponible'}</strong></div>
+      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> El 2FA y las sesiones se administran desde el servidor. Nunca compartas tus credenciales.</div>
+     </>}
+     {sheet==='help'&&<><p>Problemas frecuentes en una entrega</p>
+      <div className="df-detail-row"><span>No puedo recoger</span><strong>Contacta al comercio</strong></div>
+      <div className="df-detail-row"><span>No puedo entregar</span><strong>Solicita ayuda</strong></div>
+      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> No confirmes entregas ni cobros sin que el backend los autorice.</div>
+     </>}
     </section></div>}
   </div>;
 }
