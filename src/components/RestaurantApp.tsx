@@ -566,8 +566,8 @@ export function RestaurantWorkspace(){
      <Link to="/restaurante/alta" className="rp-btn primary">Ver activación <ArrowRight size={18}/></Link></section>:
     <>
      {tab==='inicio'&&<MerchantOverview {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}}/>}
-     {tab==='cocina'&&<MerchantKitchen {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onRefresh={refresh}/>}
-     {tab==='mas'&&<MerchantMore {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut} accountName={user?.name} accountEmail={user?.email} accountTwoFactorEnabled={user?.two_factor_enabled===true}/>}
+     {tab==='cocina'&&<MerchantKitchen key={restaurant.id} {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onRefresh={refresh}/>}
+     {tab==='mas'&&<MerchantMore key={restaurant.id} {...{restaurant,orders,stats,finance,connect,busy:busy||!syncHealthy,run:doAction,go:setTab}} onSignOut={signOut} accountName={user?.name} accountEmail={user?.email} accountTwoFactorEnabled={user?.two_factor_enabled===true}/>}
      {tab==='pedidos'&&<>
       <div className="rp-heading-row rp-flutter-orders-heading">
        <div><h2>Pedidos</h2>
@@ -678,7 +678,7 @@ export function RestaurantWorkspace(){
        {completedOrders.length>=30&&<p className="rp-legal">Historial reciente limitado a 30 registros de los pedidos consultados, no es el libro contable completo.</p>}
       </section>}
      </>}
-     {tab==='menu'&&<MerchantMenu restaurant={restaurant} busy={busy} run={doAction}/>}
+     {tab==='menu'&&<MerchantMenu key={restaurant.id} restaurant={restaurant} busy={busy} run={doAction}/>}
      {tab==='activacion'&&<>
       <div className="rp-connect-page" aria-label="Activación segura con Stripe Connect">
        <header className="rp-connect-heading">
@@ -753,7 +753,7 @@ export function RestaurantWorkspace(){
        <p className="rp-legal">Abrir el comercio no sustituye la aprobación administrativa, la verificación del titular ni la conciliación de Stripe.</p>
       </section></div>
      </>}
-     {tab==='finanzas'&&<MerchantWallet restaurantId={restaurant.id}
+     {tab==='finanzas'&&<MerchantWallet key={restaurant.id} restaurantId={restaurant.id}
       finance={finance} connect={connect} orders={orders} go={setTab}/>} 
     </>}
    </main>
