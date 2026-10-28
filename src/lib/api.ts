@@ -252,6 +252,20 @@ export const api = {
   ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'cuisine'|'eta_min'|'is_open'|'pickup_enabled'|'address'|'lat'|'lng'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'|'category'|'allergens'|'dietary_tags'|'is_combo'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean;allergens?:string;dietary_tags?:string;is_combo?:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
+  // Capability handshake is REQUIRED before offering registration: the current
+  // LIVE RC8.13 server ignores plates, so do not create incomplete accounts.
+  driverOnboardingCapabilities: () => request<{
+    driver_plate_supported:boolean;driver_documents_supported:boolean;
+    driver_admin_approval_required:boolean;
+  }>('/operations/onboarding-capabilities'),
+  driverOnboardingMine: () => request<Array<{
+    id:number;entity_type:string;status:string;notes?:string;
+  }>>('/operations/onboarding/mine'),
+  driverOnboardingDocument: (file:File) => uploadRestaurantDocument(file),
+  driverOnboardingSubmit: (vehicle:'Motocicleta'|'Automóvil'|'Bicicleta',plate:string,documents:string[]=[]) =>
+    request<{id:number;status:string;entity_type:string}>('/operations/onboarding',
+      json('POST',{entity_type:'driver',business_name:'',tax_id:'',
+        vehicle,plate,payout_account_ref:'',documents})),
   driverProfile: () => request<DriverProfile>('/driver/profile'),
   driverDashboard: () => request<Record<string,unknown>>('/driver/dashboard'),
   driverMine: () => request<Order[]>('/driver/mine?limit=100'),
