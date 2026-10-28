@@ -13,7 +13,7 @@ export default defineConfig({
    // /repartidor client routes to its custom HTML by default.
    server.middlewares.use((req,_res,next)=>{
     const route=(req.url??'').split('?')[0];
-    if(/^\\/repartidor(?:\\/|$)/.test(route)){
+    if(route==='/repartidor'||route.startsWith('/repartidor/')){
      req.url='/repartidores.html';
     }
     next();
