@@ -31,6 +31,18 @@ export function DriverPwaWorkflow(){
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
  const canProgress=driverCanProgressExistingDelivery(readiness,actionOptIn);
+ // Installable driver PWA has its own start_url, not the customer storefront.
+ useEffect(()=>{
+  const manifest=document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  const previousManifest=manifest?.getAttribute('href')??null;
+  const previousTitle=document.title;
+  manifest?.setAttribute('href','/manifest-repartidor.webmanifest');
+  document.title='Tala Eats Repartidor';
+  return()=>{
+   if(manifest&&previousManifest!==null)manifest.setAttribute('href',previousManifest);
+   document.title=previousTitle;
+  };
+ },[]);
  const refresh=useCallback(async()=>{
   try{
    const [p,proof,jobs,offers]=await Promise.all([
