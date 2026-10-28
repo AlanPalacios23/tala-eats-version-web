@@ -345,14 +345,14 @@ export function RestaurantWorkspace(){
  const [pins,setPins]=useState<Record<number,string>>({}),[cashConfirmed,setCashConfirmed]=useState<Record<number,boolean>>({});
  const mounted=useRef(true),requestVersion=useRef(0),busyRef=useRef(false);
  const currentRestaurantId=useRef<number|null>(null);
- const refresh=useCallback(async()=>{
+ const refresh=useCallback(async():Promise<boolean>=>{
   const version=++requestVersion.current;
   setRefreshing(true);
   try{
    // Order operations are the critical path: optional finance/analytics must
    // never keep the merchant staring at an empty dashboard.
    const [r,o]=await Promise.all([api.ownerRestaurant(),api.ownerOrders()]);
-   if(!mounted.current||version!==requestVersion.current)return;
+   if(!mounted.current||version!==requestVersion.current)return false;
    if(!r||!Number.isSafeInteger(r.id)||!Array.isArray(o))
     throw new Error('El backend no devolvió los datos válidos del restaurante.');
    if(o.some(order=>order.restaurant_id!==r.id))
@@ -369,13 +369,14 @@ export function RestaurantWorkspace(){
    const [a,c,f]=await Promise.allSettled([
     api.ownerAnalytics(),api.ownerConnectStatus(r.id),api.ownerFinance()
    ]);
-   if(!mounted.current||version!==requestVersion.current)return;
+   if(!mounted.current||version!==requestVersion.current)return false;
    setStats(a.status==='fulfilled'?a.value:null);
    if(c.status==='fulfilled'){
     try{setConnect(checkedOwnerConnectStatus(c.value,r.id));setConnectError('');}
     catch(e){setConnect(null);setConnectError(e instanceof Error?e.message:'El estado Connect no pudo validarse.');}
    }else {setConnect(null);setConnectError('No hay una cuenta Connect autorizada o no se pudo consultar.');}
    setFinance(f.status==='fulfilled'?f.value:null);
+   return true;
   }catch(e){
    if(mounted.current&&version===requestVersion.current){
     // No assigned shop is a legitimate empty state, not a retry loop.
@@ -383,14 +384,20 @@ export function RestaurantWorkspace(){
      currentRestaurantId.current=null;
      setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
      setOwnerConnectAcknowledged(false);
-     setPins({});setCashConfirmed({});
+     setPins({});setCashConfirmed({});setLastSync(null);setNotice('');
      setSyncHealthy(true);setError('');
     }else{
-     // Do not allow actions against stale orders after a server/session failure.
+     // Fail closed on network/auth errors across the entire workspace,
+     // including notifications and balances outside its guarded main area.
+     currentRestaurantId.current=null;
+     setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
+     setPins({});setCashConfirmed({});setLastSync(null);setNotice('');
+     setOwnerConnectAcknowledged(false);
      setSyncHealthy(false);
      setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
     }
    }
+   return false;
   }finally{
    if(mounted.current&&version===requestVersion.current){setLoading(false);setRefreshing(false);}
   }
@@ -416,7 +423,18 @@ export function RestaurantWorkspace(){
    return false;
   }
   busyRef.current=true;setBusy(true);setError('');setNotice('');
-  try{await work();setNotice(message);await refresh();return true;}
+  try{
+   await work();
+   // A write only qualifies as confirmed after an authorized re-read.
+   const verified=await refresh();
+   if(!verified){
+    setNotice('');
+    setError('La operación fue enviada, pero no pudimos verificar el estado del servidor. Consulta el comercio antes de volver a intentarlo.');
+    return false;
+   }
+   setNotice(message);
+   return true;
+  }
   catch(e){
    // A successful refresh clears setError: report the failed write *after* resync.
    const reason=e instanceof Error?e.message:'La operación no pudo confirmarse en el servidor.';
