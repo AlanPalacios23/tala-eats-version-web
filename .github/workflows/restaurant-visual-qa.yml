@@ -13,6 +13,9 @@ on:
       - 'deploy/talaeats-restaurantes-pwa.service'
       - 'src/lib/api.ts'
       - 'tools/capture-restaurant-qa.mjs'
+      - 'tools/simulate-wallet-stripe-connect.mjs'
+      - 'src/components/MerchantWallet.tsx'
+      - 'src/lib/merchant-connect.ts'
       - 'tools/serve-merchant-only-qa.mjs'
       - 'src/RestaurantStandalone.tsx'
       - 'src/main-restaurantes.tsx'
@@ -70,7 +73,12 @@ jobs:
           RESTAURANT_QA_ORIGIN: http://127.0.0.1:4174
           RESTAURANT_QA_DIR: artifacts/restaurant-standalone
         run: node tools/capture-restaurant-qa.mjs
-      - name: Upload QA screenshots (synthetic only)
+      - name: Wallet to Stripe Connect simulation (isolated mock; zero LIVE writes)
+        env:
+          RESTAURANT_QA_ORIGIN: http://127.0.0.1:4174
+          RESTAURANT_QA_DIR: artifacts/restaurant-standalone
+        run: node tools/simulate-wallet-stripe-connect.mjs
+      - name: Upload QA screenshots and mock evidence (synthetic only)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -78,5 +86,6 @@ jobs:
           path: |
             artifacts/restaurant-visual/*.png
             artifacts/restaurant-standalone/*.png
+            artifacts/restaurant-standalone/stripe-connect-wallet-simulation.json
           if-no-files-found: warn
           retention-days: 14
