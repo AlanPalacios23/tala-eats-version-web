@@ -7,5 +7,5 @@ export interface Order { id: number; restaurant_id: number; status: string; orde
 export interface PaymentMethod { id: string; label?: string; enabled: boolean; reason?: string; mode?: string; }
 export interface PaymentOptions { methods: PaymentMethod[]; pickup_checkout_supported?: boolean; pickup_quote_supported?: boolean; delivery_checkout_supported?: boolean; delivery_cash_supported?: boolean; delivery_stripe_supported?: boolean; delivery_quote_supported?: boolean; commercial_pricing_version?:string; service_fee_rate?:string|number; delivery_base_fee?:string|number;service_fee_cap?:string|number;delivery_included_km?:string|number;delivery_additional_per_km?:string|number; }
 export interface Quote { total: string | number; subtotal?: string | number; service_fee?: string | number; restaurant_total?: string | number; [key: string]: unknown; }
-export interface DriverProfile { is_online?: boolean; is_verified?: boolean; vehicle?: string; rating?: string; total_deliveries?: number; }
+export interface DriverProfile { is_online?: boolean; is_verified?: boolean; vehicle?: string; plate?:string; rating?: string; total_deliveries?: number; }
 export interface AuthResponse { access_token: string; user: User; }
