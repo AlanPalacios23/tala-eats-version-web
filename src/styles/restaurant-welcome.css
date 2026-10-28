@@ -84,3 +84,64 @@
 .rb-section{padding:65px 18px}.rb-feature-grid{grid-template-columns:1fr;gap:11px}.rb-feature{padding:23px}.rb-feature-icon{margin-bottom:16px}.rb-feature h3{font-size:21px}
 .rb-activation{padding:62px 18px}.rb-steps{padding:21px}.rb-final-cta{padding:55px 18px}.rb-footer{padding:25px 18px;flex-direction:column;align-items:flex-start}.rb-footer .rb-wordmark{font-size:23px}}
 @media(prefers-reduced-motion:reduce){.rb-btn{transition:none}.rb-btn:hover{transform:none}}
+
+
+/* Native Flutter 0.7.6 WelcomeScreen mirrored on phone/tablet.
+   Keep the existing marketing landing on wide web; mobile opens an honest
+   three-step merchant setup ticket with a fixed lower CTA, not a hero grid. */
+.rb-flutter-welcome{display:none}
+@media(max-width:839px){
+ .rb-welcome{background:#F1F2EF;overflow-x:clip;min-height:100dvh}
+ .rb-welcome>.rb-header,.rb-welcome>#rb-main,.rb-welcome>.rb-footer{display:none!important}
+ .rb-flutter-welcome{
+  display:flex;flex-direction:column;min-height:100dvh;
+  width:100%;max-width:520px;margin:0 auto;
+  padding:calc(24px + env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+  position:relative;color:#1C1D1B;
+ }
+ .rb-flutter-welcome:before,.rb-flutter-welcome:after{
+  content:"";position:absolute;pointer-events:none;border-radius:50%;
+  background:rgba(255,90,31,.06);right:-200px;top:-210px;
+  width:480px;height:480px}
+ .rb-flutter-welcome:after{background:rgba(255,90,31,.07);
+  right:-110px;top:-120px;width:300px;height:300px}
+ .rb-flutter-content{position:relative;z-index:1;flex:1;min-width:0}
+ .rb-flutter-content .rb-wordmark{font-size:27px;color:#1C1D1B}
+ .rb-flutter-content .rb-wordmark-tag{font-size:8px}
+ .rb-flutter-content>h1{font-size:clamp(30px,8.8vw,41px)!important;
+  line-height:1.08;letter-spacing:-1.1px;margin:40px 0 14px;
+  font-weight:820;color:#1C1D1B}
+ .rb-flutter-content>p{font-size:15px;line-height:1.58;margin:0 0 28px;color:#525750}
+ .rb-flutter-existing{padding:12px;border:1px solid #E0E2DC;background:#fff;
+  border-radius:12px;font-size:13px;margin:-8px 0 17px}
+ .rb-flutter-ticket{border:1px solid #E0E2DC;background:#fff;
+  border-radius:19px;overflow:hidden;box-shadow:none}
+ .rb-flutter-ticket-head{display:flex;align-items:center;justify-content:space-between;
+  background:#F8F7F2;border-bottom:1px dashed #C9CCC5;padding:16px;gap:8px}
+ .rb-flutter-ticket-head h2{margin:0;font-size:18px;font-weight:750}
+ .rb-flutter-ticket-head span{font-size:12px;color:#525750}
+ .rb-flutter-ticket-steps{padding:19px 16px 18px;display:grid;gap:0}
+ .rb-flutter-ticket-steps>div{display:flex;align-items:stretch;gap:14px;min-height:78px}
+ .rb-flutter-ticket-steps>div:not(:last-child)>b:after{content:"";
+  display:block;position:absolute;top:34px;bottom:-49px;left:14px;
+  width:2px;background:#E0E2DC}
+ .rb-flutter-ticket-steps b{position:relative;width:30px;height:30px;min-width:30px;
+  border-radius:50%;background:#1C1D1B;color:#fff;display:grid;
+  place-items:center;font-size:14px;font-weight:800}
+ .rb-flutter-ticket-steps span{display:grid;align-content:start;gap:4px;
+  padding:3px 0 14px;min-width:0}
+ .rb-flutter-ticket-steps strong{font-size:15px;color:#1C1D1B}
+ .rb-flutter-ticket-steps small{font-size:12px;line-height:1.45;color:#525750}
+ .rb-flutter-ticket-foot{display:flex;align-items:center;gap:8px;
+  background:#F8F7F2;border-top:1px dashed #C9CCC5;padding:14px 16px;
+  font-size:12px;font-weight:650;color:#525750}
+ .rb-flutter-ticket-foot svg{flex-shrink:0}
+ .rb-flutter-actions{position:relative;z-index:1;margin-top:22px;display:grid;gap:8px;
+  padding:10px 0 0}
+ .rb-flutter-actions a{display:flex;align-items:center;justify-content:center;
+  border-radius:14px;min-height:52px;font-size:15px;font-weight:800;
+  text-align:center;width:100%}
+ .rb-flutter-primary{background:#FF5A1F;color:#1C1D1B}
+ .rb-flutter-secondary{background:transparent;color:#1C1D1B}
+ .rb-flutter-primary:focus-visible,.rb-flutter-secondary:focus-visible{outline-offset:3px}
+}

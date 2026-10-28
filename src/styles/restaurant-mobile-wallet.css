@@ -211,3 +211,118 @@
  .rp-layout .rm-more-column .rp-setting .rp-btn{min-height:42px}
  .rp-layout .rm-more-column .rp-legal{font-size:10px}
 }
+
+/* Premium clean | 2026-10-27.
+   Operational-only content. No new images or promotional visual chrome. */
+.rp-layout .rp-sidebar-label{display:block;color:#dce5dc;font-size:15px;font-weight:700;
+ padding:7px 12px;letter-spacing:-.3px}
+.rp-layout .rp-sidebar-footnote,.rp-layout .rp-side-caption{display:none}
+.rp-layout .rp-topbar{min-height:78px}
+.rp-layout .rp-topbar h1{font-size:clamp(19px,2.2vw,26px);letter-spacing:-.45px}
+.rp-layout .rp-top-actions .rp-open-badge{border:0;box-shadow:none}
+.rp-layout .rp-top-actions .rp-icon-btn{background:transparent;border:0;box-shadow:none}
+.rp-layout .rp-nav-item{box-shadow:none}
+.rp-layout .rp-heading-row h2,.rp-layout .rm-title h2{font-weight:790}
+.rp-layout .rp-stats>div,.rp-layout .rm-metrics>div,
+.rp-layout .rp-panel-card,.rp-layout .rp-order-card,
+.rp-layout .rp-catalog-item{box-shadow:none}
+.mw-balance-mark,.mw-overline,.mw-modal-icon{display:none}
+.mw-balance{box-shadow:none}
+.mw-balance>p{margin:0;color:#cbd6ca}
+.mw-balance>strong{font-weight:780}
+.mw-summary{background:#fff;border:1px solid #e6ebe4;border-radius:14px;gap:0}
+.mw-summary>div{border:0;border-radius:0;padding:14px}
+.mw-summary>div+div{border-left:1px solid #edf0eb}
+.mw-entry-icon{display:none}
+.mw-activity-heading span{display:none}
+.mw-entries{padding:0 13px}
+.mw-entry{gap:7px}
+.mw-disclaimer{display:none}
+.mw-connect{border-color:#e6ebe4;background:#fff;color:#ba5e29;min-height:52px}
+.mw-connect strong{font-size:12px}
+@media(max-width:850px){
+ /* No brand rail, logos, tagline or faux desktop navbar on any authenticated phone screen. */
+ .rp-layout{display:block!important;min-height:100dvh;background:#fbfcfa}
+ .rp-layout .rp-sidebar{display:none!important}
+ .rp-layout .rp-workspace{min-height:100dvh}
+ .rp-layout .rp-topbar{padding:9px 17px!important;min-height:57px!important;
+  background:#fff;border-bottom:1px solid #eff1ec;gap:10px}
+ .rp-layout .rp-top-identity{flex:1}
+ .rp-layout .rp-topbar h1{font-size:16px!important;font-weight:730;max-width:210px}
+ .rp-layout .rp-top-actions{gap:6px}
+ .rp-layout .rp-top-actions .rp-install-wrap{display:none!important}
+ .rp-layout .rp-top-actions .rp-open-badge{display:none}
+ .rp-layout .rp-top-actions .rp-icon-btn{width:38px;height:38px;padding:9px}
+ .rp-layout .rp-content{padding:17px 14px calc(90px + env(safe-area-inset-bottom))}
+ .rp-layout .rp-heading-row p,.rp-layout .rm-title p{display:none}
+ .rp-layout .rp-heading-row h2,.rp-layout .rm-title h2,
+ .rp-layout .rm-heading-row h2{font-size:24px;letter-spacing:-.6px}
+ .rm-mobile-home-header h2{font-size:25px;margin:0}
+ .rm-mobile-home-header>div>span{display:none}
+ .rm-mobile-home{gap:10px}
+ .rm-mobile-primary-task{min-height:104px;padding:18px;border-radius:13px}
+ .rm-mobile-primary-task strong{font-size:38px}
+ .rm-mobile-tasks{gap:8px}
+ .rm-mobile-tasks button{min-height:73px;justify-content:flex-start;padding:14px;
+  background:#fff;box-shadow:none;border-radius:12px}
+ .rm-mobile-tasks button>span{gap:4px}
+ .rm-mobile-tasks b{font-size:22px}
+ .rm-mobile-tasks small{font-size:11px}
+ .rm-mobile-open-toggle{background:transparent;border:0;border-bottom:1px solid #e9eeea;
+  border-radius:0;justify-content:flex-start;padding:12px 4px;min-height:45px}
+ .rm-mobile-stock{background:#fffdfb;border:1px solid #f3e9de;border-radius:9px}
+ .rp-layout .rp-mobile-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));
+  padding:6px 6px max(9px,env(safe-area-inset-bottom));border-color:#eef1ec;
+  box-shadow:none;background:#fff}
+ .rp-layout .rp-mobile-tabs button{padding:14px 2px 12px;min-height:48px;border-radius:0}
+ .rp-layout .rp-mobile-tabs button svg{display:none}
+ .rp-layout .rp-mobile-tabs button span{font-size:11px;font-weight:700}
+ .rp-layout .rp-mobile-tabs button.selected{background:none;color:#d75e26;
+  box-shadow:inset 0 3px #e86e32}
+ .rp-layout .rm-kitchen-toolbar{border:0;box-shadow:none;padding:0;background:transparent}
+ .rp-layout .rm-kitchen-lane{background:#fafbf8;border:1px solid #e9eee8;box-shadow:none}
+ .rp-layout .rm-ticket{border-color:#e6ebe5}
+ .rp-layout .rm-kitchen-lane>header{padding:1px 4px 8px}
+ .rp-layout .rp-order-card{border-radius:11px;box-shadow:none}
+ .rp-layout .rp-catalog-item{padding:11px;border-radius:11px}
+ .rp-layout .rp-menu-visual{width:56px;min-width:56px;height:58px}
+ .rp-layout .rp-menu-grid{gap:7px}
+ .rp-layout .rp-menu-count{display:none}
+ .rp-layout .rp-catalog-heading-actions .rp-btn{padding:11px 13px;min-height:43px}
+ .rp-layout .rp-catalog-heading-actions .rp-btn>svg{display:none}
+ .rp-layout .rp-menu-controls label>svg{display:none}
+ .rp-layout .rp-order-controls>label{padding-left:10px}
+ .rp-layout .rp-menu-item>svg{display:none}
+ .rp-layout .rp-catalog-empty>svg{display:none}
+ .rp-layout .rm-mobile-more-shortcuts{gap:0;border:1px solid #e6ece6;background:#fff;
+  border-radius:12px;padding:0 12px;overflow:hidden}
+ .rp-layout .rm-mobile-more-shortcuts button{border:0;border-radius:0;padding:16px 2px;
+  min-height:53px;background:transparent;color:#2b352d}
+ .rp-layout .rm-mobile-more-shortcuts button+button{border-top:1px solid #edf0eb}
+ .rp-layout .rm-mobile-more-shortcuts strong{font-size:14px}
+ .rp-layout .rm-mobile-more-shortcuts small{font-size:10px}
+ .rp-layout .rm-more-duo>.rm-more-column{order:0}
+ .rp-layout .rm-more-column>.rp-panel-card{border-radius:12px}
+ .rp-layout .rm-more-profile,.rp-layout .rm-team-fold{box-shadow:none;border-radius:12px}
+ .rp-layout .rm-more-column .rp-setting{gap:7px}
+ .rp-layout .rm-more-column .rp-setting .rp-btn{padding:8px 12px}
+ .mw-screen{gap:12px}
+ .mw-heading h2{font-size:26px}
+ .mw-balance{padding:21px 17px;border-radius:15px;gap:9px}
+ .mw-balance>p{font-size:12px}
+ .mw-balance>strong{font-size:39px}
+ .mw-balance-note{font-size:11px}
+ .mw-withdraw{border-radius:10px;margin-top:9px;min-height:49px;font-size:13px}
+ .mw-summary>div{padding:13px 11px}
+ .mw-summary>div strong{font-size:19px}
+ .mw-summary>div small{font-size:10px}
+ .mw-entry{min-height:56px}
+ .mw-modal h3{font-size:21px}
+}
+@media(max-width:360px){
+ .rp-layout .rp-content{padding-inline:11px}
+ .rp-layout .rp-topbar{padding-inline:12px!important}
+ .rp-layout .rp-mobile-tabs button span{font-size:10px}
+ .mw-summary>div{padding:12px 9px}
+ .mw-summary>div strong{font-size:16px}
+}

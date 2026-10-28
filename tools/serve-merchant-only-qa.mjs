@@ -3,7 +3,7 @@ import {readFile,stat} from 'node:fs/promises';
 import {extname,normalize,resolve,sep} from 'node:path';
 const root=resolve('dist-restaurantes');
 const routeRoot=['/restaurante','/restaurante/acceso','/restaurante/alta','/admin/solicitudes-restaurantes','/admin/conectar-restaurante'];
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.webp':'image/webp'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon','.webp':'image/webp','.ttf':'font/ttf'};
 const site=createServer(async(req,res)=>{
  const url=new URL(req.url??'/', 'http://127.0.0.1:4174');
  const path=url.pathname;

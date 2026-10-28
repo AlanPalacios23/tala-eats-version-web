@@ -1,15 +1,14 @@
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {
- ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
- MapPin,PackageCheck,Settings2,ShieldCheck,
- ShoppingBag,Store,Users,Wallet
+ ArrowLeft,ArrowRight,AlertTriangle,ChefHat,ClipboardList,Clock3,
+ MapPin,PackageCheck,RefreshCw,Settings2,Wallet,Edit3,ChevronRight,Info,X,ShieldCheck,
+ ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
 import type {MerchantFinance} from '../lib/api';
 import {nextMerchantState} from '../lib/restaurant-state';
 import {kitchenOrders,orderElapsedLabel,kitchenOrderTypeLabel} from '../lib/merchant-kitchen';
-import type {KitchenOrderFilter} from '../lib/merchant-kitchen';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
 import type {Order,Restaurant} from '../lib/types';
 import '../styles/restaurant-parity.css';
@@ -20,6 +19,9 @@ export type MerchantExperienceProps={
  restaurant:Restaurant;orders:Order[];stats:Stats|null;finance:MerchantFinance|null;
  connect:MerchantConnectStatus|null;busy:boolean;run:MerchantAction;
  go:(tab:MerchantTab)=>void;
+ onSignOut?:()=>Promise<void>;
+ onRefresh?:()=>Promise<boolean>;
+ accountName?:string;accountEmail?:string;accountTwoFactorEnabled?:boolean;
 };
 function CardTitle({eyebrow,title,description}:{eyebrow:string;title:string;description?:string}){
  return <div className="rm-title"><span className="rp-eyebrow">{eyebrow}</span><h2>{title}</h2>{description&&<p>{description}</p>}</div>;
@@ -28,7 +30,7 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
  const live=orders.filter(o=>!['cancelled','delivered'].includes(o.status));
  const incoming=live.filter(o=>o.status==='received');
  const ready=live.filter(o=>o.status==='ready');
- const lowStock=(restaurant.menu_items??[]).filter(i=>i.is_available&&i.stock>0&&i.stock<10);
+ const lowStock=(restaurant.menu_items??[]).filter(i=>i.is_available&&i.stock>0&&i.stock<=10);
  const soldOut=(restaurant.menu_items??[]).filter(i=>i.stock===0||!i.is_available);
  const notPaid=live.filter(i=>i.payment_method==='stripe'&&i.payment_status!=='paid');
  const attention=[
@@ -38,27 +40,49 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
   {label:'Productos agotados o pausados',count:soldOut.length,detail:'Revisar disponibilidad del menú',tab:'menu' as MerchantTab},
  ];
  return <div className="rm-experience">
-  <section className="rm-mobile-home" aria-label="Inicio rápido del restaurante">
-   <div className="rm-mobile-home-header">
-    <div><span>HOY EN TU NEGOCIO</span><h2>Inicio</h2></div>
-    <span className={'rm-mobile-business-status '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
-   </div>
-   <button className="rm-mobile-primary-task" onClick={()=>go('pedidos')}>
-    <span><small>Pedidos nuevos</small><strong>{incoming.length}</strong><em>{incoming.length?'Por aceptar':'Todo al día'}</em></span>
-    <ArrowRight size={22}/>
+  <section className="rm-mobile-home flutter-home" aria-label="Inicio rápido del restaurante">
+   <header className="flutter-store-heading"><div className="flutter-store-thumb">{safeImage(restaurant.cover_image_url)?
+    <img src={safeImage(restaurant.cover_image_url)??undefined} alt="" loading="lazy"/>:<Store size={24}/>}</div>
+    <div><span>Tu negocio</span><h2>{restaurant.name}</h2></div></header>
+   <section className={'flutter-open-card '+(restaurant.is_open?'is-open':'')} aria-label="Estado del restaurante">
+    <span className="flutter-open-dot" aria-hidden="true"/>
+    <div><strong>{restaurant.is_open?'Abierto':'Cerrado'}</strong>
+     <small>{restaurant.is_open?'Recibiendo pedidos':'Pedidos nuevos en pausa'}</small></div>
+    <label className="flutter-switch"><input type="checkbox" checked={restaurant.is_open} disabled={busy}
+     aria-label="Recibir pedidos nuevos" onChange={event=>{
+      if(!event.target.checked&&!window.confirm('¿Pausar pedidos? Los pedidos activos no se afectan.'))return;
+      void run(()=>api.ownerUpdateRestaurant({is_open:event.target.checked}),
+       event.target.checked?'Restaurante abierto.':'Pedidos pausados.');
+     }}/><span aria-hidden="true"/></label>
+   </section>
+   <h3 className="flutter-section-heading">Requiere atención</h3>
+   <section className="flutter-attention" aria-label="Pendientes de atención">
+    {incoming.length===0&&ready.length===0&&lowStock.length===0&&soldOut.length===0?
+     <p className="flutter-all-clear">Todo al día</p>:<>
+     {incoming.length>0&&<button type="button" onClick={()=>go('pedidos')}><span>Pedidos nuevos</span><b>{incoming.length}</b><ArrowRight size={17}/></button>}
+     {ready.length>0&&<button type="button" onClick={()=>go('pedidos')}><span>Pedidos listos</span><b>{ready.length}</b><ArrowRight size={17}/></button>}
+     {lowStock.length>0&&<button type="button" onClick={()=>go('menu')}><span>Stock bajo</span><b>{lowStock.length}</b><ArrowRight size={17}/></button>}
+     {soldOut.length>0&&<button type="button" onClick={()=>go('menu')}><span>Agotados o pausados</span><b>{soldOut.length}</b><ArrowRight size={17}/></button>}
+    </>}
+   </section>
+   {notPaid.length>0&&<p className="rm-mobile-payment-warning" role="status"><AlertTriangle size={16}/>{notPaid.length} pago(s) sin conciliar; no preparar.</p>}
+   <button type="button" className="flutter-kitchen-entry" onClick={()=>go('cocina')}>
+    <span className="flutter-kitchen-symbol"><ChefHat size={23}/></span>
+    <span className="flutter-kitchen-copy"><strong>Modo cocina</strong>
+     <small>{incoming.length} nuevos · {live.filter(o=>o.status==='confirmed'||o.status==='preparing').length} en preparación · {ready.length} listos</small></span>
+    <ArrowRight size={19}/>
    </button>
-   <div className="rm-mobile-tasks">
-    <button onClick={()=>go('cocina')}><ChefHat size={19}/><span><b>{live.filter(o=>o.status==='confirmed'||o.status==='preparing').length}</b><small>En cocina</small></span><ArrowRight size={16}/></button>
-    <button onClick={()=>go('pedidos')}><PackageCheck size={19}/><span><b>{ready.length}</b><small>Listos</small></span><ArrowRight size={16}/></button>
+   <div className="flutter-section-row"><h3 className="flutter-section-heading">En curso</h3>
+    {live.length>0&&<button type="button" onClick={()=>go('pedidos')}>Ver pedidos</button>}</div>
+   <div className="flutter-current-orders">
+    {live.length===0?<p>No hay pedidos en curso</p>:live.slice(0,5).map(o=>
+     <button key={o.id} type="button" onClick={()=>go('pedidos')}>
+      <span><b>#{o.id}</b><small>{o.items?.map(i=>i.name_snapshot).slice(0,2).join(', ')||'Pedido'}</small></span>
+      <strong>{pesos(o.total)}</strong></button>)}
    </div>
-   {notPaid.length>0&&<p className="rm-mobile-payment-warning"><AlertTriangle size={17}/>{notPaid.length} pago(s) pendientes de verificar. No preparar.</p>}
-   {lowStock.length>0&&<button className="rm-mobile-stock" onClick={()=>go('menu')}>Stock bajo · {lowStock.length} producto(s)<ArrowRight size={17}/></button>}
-   <button className="rm-mobile-open-toggle" disabled={busy}
-    onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar nuevos pedidos?'))return;
-      void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),
-        restaurant.is_open?'Restaurante cerrado.':'Restaurante abierto según el backend.');}}>
-    <span>{restaurant.is_open?'Pausar nuevos pedidos':'Abrir restaurante'}</span><ArrowRight size={18}/>
-   </button>
+   <h3 className="flutter-section-heading">Resumen</h3>
+   <div className="flutter-summary"><div><span>Pedidos activos</span><strong>{live.length}</strong></div>
+    <div><span>Entregados registrados</span><strong>{stats?.delivered??'—'}</strong></div></div>
   </section>
   <div className="rm-desktop-home">
   <div className="rm-heading-row"><CardTitle eyebrow="CENTRO DE OPERACIONES" title="Así va tu restaurante" description="Estado real del comercio y los pedidos recuperados del servidor."/>
@@ -92,47 +116,57 @@ export function MerchantOverview({restaurant,orders,stats,busy,run,go}:MerchantE
   </div>
  </div>;
 }
-export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
- const lanes=[{id:'received',label:'Por aceptar'},{id:'confirmed',label:'Confirmados'},{id:'preparing',label:'En preparación'},{id:'ready',label:'Listos'}] as const;
- const [expanded,setExpanded]=useState(true);
- const [mode,setMode]=useState<KitchenOrderFilter>('all');
+export function MerchantKitchen({orders,busy,run,go,onRefresh}:MerchantExperienceProps){
+ // Flutter v0.7.6: three KDS lanes. Confirmed and preparing are the same
+ // operational column; on narrow screens only the selected column is visible.
+ const lanes=[
+  {id:'received',label:'Nuevos',states:['received']},
+  {id:'kitchen',label:'Preparando',states:['confirmed','preparing']},
+  {id:'ready',label:'Listos',states:['ready']}
+ ] as const;
+ type LaneId=(typeof lanes)[number]['id'];
+ const [selectedLane,setSelectedLane]=useState<LaneId>('received');
  const [now,setNow]=useState(()=>Date.now());
  useEffect(()=>{
-  // Clock is for elapsed time since the server placed an order; never an ETA.
-  const interval=window.setInterval(()=>{if(document.visibilityState==='visible')setNow(Date.now());},30000);
-  return()=>window.clearInterval(interval);
+  const tick=()=>{if(document.visibilityState==='visible')setNow(Date.now());};
+  const interval=window.setInterval(tick,30000);
+  document.addEventListener('visibilitychange',tick);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',tick);};
  },[]);
  const allActive=kitchenOrders(orders);
- const visible=kitchenOrders(orders,mode);
- const filters=([
-  {id:'all',label:'Todas',count:allActive.length},
-  {id:'pickup',label:'Recoger en tienda',count:allActive.filter(o=>o.order_type==='pickup').length},
-  {id:'delivery',label:'A domicilio',count:allActive.filter(o=>o.order_type==='delivery').length}
- ] as const);
+ const inProgress=allActive.filter(o=>o.status==='confirmed'||o.status==='preparing');
+ const oldest=inProgress.reduce<Order|null>((prev,o)=>{
+  const t=Date.parse(o.created_at);
+  return Number.isFinite(t)&&(!prev||t<Date.parse(prev.created_at))?o:prev;
+ },null);
+ const subtitle=oldest?'Más antiguo en cocina: '+orderElapsedLabel(oldest.created_at,now):'Sin pedidos en preparación';
+ const timeLabel=new Date(now).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',timeZone:'America/Mexico_City'});
  return <div className="rm-experience rm-kitchen">
-  <div className="rm-heading-row">
-   <CardTitle eyebrow="MODO COCINA · KDS" title="Comandas en preparación"
-    description="Vista priorizada por hora de creación, con pedidos y pagos confirmados por el servidor."/>
-   <button type="button" className="rp-btn outline small" onClick={()=>setExpanded(p=>!p)}
-    aria-pressed={!expanded}>{expanded?'Vista compacta':'Vista ampliada'}</button>
-  </div>
-  <section className="rm-kitchen-toolbar" aria-label="Filtrar comandas por modalidad">
-   <div className="rm-kitchen-filter-pills">{filters.map(filter=><button type="button" key={filter.id}
-    aria-pressed={mode===filter.id} className={mode===filter.id?'selected':''}
-    onClick={()=>setMode(filter.id)}>{filter.label}<b>{filter.count}</b></button>)}</div>
-   <span><Clock3 size={16}/> {visible.length} comandas · Actualización automática cada 20 s cuando esta vista está abierta</span>
-  </section>
+  <header className="flutter-kds-header">
+   <button type="button" onClick={()=>go('inicio')} aria-label="Volver a Inicio"><ArrowLeft size={20}/></button>
+   <div className="flutter-kds-title"><h2>Cocina</h2><small>{subtitle}</small></div>
+   <time className="flutter-kds-clock" aria-label={'Hora actual '+timeLabel}>{timeLabel}</time>
+   <button type="button" className="flutter-kds-refresh" aria-label="Actualizar Cocina"
+    disabled={busy||!onRefresh} onClick={()=>void onRefresh?.()}><RefreshCw size={20}/></button>
+  </header>
+  <nav className="flutter-kds-lane-tabs" aria-label="Carriles de Cocina">
+   {lanes.map(lane=>{
+    const count=allActive.filter(o=>(lane.states as readonly string[]).includes(o.status)).length;
+    return <button key={lane.id} type="button" className={selectedLane===lane.id?'selected':''}
+     aria-pressed={selectedLane===lane.id} onClick={()=>setSelectedLane(lane.id)}>
+     <span className={'rm-lane-dot '+lane.id}/><span>{lane.label}</span><b>{count}</b>
+    </button>;
+   })}
+  </nav>
   {allActive.length===0&&<div className="rm-kitchen-empty-state">
    <PackageCheck size={36}/><h3>Todo al día en cocina</h3>
    <p>Cuando llegue un pedido autorizado aparecerá aquí sin tener que recargar la aplicación.</p>
   </div>}
-  {allActive.length>0&&visible.length===0&&<div className="rm-kitchen-empty-state">
-   <PackageCheck size={32}/><h3>Sin comandas en esta modalidad</h3>
-   <p>Prueba la pestaña Todas para revisar el resto de tus pedidos.</p>
-  </div>}
-  {visible.length>0&&<div className={'rm-kitchen-grid '+(expanded?'':'compact')}>{lanes.map(lane=>{
-    const list=visible.filter(o=>o.status===lane.id);
-    return <section className={'rm-kitchen-lane '+(list.length===0?'rm-kitchen-lane-empty':'')} key={lane.id} aria-label={lane.label}>
+  {allActive.length>0&&<div className="rm-kitchen-grid">{lanes.map(lane=>{
+    const list=allActive.filter(o=>(lane.states as readonly string[]).includes(o.status));
+    return <section className={'rm-kitchen-lane '+(selectedLane===lane.id?'is-selected ':'')+
+     (list.length===0?'rm-kitchen-lane-empty':'')} key={lane.id}
+     data-kds-lane={lane.id} aria-label={lane.label}>
      <header><span className={'rm-lane-dot '+lane.id}/><strong>{lane.label}</strong><b>{list.length}</b></header>
      {list.length===0?<div className="rm-kitchen-empty"><PackageCheck size={25}/> Sin comandas</div>:list.map(o=>{
       const next=nextMerchantState(o);
@@ -148,7 +182,9 @@ export function MerchantKitchen({orders,busy,run,go}:MerchantExperienceProps){
        </div>
        <div className="rm-ticket-items">{(o.items??[]).map((i,n)=><p key={n}><strong>{i.quantity}×</strong> {i.name_snapshot}</p>)}</div>
        <span className={'rm-payment-indicator '+(paymentPending?'pending':'')}>
-        {o.payment_method==='cash'?'Efectivo · confirmar al recoger':paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
+        {o.payment_method==='cash'?
+          (o.order_type==='pickup'?'Efectivo · cobrar al recoger':'Efectivo · cobro en entrega'):
+          paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
        </span>
        {paymentPending&&<div className="rm-ticket-warning"><AlertTriangle size={15}/> Sin pago conciliado. No preparar ni volver a cobrar.</div>}
        {next&&<button disabled={busy} className="rp-btn primary small"
@@ -186,13 +222,45 @@ function MerchantTeam({restaurantId,busy,run}: {restaurantId:number;busy:boolean
   </form>
  </section>;
 }
-export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantExperienceProps){
+export function MerchantMore({restaurant,connect,busy,run,go,onSignOut,accountName,accountEmail,accountTwoFactorEnabled}:MerchantExperienceProps){
+ const profileRef=useRef<HTMLDetailsElement>(null),teamRef=useRef<HTMLDetailsElement>(null);
+ const openSection=(ref:{current:HTMLDetailsElement|null})=>{
+  if(!ref.current)return;
+  ref.current.open=true;ref.current.scrollIntoView({behavior:'smooth',block:'start'});
+ };
  const [name,setName]=useState(restaurant.name),[description,setDescription]=useState(restaurant.description??'');
  const [cuisine,setCuisine]=useState(restaurant.cuisine??''),[eta,setEta]=useState(restaurant.eta_min??30);
  const [address,setAddress]=useState(restaurant.address??'');
  const [lat,setLat]=useState(restaurant.lat==null?'':String(restaurant.lat)),[lng,setLng]=useState(restaurant.lng==null?'':String(restaurant.lng));
  const [locationError,setLocationError]=useState('');
  const [cover,setCover]=useState<File|null>(null),[uploadBusy,setUploadBusy]=useState(false);
+ const coverInput=useRef<HTMLInputElement>(null);
+ const [aboutOpen,setAboutOpen]=useState(false);
+ const aboutRef=useRef<HTMLElement>(null),aboutTrigger=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{
+  if(!aboutOpen)return;
+  const before=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  aboutRef.current?.querySelector<HTMLButtonElement>('.rm-about-close')?.focus();
+  const onKey=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'){event.preventDefault();setAboutOpen(false);return;}
+   if(event.key!=='Tab')return;
+   const buttons=Array.from(aboutRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')??[]);
+   const first=buttons[0],last=buttons[buttons.length-1];
+   if(!first||!last)return;
+   if(!aboutRef.current?.contains(document.activeElement)){event.preventDefault();first.focus();}
+   else if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener('keydown',onKey);
+  return()=>{
+   document.removeEventListener('keydown',onKey);
+   document.body.style.overflow=previousOverflow;
+   const target=aboutTrigger.current?.isConnected?aboutTrigger.current:before;
+   if(target?.isConnected)target.focus({preventScroll:true});
+  };
+ },[aboutOpen]);
  useEffect(()=>{setName(restaurant.name);setDescription(restaurant.description??'');setCuisine(restaurant.cuisine??'');setEta(restaurant.eta_min??30);setAddress(restaurant.address??'');setLat(restaurant.lat==null?'':String(restaurant.lat));setLng(restaurant.lng==null?'':String(restaurant.lng));},[restaurant.id,restaurant.name,restaurant.description,restaurant.cuisine,restaurant.eta_min,restaurant.address,restaurant.lat,restaurant.lng]);
  function captureLocation(){
   setLocationError('');
@@ -205,33 +273,98 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
   );
  }
  async function saveProfile(e:FormEvent){
-  e.preventDefault();if(name.trim().length<2||address.trim().length>0&&address.trim().length<5)return;
-  const hasLat=lat.trim()!=='';const hasLng=lng.trim()!=='';
-  const latitude=Number(lat),longitude=Number(lng);
-  if(hasLat!==hasLng||hasLat&&(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude< -90||latitude>90||longitude< -180||longitude>180)){
-   setLocationError('Escribe una latitud y longitud válidas, juntas.');return;
+   e.preventDefault();
+   if(name.trim().length<2||!Number.isInteger(eta)||eta<5||eta>180||
+    (address.trim().length>0&&address.trim().length<5)){
+    setLocationError('Verifica el nombre, la dirección y un tiempo de preparación entre 5 y 180 minutos.');
+    return;
+   }
+   const hasLat=lat.trim()!=='';const hasLng=lng.trim()!=='';
+   const latitude=Number(lat),longitude=Number(lng);
+   if(hasLat!==hasLng||hasLat&&(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude< -90||latitude>90||longitude< -180||longitude>180)){
+    setLocationError('Escribe una latitud y longitud válidas, juntas.');return;
+   }
+   const locationChanged=lat!==(restaurant.lat==null?'':String(restaurant.lat))||
+    lng!==(restaurant.lng==null?'':String(restaurant.lng));
+   if(locationChanged){
+    const warning=hasLat?
+     '¿Confirmas que este punto GPS corresponde exactamente a la puerta del restaurante? Afectará futuras cotizaciones de domicilio.':
+     '¿Quitar el punto GPS del restaurante? La entrega a domicilio puede quedar suspendida hasta configurar uno nuevo.';
+    if(!window.confirm(warning))return;
+   }
+   const updated={name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,
+    address:address.trim()};
+   const locationPatch=locationChanged?(hasLat?{lat:latitude,lng:longitude}:{lat:null,lng:null}):{};
+   const ok=await run(()=>api.ownerUpdateRestaurant({...updated,...locationPatch}),'Perfil actualizado desde el backend.');
+   if(ok)setLocationError('');
   }
-  const locationChanged=lat!==(restaurant.lat==null?'':String(restaurant.lat))||lng!==(restaurant.lng==null?'':String(restaurant.lng));
-  if(locationChanged&&hasLat&&!window.confirm('¿Confirmas que este punto GPS corresponde exactamente a la puerta del restaurante? Afectará las futuras cotizaciones de domicilio cuando estén habilitadas.'))return;
-  const updated={name:name.trim(),description:description.trim(),cuisine:cuisine.trim(),eta_min:eta,...(address.trim()?{address:address.trim()}:{})};
-  await run(()=>api.ownerUpdateRestaurant({...updated,...(locationChanged&&hasLat?{lat:latitude,lng:longitude}:{})}),'Perfil actualizado desde el backend.');
- }
- async function uploadCover(){
+  async function uploadCover(){
   if(!cover||busy||uploadBusy)return;
   setUploadBusy(true);
   try{const ok=await run(()=>api.ownerUploadCover(cover),'Foto de portada publicada por el backend.');
-   if(ok)setCover(null);
+   if(ok){setCover(null);if(coverInput.current)coverInput.current.value='';}
   }finally{setUploadBusy(false);}
  }
  return <div className="rm-experience">
-  <div className="rm-heading-row"><CardTitle eyebrow="CONFIGURACIÓN DEL COMERCIO" title="Más y ajustes"/></div>
+  <div className="rm-heading-row"><h2>Más</h2></div>
+  <section className="rm-flutter-identity" aria-label="Perfil de tu restaurante">
+   <div className="rm-flutter-cover">{safeImage(restaurant.cover_image_url)?
+    <img src={safeImage(restaurant.cover_image_url)??undefined} alt={'Foto de '+restaurant.name} loading="lazy"/>:
+    <Store size={34} aria-hidden="true"/>}</div>
+   <div className="rm-flutter-identity-body">
+    <div><h3>{restaurant.name}</h3><p>{restaurant.cuisine||'Restaurante'}</p>
+     {restaurant.description&&<p className="rm-flutter-description">{restaurant.description}</p>}
+     <span className={'rm-flutter-open '+(restaurant.is_open?'open':'')}>{restaurant.is_open?'Abierto':'Cerrado'}</span>
+    </div>
+    <button type="button" className="rp-btn outline small" onClick={()=>openSection(profileRef)}>
+     <Edit3 size={16}/> Editar</button>
+   </div>
+  </section>
+  <div className="rm-flutter-settings" aria-label="Opciones del restaurante">
+   <h3>Operación</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>go('cocina')}><ChefHat size={21}/>
+     <span><strong>Modo cocina</strong><small>Comandas en pantalla completa</small></span><ChevronRight size={18}/></button>
+    <button type="button" onClick={()=>openSection(profileRef)}><MapPin size={21}/>
+     <span><strong>Ubicación del establecimiento</strong><small>Dirección y punto GPS para calcular envíos</small></span><ChevronRight size={18}/></button>
+    <div className="rm-flutter-switch-row"><PackageCheck size={21}/>
+     <span><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></span>
+     <button type="button" className="rp-btn outline small" disabled={busy}
+      onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>
+      {restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
+    <button type="button" onClick={()=>openSection(profileRef)}><Settings2 size={21}/>
+     <span><strong>Preparación y entrega</strong><small>{restaurant.eta_min??30} min de preparación · envío calculado por Tala Eats</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Pagos</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>go('finanzas')}><Wallet size={21}/>
+     <span><strong>Retiros y cuenta bancaria</strong><small>Wallet, ganancias y movimientos</small></span><ChevronRight size={18}/></button>
+    <button type="button" onClick={()=>go('activacion')}><RefreshCw size={21}/>
+     <span><strong>Activación de pagos</strong><small>{connect?.owner_approved?'Consultar Stripe Connect':'Requisitos pendientes'}</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Equipo</h3>
+   <div className="rm-flutter-settings-group">
+    <button type="button" onClick={()=>openSection(teamRef)}><Users size={21}/>
+     <span><strong>Equipo y permisos</strong><small>Gerentes, caja y cocina</small></span><ChevronRight size={18}/></button>
+   </div>
+   <h3>Cuenta</h3>
+   <div className="rm-flutter-settings-group rm-flutter-account">
+    <div><Users size={20}/><span><strong>{accountName||'Propietario'}</strong>
+     <small>{accountEmail||'Cuenta de restaurante'}</small></span></div>
+    {accountTwoFactorEnabled&&<div><ShieldCheck size={20}/><span><strong>Verificación en dos pasos</strong>
+     <small>Activa en tu cuenta</small></span></div>}
+    <button type="button" ref={aboutTrigger} onClick={()=>setAboutOpen(true)}><Info size={20}/><span>
+     <strong>Acerca de la app</strong>
+     <small>Versión web · Tala Eats Restaurante</small></span><ChevronRight size={18}/></button>
+   </div>
+  </div>
   <div className="rm-mobile-more-shortcuts">
-   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><Wallet size={21}/><span><strong>Wallet</strong><small>{finance?'Movimientos y retiros':'Consultar ganancias'}</small></span><ArrowRight size={18}/></button>
-   <button type="button" onClick={()=>go('activacion')}><ShieldCheck size={21}/><span><strong>Activación</strong><small>{connect?.owner_approved?'Cuenta vinculada':'Verificar tu comercio'}</small></span><ArrowRight size={18}/></button>
+   <button type="button" aria-label="Abrir Wallet" onClick={()=>go('finanzas')}><span><strong>Wallet</strong></span></button>
+   <button type="button" onClick={()=>go('activacion')}><span><strong>Activación</strong>{!connect?.owner_approved&&<small>Pendiente</small>}</span></button>
   </div>
   <div className="rm-duo rm-more-duo">
-   <details className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
-    <summary><Store size={19}/><strong>Perfil del restaurante</strong><ArrowRight size={17}/></summary>
+   <details ref={profileRef} className="rp-panel-card rm-more-profile" data-merchant-accordion="profile">
+    <summary><strong>Perfil del negocio</strong><ArrowRight size={16}/></summary>
     <form onSubmit={e=>void saveProfile(e)} className="rm-settings-form">
      <label>Nombre<input value={name} required minLength={2} maxLength={150} onChange={e=>setName(e.target.value)}/></label>
      <label>Tipo de comida<input maxLength={100} value={cuisine} onChange={e=>setCuisine(e.target.value)} placeholder="Mexicana, hamburguesas, tacos…"/></label>
@@ -250,22 +383,42 @@ export function MerchantMore({restaurant,connect,finance,busy,run,go}:MerchantEx
     <div className="rm-cover-uploader"><strong>Foto de portada</strong>
      {safeImage(restaurant.cover_image_url)&&<img className="rm-cover-preview" src={safeImage(restaurant.cover_image_url)??undefined} alt={'Portada de '+restaurant.name} loading="lazy"/>}
      <p>Sube una foto original del negocio para el catálogo, verificada y almacenada en el backend.</p>
-     <input aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
+     <input ref={coverInput} aria-label="Foto de portada" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setCover(e.target.files?.[0]??null)}/>
      <button className="rp-btn outline small" disabled={!cover||busy||uploadBusy} onClick={()=>void uploadCover()}>Publicar portada</button>
     </div>
    </details>
    <div className="rm-more-column">
-    <section className="rp-panel-card"><h3><Settings2 size={19}/> Preparación y entrega</h3>
+    <section className="rp-panel-card"><h3>Operación</h3>
      <div className="rp-setting"><div><strong>Recibir nuevos pedidos</strong><small>{restaurant.is_open?'Abierto':'Cerrado'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>{if(restaurant.is_open&&!window.confirm('¿Pausar pedidos nuevos?'))return;void run(()=>api.ownerUpdateRestaurant({is_open:!restaurant.is_open}),'Disponibilidad actualizada.');}}>{restaurant.is_open?'Pausar':'Abrir'}</button></div>
      <div className="rp-setting"><div><strong>Recoger en tienda</strong><small>{restaurant.pickup_enabled?'Activo':'Inactivo'}</small></div><button className="rp-btn outline small" disabled={busy} onClick={()=>void run(()=>api.ownerUpdateRestaurant({pickup_enabled:!restaurant.pickup_enabled}),'Recogida actualizada.')}>{restaurant.pickup_enabled?'Desactivar':'Activar'}</button></div>
-     <p className="rp-legal">El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
+    <details className="rm-technical-note"><summary>Sobre las entregas</summary>
+     <p>El reparto a domicilio LIVE requiere un flujo de conductor certificado por separado.</p>
+    </details>
+     
     </section>
    </div>
   </div>
-  <details className="rm-team-fold" data-merchant-accordion="team">
-   <summary><Users size={19}/><strong>Equipo y permisos</strong><ArrowRight size={17}/></summary>
+  <details ref={teamRef} className="rm-team-fold" data-merchant-accordion="team">
+   <summary><strong>Equipo</strong><ArrowRight size={16}/></summary>
    <MerchantTeam restaurantId={restaurant.id} busy={busy} run={run}/>
   </details>
+  {aboutOpen&&<div className="rm-about-backdrop" onClick={()=>setAboutOpen(false)}>
+   <section ref={aboutRef} className="rm-about-sheet" role="dialog" aria-modal="true"
+    aria-labelledby="rm-about-title" aria-describedby="rm-about-description"
+    onClick={e=>e.stopPropagation()}>
+    <button type="button" className="rm-about-close" aria-label="Cerrar información de la aplicación"
+     onClick={()=>setAboutOpen(false)}><X size={20}/></button>
+    <div className="rm-about-mark"><Store size={34}/></div>
+    <h3 id="rm-about-title">Tala Eats Restaurante</h3>
+    <p id="rm-about-description">Panel para restaurantes · Versión Web</p>
+    <p className="rm-about-detail">La aplicación usa tu cuenta de comercio y las operaciones requieren autorización del servidor.</p>
+    <button type="button" className="rp-btn primary" onClick={()=>setAboutOpen(false)}>Entendido</button>
+   </section>
+  </div>}
+  {onSignOut&&<button type="button" className="flutter-signout" disabled={busy}
+   onClick={()=>{if(window.confirm('¿Cerrar sesión? Para volver a administrar el negocio necesitarás iniciar sesión.'))void onSignOut();}}>
+   Cerrar sesión
+  </button>}
  </div>;
 }
 

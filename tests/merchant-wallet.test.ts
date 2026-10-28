@@ -35,6 +35,13 @@ describe('Tala Eats restaurant Wallet: no simulated bank withdrawals',()=>{
   expect(wallet).toContain('No iniciada');
   expect(wallet).not.toMatch(/api\.[A-Za-z]*(Withdraw|Transfer|Payout)/);
   expect(wallet).not.toContain('stripe.transfers.create');
+   // Do not present stale balances from another restaurant or retry.
+   expect(wallet).toContain('requestId.current');
+   expect(wallet).toContain('thisRequest===requestId.current');
+   expect(wallet).toContain('merchantEarningTotals(data)===null');
+   expect(wallet).toContain('aria-describedby="mw-modal-description"');
+   expect(wallet).toContain("event.key!=='Tab'");
+   expect(wallet).toContain('target.focus({preventScroll:true})');
  });
  it('mobile navigation retains 5 one-touch destinations with Wallet under Más',()=>{
   const app=read('../src/components/RestaurantApp.tsx');

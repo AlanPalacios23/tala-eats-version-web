@@ -84,15 +84,20 @@ async function checkViewport(page,width,label){
  }
 }
 async function openTab(page,width,label){
- const isMobile=width<=850;
+ const isMobile=width<840;
+ if(await page.locator('[data-kitchen-open="true"]').count()){
+  await page.getByRole('button',{name:'Volver a Inicio'}).click();
+ }
  if(isMobile){
   const nav=page.locator('.rp-mobile-tabs');
-  if(label==='finanzas'||label==='activacion'){
+  if(label==='cocina'){
+   await nav.getByRole('button',{name:'Inicio',exact:true}).click();
+   await page.getByRole('button',{name:/Modo cocina/}).click();
+  }else if(label==='activacion'){
    await nav.getByRole('button',{name:'Más',exact:true}).click();
-   if(label==='finanzas')await page.getByRole('button',{name:/Abrir Wallet/}).click();
-   else await page.locator('.rm-mobile-more-shortcuts').getByRole('button',{name:/Activación/}).click();
+   await page.locator('.rm-flutter-settings').getByRole('button',{name:/Activación de pagos/}).click();
   }else{
-   const name={pedidos:'Pedidos',cocina:'Cocina',menu:'Menú',mas:'Más',inicio:'Inicio'}[label];
+   const name={pedidos:'Pedidos',menu:'Menú',mas:'Más',inicio:'Inicio',finanzas:'Wallet'}[label];
    await nav.getByRole('button',{name,exact:true}).click();
   }
  }else{
@@ -107,8 +112,18 @@ for(const width of widths){
  page.on('pageerror',err=>{console.error('MERCANTE PAGE ERROR:',err.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-app="true"]').waitFor();
- if(width<=850)await page.getByRole('heading',{name:'Inicio',exact:true}).waitFor({timeout:12000});
- else await page.getByRole('heading',{name:'Así va tu restaurante'}).waitFor({timeout:12000});
+ // Flutter uses the same Inicio hierarchy on phone and on the wider shell.
+ await page.locator('.flutter-store-heading h2').waitFor({timeout:12000});
+ // Mobile merchant controls must not disappear with the hidden desktop toolbar.
+ if(width===390){
+  const bell=page.locator('.rp-mobile-order-alerts .rp-alert-toggle');
+  if(!await bell.isVisible())throw Error('Merchant phone has no alert toggle');
+  if(await page.locator('.rp-topbar').isVisible())throw Error('Desktop toolbar leaked into merchant phone');
+  await bell.click();
+  const pressed=await bell.getAttribute('aria-pressed');
+  if(pressed!=='true'&&!await page.locator('.rp-mobile-order-alerts .rp-alert-error').isVisible())
+   throw Error('New-order sound toggle did not respond to mobile gesture');
+ }
  if(BASE.endsWith('4174')){
   await page.locator('[data-merchant-standalone="true"]').waitFor();
   const foreign=await page.evaluate(()=>[...document.querySelectorAll('script[src]')].some(node=>node.getAttribute('src')?.includes('main.tsx')));
@@ -116,63 +131,210 @@ for(const width of widths){
  }
  const manifest=await page.locator('link[rel="manifest"]').getAttribute('href');
  if(manifest!=='/manifest-restaurante.webmanifest')throw Error('Merchant installed identity mismatched: '+manifest);
+ if(width===390){
+  // Flutter's OFL families must be served by this independent origin, not via
+  // a Google Fonts request or a browser fallback font.
+  for(const file of ['Figtree-VF.ttf','BricolageGrotesque-VF.ttf']){
+   const response=await page.request.get(BASE+'/fonts/restaurante/'+file);
+   if(response.status()!==200)throw Error('Local Flutter font unavailable: '+file+' HTTP '+response.status());
+  }
+  const loaded=await page.evaluate(async()=>{
+   const results=await Promise.all([
+    document.fonts.load('500 16px Figtree'),
+    document.fonts.load('700 20px Bricolage')
+   ]);
+   return results.every(group=>group.length>0)&&
+    document.fonts.check('500 16px Figtree')&&document.fonts.check('700 20px Bricolage');
+  });
+  if(!loaded)throw Error('Native Flutter Figtree/Bricolage did not load in Chromium');
+ }
  const scenes=[
   ['inicio',null],
   ['pedidos','Pedidos'],
-  ['cocina','Comandas en preparación'],
-  ['menu','Mi menú'],
-  ['mas','Más y ajustes'],
+  ['cocina','Cocina'],
+  ['menu','Menú'],
+  ['mas','Más'],
   ['finanzas','Wallet'],
-  ['activacion','Activación del restaurante']
+  ['activacion','Activación']
  ];
  for(const [name,title] of scenes){
   if(name!=='inicio')await openTab(page,width,name);
   if(title)await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:12000});
   await checkViewport(page,width,name);
   if(width<=430){
-   const brandHeight=await page.locator('.rp-sidebar').evaluate(node=>node.getBoundingClientRect().height);
-   if(brandHeight>76)throw Error('Oversized mobile brand/header: '+brandHeight+' at '+width+' '+name);
+   const navButtons=await page.locator('.rp-mobile-tabs button').count();
+   if(navButtons!==5)throw Error('Flutter bottom NavigationBar requires 5 destinations');
+   if(name!=='cocina'){
+    const selected=page.locator('.rp-mobile-tabs button.selected');
+    if(await selected.count()!==1)throw Error('Flutter NavigationBar must select exactly one destination: '+name);
+    const selectedText=(await selected.innerText()).trim();
+    const expected=name==='activacion'?'Más':name==='finanzas'?'Wallet':
+     ({inicio:'Inicio',pedidos:'Pedidos',menu:'Menú',mas:'Más'})[name];
+    if(selectedText!==expected)throw Error('Incorrect Flutter selected destination '+selectedText+' for '+name);
+   }
+   if(name==='inicio'){
+    if(await page.locator('.flutter-open-card').count()!==1||await page.locator('.flutter-kitchen-entry').count()!==1)
+     throw Error('Missing native Flutter store status or KDS entry');
+   }
+  }
+  if(name==='mas'){
+   await page.locator('.flutter-signout').waitFor({timeout:12000});
+   if(width===390){
+    const identity=page.locator('.rm-flutter-identity');
+    if(!await identity.isVisible())throw Error('Flutter business identity missing in Más');
+    if(!await page.locator('.rm-flutter-settings').isVisible())throw Error('Flutter operation rows missing');
+    await identity.getByRole('button',{name:'Editar',exact:true}).click();
+    if(!await page.locator('.rm-more-profile').evaluate(el=>el.open))
+     throw Error('Flutter Editar did not open the real business editor');
+    await page.locator('.rm-more-profile>summary').click();
+    await page.locator('.rm-flutter-settings').getByRole('button',{name:/Equipo y permisos/}).click();
+    if(!await page.locator('.rm-team-fold').evaluate(el=>el.open))
+     throw Error('Equipo y permisos did not open the team editor');
+    await page.locator('.rm-team-fold>summary').click();
+    const about=page.locator('.rm-flutter-account').getByRole('button',{name:/Acerca de la app/});
+    await about.click();
+    const dialog=page.getByRole('dialog',{name:'Tala Eats Restaurante'});
+    await dialog.waitFor();
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Cerrar información de la aplicación');
+    await page.keyboard.press('Escape');
+    if(await dialog.count())throw Error('Native More Acerca dialog did not dismiss on Escape');
+    if(!await about.evaluate(el=>el===document.activeElement))
+     throw Error('Native More Acerca did not restore focus');
+   }
+   await page.locator('.flutter-incoming-banner').waitFor({timeout:12000});
+   if(width===390){
+    page.once('dialog',dialog=>void dialog.dismiss());
+    await page.locator('.flutter-signout').click();
+    if(await page.locator('[data-restaurant-app="true"]').count()!==1)
+     throw Error('Cancel sign-out unexpectedly left the merchant app');
+   }
   }
   await page.screenshot({path:`${dir}/${width}-${name}.png`,fullPage:true});
   if(name==='finanzas'){
    await page.locator('[data-merchant-wallet="true"]').waitFor();
    await page.getByText('Ganancias registradas',{exact:true}).waitFor();
-   await page.getByRole('button',{name:/Retirar ganancias/}).click();
+   const withdrawTrigger=page.getByRole('button',{name:/Retirar ganancias/});
+   await withdrawTrigger.click();
    const dialog=page.getByRole('dialog',{name:'Retirar ganancias'});
    await dialog.waitFor();
    await dialog.getByText('Los retiros bancarios aún no están habilitados').waitFor();
    if(await dialog.getByText('Transferencia bancaria').count()!==1)
     throw Error('Wallet withdrawal disclaimer missing at '+width);
+   if(width===390){
+    // Trap focus in the financial modal and restore it after closing.
+    const close=dialog.getByRole('button',{name:'Cerrar información de retiro'});
+    const done=dialog.getByRole('button',{name:'Entendido'});
+    await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Cerrar información de retiro');
+    await page.keyboard.press('Shift+Tab');
+    if(!await done.evaluate(el=>el===document.activeElement))throw Error('Wallet modal Shift+Tab did not wrap');
+    await page.keyboard.press('Tab');
+    if(!await close.evaluate(el=>el===document.activeElement))throw Error('Wallet modal Tab did not wrap');
+    await page.keyboard.press('Escape');
+    if(await dialog.count())throw Error('Wallet Escape did not close the modal');
+    if(!await withdrawTrigger.evaluate(el=>el===document.activeElement))
+     throw Error('Wallet did not restore keyboard focus');
+    await withdrawTrigger.click();
+    await dialog.waitFor();
+   }
    await dialog.getByRole('button',{name:'Entendido'}).click();
    if(await dialog.count())throw Error('Wallet withdrawal modal did not close');
+   if(width===390){
+    const periods=page.locator('.rm-finance-activity').getByRole('button');
+    if(await periods.count()!==3)throw Error('Wallet missing native periods');
+    const week=page.locator('.rm-finance-activity').getByRole('button',{name:'7 días'});
+    await week.click();
+    if(await week.getAttribute('aria-pressed')!=='true')throw Error('Wallet period switch failed');
+   }
+  }
+  if(name==='activacion'){
+   const status=page.getByRole('progressbar',{name:'Progreso de activación Stripe Connect'});
+   await status.waitFor();
+   if(await status.getAttribute('aria-valuemax')!=='5')
+    throw Error('Stripe Connect must report five server-gated activation steps');
+   if(await page.locator('.rp-connect-guide .rp-connect-steps li').count()!==5)
+    throw Error('Stripe Connect native wizard steps missing');
+   if(width===390){
+    const ready=page.locator('.rp-connect-state.ready');
+    if(!await ready.isVisible())throw Error('Backend-approved Connect must be shown as verified');
+    if(await page.getByRole('button',{name:'Confirmar mi titularidad'}).count())
+     throw Error('Owner consent must not repeat for an approved mapping');
+    if(await page.getByRole('button',{name:/Continuar de forma segura en Stripe/}).count())
+     throw Error('Cannot create a new Account Link for fully ready Stripe Connect');
+   }
   }
   if(name==='pedidos'){
-   const group=page.locator('.rp-order-filters').first();
+   if(await page.locator('.rp-order-lane').count()!==3)
+    throw Error('Flutter Pedidos must group Nuevos, En cocina and Listos');
+   await page.getByRole('button',{name:'Abrir modo cocina'}).waitFor();
+   const group=page.locator('.rp-flutter-filter-controls .rp-order-filters');
+   const search=page.locator('.rp-flutter-orders-search');
+   if(width<840&&await search.isVisible())
+    throw Error('Native Flutter only shows order search in Historial');
+   const subtitle=page.locator('.rp-flutter-orders-heading p');
+   if(width<840&&!await subtitle.isVisible())
+    throw Error('Mobile Pedidos must show Flutter active count under header');
    await group.getByRole('button',{name:'Historial',exact:true}).click();
    if(await page.locator('.rp-lane-grid').count()!==0||await page.locator('.rp-history').count()!==1)
     throw new Error('Historial must hide active lanes at '+width);
-   await group.getByRole('button',{name:'Nuevos',exact:true}).click();
+   if(width<840){
+    if(!await search.isVisible())throw Error('Native history search missing');
+    await search.getByRole('textbox').fill('1842');
+    if(!await search.getByRole('button',{name:'Limpiar búsqueda'}).isVisible())
+     throw Error('Native history clear-search control missing');
+    await search.getByRole('button',{name:'Limpiar búsqueda'}).click();
+   }
+   await group.getByRole('button',{name:/^Nuevos(?:, \d+)?$/}).click();
    if(await page.locator('.rp-history').count()!==0)
     throw new Error('New-order filter must not show historical records at '+width);
-   await group.getByRole('button',{name:'Todos',exact:true}).click();
+   await group.getByRole('button',{name:/^Activos(?:, \d+)?$/}).click();
+   if(width<840&&await page.locator('.rp-history-secondary').isVisible())
+    throw Error('Flutter mobile Activos must not show history section');
   }
   if(name==='cocina'){
-   const types=page.locator('.rm-kitchen-filter-pills');
-   await types.getByRole('button',{name:/A domicilio/}).click();
-   if(await page.locator('.rm-ticket').count()!==1)
-    throw new Error('Delivery kitchen filter did not limit tickets at '+width);
-   await page.getByText('Esperando reparto autorizado. No confirmar la entrega desde cocina.').waitFor();
-   if(await page.getByRole('button',{name:/Confirmar recogida con PIN/}).count()>0)
-    throw new Error('Driver dispatch was confused with customer pickup');
-   await types.getByRole('button',{name:/Recoger en tienda/}).click();
-   if(await page.locator('.rm-ticket-warning').count()!==1)
-    throw new Error('Unpaid Stripe order needs a visible kitchen warning');
-   await types.getByRole('button',{name:/Todas/}).click();
+   if(width===390&&await page.locator('.rp-mobile-order-alerts').isVisible())
+    throw Error('Alert button should not cover the cooking station');
+   const columns=page.locator('[data-kds-lane]');
+   if(await columns.count()!==3)
+    throw Error('Flutter Cocina requires 3 lanes: Nuevos, Preparando, Listos');
+   const selector=page.locator('.flutter-kds-lane-tabs');
+   const narrow=width<1024;
+   if(narrow){
+    if(!await selector.isVisible())throw Error('Missing 3-lane Flutter KDS mobile selector');
+    if(await selector.getByRole('button').count()!==3)
+     throw Error('Mobile KDS must have exactly three lane tabs');
+    await selector.getByRole('button',{name:/Listos/}).click();
+    const visible=columns.filter({visible:true});
+    if(await visible.count()!==1||await visible.getAttribute('data-kds-lane')!=='ready')
+     throw Error('KDS mobile should display only its selected Listos lane');
+   }else if(await columns.filter({visible:true}).count()!==3){
+    throw Error('KDS desktop must display its three Flutter columns');
+   }
+   const ready=page.locator('[data-kds-lane="ready"]');
+   const delivery=ready.locator('.rm-ticket').filter({hasText:/domicilio/i});
+   await delivery.getByText('Esperando reparto autorizado. No confirmar la entrega desde cocina.').waitFor();
+   if(await delivery.getByRole('button',{name:/Confirmar recogida con PIN/}).count()>0)
+    throw Error('Driver dispatch was confused with customer pickup');
+   if(narrow)await selector.getByRole('button',{name:/Nuevos/}).click();
+   const newLane=page.locator('[data-kds-lane="received"]');
+   await newLane.locator('.rm-ticket-warning').waitFor();
+   await page.getByRole('button',{name:'Actualizar Cocina'}).click();
+   await page.locator('.flutter-kds-clock').waitFor();
   }
  }
  // Search is a real client-side control: the filtered product view must
  // reflect the requested item, not simply show an inert text field.
  await openTab(page,width,'menu');
+ // Flutter Menu: categories are grouped only with "Todos" and no query.
+ if(await page.locator('.rp-catalog-category').count()!==3)
+  throw Error('Menu did not group Tacos, Bebidas and Combos as in Flutter');
+ const review=page.locator('.rp-order-filters').getByRole('button',{name:/Revisar · 2/});
+ await review.click();
+ if(await page.locator('.rp-catalog-item').count()!==2||
+    await page.locator('.rp-catalog-category').count()!==0)
+  throw Error('Revisar filter must show only paused, sold-out and low-stock products');
+ await page.locator('.rp-order-filters').getByRole('button',{name:'Todos',exact:true}).click();
+ if(await page.locator('.rp-catalog-category').count()!==3)
+  throw Error('Todos filter did not restore Flutter category groups');
  await page.getByRole('textbox',{name:'Buscar productos'}).fill('Quesabirria');
  await page.waitForFunction(()=>document.querySelectorAll('.rp-menu-item').length===1,{},{timeout:12000});
  await page.locator('.rp-catalog-item').filter({hasText:'Quesabirria'}).waitFor({timeout:12000});
@@ -183,6 +345,28 @@ for(const width of widths){
  if(width===390)await page.screenshot({path:`${dir}/390-producto-editor.png`,fullPage:true});
  await page.getByRole('button',{name:'Cancelar',exact:true}).click();
  if(await page.locator('.rp-catalog-editor').count())throw Error('Cancel did not close the product editor');
+ if(width===390){
+  // Simulate a backend outage without ANY writes or real financial activity.
+  await openTab(page,width,'pedidos');
+  await page.getByRole('heading',{name:'Pedidos',exact:true}).waitFor();
+  await ctx.route('**/api/v1/owner/orders**',route=>route.fulfill({
+   status:503,contentType:'application/json',
+   body:JSON.stringify({detail:'QA synthetic backend unavailable'})
+  }));
+  await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+  await page.locator('.rp-outage').waitFor({timeout:12000});
+  if(await page.locator('.rp-sidebar .rp-nav-item em').count()>0)
+   throw Error('Stale order count leaked while backend failed');
+  if((await page.locator('.rp-top-identity h1').textContent())!=='Restaurantes')
+   throw Error('Stale merchant identity remains after fail-closed sync');
+  if(await page.locator('.rp-order-card').count()>0)
+   throw Error('Stale orders remain after backend outage');
+  await ctx.unroute('**/api/v1/owner/orders**');
+  await page.locator('.rp-outage').getByRole('button',{name:'Reintentar'}).click();
+  await page.getByText('Pedido #8101').waitFor({timeout:12000});
+  if((await page.locator('.rp-top-identity h1').textContent())!=='Antojitos La Terraza')
+   throw Error('Authorized store did not return after successful retry');
+ }
  await ctx.close();
 }
 {
@@ -192,6 +376,10 @@ for(const width of widths){
  page.on('pageerror',e=>{console.error('GUEST PAGE ERROR:',e.message);process.exitCode=1;});
  await page.goto(BASE+'/restaurante',{waitUntil:'networkidle'});
  await page.locator('[data-restaurant-welcome="true"]').waitFor({timeout:12000});
+ if(!await page.locator('.rb-flutter-welcome').isVisible())
+  throw Error('Native welcome is missing on mobile');
+ if(await page.locator('.rb-preview').isVisible())
+  throw Error('Marketing illustration leaked into native welcome');
  if(await page.locator('[data-mobile-screen="splash"]').count())throw Error('Merchant welcome leaked customer splash');
  await checkViewport(page,390,'bienvenida');
  await page.screenshot({path:`${dir}/390-bienvenida.png`,fullPage:true});
