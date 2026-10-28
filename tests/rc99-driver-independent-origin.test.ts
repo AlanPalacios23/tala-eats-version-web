@@ -1,0 +1,78 @@
+import {describe,expect,it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {driverPortalDestination} from '../src/lib/driver-host';
+const read=(file:string)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
+const shell=read('src/DriverStandalone.tsx');
+const entry=read('src/main-repartidores.tsx');
+const html=read('repartidores.html');
+const config=read('vite.repartidor.config.ts');
+const server=read('deploy/nginx-repartidores-isolated-server.conf');
+const nginx=read('deploy/nginx-repartidores-isolated-main.conf');
+const unit=read('deploy/talaeats-repartidores-pwa.service');
+const install=read('deploy/kali-install-repartidores-isolated.sh');
+const update=read('deploy/kali-update-repartidores-isolated.sh');
+const sw=read('public/sw-repartidor.js');
+const manifest=JSON.parse(read('public/manifest-repartidor.webmanifest'));
+const packageFile=JSON.parse(read('package.json'));
+describe('RC9.9: independent native-style Driver PWA',()=>{
+ it('builds a real dedicated entry, not a customer SPA masquerading as a driver role',()=>{
+  expect(html).toContain('/src/main-repartidores.tsx');
+  expect(html).not.toContain('/src/main.tsx');
+  expect(entry).toContain('<DriverStandalone/>');
+  expect(entry).toContain("'/sw-repartidor.js'");
+  expect(entry).not.toContain("from './App'");
+  expect(shell).toContain('DriverPwaWorkflow');
+  expect(shell).toContain('DriverRegistration');
+  expect(shell).toContain("user?.role==='driver'");
+  expect(shell).not.toContain('CustomerCheckout');
+  expect(shell).not.toContain('RestaurantWorkspace');
+  expect(shell).not.toContain('Stripe');
+  expect(config).toContain("outDir:'dist-repartidores'");
+  expect(config).toContain("'repartidores.html'");
+  expect(packageFile.scripts.check).toContain('build:repartidor');
+ });
+ it('has a dedicated safe public hostname, localhost port and strict route separation',()=>{
+  expect(server).toContain('listen 127.0.0.1:18199;');
+  expect(server).toContain('server_name repartidores-talaeats.alan-palacios-dev.com;');
+  expect(server).toContain('root /srv/talaeats-repartidores-pwa/current;');
+  expect(server).toContain('proxy_pass http://127.0.0.1:18190;');
+  expect(server).toContain('geolocation=(self)');
+  expect(server).toContain('location ^~ /repartidor/');
+  expect(server).toContain('location / { return 404; }');
+  expect(server).toContain('location = /sw.js { return 404; }');
+  expect(server).toContain('Cache-Control "private, no-store"');
+  expect(server).not.toContain('js.stripe.com');
+  expect(nginx).toContain('talaeats-repartidores-pwa/nginx.pid');
+  expect(unit).toContain('/etc/talaeats-repartidores-pwa/nginx.conf');
+ });
+ it('supports only explicit approved redirect after DNS is verified',()=>{
+  expect(driverPortalDestination(undefined)).toBe('/repartidor');
+  expect(driverPortalDestination('https://evil.example/repartidor')).toBe('/repartidor');
+  expect(driverPortalDestination('http://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('/repartidor');
+  expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/checkout')).toBe('/repartidor');
+  expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('https://repartidores-talaeats.alan-palacios-dev.com/repartidor');
+  expect(read('src/App.tsx')).toContain("driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)");
+ });
+ it('dedicated service worker does not intercept location, API, delivery writes or private sessions',()=>{
+  expect(sw).toContain("req.method!=='GET'");
+  expect(sw).toContain("u.pathname.startsWith('/api/')");
+  expect(sw).toContain("req.mode==='navigate'");
+  expect(sw).toContain("u.pathname.startsWith('/repartidor')");
+  expect(sw).not.toContain('showNotification');
+  expect(manifest.start_url).toBe('/repartidor');
+  expect(manifest.background_color).toBe('#F8F7F5');
+  expect(manifest.icons[0].src).toBe('/branding/tala-eats-repartidor-icon-192.png');
+  expect(manifest.icons[1].src).toBe('/branding/tala-eats-repartidor-launcher-1024.png');
+  for(const icon of manifest.icons)expect(readFileSync(new URL('../public'+icon.src,import.meta.url)).length).toBeGreaterThan(400);
+ });
+ it('requires immutable SHA and separate plan/apply tokens for installation and updating',()=>{
+  expect(install).toContain('I_APPROVE_NEW_REPARTIDORES_NGINX_18199_ONLY');
+  expect(update).toContain('I_APPROVE_REPARTIDORES_STATIC_18199_ONLY');
+  expect(install).toContain('REPARTIDORES_INSTALL_PLAN=PASS_READ_ONLY');
+  expect(update).toContain('REPARTIDORES_STATIC_PLAN=PASS_READ_ONLY');
+  expect(update).toContain('I_APPROVE_REPARTIDORES_STATIC_ROLLBACK_ONLY');
+  expect(install).not.toContain('systemctl restart talaeats-web-pwa');
+  expect(install).not.toContain('systemctl restart talaeats-restaurantes-pwa');
+  expect(install).not.toContain('cloudflared tunnel route dns');
+ });
+});

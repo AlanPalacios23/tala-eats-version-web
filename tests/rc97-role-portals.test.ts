@@ -20,7 +20,8 @@ describe('RC9.7: three operational PWA role portals',()=>{
   expect(app).toContain('!isGateway&&!isOnboarding&&!isRestaurantPortal&&!isDriverPortal&&<AppHeader count={count}/>');
   expect(app).toContain('!isGateway&&!isOnboarding&&!isRestaurantPortal&&!isDriverPortal&&<AppFooter/>');
   expect(css).toContain('.app.driver-shell');
-  expect(driver).toContain('<Link to="/" className="driver-pwa-home">Tala Eats</Link>');
+  expect(driver).toContain('className="df-screen-header"');
+  expect(driver).toContain('className="df-bottom-nav"');
  });
  it('never flashes customer-only opening artwork in restaurant or driver portals',()=>{
   expect(boot).toContain('repartidor(?:\\/|$)');
