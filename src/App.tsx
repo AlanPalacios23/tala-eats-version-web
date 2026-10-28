@@ -35,6 +35,17 @@ function ExternalLegalRedirect({href}:{href:string}){
  useEffect(()=>{window.location.replace(href)},[href]);
  return <div role="status" className="mobile-status">Abriendo el documento oficial de Tala Eats… <a href={href}>Abrir documento</a></div>;
 }
+/** After HTTPS + tunnel verification the legacy customer-host Driver routes
+ * forward to the independent Driver PWA. Before explicit opt-in, keep the
+ * existing role-guarded fallback exactly as before.
+ */
+function DriverExternalOrLocal({suffix,children}:{suffix:''|'/acceso'|'/registro';children:ReactNode}){
+ const approved=driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL);
+ const href=approved==='/repartidor'?null:approved+suffix;
+ useEffect(()=>{if(href)window.location.replace(href);},[href]);
+ if(href)return <div className="mobile-status" role="status">Abriendo Tala Eats Repartidores… <a href={href}>Abrir Repartidores</a></div>;
+ return <>{children}</>;
+}
 function Spinner(){return <div className="loading"><RefreshCw className="spin" size={20}/> Cargando información del servidor...</div>;}
 function EmptyState({icon,title,description,action}:{icon:ReactNode;title:string;description:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{description}</p>{action}</div>;}
 function AppHeader({count}:{count:number}){
@@ -44,7 +55,7 @@ function AppHeader({count}:{count:number}){
   <Link to="/" className="brand" aria-label="Tala Eats inicio"><span className="brand-mark"><ChefHat size={23} strokeWidth={2.4}/></span><span className="brand-name">Tala <b>Eats</b><small>COMERCIO LOCAL</small></span></Link>
   <nav className={'navlinks '+(menuOpen?'open':'')} aria-label="Navegación principal">
    <NavLink to="/clientes">Explorar</NavLink><NavLink to="/pedidos">Mis pedidos</NavLink>
-   <NavLink to="/restaurante">Restaurantes</NavLink><NavLink to="/repartidor">Repartidores</NavLink>
+   <NavLink to="/restaurante">Restaurantes</NavLink><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Repartidores</a>
   </nav>
   <div className="header-actions"><CustomerPwaInstallMenuButton/>
     <Link className="header-cart" to="/carrito" aria-label={'Carrito con '+count+' artículos'}><ShoppingBag size={21}/>{count>0&&<span className="cart-dot">{count}</span>}</Link>
@@ -53,7 +64,7 @@ function AppHeader({count}:{count:number}){
   </div>
  </div></header>;
 }
-function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><Link to="/repartidor">Soy repartidor</Link></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
+function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Soy repartidor</a></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
 function PortalLanding(){
  const links=[
   {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/iniciar',number:'01'},
@@ -165,9 +176,9 @@ export default function App(){
    <Route path="/restaurante/alta" element={<RestaurantOnboarding/>}/>
    <Route path="/restaurante" element={<RestaurantEntry/>}/>
    <Route path="/admin/solicitudes-restaurantes" element={<Protected role="admin"><RestaurantAdminActivation/></Protected>}/>
-   <Route path="/repartidor" element={<Protected role="driver"><Driver/></Protected>}/>
-   <Route path="/repartidor/acceso" element={<DriverAccess/>}/>
-   <Route path="/repartidor/registro" element={<DriverRegistration/>}/>
+   <Route path="/repartidor" element={<DriverExternalOrLocal suffix=""><Protected role="driver"><Driver/></Protected></DriverExternalOrLocal>}/>
+   <Route path="/repartidor/acceso" element={<DriverExternalOrLocal suffix="/acceso"><DriverAccess/></DriverExternalOrLocal>}/>
+   <Route path="/repartidor/registro" element={<DriverExternalOrLocal suffix="/registro"><DriverRegistration/></DriverExternalOrLocal>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
  </Routes></main>{!isOnboarding&&<CustomerBottomDock/>}{!isGateway&&!isOnboarding&&!isRestaurantPortal&&!isDriverPortal&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
