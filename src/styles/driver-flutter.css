@@ -216,3 +216,14 @@
 @media(prefers-reduced-motion:reduce){
  .df-app *,.df-auth *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Flutter bottom sheet: drag handle, separated detail rows and document empty state. */
+.df-sheet-handle{display:block;width:36px;height:4px;border-radius:99px;background:#d9d4cf;margin:-12px auto 23px}
+.df-detail-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;min-height:48px;padding:12px 0;border-bottom:1px solid #e9e5e1}
+.df-detail-row>span{font-size:13px;color:#6f6a65}
+.df-detail-row>strong{color:#181614;font-size:13px;font-weight:800;text-align:right;overflow-wrap:anywhere}
+.df-sheet>.df-alert{margin-top:17px}
+.df-doc-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 10px 15px;gap:10px}
+.df-doc-empty svg{color:#6f6a65}
+.df-doc-empty strong{font-size:16px;color:#181614;font-weight:800}
+.df-doc-empty>span{font-size:13px;color:#6f6a65;line-height:1.6;max-width:330px}
