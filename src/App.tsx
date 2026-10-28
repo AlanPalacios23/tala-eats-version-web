@@ -5,6 +5,7 @@ import { ArrowRight, Home as HomeIcon, ClipboardList, ChefHat, LogIn, Menu, Refr
 import { isDriverRole, isMerchantRole, pesos } from './lib/api';
 import { PREVIEW_READONLY } from './lib/preview';
 import { restaurantPortalDestination } from './lib/restaurant-host';
+import { driverPortalDestination } from './lib/driver-host';
 import { EMPTY_CART, CUSTOMER_CART_STORAGE_KEY, restoreCustomerCart, addVariantItem, basketTotal } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
@@ -66,7 +67,8 @@ function PortalLanding(){
   <main className="gateway-main">
    <nav className="gateway-portals" aria-label="Acceso a las aplicaciones de Tala Eats">
     {links.map(item=><Link className="gateway-portal"
-     to={item.path==='/restaurante'?restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL):item.path}
+     to={item.path==='/restaurante'?restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL):
+      item.path==='/repartidor'?driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL):item.path}
      key={item.path}>
      <span className="gateway-portal-text"><strong>{item.title}</strong><small>{item.description}</small></span>
      <span className="gateway-portal-arrow" aria-hidden="true"><ArrowRight size={35} strokeWidth={1.7}/></span>
