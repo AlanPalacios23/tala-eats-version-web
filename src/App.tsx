@@ -30,6 +30,7 @@ import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport
 import {CustomerPwaInstallMenuButton} from './components/CustomerPwaInstall';
 import {DriverPwaWorkflow} from './components/DriverPwaWorkflow';
 import {DriverAccess,DriverRegistration} from './components/DriverRegistration';
+import {RehearsalFlow} from './components/RehearsalFlow';
 
 function ExternalLegalRedirect({href}:{href:string}){
  useEffect(()=>{window.location.replace(href)},[href]);
@@ -171,6 +172,10 @@ export default function App(){
    <Route path="/eliminar-cuenta" element={<ExternalLegalRedirect href={LEGAL_LINKS.deletion}/>}/>
    <Route path="/acceso" element={<CustomerStepAuth/>}/>
    <Route path="/cuenta" element={<Protected role="any"><CustomerAccount/></Protected>}/><Route path="/tala-club" element={<Protected role="customer"><CustomerWallet/></Protected>}/><Route path="/notificaciones" element={<Protected role="customer"><CustomerNotifications/></Protected>}/><Route path="/soporte" element={<Protected role="customer"><CustomerSupport/></Protected>}/><Route path="/favoritos" element={<Protected role="customer"><CustomerFavorites/></Protected>}/>
+   {/* Shared NO-CHARGE operational rehearsal, never a commercial order. */}
+   {['/ensayo','/clientes/ensayo','/restaurante/ensayo','/repartidor/ensayo'].map(path=>
+    <Route key={path} path={path} element={<Protected role="any"><RehearsalFlow/></Protected>}/>
+   )}
    <Route path="/admin/conectar-restaurante" element={<Protected role="admin"><AdminPickupConnect/></Protected>}/>
    <Route path="/restaurante/acceso" element={<RestaurantAccess/>}/>
    <Route path="/restaurante/alta" element={<RestaurantOnboarding/>}/>
