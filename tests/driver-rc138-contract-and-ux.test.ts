@@ -55,7 +55,8 @@ describe('RC138 Repartidores · mobile-safe operational contract',()=>{
   expect(safeDriverMapLink('x'.repeat(400))).toBe(null);
   expect(safeDriverMapLink('bad\u0001address')).toBe(null);
   const app=read('../src/components/DriverPwaWorkflow.tsx');
-  expect(app).toContain('const deliveryAddress=!offer?');
+  expect(app).toContain('const customerAddress=!offer?');
+  expect(app).toContain('safeDriverMapLink(customerAddress)');
   expect(app).toContain('rel="noopener noreferrer"');
  });
  it('fails closed on loss of backend readiness and keeps financial actions disabled',()=>{
