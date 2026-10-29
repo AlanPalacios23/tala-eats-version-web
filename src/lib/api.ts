@@ -86,12 +86,22 @@ async function uploadRestaurantDocument(file:File):Promise<{url:string;name:stri
     method:'POST',body:form,credentials:'include',cache:'no-store',
     signal:controller.signal,headers:{Accept:'application/json','X-Talaeats-Client':'web-pwa'}
    });
-   const body=await response.json() as {url?:unknown;name?:unknown;error?:unknown};
-   if(!response.ok)throw new ApiError(response.status,
-     typeof body.error==='string'?body.error:'No fue posible subir el documento.');
+   const raw=await response.text();
+   let body:{url?:unknown;name?:unknown;error?:unknown;detail?:unknown}={};
+   try{body=JSON.parse(raw) as typeof body;}catch{/* Nginx error pages may be HTML. */}
+   if(!response.ok){
+    const detail=typeof body.detail==='string'?body.detail:
+                 typeof body.error==='string'?body.error:'';
+    const fallback=response.status===413?'El servidor rechazó el tamaño de la foto (5 MB máximo).':
+      response.status===415?'El servidor no admite el formato real de esta foto.':
+      response.status===401?'Tu sesión expiró. Inicia sesión y reintenta con la misma cuenta.':
+      response.status===403?'No tienes autorización para subir este documento.':
+      'No fue posible subir el documento.';
+    throw new ApiError(response.status,detail||fallback);
+   }
    if(typeof body.url!=='string'||typeof body.name!=='string'||
-      !/^\/api\/v1\/uploads\/onboarding-document\/u[1-9][0-9]*-[A-Za-z0-9_-]{32}\.(?:jpg|png|webp|pdf)$/.test(body.url))
-    throw new ApiError(502,'La subida no devolvió una referencia segura del servidor.');
+      !/^\/api\/v1\/uploads\/onboarding-document\/u[1-9][0-9]*-[A-Za-z0-9_-]{24,64}\.(?:jpg|png|webp|pdf)$/.test(body.url))
+    throw new ApiError(502,'La subida no devolvió una referencia privada válida del servidor.');
    return {url:body.url,name:body.name};
   }catch(err){
    if(err instanceof ApiError)throw err;

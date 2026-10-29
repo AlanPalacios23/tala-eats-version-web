@@ -40,5 +40,9 @@
       "name": "Repartidor",
       "url": "/repartidor"
     }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
   ]
 }

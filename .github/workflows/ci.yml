@@ -36,6 +36,8 @@ jobs:
           bash -n deploy/kali-install-pwa-isolated.sh
           bash -n deploy/kali-review-preview.sh
           bash -n deploy/kali-update-existing-public.sh
+          bash -n deploy/rc136-kali-build-three-pwa.sh
+          bash -n deploy/rc136-kali-promote-three-pwa.sh
           bash -n deploy/ENABLE_STRIPE_LIVE_PWA_CSP_KALI.sh
       - name: Build isolated review release
         env:

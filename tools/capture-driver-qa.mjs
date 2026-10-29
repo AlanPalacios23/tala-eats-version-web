@@ -72,9 +72,9 @@ try{
  });
  await page.goto(ORIGIN+'/repartidor/acceso');
  await page.getByRole('heading',{name:'Entra y empieza tu ruta.'}).waitFor();
- const logo=await page.locator('.df-brand img').evaluate(img=>({w:img.naturalWidth,h:img.naturalHeight,complete:img.complete}));
- assert.deepEqual(logo,{w:418,h:418,complete:true},'must reuse exact Flutter original logo');
- await page.screenshot({path:`${dir}/acceso-390.png`,fullPage:true});captures++;
+ assert.equal(await page.locator('.df-brand img').count(),0,'login must not show decorative logo');
+  assert.equal(await page.locator('.df-brand-type').count(),0,'login must not show old brand lockup');
+  await page.screenshot({path:`${dir}/acceso-390.png`,fullPage:true});captures++;
  await page.goto(ORIGIN+'/repartidor/registro');
  await page.getByRole('heading',{name:'Únete a la red de repartidores.'}).waitFor();
  await page.getByText('Número de placas').waitFor();
@@ -83,6 +83,6 @@ try{
  await context.close();
  console.log('DRIVER_FLUTTER_VISUAL_QA=PASS');
  console.log('DRIVER_VIEWS=4 SIZES=320,360,390,430 SCREENSHOTS='+captures);
- console.log('DRIVER_LOGO_ORIGINAL=PASS CTA_DOCKED=PASS WEEK_INTERACTIVE=PASS');
+ console.log('DRIVER_AUTH_CLEAN_HEADER=PASS CTA_DOCKED=PASS WEEK_INTERACTIVE=PASS');
  console.log('DRIVER_MOCK_ONLY=YES LIVE_TRANSACTIONS=0');
 }finally{await browser.close();}

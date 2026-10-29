@@ -34,3 +34,8 @@ img{max-width:100%}
 .merchant-standalone-app .mobile-address-error{color:#9e342e;font-size:12px}
 .merchant-standalone-app .mobile-profile-saved{color:#3f8356;font-size:12px}
 @media(max-width:620px){.merchant-standalone-app .form-grid{grid-template-columns:1fr}}
+
+/* Keep interactive content clear of camera notches in installed PWA mode. */
+@media(display-mode:fullscreen),(display-mode:standalone){
+ .merchant-standalone-app{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+}
