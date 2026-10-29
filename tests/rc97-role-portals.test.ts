@@ -12,7 +12,7 @@ describe('RC9.7: three operational PWA role portals',()=>{
    expect(app).toContain(r);
   }
   expect(app).toContain('restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL)');
-  expect(app).toContain('<Protected role="driver"><Driver/></Protected>');
+  expect(app).toContain('<DriverCanonicalRedirect suffix=""/>');
  });
  it('does not show the customer shopping cart, customer header or footer inside Driver',()=>{
   expect(app).toContain("const isDriverPortal=location.pathname==='/repartidor'||location.pathname.startsWith('/repartidor/')");
