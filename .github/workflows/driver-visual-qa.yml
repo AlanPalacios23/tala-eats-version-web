@@ -9,6 +9,7 @@ on:
       - 'repartidores.html'
       - 'vite.repartidor.config.ts'
       - 'deploy/*repartidores*'
+      - 'deploy/rc138-*'
       - 'src/styles/driver*.css'
       - 'src/lib/driver-registration.ts'
       - 'src/lib/driver-presence.ts'
@@ -36,7 +37,9 @@ jobs:
           npm install --no-save --package-lock=false playwright
           npx playwright install --with-deps chromium
       - name: Syntax-check independent Nginx deployment scripts
-        run: bash -n deploy/kali-install-repartidores-isolated.sh deploy/kali-update-repartidores-isolated.sh
+        run: |
+          bash -n deploy/kali-install-repartidores-isolated.sh deploy/kali-update-repartidores-isolated.sh
+          bash -n deploy/rc138-kali-build-driver-only.sh deploy/rc138-kali-driver-live-preflight.sh deploy/rc138-kali-driver-deploy.sh
       - name: Start independent Driver PWA
         run: |
           npx vite preview --config vite.repartidor.config.ts --host 127.0.0.1 --port 4173 --strictPort > /tmp/tala-driver-qa.log 2>&1 &
