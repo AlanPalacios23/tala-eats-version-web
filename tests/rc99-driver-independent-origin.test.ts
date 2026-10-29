@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
-import {driverPortalDestination} from '../src/lib/driver-host';
+import {canonicalDriverRoute,driverPortalDestination} from '../src/lib/driver-host';
 const read=(file:string)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const shell=read('src/DriverStandalone.tsx');
 const entry=read('src/main-repartidores.tsx');
@@ -45,26 +45,29 @@ describe('RC9.9: independent native-style Driver PWA',()=>{
   expect(nginx).toContain('talaeats-repartidores-pwa/nginx.pid');
   expect(unit).toContain('/etc/talaeats-repartidores-pwa/nginx.conf');
  });
- it('supports only explicit approved redirect after DNS is verified',()=>{
-  expect(driverPortalDestination(undefined)).toBe('/repartidor');
-  expect(driverPortalDestination('https://evil.example/repartidor')).toBe('/repartidor');
-  expect(driverPortalDestination('http://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('/repartidor');
-  expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/checkout')).toBe('/repartidor');
-  expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('https://repartidores-talaeats.alan-palacios-dev.com/repartidor');
-  expect(read('src/App.tsx')).toContain("driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)");
+ it('always uses the verified canonical driver origin without an unsafe env override',()=>{
+  const host='https://repartidores-talaeats.alan-palacios-dev.com';
+  expect(driverPortalDestination()).toBe(host+'/repartidor');
+  expect(canonicalDriverRoute('/repartidor')).toBe(host+'/repartidor');
+  expect(canonicalDriverRoute('/repartidor/acceso')).toBe(host+'/repartidor/acceso');
+  expect(canonicalDriverRoute('/repartidor/registro')).toBe(host+'/repartidor/registro');
+  expect(canonicalDriverRoute('/repartidor/anything-unknown?next=https://evil.example')).toBe(host+'/repartidor');
  });
- it('RC10.0: all customer-host legacy Driver links and routes redirect only after explicit verified build opt-in',()=>{
+ it('RC139: every main portal entry and old Driver route leads to ONLY the official PWA',()=>{
   const app=read('src/App.tsx');
-  expect(app).toContain('function DriverExternalOrLocal(');
-  expect(app).toContain("window.location.replace(href)");
-  expect(app).toContain("const href=approved==='/repartidor'?null:approved+suffix");
-  expect(app).toContain('<DriverExternalOrLocal suffix=""><Protected role="driver"><Driver/></Protected></DriverExternalOrLocal>');
-  expect(app).toContain('<DriverExternalOrLocal suffix="/acceso"><DriverAccess/></DriverExternalOrLocal>');
-  expect(app).toContain('<DriverExternalOrLocal suffix="/registro"><DriverRegistration/></DriverExternalOrLocal>');
-  expect(app).toContain('<a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Repartidores</a>');
-  expect(app).toContain('<a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Soy repartidor</a>');
-  expect(driverPortalDestination(undefined)).toBe('/repartidor');
-  expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('https://repartidores-talaeats.alan-palacios-dev.com/repartidor');
+  expect(app).toContain('function DriverCanonicalRedirect(');
+  expect(app).toContain('window.location.replace(href)');
+  expect(app).toContain('const href=driverPortalDestination()+suffix');
+  expect(app).toContain('<Route path="/repartidor" element={<DriverCanonicalRedirect suffix=""/>}/>');
+  expect(app).toContain('<Route path="/repartidor/acceso" element={<DriverCanonicalRedirect suffix="/acceso"/>}/>');
+  expect(app).toContain('<Route path="/repartidor/registro" element={<DriverCanonicalRedirect suffix="/registro"/>}/>');
+  expect(app).toContain('<Route path="/repartidor/*" element={<DriverCanonicalRedirect suffix=""/>}/>');
+  expect(app).toContain('<a href={driverPortalDestination()}>Repartidores</a>');
+  expect(app).toContain('<a href={driverPortalDestination()}>Soy repartidor</a>');
+  expect(app).not.toContain("import {DriverPwaWorkflow}");
+  expect(app).not.toContain("import {DriverAccess");
+  expect(app).not.toContain("import.meta.env.VITE_DRIVER_APP_URL");
+  expect(app).not.toContain("DriverExternalOrLocal");
  });
  it('dedicated service worker does not intercept location, API, delivery writes or private sessions',()=>{
   expect(sw).toContain("req.method!=='GET'");
