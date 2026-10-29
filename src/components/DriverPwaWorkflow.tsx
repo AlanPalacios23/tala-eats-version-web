@@ -35,6 +35,7 @@ export function DriverPwaWorkflow(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
  const [proofSheet,setProofSheet]=useState(false);
+ const proofInput=useRef<HTMLInputElement>(null);
  const [selectedDay,setSelectedDay]=useState<string|null>(null);
  const actionCooldown=useRef(0);
  const [sheet,setSheet]=useState<'vehicle'|'documents'|'security'|'help'|null>(null);
@@ -189,6 +190,17 @@ export function DriverPwaWorkflow(){
 
  const doneToday=dashboard?.today?.deliveries;
  useEffect(()=>{if(!active&&proofSheet)setProofSheet(false);},[active?.id,proofSheet]);
+ useEffect(()=>{
+  if(!proofSheet)return;
+  const scroll=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  proofInput.current?.focus();
+  const key=(e:KeyboardEvent)=>{
+   if(e.key==='Escape'&&!busy){e.preventDefault();setProofSheet(false);}
+  };
+  document.addEventListener('keydown',key);
+  return()=>{document.body.style.overflow=scroll;document.removeEventListener('keydown',key);};
+ },[proofSheet,busy]);
  const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);setProofSheet(false);};
  const openDeliveryProof=(order:Order)=>{
   if(order.status==='on_the_way'&&canProgress&&!busy){
@@ -280,38 +292,45 @@ export function DriverPwaWorkflow(){
   press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true);}
  }:active?.status==='on_the_way'&&canProgress?{
   label:'Validar entrega con PIN',disabled:busy,
-  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();setProofSheet(true);}}
+  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();openDeliveryProof(active);}}
  }:null;
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
- return <div className="df-app" data-driver-pwa="true">
+ return <div className="df-app" data-driver-pwa="true" data-presence={online?'online':readiness?'offline':'unavailable'}>
    <main className="df-content">
+    {!readiness&&!loading&&error&&<section className="df-reconnect df-surface" role="alert">
+     <WifiOff size={24}/><div><strong>No pudimos sincronizar tus entregas</strong>
+      <p>Por seguridad no se aceptarán nuevos pedidos hasta recuperar la conexión con Tala Eats.</p></div>
+     <button type="button" className="df-outline" onClick={()=>void refresh()}>Reintentar</button>
+    </section>}
+    {loading&&!readiness&&<div className="df-initial-loading" role="status"><RefreshCw size={20} className="df-rotate"/> Sincronizando tu cuenta con Tala Eats…</div>}
     {tab==='inicio'&&<>
-      <header className="df-screen-header"><div><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
+      <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
        <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{initial}</button></header>
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
-       <div className="df-availability-text"><strong>{online?'En línea':'Fuera de línea'}</strong>
-        <small>{active?'Entrega en curso':online?(reachable?'Recibiendo pedidos':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
+       <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
+        <small>{active?'Entrega en curso':online?(reachable?'Listo para nuevas asignaciones':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
        <button className={'df-switch '+(online?'on':'')} type="button" role="switch" aria-checked={online}
         aria-label="Cambiar disponibilidad" disabled={busy||!!active||readiness?.presence_enabled!==true||!readiness?.admin_verified}
         onClick={()=>void setOnline(!online)}><span/></button>
       </section>
       {readiness?.admin_verified!==true&&<div className="df-alert df-alert-info"><ShieldCheck size={19}/> Tu cuenta debe estar aprobada por ADMIN antes de conectarte.</div>}
       {readiness?.presence_enabled===false&&<div className="df-alert df-alert-info"><LockKeyhole size={18}/> El servidor todavía no habilitó la presencia en este entorno.</div>}
-      {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén abierta la PWA.</div>}
+      {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén la PWA abierta y permite la ubicación precisa.</div>}
+      {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Estás conectado y verificado. El servidor aún no habilita nuevas asignaciones para este modo de reparto.</div>}
       {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS</button>}
       <section className="df-main-stage">
        {active?<>{jobCard(active)}<p className="df-safety"><ShieldCheck size={17}/> Por seguridad, detente antes de usar la app en ruta.</p></>:
         <div className="df-empty df-surface">
          {online?<Bike size={34}/>:<Moon size={34}/>}
          <h2>{online?'Esperando pedidos':'Estás fuera de línea'}</h2>
-         <p>{online?'Te avisaremos en cuanto tengas una asignación. Mantén la app abierta.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
+         <p>{online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
         </div>}
       </section>
       <section className="df-section">
-       <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias</button></header>
+       <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
        <button className="df-surface df-metrics" onClick={()=>onTab('ganancias')} aria-label="Abrir ganancias">
         <div><small>Ganancias</small><strong>{dashboard?.today?safeAmount(dashboard.today.earnings):'—'}</strong></div>
         <div><small>Entregas</small><strong>{metric(doneToday)}</strong></div>
@@ -324,7 +343,7 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Entregas</h1><p>{dashboard?.today?('Hoy · '+metric(doneToday)+' completadas'):'Historial de entregas'}</p></div>
        <button className="df-icon-button" aria-label="Actualizar entregas" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={21}/></button></header>
       {active&&<section className="df-section"><h2>En curso</h2>{jobCard(active)}</section>}
-      <section className="df-section"><div className="df-section-title"><h2>Historial</h2><small>{delivered.length} pedidos</small></div>
+      <section className="df-section"><div className="df-section-title"><h2>Historial validado</h2><small>{delivered.length} pedidos</small></div>
        {delivered.length?delivered.map(o=>jobCard(o)):
        <div className="df-empty df-surface"><ReceiptText size={32}/><h2>Aún no hay entregas</h2><p>Las entregas que completes aparecerán aquí.</p></div>}
       </section>
@@ -345,7 +364,7 @@ export function DriverPwaWorkflow(){
        </section>
       <FinanceWeeklyPreview kind="driver"/>
       <DriverCashHandoff orders={delivered}/>
-      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Configura tus retiros</strong></div>
+      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Cuenta bancaria y retiros</strong></div>
        <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
        <button className="df-outline" disabled>Configurar cuenta bancaria</button>
        <p className="df-caption">Los retiros reales solo se habilitan con saldo confirmado y autorización de Tala Eats.</p></div>
@@ -378,7 +397,7 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Perfil</h1></div></header>
       <div className="df-surface df-profile-identity"><span className="df-avatar df-avatar-static">{initial}</span>
        <div><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
-        <span className="df-chip"><ShieldCheck size={14}/>{profile?.is_verified?'Cuenta verificada':'Verificación pendiente'}</span>
+        <span className="df-chip"><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
        </div></div>
       <section className="df-section"><h2>Trabajo</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('vehicle')}><Bike size={21}/><span><strong>Vehículo</strong><small>{profile?.vehicle||'Sin vehículo'} · {maskedDriverPlate(profile?.plate)}</small></span><ChevronRight size={19}/></button>
@@ -409,18 +428,28 @@ export function DriverPwaWorkflow(){
       <span className="df-nav-icon"><t.Icon size={24} strokeWidth={tab===t.key?2.6:1.9}/>{t.key==='inicio'&&active&&tab!=='inicio'&&<i className="df-active-pip"/>}</span><span className="df-nav-label">{t.label}</span>
      </button>)}
    </nav>
-   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setProofSheet(false)}>
-     <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-label="Confirmar entrega" onClick={e=>e.stopPropagation()}>
-      <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setProofSheet(false)}><X size={21}/></button>
-      <h2>Confirmar entrega</h2>
-      <p>Introduce el PIN de 4 dígitos que te dio el cliente. El servidor verificará la entrega.</p>
-      <label>PIN de entrega<input type="text" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}"
-        placeholder="0000" value={pin[active.id]??''}
-        onChange={e=>setPin(p=>({...p,[active.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
-      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> La evidencia fotográfica continúa pendiente de integración; no se simulan fotografías.</div>
-      <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[active.id]??'')}
-       onClick={()=>void guardedAction(()=>api.driverComplete(active.id,pin[active.id]??''),'Entrega validada por el servidor.',true)}>
-       {busy?'Validando…':'Confirmar entrega'}</button>
+   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>{if(!busy)setProofSheet(false);}}>
+     <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-labelledby="df-proof-title" aria-describedby="df-proof-description" onClick={e=>e.stopPropagation()}>
+      <button type="button" className="df-icon-button df-sheet-close" aria-label="Cerrar" disabled={busy} onClick={()=>setProofSheet(false)}><X size={21}/></button>
+      <span className="df-sheet-handle" aria-hidden="true"/>
+      <span className="df-eyebrow">PEDIDO #{active.id} · ÚLTIMO PASO</span>
+      <h2 id="df-proof-title">Confirmar entrega</h2>
+      <p id="df-proof-description">Solicita al cliente el PIN de 4 dígitos. Solo el servidor puede autorizar el cierre del pedido.</p>
+      {cashCollectionRequired(active)&&<label className="df-cash-ack">
+        <input type="checkbox" checked={cashReceived[active.id]===true} disabled={busy}
+         onChange={e=>setCashReceived(old=>({...old,[active.id]:e.target.checked}))}/>
+        <span><strong>Recibí el efectivo del cliente</strong>
+         <small>Confirmo que conté y recibí {pesos(active.total)}. El backend registrará esta cobranza y quedará pendiente de conciliación; no es mi ganancia.</small></span>
+       </label>}
+      <label className="df-proof-pin-label" htmlFor="df-pin-entry">PIN de entrega
+       <input ref={proofInput} id="df-pin-entry" type="text" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}"
+        placeholder="••••" value={pin[active.id]??''} disabled={busy}
+        onChange={e=>setPin(old=>({...old,[active.id]:sanitizeDeliveryPin(e.target.value)}))}/>
+      </label>
+      <p className="df-proof-note"><ShieldCheck size={16}/> El PIN no se guarda en este dispositivo. La evidencia fotográfica no está habilitada en esta versión.</p>
+      <button type="button" className="df-primary" disabled={busy||!canProgress||!canSubmitDelivery(active,pin[active.id]??'',cashReceived[active.id]===true)}
+       onClick={()=>void completeDelivery(active)}>
+       {busy?'Validando en el servidor…':'Confirmar entrega de forma segura'}</button>
      </section>
     </div>}
    {sheet&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setSheet(null)}>
@@ -435,8 +464,8 @@ export function DriverPwaWorkflow(){
      </>}
      {sheet==='documents'&&<>
       <p>Estado de tu documentación.</p>
-      <div className="df-doc-empty"><FileCheck2 size={30}/><strong>Aún no hay documentos verificados</strong>
-       <span>Cuando Tala Eats confirme tu registro, aquí aparecerá el estado de cada documento.</span></div>
+      <div className="df-doc-empty"><FileCheck2 size={30}/><strong>{readiness?.admin_verified?'Cuenta aprobada':'Verificación pendiente'}</strong>
+       <span>Esta sección muestra el estado general de tu aprobación. El detalle de cada documento no está disponible en esta vista.</span></div>
      </>}
      {sheet==='security'&&<><p>Acceso y sesión</p>
       <div className="df-detail-row"><span>Correo</span><strong>{session.user?.email||'No disponible'}</strong></div>
