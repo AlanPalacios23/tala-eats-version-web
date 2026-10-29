@@ -136,10 +136,28 @@ export interface MerchantStaff {
  id:number;user_id:number;name:string;email:string;role:string;
 }
 
+export interface AdminRestaurantRecord {
+ id:number;name:string;owner_id:number|null;is_open:boolean;
+ verification_status:string;onboarding_status:string;active_orders:number;
+ can_archive:boolean;market_code:string;
+}
 export interface MerchantApplication {
   id:number;user_id:number;entity_type:'restaurant'|'driver';
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
   notes:string;created_at:string;updated_at:string;
+}
+export interface WeeklyWalletStatement {
+ currency:'MXN';unit:'centavos';kind:'restaurant'|'driver';payee_id:number;
+ period_start:string;period_timezone:'America/Mexico_City';
+ recorded_earnings_cents:string;pending_allocation_cents:string;
+ cash_in_driver_custody_cents:string;
+ cash_in_merchant_custody_unverified_cents:string;withdrawable_cents:string;
+ bank_payout_confirmed:false;payment_to_bank_status:string;
+ release_approved:false;status:string;completeness:string;
+ items:Array<{order_id:number;earned_cents:string;allocation_state:string;
+  payment_method:string;fulfillment:string;delivered_at:string;
+  cash_collector_kind:string|null;cash_collector_id:number|null;
+  cash_custody_status:string|null;financial_hold_reasons:string[]}>;
 }
 export interface MerchantEarnings {
   restaurant_id:number;currency:'MXN';unit:'centavos';
@@ -221,11 +239,28 @@ export const api = {
       entity_type:'restaurant',business_name:businessName,tax_id:taxId,
       vehicle:'',payout_account_ref:'',documents,
     })),
+  adminRestaurants: () => request<AdminRestaurantRecord[]>('/admin/restaurants?limit=100'),
+  adminRestoreRestaurant: (id:number,confirmName:string,reason:string) =>
+    request<{id:number;name:string;restored:boolean;verification_status:string;is_open:boolean;pickup_enabled:boolean}>(
+      `/admin/restaurants/${id}/restore`,json('PATCH',{confirm_name:confirmName,reason})),
   adminRestaurantApplications: () => request<MerchantApplication[]>('/admin/onboarding'),
   adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
   ownerFinance: () => request<MerchantFinance>('/owner/finance'),
   ownerEarnings: (restaurantId:number) => request<MerchantEarnings>(`/owner/finance/earnings/${restaurantId}`),
+  ownerWeeklyWallet: (id:number) => request<WeeklyWalletStatement>(`/owner/wallet/weekly/${id}`),
+  driverWeeklyWallet: () => request<WeeklyWalletStatement>('/driver/wallet/weekly'),
+  driverCashHandoffStart: (orderId:number) => request<{
+    order_id:number;amount_cents:string;code:string;valid_for_minutes:number;
+    state:string;bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/driver/finance/cash-handoff/${orderId}/start`,json('POST',{})),
+  ownerCashHandoffConfirm: (orderId:number,code:string,amountCents:string) => request<{
+    order_id:number;amount_cents:string;state:string;
+    bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/owner/finance/cash-handoff/${orderId}/confirm`,json('POST',{
+    code,amount_cents:amountCents
+  })),
+
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=200&offset=0'),
   ownerEmployees: () => request<MerchantStaff[]>('/owner/employees'),
