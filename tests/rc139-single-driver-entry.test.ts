@@ -33,6 +33,17 @@ describe('RC139 one canonical Driver PWA for ALL old customer-origin links',()=>
   expect(script).toContain('RC139_DIAG_PATH=');
   expect(script).toContain('check_routes_retry');
   expect(script).toContain('verify_isolated_nginx');
+  // P0 regression: Nginx is launched as www-data, not root. Root nginx -t
+  // can pass a 0600 include while systemd ExecStartPre will crash.
+  expect(script).toContain('unit_user="$(systemctl show -p User --value "$SERVICE")"');
+  expect(script).toContain('config_readable "$CONFIG"');
+  expect(script).toContain('config_readable "$TEMP"');
+  expect(script).toContain('chown root:www-data "$TEMP"');
+  expect(script).toContain('chmod 0640 "$TEMP"');
+  expect(script).toContain('chown root:www-data "$CONFIG"');
+  expect(script).toContain('chmod 0640 "$CONFIG"');
+  expect(script).not.toContain('chmod --reference="$CONFIG" "$TEMP"');
+  expect(script).not.toContain('chown --reference="$CONFIG" "$TEMP"');
   expect(script).toContain('RC139_ISOLATED_NGINX_IDENTITY=PASS');
   expect(script).toContain('RC139_NGINX_ACTIVATION=PASS_ISOLATED_RESTART');
   expect(script).toContain('RC139_REDIRECT=HOLD_POST_RESTART');
