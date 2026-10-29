@@ -44,7 +44,7 @@ describe('Restaurantes Web: Stripe Connect production readiness (no LIVE calls)'
  it('needs explicit owner approval and never creates a Stripe account or payout in browser',()=>{
   const app=readFileSync(new URL('../src/components/RestaurantApp.tsx',import.meta.url),'utf8');
   expect(app).toContain('ownerConnectAcknowledged');
-  expect(app).toContain('disabled={busy||!syncHealthy||!ownerConnectAcknowledged||PREVIEW_READONLY}');
+  expect(app).toContain('disabled={busy||!syncHealthy||!ownerConnectAcknowledged||!connectTotpReady||PREVIEW_READONLY}');
   expect(app).toContain("if(result?.owner_confirmed!==true)");
   expect(app).toContain('checkedOwnerConnectStatus(c.value,r.id)');
   expect(app).toContain('trustedStripeConnectLink(result)');

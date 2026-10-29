@@ -604,3 +604,12 @@
 @media(prefers-reduced-motion:reduce){
  .rp-auth-page .rp-form input{transition:none}
 }
+
+/* RC137: unobtrusive mobile-first authenticator step-up for Stripe Connect. */
+.rp-connect-totp{display:grid;gap:9px;padding:16px;margin:16px 0;border:1px solid #e5e9e1;background:#fff;border-radius:16px}
+.rp-connect-totp label{display:block;font-size:13px;font-weight:750;color:#28332b}
+.rp-connect-totp input{box-sizing:border-box;width:100%;min-width:0;max-width:310px;min-height:48px;padding:11px 14px;border:1px solid #d5ded3;border-radius:12px;background:#fff;color:#26332a;font:inherit;font-size:18px;letter-spacing:.15em}
+.rp-connect-totp input:focus-visible{outline:3px solid #ed8c5338;outline-offset:1px;border-color:#df773b}
+.rp-connect-totp input:disabled{background:#f6f6f5;opacity:.7}
+.rp-connect-totp small{font-size:12px;line-height:1.55;color:#657167;max-width:460px}
+@media(max-width:590px){.rp-connect-totp{padding:14px;margin:12px 0}.rp-connect-totp input{max-width:100%}}

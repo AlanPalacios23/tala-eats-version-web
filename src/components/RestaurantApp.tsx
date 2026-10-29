@@ -378,6 +378,8 @@ export function RestaurantWorkspace(){
  const [connect,setConnect]=useState<MerchantConnectStatus|null>(null);
  const [connectError,setConnectError]=useState('');
  const [ownerConnectAcknowledged,setOwnerConnectAcknowledged]=useState(false);
+ const [connectTotp,setConnectTotp]=useState('');
+ const connectTotpReady=/^[0-9]{6}$/.test(connectTotp);
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [syncHealthy,setSyncHealthy]=useState(false),[refreshing,setRefreshing]=useState(false);
 
@@ -401,7 +403,7 @@ export function RestaurantWorkspace(){
     // Discard approvals and balances belonging to the previous merchant.
     currentRestaurantId.current=r.id;
     setStats(null);setFinance(null);setConnect(null);setConnectError('');
-    setOwnerConnectAcknowledged(false);
+    setOwnerConnectAcknowledged(false);setConnectTotp('');
     setPins({});setCashConfirmed({});
    }
    setRestaurant(r);setOrders(o);setError('');setSyncHealthy(true);
@@ -423,7 +425,7 @@ export function RestaurantWorkspace(){
     if(e instanceof ApiError&&e.status===404){
      currentRestaurantId.current=null;
      setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
-     setOwnerConnectAcknowledged(false);
+     setOwnerConnectAcknowledged(false);setConnectTotp('');
      setPins({});setCashConfirmed({});setLastSync(null);setNotice('');
      setSyncHealthy(true);setError('');
     }else{
@@ -432,7 +434,7 @@ export function RestaurantWorkspace(){
      currentRestaurantId.current=null;
      setRestaurant(null);setOrders([]);setStats(null);setFinance(null);setConnect(null);
      setPins({});setCashConfirmed({});setLastSync(null);setNotice('');
-     setOwnerConnectAcknowledged(false);
+     setOwnerConnectAcknowledged(false);setConnectTotp('');
      setSyncHealthy(false);
      setError(e instanceof Error?e.message:'No se pudo conectar con el backend de tu restaurante.');
     }
@@ -484,26 +486,30 @@ export function RestaurantWorkspace(){
  };
  async function signOut(){
   if(busyRef.current)return;
-  try{await logout();navigate('/restaurante/acceso',{replace:true});}
+  try{setConnectTotp('');await logout();navigate('/restaurante/acceso',{replace:true});}
   catch(e){setError(e instanceof Error?e.message:'No se pudo cerrar sesión.');}
  }
  function confirmOwner(){
-  if(!restaurant||!connect||connect.owner_approved||!ownerConnectAcknowledged||busyRef.current)return;
+  if(!restaurant||!connect||connect.owner_approved||!ownerConnectAcknowledged||!connectTotpReady||busyRef.current||PREVIEW_READONLY)return;
   if(!window.confirm('Confirmo que soy el titular del comercio y reconocí con administración la cuenta Stripe Connect vinculada. La autorización quedará registrada en el servidor. ¿Continuar?'))return;
+  const totp=connectTotp;
+  setConnectTotp(''); // One-time financial authentication codes cannot be reused.
   void doAction(async()=>{
-   const result=await api.ownerConfirmConnect(restaurant.id);
+   const result=await api.ownerConfirmConnect(restaurant.id,totp);
    if(result?.owner_confirmed!==true)
     throw new Error('El servidor no confirmó tu autorización Stripe Connect.');
-   setOwnerConnectAcknowledged(false);
+   setOwnerConnectAcknowledged(false);setConnectTotp('');
   },'Autorización registrada. El backend verificará los requisitos de Stripe antes de habilitar pedidos.');
  }
  async function onboardingLink(){
-  if(!restaurant||!connect?.owner_approved||busyRef.current||PREVIEW_READONLY)return;
+  if(!restaurant||!connect?.owner_approved||!connectTotpReady||busyRef.current||PREVIEW_READONLY)return;
+  const totp=connectTotp;
+  setConnectTotp(''); // A second Connect step requires a different code.
   busyRef.current=true;setBusy(true);setError('');setNotice('');
   try{
    // A fresh, one-time Account Link is generated only after a real click.
    // Reject expired links and unexpected origins before leaving Tala Eats.
-   const result=await api.ownerConnectOnboardingLink(restaurant.id);
+   const result=await api.ownerConnectOnboardingLink(restaurant.id,totp);
    const url=trustedStripeConnectLink(result);
    window.location.assign(url);
   }catch(e){setError(e instanceof Error?e.message:'No fue posible continuar a Stripe Connect.');}
@@ -758,6 +764,14 @@ export function RestaurantWorkspace(){
          <span><strong>{step.label}</strong><small>{step.complete?'Completado según el servidor':'Pendiente de validación'}</small></span>
         </li>)}</ol>
         {connectError&&<Notice kind="info" message={connectError}/>}
+         {(connectStage==='owner'||connectStage==='stripe')&&<div className="rp-connect-totp">
+          <label htmlFor="restaurant-connect-totp">Código de seguridad de tu autenticador</label>
+          <input id="restaurant-connect-totp" type="password" inputMode="numeric" autoComplete="one-time-code"
+           placeholder="6 dígitos" maxLength={6} pattern="[0-9]{6}" value={connectTotp}
+           onChange={e=>setConnectTotp(e.target.value.replace(/[^0-9]/g,'').slice(0,6))}
+           disabled={busy||PREVIEW_READONLY} aria-describedby="restaurant-connect-totp-help"/>
+          <small id="restaurant-connect-totp-help">Activa primero la verificación 2FA e inicia sesión con ella. Por seguridad, cada confirmación exige un código nuevo y solo puede utilizarse una vez.</small>
+         </div>}
         {connectStage==='unlinked'&&<div className="rp-connect-help">
          <strong>Tu cuenta todavía no aparece vinculada</strong>
          <p>Solicita a administración que revise la cuenta de cobro de tu negocio. Si ya la vinculó, vuelve a verificar aquí. No introduzcas contraseñas ni claves de Stripe en Tala Eats.</p>
@@ -767,13 +781,13 @@ export function RestaurantWorkspace(){
          <label><input type="checkbox" checked={ownerConnectAcknowledged}
           disabled={busy||PREVIEW_READONLY} onChange={e=>setOwnerConnectAcknowledged(e.target.checked)}/>
           <span>Soy el titular del restaurante y confirmé directamente con administración que la cuenta Stripe Connect vinculada es la mía.</span></label>
-         <button type="button" className="rp-btn primary" disabled={busy||!syncHealthy||!ownerConnectAcknowledged||PREVIEW_READONLY}
+         <button type="button" className="rp-btn primary" disabled={busy||!syncHealthy||!ownerConnectAcknowledged||!connectTotpReady||PREVIEW_READONLY}
           onClick={confirmOwner}><KeyRound size={17}/> Confirmar mi titularidad</button>
         </div>}
         {connectStage==='stripe'&&<div className="rp-connect-cta">
          <p>Se abrirá <strong>connect.stripe.com</strong>. Tala Eats no recopila tus contraseñas ni los números de tu cuenta bancaria.</p>
          <button type="button" className="rp-btn primary"
-          disabled={busy||!syncHealthy||PREVIEW_READONLY} onClick={()=>void onboardingLink()}>
+          disabled={busy||!syncHealthy||!connectTotpReady||PREVIEW_READONLY} onClick={()=>void onboardingLink()}>
           Continuar de forma segura en Stripe <ArrowRight size={18}/></button>
         </div>}
         {connectStage==='review'&&<p className="rp-connect-pending" role="status">
