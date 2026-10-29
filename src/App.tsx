@@ -28,23 +28,19 @@ import { CustomerLaunch } from './components/CustomerLaunch';
 import { CustomerEntry, CustomerStepAuth } from './components/CustomerOnboarding';
 import { CustomerAccount, CustomerWallet, CustomerNotifications, CustomerSupport, CustomerFavorites } from './components/CustomerAccount';
 import {CustomerPwaInstallMenuButton} from './components/CustomerPwaInstall';
-import {DriverPwaWorkflow} from './components/DriverPwaWorkflow';
-import {DriverAccess,DriverRegistration} from './components/DriverRegistration';
 
 function ExternalLegalRedirect({href}:{href:string}){
  useEffect(()=>{window.location.replace(href)},[href]);
  return <div role="status" className="mobile-status">Abriendo el documento oficial de Tala Eats… <a href={href}>Abrir documento</a></div>;
 }
-/** After HTTPS + tunnel verification the legacy customer-host Driver routes
- * forward to the independent Driver PWA. Before explicit opt-in, keep the
- * existing role-guarded fallback exactly as before.
+/** RC139: the main customer origin never renders driver-specific screens.
+ * Authentication and registration are performed ONLY by the standalone
+ * HTTPS driver origin, not via cookies/localStorage copied between domains.
  */
-function DriverExternalOrLocal({suffix,children}:{suffix:''|'/acceso'|'/registro';children:ReactNode}){
- const approved=driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL);
- const href=approved==='/repartidor'?null:approved+suffix;
- useEffect(()=>{if(href)window.location.replace(href);},[href]);
- if(href)return <div className="mobile-status" role="status">Abriendo Tala Eats Repartidores… <a href={href}>Abrir Repartidores</a></div>;
- return <>{children}</>;
+function DriverCanonicalRedirect({suffix}:{suffix:''|'/acceso'|'/registro'}){
+ const href=driverPortalDestination()+suffix;
+ useEffect(()=>{window.location.replace(href);},[href]);
+ return <div className="mobile-status" role="status">Abriendo Tala Eats Repartidores… <a href={href}>Continuar a Repartidores</a></div>;
 }
 function Spinner(){return <div className="loading"><RefreshCw className="spin" size={20}/> Cargando información del servidor...</div>;}
 function EmptyState({icon,title,description,action}:{icon:ReactNode;title:string;description:string;action?:ReactNode}){return <div className="empty"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{description}</p>{action}</div>;}
@@ -55,7 +51,7 @@ function AppHeader({count}:{count:number}){
   <Link to="/" className="brand" aria-label="Tala Eats inicio"><span className="brand-mark"><ChefHat size={23} strokeWidth={2.4}/></span><span className="brand-name">Tala <b>Eats</b><small>COMERCIO LOCAL</small></span></Link>
   <nav className={'navlinks '+(menuOpen?'open':'')} aria-label="Navegación principal">
    <NavLink to="/clientes">Explorar</NavLink><NavLink to="/pedidos">Mis pedidos</NavLink>
-   <NavLink to="/restaurante">Restaurantes</NavLink><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Repartidores</a>
+   <NavLink to="/restaurante">Restaurantes</NavLink><a href={driverPortalDestination()}>Repartidores</a>
   </nav>
   <div className="header-actions"><CustomerPwaInstallMenuButton/>
     <Link className="header-cart" to="/carrito" aria-label={'Carrito con '+count+' artículos'}><ShoppingBag size={21}/>{count>0&&<span className="cart-dot">{count}</span>}</Link>
@@ -64,7 +60,7 @@ function AppHeader({count}:{count:number}){
   </div>
  </div></header>;
 }
-function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Soy repartidor</a></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
+function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><a href={driverPortalDestination()}>Soy repartidor</a></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
 function PortalLanding(){
  const links=[
   {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/iniciar',number:'01'},
@@ -79,7 +75,7 @@ function PortalLanding(){
    <nav className="gateway-portals" aria-label="Acceso a las aplicaciones de Tala Eats">
     {links.map(item=><Link className="gateway-portal"
      to={item.path==='/restaurante'?restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL):
-      item.path==='/repartidor'?driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL):item.path}
+      item.path==='/repartidor'?driverPortalDestination():item.path}
      key={item.path}>
      <span className="gateway-portal-text"><strong>{item.title}</strong><small>{item.description}</small></span>
      <span className="gateway-portal-arrow" aria-hidden="true"><ArrowRight size={35} strokeWidth={1.7}/></span>
@@ -105,7 +101,7 @@ function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'admin
  if(!user)return <Navigate to={role==='restaurant'?'/restaurante/acceso':role==='driver'?'/repartidor/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
  if(role==='restaurant'&&user.role==='customer')return <Navigate to="/restaurante/alta" replace/>;
  if(role==='restaurant'&&user.role==='admin')return <Navigate to="/admin/solicitudes-restaurantes" replace/>;
- if(role==='driver'&&!isDriverRole(user.role))return <DriverAccess/>;
+ if(role==='driver'&&!isDriverRole(user.role))return <DriverCanonicalRedirect suffix="/acceso"/>;
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role))||(role==='admin'&&user.role!=='admin'))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
@@ -118,7 +114,6 @@ function CustomerGate({children}:{children:ReactNode}){
  if(user.role!=='customer')return <div className="mobile-status" role="alert">Esta cuenta pertenece a otra aplicación de TALA EATS.</div>;
  return <>{children}</>;
 }
-function Driver(){return <DriverPwaWorkflow/>;}
 function CustomerBottomDock(){
  const location=useLocation();
  const tabs=[
@@ -176,9 +171,10 @@ export default function App(){
    <Route path="/restaurante/alta" element={<RestaurantOnboarding/>}/>
    <Route path="/restaurante" element={<RestaurantEntry/>}/>
    <Route path="/admin/solicitudes-restaurantes" element={<Protected role="admin"><RestaurantAdminActivation/></Protected>}/>
-   <Route path="/repartidor" element={<DriverExternalOrLocal suffix=""><Protected role="driver"><Driver/></Protected></DriverExternalOrLocal>}/>
-   <Route path="/repartidor/acceso" element={<DriverExternalOrLocal suffix="/acceso"><DriverAccess/></DriverExternalOrLocal>}/>
-   <Route path="/repartidor/registro" element={<DriverExternalOrLocal suffix="/registro"><DriverRegistration/></DriverExternalOrLocal>}/>
+   <Route path="/repartidor" element={<DriverCanonicalRedirect suffix=""/>}/>
+   <Route path="/repartidor/acceso" element={<DriverCanonicalRedirect suffix="/acceso"/>}/>
+   <Route path="/repartidor/registro" element={<DriverCanonicalRedirect suffix="/registro"/>}/>
+   <Route path="/repartidor/*" element={<DriverCanonicalRedirect suffix=""/>}/>
    <Route path="*" element={<div className="container page"><EmptyState icon={<WifiOff size={32}/>} title="No encontramos esta página" description="Regresa a Tala Eats para seguir explorando." action={<Link className="btn primary" to="/">Ir al inicio</Link>}/></div>}/>
  </Routes></main>{!isOnboarding&&<CustomerBottomDock/>}{!isGateway&&!isOnboarding&&!isRestaurantPortal&&!isDriverPortal&&<AppFooter/>}{!isGateway&&count>0&&location.pathname==='/clientes'&&<button className="mobile-cart-bar" onClick={()=>navigate('/carrito')}><ShoppingCart size={20}/> Ver carrito <span>{count} productos · {pesos(basketTotal(cart))}</span></button>}</div>;
 }
