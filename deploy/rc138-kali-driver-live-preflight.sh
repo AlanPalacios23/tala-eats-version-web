@@ -5,6 +5,39 @@
 set -Eeuo pipefail
 set +x
 umask 077
+# Safe one-command discovery: show only the exact shared SHA, never PM2 JSON.
+if [[ "${1:-}" == '--detect-backend' ]];then
+ [[ "$#" -eq 1 && "$(id -un)" == tala-node-stage &&
+    "$HOME" == /home/tala-node-stage ]] || {
+  echo 'DRIVER_RC138_BACKEND_SHA=HOLD_SERVICE_USER_REQUIRED';exit 2;
+ }
+ export PATH="$HOME/.local/node24/bin:$HOME/.local/bin:$PATH"
+ command -v pm2 >/dev/null && command -v node >/dev/null || exit 2
+ pm2 jlist | node -e '
+let s="";process.stdin.on("data",b=>s+=b);process.stdin.on("end",()=>{
+ try{
+  const p=JSON.parse(s),names=[
+   "tala-node-stage-api","tala-node-stage-worker"
+  ],shas=[];
+  if(p.length!==2)throw Error("COUNT");
+  for(const name of names){
+   const matches=p.filter(x=>x.name===name);
+   if(matches.length!==1||matches[0].pm2_env?.status!=="online")
+    throw Error("PROCESS");
+   const cwd=matches[0].pm2_env.pm_cwd||"";
+   const m=cwd.match(/^\\/home\\/tala-node-stage\\/tala-node-releases\\/([a-f0-9]{40})\\/node-backend$/);
+   if(!m)throw Error("RELEASE_DIR");
+   shas.push(m[1]);
+  }
+  if(shas[0]!==shas[1])throw Error("MISMATCH");
+  console.log("DRIVER_RC138_CURRENT_LIVE_BACKEND_SHA="+shas[0]);
+ }catch{
+  console.log("DRIVER_RC138_CURRENT_LIVE_BACKEND_SHA=HOLD_UNVERIFIED");
+  process.exitCode=2;
+ }
+})'
+ exit $?
+fi
 MODE="${1:-}" WEB_SHA="${2:-}" BACK_SHA="${3:-}"
 [[ "$#" -eq 3 && "$MODE" =~ ^--(plan|post)$ &&
  "$WEB_SHA" =~ ^[0-9a-f]{40}$ && "$BACK_SHA" =~ ^[0-9a-f]{40}$ ]] || {
