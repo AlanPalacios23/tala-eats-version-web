@@ -20,6 +20,19 @@ DRIVER=http://127.0.0.1:18199
 MHOST=web-talaeats.alan-palacios-dev.com
 DHOST=repartidores-talaeats.alan-palacios-dev.com
 SERVICE=talaeats-web-pwa.service
+# The active service must be the expected isolated Nginx, not an unrelated
+# system Nginx instance. A service named correctly is not sufficient.
+verify_isolated_nginx(){
+ local exec_start pid process_command
+ exec_start="$(systemctl show --property=ExecStart --value "$SERVICE")" || return 1
+ [[ "$exec_start" == *"/usr/sbin/nginx"* &&
+    "$exec_start" == *"$MAIN_CONF"* ]] || return 1
+ pid="$(systemctl show --property=MainPID --value "$SERVICE")" || return 1
+ [[ "$pid" =~ ^[1-9][0-9]*$ && -r "/proc/$pid/cmdline" ]] || return 1
+ process_command="$(tr '\0' ' ' < "/proc/$pid/cmdline")" || return 1
+ [[ "$process_command" == *"nginx"* &&
+    "$process_command" == *"$MAIN_CONF"* ]]
+}
 [[ -f "$CONFIG" && ! -L "$CONFIG" && -f "$MAIN_CONF" && ! -L "$MAIN_CONF" ]] || {
  echo RC139_REDIRECT=HOLD_UNKNOWN_CONFIG;exit 2;
 }
@@ -31,6 +44,8 @@ done
 grep -Fq '/etc/talaeats-web-pwa/server.conf;' "$MAIN_CONF" || exit 2
 systemctl is-active --quiet "$SERVICE" || exit 2
 systemctl is-active --quiet talaeats-repartidores-pwa.service || exit 2
+verify_isolated_nginx || { echo RC139_REDIRECT=HOLD_ACTIVE_NGINX_IDENTITY;exit 2; }
+echo RC139_ISOLATED_NGINX_IDENTITY=PASS
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/clientes" |
  grep -Fq '<div id="root">' || { echo RC139_REDIRECT=HOLD_MAIN_CUSTOMERS;exit 2; }
 curl -fsS --max-time 8 -H "Host: $DHOST" "$DRIVER/repartidor/acceso" |
@@ -113,21 +128,26 @@ recover(){
  if [[ "$status" -ne 0 && "$RESTORE" == yes ]];then
   cp -a -- "$BACKUP" "$CONFIG"
   if cmp -s "$BACKUP" "$CONFIG" &&
-   /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1 &&
-   systemctl reload "$SERVICE";then
-   local attempt restored=no
-   for attempt in 1 2 3 4 5 6 7 8 9 10;do
-    if [[ "$(probe_routes)" == "$BASELINE_ROUTES" ]];then
-     restored=yes
-     break
-    fi
-    sleep 1
-   done
-   if [[ "$restored" == yes ]];then
-    echo RC139_REDIRECT=FAILED_BUT_ROLLBACK_HTTP_VERIFIED
+   /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1;then
+   # A prior reload did not adopt the new rules. Restarting ONLY this
+   # dedicated frontend unit makes rollback deterministic as well.
+   if ! systemctl restart "$SERVICE";then
+    echo RC139_REDIRECT=FAILED_ROLLBACK_RESTART_UNVERIFIED
    else
-    show_diagnostics
-    echo RC139_REDIRECT=FAILED_ROLLBACK_HTTP_NOT_VERIFIED
+    local attempt restored=no
+    for attempt in 1 2 3 4 5 6 7 8 9 10;do
+     if [[ "$(probe_routes)" == "$BASELINE_ROUTES" ]];then
+      restored=yes
+      break
+     fi
+     sleep 1
+    done
+    if [[ "$restored" == yes ]];then
+     echo RC139_REDIRECT=FAILED_BUT_ROLLBACK_HTTP_VERIFIED
+    else
+     show_diagnostics
+     echo RC139_REDIRECT=FAILED_ROLLBACK_HTTP_NOT_VERIFIED
+    fi
    fi
   else
    echo RC139_REDIRECT=FAILED_ROLLBACK_CONFIG_NOT_VERIFIED
@@ -157,8 +177,21 @@ chmod --reference="$CONFIG" "$TEMP"
 chown --reference="$CONFIG" "$TEMP"
 mv -f -- "$TEMP" "$CONFIG"
 /usr/sbin/nginx -t -c "$MAIN_CONF"
-systemctl reload "$SERVICE"
-check_routes_retry || { show_diagnostics; echo RC139_REDIRECT=HOLD_POSTCHECK;exit 1; }
+echo RC139_NGINX_ACTIVATION=RELOAD_ATTEMPTED
+if systemctl reload "$SERVICE" && check_routes_retry;then
+ echo RC139_NGINX_ACTIVATION=PASS_RELOAD
+else
+ # Some installed service units signal a different/old master and acknowledge
+ # the reload without loading the changed config. Restart just the main PWA
+ # service; Stripe, PM2, Repartidores and Restaurantes are never restarted.
+ echo RC139_NGINX_ACTIVATION=RELOAD_STALE_RESTARTING_MAIN_18195_ONLY
+ verify_isolated_nginx || { echo RC139_REDIRECT=HOLD_ACTIVE_NGINX_IDENTITY;exit 1; }
+ systemctl restart "$SERVICE" || {
+  echo RC139_REDIRECT=HOLD_ISOLATED_RESTART;exit 1;
+ }
+ check_routes_retry || { show_diagnostics; echo RC139_REDIRECT=HOLD_POST_RESTART;exit 1; }
+ echo RC139_NGINX_ACTIVATION=PASS_ISOLATED_RESTART
+fi
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/clientes" |
  grep -Fq '<div id="root">' || exit 1
 # Validate the Cloudflare hostname, not merely localhost; do not follow the
