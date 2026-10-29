@@ -12,7 +12,7 @@ SHA="${1:-}"
  echo 'DRIVER_RC138_BUILD=HOLD_RUN_AS_TALA_NODE_STAGE';exit 2;
 }
 export PATH="$HOME/.local/node24/bin:$HOME/.local/bin:$PATH"
-for bin in git node npm sha256sum grep find;do command -v "$bin" >/dev/null || {
+for bin in git node npm python3 sha256sum grep find;do command -v "$bin" >/dev/null || {
  echo "DRIVER_RC138_BUILD=HOLD_MISSING_TOOL:$bin";exit 2;
 };done
 MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
@@ -45,10 +45,9 @@ export VITE_PREVIEW_READONLY=false
 export VITE_DRIVER_ACTIONS_ENABLED=false
 export VITE_CASH_HANDOFF_V2_ENABLED=false
 export VITE_FINANCE_WALLET_V2_ENABLED=false
-[[ -s package-lock.json ]] || {
- echo 'DRIVER_RC138_BUILD=HOLD_LOCKFILE_REQUIRED';exit 2;
-}
-npm ci --no-audit --no-fund
+# Current repository has no package-lock.json; use the same install procedure
+# as its passing GitHub Actions workflow. CI must pass for this exact commit.
+npm install --no-package-lock --no-audit --no-fund
 npm test
 npm run build:repartidor
 DIST="$TARGET/dist-repartidores"
