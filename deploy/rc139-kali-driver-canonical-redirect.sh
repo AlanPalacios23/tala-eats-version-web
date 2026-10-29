@@ -98,6 +98,8 @@ if [[ "$MODE" == --plan ]];then
  echo RC139_REDIRECT_PLAN=PASS_READ_ONLY
  exit 0
 fi
+BASELINE_ROUTES="$(probe_routes)"
+[[ -n "$BASELINE_ROUTES" ]] || { echo RC139_REDIRECT=HOLD_NO_BASELINE_HTTP;exit 2; }
 BACKUP="$CONFIG.before-rc139-$(date -u +%Y%m%dT%H%M%SZ)"
 [[ ! -e "$BACKUP" ]] || exit 2
 cp -a -- "$CONFIG" "$BACKUP"
@@ -113,9 +115,22 @@ recover(){
   if cmp -s "$BACKUP" "$CONFIG" &&
    /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1 &&
    systemctl reload "$SERVICE";then
-   echo RC139_REDIRECT=FAILED_CONFIG_RESTORED_RELOAD_REQUESTED
+   local attempt restored=no
+   for attempt in 1 2 3 4 5 6 7 8 9 10;do
+    if [[ "$(probe_routes)" == "$BASELINE_ROUTES" ]];then
+     restored=yes
+     break
+    fi
+    sleep 1
+   done
+   if [[ "$restored" == yes ]];then
+    echo RC139_REDIRECT=FAILED_BUT_ROLLBACK_HTTP_VERIFIED
+   else
+    show_diagnostics
+    echo RC139_REDIRECT=FAILED_ROLLBACK_HTTP_NOT_VERIFIED
+   fi
   else
-   echo RC139_REDIRECT=FAILED_ROLLBACK_NOT_VERIFIED
+   echo RC139_REDIRECT=FAILED_ROLLBACK_CONFIG_NOT_VERIFIED
   fi
  fi
  exit "$status"
@@ -165,7 +180,12 @@ check_public_retry(){
 }
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/api/v1/health" |
  python3 -c 'import json,sys;d=json.load(sys.stdin);assert d["status"]=="ok"' || exit 1
-check_public_retry || { echo RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK;exit 1; }
+check_public_retry || {
+ local_public="$(curl -sS --connect-timeout 5 --max-time 12 -o /dev/null -w '%{http_code}|%{redirect_url}' "https://$MHOST/repartidor/acceso" || true)"
+ echo "RC139_DIAG_PUBLIC_ACCESS=$local_public"
+ echo RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK
+ exit 1
+}
 RESTORE=no
 trap - EXIT
 echo RC139_REDIRECT=PASS_MAIN_18195_TO_DRIVER_18199
