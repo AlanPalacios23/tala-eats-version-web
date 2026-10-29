@@ -170,9 +170,18 @@ export function DriverPwaWorkflow(){
  async function doAction(action:()=>Promise<unknown>,success:string,existing=false){
   if(inFlight.current||!(existing?canProgress:actions))return;
   inFlight.current=true;setBusy(true);setMessage('');setError('');
+  let failed:string|null=null;
   try{await action();if(mounted.current)setMessage(success);}
-  catch(e){if(mounted.current)setError(failure(e));}
-  finally{inFlight.current=false;if(mounted.current){setBusy(false);await refresh();}}
+  catch(e){failed=failure(e);}
+  finally{
+   inFlight.current=false;
+   if(mounted.current){
+    setBusy(false);
+    await refresh();
+    // A successful read must not hide an unsuccessful delivery/financial write.
+    if(failed&&mounted.current){setMessage('');setError(failed);}
+   }
+  }
  }
 
  const active=mine.find(deliveryInProgress)??null;
