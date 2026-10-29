@@ -17,9 +17,9 @@ describe('portada / del portal Tala Eats: exactamente tres apps y dos links lega
   expect(portal).toContain("path:'/repartidor',number:'03'");
   expect(source).toContain('path="/restaurante" element={<RestaurantEntry/>}');
   expect(source).toContain("if(user?.role==='restaurant')return <RestaurantWorkspace/>");
-  // The approved, independent Driver hostname receives legacy /repartidor links.
-  // Without explicit build opt-in the original Protected driver route remains.
-  expect(source).toContain('path="/repartidor" element={<DriverExternalOrLocal suffix=""><Protected role="driver"><Driver/></Protected></DriverExternalOrLocal>');
+  // RC139: the public portal only redirects; no duplicate Repartidor UI.
+  expect(source).toContain('path="/repartidor" element={<DriverCanonicalRedirect suffix=""/>}');
+  expect(source).toContain('<a href={driverPortalDestination()}>Repartidores</a>');
  });
  it('mantiene solo el nombre Tala Eats arriba, en su posición original',()=>{
   expect(portal).toContain('className="gateway gateway-minimal"');
