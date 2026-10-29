@@ -55,7 +55,7 @@ function AppHeader({count}:{count:number}){
   <Link to="/" className="brand" aria-label="Tala Eats inicio"><span className="brand-mark"><ChefHat size={23} strokeWidth={2.4}/></span><span className="brand-name">Tala <b>Eats</b><small>COMERCIO LOCAL</small></span></Link>
   <nav className={'navlinks '+(menuOpen?'open':'')} aria-label="Navegación principal">
    <NavLink to="/clientes">Explorar</NavLink><NavLink to="/pedidos">Mis pedidos</NavLink>
-   <NavLink to="/restaurante">Restaurantes</NavLink><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Repartidores</a>
+   <NavLink to="/restaurante">Restaurantes</NavLink><a href="https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso">Repartidores</a>
   </nav>
   <div className="header-actions"><CustomerPwaInstallMenuButton/>
     <Link className="header-cart" to="/carrito" aria-label={'Carrito con '+count+' artículos'}><ShoppingBag size={21}/>{count>0&&<span className="cart-dot">{count}</span>}</Link>
@@ -64,7 +64,7 @@ function AppHeader({count}:{count:number}){
   </div>
  </div></header>;
 }
-function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Soy repartidor</a></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
+function AppFooter(){return <footer className="footer"><div className="container footer-inner"><div><strong>Tala Eats</strong><p>La comida de aquí, contigo. Hecho para la comunidad de Tala y la región.</p></div><div><Link to="/clientes">Descubrir</Link><Link to="/restaurante">Soy comercio</Link><a href="https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso">Soy repartidor</a></div><div className="foot-note">Versión Web PWA · Los pagos y entregas dependen de la disponibilidad real de cada comercio.</div></div></footer>;}
 function PortalLanding(){
  const links=[
   {title:'Pedir comida',description:'Explora restaurantes y tiendas cerca de ti',path:'/iniciar',number:'01'},
@@ -79,7 +79,7 @@ function PortalLanding(){
    <nav className="gateway-portals" aria-label="Acceso a las aplicaciones de Tala Eats">
     {links.map(item=><Link className="gateway-portal"
      to={item.path==='/restaurante'?restaurantPortalDestination(import.meta.env.VITE_RESTAURANT_APP_URL):
-      item.path==='/repartidor'?driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL):item.path}
+      item.path==='/repartidor'?'https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso':item.path}
      key={item.path}>
      <span className="gateway-portal-text"><strong>{item.title}</strong><small>{item.description}</small></span>
      <span className="gateway-portal-arrow" aria-hidden="true"><ArrowRight size={35} strokeWidth={1.7}/></span>
