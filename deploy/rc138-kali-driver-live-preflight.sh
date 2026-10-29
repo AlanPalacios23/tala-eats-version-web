@@ -89,6 +89,13 @@ for contract in "stageDriverRouter.get('/presence-readiness'" \
   echo 'DRIVER_RC138_GATE=HOLD_BACKEND_CONTRACT_MISSING';exit 2;
  }
 done
+# In addition to path existence, require the response shape consumed by RC138.
+# A historical backend with similarly named routes is not necessarily compatible.
+grep -Fq 'user:{id:actor.id,name:' "$WORK/src/marketplace/driver.ts" &&
+grep -Fq 'live_delivery_checkout_enabled:' "$WORK/src/marketplace/driver.ts" &&
+grep -Fq 'const driverCompleteInput=z.strictObject({' "$WORK/src/marketplace/routes.ts" || {
+ echo 'DRIVER_RC138_GATE=HOLD_BACKEND_PAYLOAD_OR_PIN_CONTRACT';exit 2;
+}
 export DRIVER_EXPECTED_BACK_WORK="$WORK"
 # PM2 output contains private process metadata. Parse it only in-memory;
 # never output jlist, pm2_env, command arguments, environment or credentials.
