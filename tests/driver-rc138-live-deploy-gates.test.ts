@@ -23,7 +23,7 @@ describe('RC138 Driver PWA deployment gates are static-only and fail closed',()=
  it('PM2 inline shell JavaScript stays valid in bash and identifies the exact same SHA',()=>{
   const bash=spawnSync('bash',['-n','deploy/rc138-kali-driver-live-preflight.sh'],{encoding:'utf8'});
   expect(bash.status).toBe(0);
-  const scripts=[...plan.matchAll(/pm2 jlist \\| node -e '([\\s\\S]*?)'\\n/g)].map(m=>m[1]);
+  const scripts=[...plan.matchAll(/pm2 jlist \| node -e '([\s\S]*?)'\n/g)].map(m=>m[1]);
   expect(scripts).toHaveLength(2);
   for(const js of scripts){
    // The script embeds JS inside a single-quoted bash string. A lone quote
