@@ -44,6 +44,18 @@ done
 grep -Fq '/etc/talaeats-web-pwa/server.conf;' "$MAIN_CONF" || exit 2
 systemctl is-active --quiet "$SERVICE" || exit 2
 systemctl is-active --quiet talaeats-repartidores-pwa.service || exit 2
+# The unit runs as www-data. A root-only nginx -t is insufficient: ExecStartPre
+# runs under the unit's User= and must read the include before it can start.
+unit_user="$(systemctl show -p User --value "$SERVICE")"
+[[ "$unit_user" == www-data ]] || {
+ echo RC139_REDIRECT=HOLD_UNEXPECTED_NGINX_SERVICE_USER;exit 2;
+}
+config_readable(){
+ runuser -u www-data -- test -r "$1"
+}
+config_readable "$CONFIG" || {
+ echo RC139_REDIRECT=HOLD_MAIN_CONFIG_NOT_READABLE_BY_WWW_DATA;exit 2;
+}
 verify_isolated_nginx || { echo RC139_REDIRECT=HOLD_ACTIVE_NGINX_IDENTITY;exit 2; }
 echo RC139_ISOLATED_NGINX_IDENTITY=PASS
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/clientes" |
@@ -127,7 +139,11 @@ recover(){
  rm -f -- "$TEMP"
  if [[ "$status" -ne 0 && "$RESTORE" == yes ]];then
   cp -a -- "$BACKUP" "$CONFIG"
+  # Restore contents, NOT a potentially unreadable 0600 backup mode.
+  chown root:www-data "$CONFIG"
+  chmod 0640 "$CONFIG"
   if cmp -s "$BACKUP" "$CONFIG" &&
+   config_readable "$CONFIG" &&
    /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1;then
    # A prior reload did not adopt the new rules. Restarting ONLY this
    # dedicated frontend unit makes rollback deterministic as well.
@@ -173,9 +189,20 @@ block="""
 pos=server[0].end()
 pathlib.Path(sys.argv[2]).write_text(current[:pos]+'\n'+block+current[pos:])
 PY
-chmod --reference="$CONFIG" "$TEMP"
-chown --reference="$CONFIG" "$TEMP"
+# The script's restrictive umask makes mktemp 0600. Never promote such a
+# file into the Nginx include: root nginx -t would pass but systemd's www-data
+# ExecStartPre would fail after restart. Use exact, minimal read permissions.
+chown root:www-data "$TEMP"
+chmod 0640 "$TEMP"
+config_readable "$TEMP" || {
+ echo RC139_REDIRECT=HOLD_CANDIDATE_NOT_READABLE_BY_WWW_DATA
+ exit 1
+}
 mv -f -- "$TEMP" "$CONFIG"
+config_readable "$CONFIG" || {
+ echo RC139_REDIRECT=HOLD_ACTIVE_CONFIG_NOT_READABLE_BY_WWW_DATA
+ exit 1
+}
 /usr/sbin/nginx -t -c "$MAIN_CONF"
 echo RC139_NGINX_ACTIVATION=RELOAD_ATTEMPTED
 if systemctl reload "$SERVICE" && check_routes_retry;then
