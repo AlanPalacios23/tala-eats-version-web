@@ -241,6 +241,17 @@ export const api = {
   ownerEarnings: (restaurantId:number) => request<MerchantEarnings>(`/owner/finance/earnings/${restaurantId}`),
   ownerWeeklyWallet: (id:number) => request<WeeklyWalletStatement>(`/owner/wallet/weekly/${id}`),
   driverWeeklyWallet: () => request<WeeklyWalletStatement>('/driver/wallet/weekly'),
+  driverCashHandoffStart: (orderId:number) => request<{
+    order_id:number;amount_cents:string;code:string;valid_for_minutes:number;
+    state:string;bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/driver/finance/cash-handoff/${orderId}/start`,json('POST',{})),
+  ownerCashHandoffConfirm: (orderId:number,code:string,amountCents:string) => request<{
+    order_id:number;amount_cents:string;state:string;
+    bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/owner/finance/cash-handoff/${orderId}/confirm`,json('POST',{
+    code,amount_cents:amountCents
+  })),
+
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=200&offset=0'),
   ownerEmployees: () => request<MerchantStaff[]>('/owner/employees'),
