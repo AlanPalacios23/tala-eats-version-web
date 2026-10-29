@@ -179,6 +179,10 @@ export const api = {
     restaurant_id:number;order_type:'pickup';ready:boolean;
     cash_enabled:boolean;stripe_enabled:boolean;reason:string;
   }>(`/restaurants/${restaurantId}/pickup-readiness`),
+  deliveryReadiness: (restaurantId:number) => request<{
+    restaurant_id:number;order_type:'delivery';ready:boolean;
+    cash_enabled:boolean;stripe_enabled:boolean;reason:string;
+  }>(`/restaurants/${restaurantId}/delivery-readiness`),
   stripeTestConfig: () => request<StripeTestConfig>('/payments/stripe/config'),
   stripeTestIntent: (orderId:number) => request<StripeIntentReply>(`/payments/stripe/orders/${orderId}/payment-intent`,json('POST')),
   stripePaymentStatus: (orderId:number) => request<{

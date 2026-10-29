@@ -67,7 +67,10 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  const {user}=useSession(),navigate=useNavigate();
  const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[options,setOptions]=useState<PaymentOptions|null>(null),[addresses,setAddresses]=useState<CustomerAddress[]>([]);
  const [stripeConfig,setStripeConfig]=useState<StripeTestConfig|null>(null),[method,setMethod]=useState<PaymentKind>('cash');
- const [sellerReadiness,setSellerReadiness]=useState<{ready:boolean;cash_enabled:boolean;stripe_enabled:boolean;reason:string}|null>(null);
+ type SellerCapability={ready:boolean;cash_enabled:boolean;stripe_enabled:boolean;reason:string};
+ const [sellerReadinessByMode,setSellerReadinessByMode]=useState<{
+   pickup:SellerCapability|null;delivery:SellerCapability|null;
+ }>({pickup:null,delivery:null});
 
  const [loading,setLoading]=useState(true),[serverError,setServerError]=useState('');
  const [refresh,setRefresh]=useState(0),[mode,setMode]=useState<FulfillmentMode>('pickup'),[coupon,setCoupon]=useState(''),[notes,setNotes]=useState('');
@@ -79,17 +82,23 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
  useEffect(()=>{
   let active=true;setLoading(true);setOptions(null);setServerError('');setRestaurant(null);
   if(!restaurantId||!userId){setLoading(false);return ()=>{active=false};}
-  setStripeConfig(null);setSellerReadiness(null);
+  setStripeConfig(null);setSellerReadinessByMode({pickup:null,delivery:null});
   Promise.all([api.restaurant(restaurantId),api.paymentOptions(),
     api.customerAddresses().catch(()=>[]),api.stripeTestConfig()])
    .then(async([r,p,a,cfg])=>{
     // Fail closed on LIVE merchant approval: global Stripe availability never
     // means this restaurant is permitted to accept money or cash orders.
     const readiness=cfg.environment==='production'
-      ?await api.pickupReadiness(restaurantId):null;
+      ?await Promise.all([
+        api.pickupReadiness(restaurantId),
+        p.delivery_checkout_supported===true
+          ?api.deliveryReadiness(restaurantId):Promise.resolve(null),
+       ]):null;
     if(active){
      setRestaurant(r);setOptions(p);setAddresses(a);setStripeConfig(cfg);
-     setSellerReadiness(readiness);
+     setSellerReadinessByMode({
+       pickup:readiness?.[0]??null,delivery:readiness?.[1]??null,
+     });
      if(!r.pickup_enabled&&p.delivery_checkout_supported===true&&p.delivery_quote_supported===true)
       setMode('delivery');
     }
@@ -97,6 +106,9 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
     .finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[restaurantId,userId,refresh]);
+ // The merchant can offer delivery without pickup or vice versa.
+ // Never reuse the pickup-only readiness for a home-delivery payment.
+ const sellerReadiness=sellerReadinessByMode[mode];
  const address=addresses.find(a=>a.is_default)??addresses[0];
  // A missing Stripe environment response is never permission to take cash
  // in production. Both live methods require this merchant's Connect approval.
@@ -155,7 +167,9 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
    const freshOptions=await api.paymentOptions();
    const freshStripe=await api.stripeTestConfig();
    if(freshStripe.environment==='production'){
-    const seller=await api.pickupReadiness(restaurantId);
+    const seller=mode==='delivery'
+      ?await api.deliveryReadiness(restaurantId)
+      :await api.pickupReadiness(restaurantId);
     if(!seller.ready||(method==='cash'?!seller.cash_enabled:!seller.stripe_enabled))
      throw new Error('El restaurante aún no está autorizado para recibir este pedido LIVE.');
    }
@@ -188,7 +202,9 @@ export function CustomerCheckout({cart,setCart}:{cart:Cart;setCart:(value:Cart)=
   <div className="mobile-detail-header"><Link to="/carrito" aria-label="Volver a carrito"><ArrowLeft size={22}/></Link><h1>Finalizar pedido</h1><button onClick={reload} disabled={loading||submitting} aria-label="Actualizar cotización"><RefreshCw size={19}/></button></div>
   {serverError&&<div className="mobile-address-error" role="alert">No logramos verificar tu pedido: {serverError}<button onClick={reload}>Reintentar</button></div>}
   {stripeConfig?.environment==='production'&&sellerReadiness?.ready===false&&
-    <div className="mobile-address-error" role="alert">Este comercio todavía no está habilitado para recibir pedidos reales. El restaurante debe completar su autorización Stripe Connect antes de ofrecer efectivo o tarjeta.</div>}
+    <div className="mobile-address-error" role="alert">{mode==='delivery'
+      ?'La entrega a domicilio aún no está disponible: revisa el horario del comercio, su autorización o la disponibilidad de repartidores.'
+      :'Este comercio todavía no está habilitado para recoger pedidos reales. Debe completar su autorización y abrir la tienda.'}</div>}
   <section className="mobile-checkout-card"><h2>Entrega</h2><div className="mobile-checkout-modes">
    <button className={mode==='delivery'?'selected':''} aria-pressed={mode==='delivery'} disabled={loading||options?.delivery_checkout_supported!==true||submitting||Boolean(pending)} onClick={()=>choose('delivery')}><Truck size={24}/><span>A domicilio<small>{options?.delivery_checkout_supported===true?'Según disponibilidad':'Sujeto a activación'}</small></span></button>
    <button className={mode==='pickup'?'selected':''} aria-pressed={mode==='pickup'} disabled={loading||restaurant?.pickup_enabled!==true||submitting||Boolean(pending)} onClick={()=>choose('pickup')}><Store size={24}/><span>Recoger<small>Sin costo de envío</small></span></button>

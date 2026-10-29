@@ -35,7 +35,10 @@ export function stripePaymentMode(
  if(config.environment==='production'&&config.mode==='live-pickup-only'&&
     config.financial_writes_enabled===true&&
     /^pk_live_[A-Za-z0-9]+$/.test(config.publishable_key)&&
-    card.mode==='live-stripe-pickup'&&fulfillment==='pickup')
+    card.mode==='live-stripe-pickup'&&
+    (fulfillment==='pickup'||(
+      fulfillment==='delivery'&&methods?.delivery_checkout_supported===true&&
+      methods.delivery_quote_supported===true&&methods.delivery_stripe_supported===true)))
    return 'live';
  if(config.environment==='staging'&&config.mode==='test-pickup-only'&&
     /^pk_test_[A-Za-z0-9]+$/.test(config.publishable_key)&&
