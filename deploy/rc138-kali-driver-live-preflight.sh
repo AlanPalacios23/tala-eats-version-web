@@ -25,7 +25,7 @@ let s="";process.stdin.on("data",b=>s+=b);process.stdin.on("end",()=>{
    if(matches.length!==1||matches[0].pm2_env?.status!=="online")
     throw Error("PROCESS");
    const cwd=matches[0].pm2_env.pm_cwd||"";
-    const parts=cwd.split('/');
+    const parts=cwd.split("/");
     if(parts.length!==6||parts[0]!==''||parts[1]!=='home'||
       parts[2]!=='tala-node-stage'||parts[3]!=='tala-node-releases'||
       parts[5]!=='node-backend'||!/^[a-f0-9]{40}$/.test(parts[4]))
