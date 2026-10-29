@@ -101,7 +101,7 @@ function Protected({role,children}:{role:'customer'|'restaurant'|'driver'|'admin
  if(!user)return <Navigate to={role==='restaurant'?'/restaurante/acceso':role==='driver'?'/repartidor/acceso':'/iniciar'} replace state={{from:location.pathname}}/>;
  if(role==='restaurant'&&user.role==='customer')return <Navigate to="/restaurante/alta" replace/>;
  if(role==='restaurant'&&user.role==='admin')return <Navigate to="/admin/solicitudes-restaurantes" replace/>;
- if(role==='driver'&&!isDriverRole(user.role))return <DriverAccess/>;
+ if(role==='driver'&&!isDriverRole(user.role))return <DriverCanonicalRedirect suffix="/acceso"/>;
  if((role==='customer'&&user.role!=='customer')||(role==='restaurant'&&!isMerchantRole(user.role))||(role==='driver'&&!isDriverRole(user.role))||(role==='admin'&&user.role!=='admin'))return <div className="container page"><EmptyState icon={<ShieldCheck size={32}/>} title="Este acceso requiere otro rol" description="Tu cuenta no tiene permisos para esta sección. Los roles de restaurante y repartidor se autorizan desde administración." action={<Link className="btn outline" to="/">Volver al inicio</Link>}/></div>;
  return <>{children}</>;
 }
