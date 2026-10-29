@@ -17,18 +17,27 @@ export const DRIVER_GPS_HEARTBEAT_MS=45000; // below Redis TTL 120 seconds
 export function verifiedOnlinePresence(p:DriverPresenceReadiness|null):boolean{
  return Boolean(p?.presence_enabled&&p.admin_verified&&p.online&&p.fresh_gps);
 }
+/**
+ * For LIVE production the compiled frontend build flag is NOT an authority.
+ * The authenticated backend has to approve dispatch itself, after checking
+ * financial release, courier verification, fresh GPS and valid order tender.
+ */
 export function driverActionsAvailable(p:DriverPresenceReadiness|null,uiEnabled:boolean):boolean{
- return uiEnabled&&verifiedOnlinePresence(p)&&p?.ready_for_dispatch===true;
+ return Boolean((uiEnabled||p?.environment==='production')&&
+   verifiedOnlinePresence(p)&&p?.ready_for_dispatch===true);
 }
 /**
- * An already assigned STAGING delivery may continue to PIN despite GPS
- * temporarily expiring; it must never grant a NEW claim. LIVE still needs an
- * independent server authorization contract before it can progress orders.
+ * An already assigned delivery can finish pickup/on-way/PIN while GPS has
+ * temporarily expired. This NEVER grants a NEW order claim. Production
+ * additionally needs its own released server delivery capabilities; staging
+ * keeps its explicit UI opt-in. Server verifies PIN, driver ID and ledger.
  */
 export function driverCanProgressExistingDelivery(
  p:DriverPresenceReadiness|null,uiEnabled:boolean):boolean{
- return Boolean(uiEnabled&&p?.environment==='staging'&&p?.presence_enabled&&
-   p?.admin_verified&&p?.online);
+ if(!p?.presence_enabled||!p.admin_verified||!p.online)return false;
+ if(p.environment==='production')
+   return p.live_delivery_checkout_enabled===true;
+ return uiEnabled&&p.environment==='staging';
 }
 export interface BrowserDriverPosition {lat:number;lng:number}
 export function validDriverCoordinates(value:BrowserDriverPosition):boolean{
