@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import '../styles/driver-pwa.css';
-import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
+import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,Navigation,ArrowUpRight,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
@@ -8,10 +8,9 @@ import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
-type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};recent?:Order[];
- today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
- last_7_days?:Array<{date:string;earnings:number;deliveries:number}>;
- acceptance_rate?:number};
+import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
+import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
+type DriverDash=DriverDashboardPayload;
 type DriverTab='inicio'|'entregas'|'ganancias'|'perfil';
 const todayLabel=()=>new Intl.DateTimeFormat('es-MX',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
 const safeAmount=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0?pesos(v):'—';
@@ -48,6 +47,8 @@ export function DriverPwaWorkflow(){
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[message,setMessage]=useState('');
  const [pin,setPin]=useState<Record<number,string>>({});
+ const [cashReceived,setCashReceived]=useState<Record<number,boolean>>({});
+ const refreshVersion=useRef(0);
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
  const online=readiness?.online===true;
  const reachable=verifiedOnlinePresence(readiness);
@@ -66,28 +67,43 @@ export function DriverPwaWorkflow(){
   };
  },[]);
  const refresh=useCallback(async()=>{
+  // Polling, resume, GPS and manual refresh may overlap. Only newest responses
+  // can update operational state or a previous merchant/driver's private data.
+  const version=++refreshVersion.current;
   try{
    const [p,proof,jobs,offers]=await Promise.all([
     api.driverProfile(),api.driverPresenceReadiness(),
     api.driverMine(),api.driverAvailable(),
    ]);
-   if(!mounted.current)return;
+   if(!mounted.current||version!==refreshVersion.current)return;
+   if(!Array.isArray(jobs)||!Array.isArray(offers)||
+      typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
+    throw new Error('El backend no devolvió un estado de reparto válido.');
    setProfile(p);setReadiness(proof);setMine(jobs);setAvailable(offers);setError('');
-   // Separate financial/dashboard read is deliberately non-authoritative if it fails.
+   // Dashboard has a DIFFERENT order payload: only use it for stats and
+   // identity-checked active route details, never as delivery history.
    void api.driverDashboard().then(value=>{
-    if(mounted.current){setDashboard(value as DriverDash);setDashboardError(false);}
-   }).catch(()=>{if(mounted.current){setDashboard(null);setDashboardError(true);}});
-
-  }catch(e){if(mounted.current)setError(failure(e));}
-  finally{if(mounted.current)setLoading(false);}
- },[]);
+    if(!mounted.current||version!==refreshVersion.current)return;
+    const data=value as DriverDash;
+    if(data.user?.id!==session.user?.id)throw new Error('Resumen no autorizado');
+    setDashboard(data);setDashboardError(false);
+   }).catch(()=>{
+    if(mounted.current&&version===refreshVersion.current){setDashboard(null);setDashboardError(true);}
+   });
+  }catch(e){
+   if(mounted.current&&version===refreshVersion.current){
+    setReadiness(null);setAvailable([]);setMine([]);setProfile(null);
+    setDashboard(null);setDashboardError(true);setError(failure(e));
+   }
+  }finally{if(mounted.current&&version===refreshVersion.current)setLoading(false);}
+ },[session.user?.id]);
  useEffect(()=>{
   mounted.current=true;
   void refresh();
   const interval=window.setInterval(()=>{
    if(document.visibilityState==='visible'&&!inFlight.current)void refresh();
   },15000);
-  return()=>{mounted.current=false;window.clearInterval(interval);};
+  return()=>{mounted.current=false;refreshVersion.current++;window.clearInterval(interval);};
  },[refresh]);
 
  // Browser GPS is foreground-only. Expired TTL means "unavailable" even if
@@ -159,7 +175,7 @@ export function DriverPwaWorkflow(){
  }
 
  const active=mine.find(deliveryInProgress)??null;
- const delivered=dashboard?.recent?.filter(o=>o.status==='delivered')??mine.filter(o=>o.status==='delivered');
+ const delivered=driverDeliveredOrders(mine);
  const weekdays=dashboard?.last_7_days??[];
  const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
  const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
@@ -174,6 +190,24 @@ export function DriverPwaWorkflow(){
  const doneToday=dashboard?.today?.deliveries;
  useEffect(()=>{if(!active&&proofSheet)setProofSheet(false);},[active?.id,proofSheet]);
  const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);setProofSheet(false);};
+ const openDeliveryProof=(order:Order)=>{
+  if(order.status==='on_the_way'&&canProgress&&!busy){
+   setPin(old=>({...old,[order.id]:''}));
+   setCashReceived(old=>({...old,[order.id]:false}));
+   setProofSheet(true);
+  }
+ };
+ const completeDelivery=async(order:Order)=>{
+  if(!canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true))return;
+  await guardedAction(async()=>{
+   await api.driverComplete(order.id,pin[order.id]??'');
+   if(mounted.current){
+    setProofSheet(false);
+    setPin(old=>{const next={...old};delete next[order.id];return next;});
+    setCashReceived(old=>{const next={...old};delete next[order.id];return next;});
+   }
+  },'Entrega validada por el servidor.',true);
+ };
  const doLogout=async()=>{
   if(active){setError('Termina la entrega en curso antes de cerrar sesión.');return;}
   if(!window.confirm('¿Cerrar sesión? Dejarás de recibir pedidos hasta que vuelvas a entrar.'))return;
@@ -235,8 +269,8 @@ export function DriverPwaWorkflow(){
   label:'Validar entrega con PIN',disabled:busy,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();setProofSheet(true);}}
  }:null;
- const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\\s+/)[0];
- const initial=(session.user?.name||'R').trim().split(/\\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
+ const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
+ const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
  return <div className="df-app" data-driver-pwa="true">
    <main className="df-content">
