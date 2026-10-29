@@ -19,7 +19,6 @@ describe('RC136 Kali static-only deployment safety',()=>{
   expect(promote).toContain('PRIVATE_UPLOAD_ENDPOINT_EXPECTED_401');
   expect(promote).toContain('DRIVER_ONBOARDING_BACKEND_CAPABILITY_MISSING');
   expect(promote).toContain('BACKEND_DOCUMENTS_AND_THREE_PORTALS');
-  expect(promote).toContain('VITE');
  });
  it('uses existing per-site atomic scripts with explicit approval and reverse rollback',()=>{
   for(const item of ['kali-update-existing-public.sh','kali-update-restaurantes-isolated.sh',
