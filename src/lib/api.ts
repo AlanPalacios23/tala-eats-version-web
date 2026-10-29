@@ -136,6 +136,11 @@ export interface MerchantStaff {
  id:number;user_id:number;name:string;email:string;role:string;
 }
 
+export interface AdminRestaurantRecord {
+ id:number;name:string;owner_id:number|null;is_open:boolean;
+ verification_status:string;onboarding_status:string;active_orders:number;
+ can_archive:boolean;market_code:string;
+}
 export interface MerchantApplication {
   id:number;user_id:number;entity_type:'restaurant'|'driver';
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
@@ -234,6 +239,10 @@ export const api = {
       entity_type:'restaurant',business_name:businessName,tax_id:taxId,
       vehicle:'',payout_account_ref:'',documents,
     })),
+  adminRestaurants: () => request<AdminRestaurantRecord[]>('/admin/restaurants?limit=100'),
+  adminRestoreRestaurant: (id:number,confirmName:string,reason:string) =>
+    request<{id:number;name:string;restored:boolean;verification_status:string;is_open:boolean;pickup_enabled:boolean}>(
+      `/admin/restaurants/${id}/restore`,json('PATCH',{confirm_name:confirmName,reason})),
   adminRestaurantApplications: () => request<MerchantApplication[]>('/admin/onboarding'),
   adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
