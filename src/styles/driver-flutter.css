@@ -257,3 +257,156 @@
 .df-selected-files li{overflow-wrap:anywhere;line-height:1.5;color:#403c37}
 .df-selected-files li span{color:#6f6a65;font-weight:400}
 .df-upload-progress{padding:12px 14px;border-radius:12px;border:1px solid #c6dccd;background:#f4faf6;color:#21603a;font-size:13px;font-weight:700}
+
+
+/* RC138 · Tala Eats Driver — premium operational UI, no customer/merchant selectors.
+   Larger touch targets and clearer state hierarchy, 320–430dp + installable PWA. */
+.df-app,.df-auth{
+ --df-bg:#f5f6f3;--df-ink:#202620;--df-muted:#626e66;
+ --df-line:#e3e8e0;--df-green:#16834d;--df-orange:#ff5a1f;
+ color:var(--df-ink);background:var(--df-bg);
+}
+.df-app{min-height:100dvh}
+.df-content{width:min(100%,700px);padding:18px 16px calc(130px + env(safe-area-inset-bottom))}
+.df-header-premium{margin:0 0 18px;border-radius:24px;padding:23px 20px;
+ background:linear-gradient(132deg,#ffffff 0%,#fff9f3 100%);
+ border:1px solid #f1eae0;box-shadow:0 12px 38px #32352a08}
+.df-eyebrow{display:block;font-size:10px;font-weight:850;letter-spacing:1.65px;color:#ab552b;margin-bottom:7px}
+.df-header-premium h1{font-size:clamp(26px,6.7vw,33px);letter-spacing:-1.15px;line-height:1.15;margin:0 0 7px}
+.df-header-premium p{font-size:12px;letter-spacing:.1px}
+.df-header-premium .df-avatar{background:#ffeadb;border:1px solid #f8d9c7;
+ color:#9e411b;box-shadow:0 4px 12px #ed824117}
+.df-surface{border-color:var(--df-line);border-radius:22px;box-shadow:0 5px 24px #132c1308}
+.df-availability{min-height:95px;padding:17px 18px;gap:15px;background:#fff}
+.df-availability.is-online{background:linear-gradient(113deg,#f0fbf4,#ffffff);border-color:#b9d9c5}
+.df-availability .df-availability-text strong{font-size:18px;letter-spacing:-.3px}
+.df-availability .df-availability-text small{font-size:12px;line-height:1.45;
+ white-space:normal;overflow:visible;text-overflow:clip}
+.df-status-dot{height:11px;width:11px}
+.df-switch{width:57px;height:36px;padding:4px;flex-shrink:0}
+.df-switch>span{width:28px;height:28px}
+.df-alert-info{background:#fffaf0;border-color:#f1e7d0;color:#75512e;
+ padding:13px 14px;line-height:1.5}
+.df-main-stage{margin-top:21px}
+.df-main-stage .df-empty{background:linear-gradient(180deg,#fff,#fffdfb);min-height:215px}
+.df-empty>svg{color:#ef7a40}
+.df-empty h2{font-size:20px;letter-spacing:-.5px}
+.df-empty p{font-size:13px;line-height:1.6}
+.df-section{margin-top:27px}
+.df-section-title h2,.df-section>h2{font-size:18px;letter-spacing:-.5px}
+.df-section-title button{display:inline-flex;align-items:center;gap:5px;color:#a54b24;min-height:46px}
+.df-metrics{padding:22px 10px;border-radius:22px}
+.df-metrics small{font-size:12px;margin-bottom:9px}
+.df-metrics strong{font-size:clamp(14px,4.2vw,20px)}
+.df-job{padding:19px;margin:0 0 13px;overflow:hidden}
+.df-job.is-active{border:1px solid #f3cdb9;box-shadow:0 9px 35px #e8692410}
+.df-job-head{font-size:16px;margin-bottom:12px}
+.df-order-code{font-size:17px;font-weight:850;letter-spacing:-.45px}
+.df-chip{padding:7px 11px;border-radius:999px;background:#fff3e9;color:#a34718;font-size:11px}
+.df-chip-offer{background:#ecf9f0;color:#21683b}
+.df-stage-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:14px 0 18px}
+.df-stage-progress>span{height:5px;border-radius:99px;background:#edf0eb}
+.df-stage-progress>span.filled{background:#ef6a29}
+.df-order-highlights{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:12px 14px;background:#f8faf7;border-radius:13px;margin-bottom:16px;
+ color:#526158;font-size:12px;font-weight:700}
+.df-order-highlights>span{display:inline-flex;align-items:center;gap:7px;min-width:0}
+.df-order-highlights>span svg{color:#db6e34;flex:none}
+.df-order-highlights>strong{color:#1a5936;font-size:16px;font-weight:850;white-space:nowrap}
+.df-route-stops{margin:9px 0 20px}
+.df-route-stop{gap:12px}
+.df-route-stop>div:last-child{min-width:0}
+.df-route-stop strong{line-height:1.35;overflow-wrap:anywhere}
+.df-route-stop span{overflow-wrap:anywhere;line-height:1.5}
+.df-route-link{display:inline-flex;align-items:center;gap:6px;min-height:42px;margin-top:7px;
+ padding:0 10px;border-radius:10px;color:#a84616;background:#fff1e8;
+ font-size:12px;font-weight:850;text-decoration:none}
+.df-route-link:focus-visible{outline:3px solid #fa9b5a;outline-offset:2px}
+.df-offer-location{display:flex;align-items:flex-start;gap:8px;color:var(--df-muted);
+ font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.df-offer-location svg{flex:none;color:#d96931;margin-top:2px}
+.df-job-complete{display:flex;align-items:center;gap:7px;font-weight:750;
+ color:#1a7142;font-size:12px;padding:11px 0}
+.df-job-actions{margin-top:16px}
+.df-primary{min-height:56px;border-radius:16px;background:linear-gradient(100deg,#ef6827,#f57e30);
+ color:#fff;box-shadow:0 6px 16px #eb743220;font-size:15px;letter-spacing:-.12px}
+.df-primary:active:not(:disabled){transform:scale(.985)}
+.df-primary:focus-visible,.df-bottom-nav button:focus-visible,.df-switch:focus-visible,
+.df-text-button:focus-visible,.df-outline:focus-visible,.df-icon-button:focus-visible{
+ outline:3px solid #fca166;outline-offset:2px}
+.df-primary:disabled{background:#c9c6c2;box-shadow:none;color:#50534d;opacity:.68}
+.df-outline{min-height:46px;color:#9e4721;background:#fff;border-color:#e9d9cb}
+.df-earnings-main{padding:24px 21px;background:linear-gradient(155deg,#fff 15%,#fff7ef)}
+.df-earnings-main>strong{font-size:clamp(35px,9.4vw,44px);color:#252921}
+.df-wallet{background:#fefdfb;border:1px solid #eee8df}
+.df-week-panel{overflow:hidden}
+.df-week-bar>span{background:linear-gradient(0deg,#ee652a,#ffa35f)}
+.df-week-day{min-height:145px;border-radius:11px}
+.df-profile-identity{padding:24px 19px}
+.df-settings button{min-height:80px}
+.df-bottom-nav{min-height:calc(74px + env(safe-area-inset-bottom));
+ padding:5px max(9px,env(safe-area-inset-left)) calc(5px + env(safe-area-inset-bottom)) max(9px,env(safe-area-inset-right));
+ background:#ffffffed;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+ border-top:1px solid #e4e7e0;box-shadow:0 -10px 35px #1d261608}
+.df-bottom-nav button{min-height:61px;max-width:150px;border-radius:15px;color:#727c72}
+.df-bottom-nav button.selected{color:#be4b19;background:#fff0e7}
+.df-bottom-nav button.selected svg{stroke-width:2.4}
+.df-home-action{bottom:calc(75px + env(safe-area-inset-bottom))}
+.df-home-action .df-primary{box-shadow:0 10px 25px #eb743223}
+.df-floating-status{bottom:calc(154px + env(safe-area-inset-bottom));font-size:13px;border-radius:17px}
+.df-initial-loading{display:flex;align-items:center;justify-content:center;gap:12px;
+ padding:18px;font-size:13px;color:#59645b}
+@keyframes df-spinner{to{transform:rotate(360deg)}}
+.df-rotate{animation:df-spinner 1s linear infinite}
+.df-reconnect{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px;
+ border:1px solid #f0d4c3;background:#fff9f5;margin-bottom:18px}
+.df-reconnect>svg{color:#bb5b31;flex:none}
+.df-reconnect>div{flex:1;min-width:180px}
+.df-reconnect strong{font-size:14px;display:block;line-height:1.4}
+.df-reconnect p{color:#775e50;font-size:12px;margin:5px 0 0;line-height:1.55}
+.df-reconnect button{min-width:125px;font-size:13px}
+.df-sheet{width:min(100%,580px);max-height:92dvh;overflow-y:auto;
+ border-radius:28px 28px 0 0;padding:27px 22px calc(28px + env(safe-area-inset-bottom))}
+.df-sheet h2{font-size:25px;letter-spacing:-.8px}
+.df-sheet-handle{display:block;width:43px;height:5px;background:#e7e7e5;border-radius:99px;margin:0 auto 24px}
+.df-proof-pin-label{display:grid;gap:9px;font-weight:800;font-size:13px;margin:17px 0 12px;color:#28312a}
+.df-proof-pin-label input{width:100%;height:59px;border:1px solid #dce3dc;background:#fff;
+ color:#202620;border-radius:15px;text-align:center;font-size:26px;font-weight:850;letter-spacing:.45em}
+.df-proof-pin-label input:focus-visible{outline:3px solid #fcaa76;border-color:#f47634;outline-offset:1px}
+.df-cash-ack{display:flex;align-items:flex-start;gap:13px;padding:16px;
+ border:1px solid #eddfc7;background:#fff9ed;border-radius:16px;cursor:pointer;margin-top:17px}
+.df-cash-ack input{width:23px;height:23px;accent-color:#e86b25;flex:none;margin:2px 0 0}
+.df-cash-ack>span{display:grid;gap:5px}
+.df-cash-ack strong{font-size:14px;line-height:1.4}
+.df-cash-ack small{font-size:12px;line-height:1.6;color:#745a3b}
+.df-proof-note{display:flex;align-items:flex-start;gap:8px;font-size:12px!important;
+ line-height:1.55!important;color:#68736b!important;margin:12px 0 22px!important}
+.df-proof-note svg{flex:none;margin-top:1px;color:#35744f}
+.df-auth{background:radial-gradient(circle at top right,#fff5ec 0%,#f8f8f5 44%,#f5f6f3 100%)}
+.df-auth-inner{background:#fff;border:1px solid #eeeae4;border-radius:26px;
+ padding:28px 24px 30px;box-shadow:0 20px 58px #20282010}
+.df-auth h1{font-size:clamp(27px,7vw,34px);letter-spacing:-1.1px}
+.df-auth-form input:not([type=file]),.df-auth-form select{border-color:#dfe5db;border-radius:14px;min-height:56px}
+.df-auth-form input:focus-visible,.df-auth-form select:focus-visible{outline:3px solid #ffb588;border-color:#eb7a38}
+.df-file-picker{border-radius:16px;min-height:72px;border-color:#f1caa9;background:#fffaf5}
+@media(max-width:430px){
+ .df-content{padding:14px 13px calc(136px + env(safe-area-inset-bottom))}
+ .df-header-premium{padding:21px 17px;border-radius:21px}
+ .df-availability{padding:14px 15px}
+ .df-job{padding:16px}
+ .df-order-highlights{padding:12px}
+ .df-sheet{padding:25px 18px calc(25px + env(safe-area-inset-bottom))}
+ .df-bottom-nav button{font-size:11px}
+ .df-auth{padding:15px}
+ .df-auth-inner{padding:25px 18px;border-radius:22px}
+}
+@media(max-width:340px){
+ .df-content{padding-inline:10px}
+ .df-order-highlights{align-items:flex-start;flex-direction:column;gap:6px}
+ .df-availability .df-availability-text strong{font-size:16px}
+ .df-bottom-nav button{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-rotate{animation:none}
+ .df-primary{transition:none}
+}

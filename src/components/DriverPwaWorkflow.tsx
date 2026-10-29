@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import '../styles/driver-pwa.css';
-import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
+import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,Navigation,ArrowUpRight,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
@@ -8,10 +8,9 @@ import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
-type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};recent?:Order[];
- today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
- last_7_days?:Array<{date:string;earnings:number;deliveries:number}>;
- acceptance_rate?:number};
+import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
+import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
+type DriverDash=DriverDashboardPayload;
 type DriverTab='inicio'|'entregas'|'ganancias'|'perfil';
 const todayLabel=()=>new Intl.DateTimeFormat('es-MX',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
 const safeAmount=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0?pesos(v):'—';
@@ -36,6 +35,7 @@ export function DriverPwaWorkflow(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
  const [proofSheet,setProofSheet]=useState(false);
+ const proofInput=useRef<HTMLInputElement>(null);
  const [selectedDay,setSelectedDay]=useState<string|null>(null);
  const actionCooldown=useRef(0);
  const [sheet,setSheet]=useState<'vehicle'|'documents'|'security'|'help'|null>(null);
@@ -45,9 +45,12 @@ export function DriverPwaWorkflow(){
  const [readiness,setReadiness]=useState<DriverPresenceReadiness|null>(null);
  const [mine,setMine]=useState<Order[]>([]);
  const [available,setAvailable]=useState<Order[]>([]);
+ const [offersError,setOffersError]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[message,setMessage]=useState('');
  const [pin,setPin]=useState<Record<number,string>>({});
+ const [cashReceived,setCashReceived]=useState<Record<number,boolean>>({});
+ const refreshVersion=useRef(0);
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
  const online=readiness?.online===true;
  const reachable=verifiedOnlinePresence(readiness);
@@ -66,28 +69,50 @@ export function DriverPwaWorkflow(){
   };
  },[]);
  const refresh=useCallback(async()=>{
+  // Polling, resume, GPS and manual refresh may overlap. Only newest responses
+  // can update operational state or a previous merchant/driver's private data.
+  const version=++refreshVersion.current;
   try{
-   const [p,proof,jobs,offers]=await Promise.all([
-    api.driverProfile(),api.driverPresenceReadiness(),
-    api.driverMine(),api.driverAvailable(),
+   const [p,proof,jobs]=await Promise.all([
+    api.driverProfile(),api.driverPresenceReadiness(),api.driverMine(),
    ]);
-   if(!mounted.current)return;
-   setProfile(p);setReadiness(proof);setMine(jobs);setAvailable(offers);setError('');
-   // Separate financial/dashboard read is deliberately non-authoritative if it fails.
+   if(!mounted.current||version!==refreshVersion.current)return;
+   if(!Array.isArray(jobs)||
+      typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
+    throw new Error('El backend no devolvió un estado de reparto válido.');
+   setProfile(p);setReadiness(proof);setMine(jobs);setAvailable([]);setOffersError(false);setError('');
+   // An offers outage must not block ongoing deliveries assigned to this driver.
+   void api.driverAvailable().then(offers=>{
+    if(!mounted.current||version!==refreshVersion.current)return;
+    if(!Array.isArray(offers))throw Error('INVALID_DRIVER_OFFERS');
+    setAvailable(offers);setOffersError(false);
+   }).catch(()=>{
+    if(mounted.current&&version===refreshVersion.current){setAvailable([]);setOffersError(true);}
+   });
+   // Dashboard has a DIFFERENT order payload: only use it for stats and
+   // identity-checked active route details, never as delivery history.
    void api.driverDashboard().then(value=>{
-    if(mounted.current){setDashboard(value as DriverDash);setDashboardError(false);}
-   }).catch(()=>{if(mounted.current){setDashboard(null);setDashboardError(true);}});
-
-  }catch(e){if(mounted.current)setError(failure(e));}
-  finally{if(mounted.current)setLoading(false);}
- },[]);
+    if(!mounted.current||version!==refreshVersion.current)return;
+    const data=value as DriverDash;
+    if(data.user?.id!==session.user?.id)throw new Error('Resumen no autorizado');
+    setDashboard(data);setDashboardError(false);
+   }).catch(()=>{
+    if(mounted.current&&version===refreshVersion.current){setDashboard(null);setDashboardError(true);}
+   });
+  }catch(e){
+   if(mounted.current&&version===refreshVersion.current){
+    setReadiness(null);setAvailable([]);setMine([]);setProfile(null);setOffersError(false);
+    setDashboard(null);setDashboardError(true);setError(failure(e));
+   }
+  }finally{if(mounted.current&&version===refreshVersion.current)setLoading(false);}
+ },[session.user?.id]);
  useEffect(()=>{
   mounted.current=true;
   void refresh();
   const interval=window.setInterval(()=>{
    if(document.visibilityState==='visible'&&!inFlight.current)void refresh();
   },15000);
-  return()=>{mounted.current=false;window.clearInterval(interval);};
+  return()=>{mounted.current=false;refreshVersion.current++;window.clearInterval(interval);};
  },[refresh]);
 
  // Browser GPS is foreground-only. Expired TTL means "unavailable" even if
@@ -153,13 +178,22 @@ export function DriverPwaWorkflow(){
  async function doAction(action:()=>Promise<unknown>,success:string,existing=false){
   if(inFlight.current||!(existing?canProgress:actions))return;
   inFlight.current=true;setBusy(true);setMessage('');setError('');
+  let failed:string|null=null;
   try{await action();if(mounted.current)setMessage(success);}
-  catch(e){if(mounted.current)setError(failure(e));}
-  finally{inFlight.current=false;if(mounted.current){setBusy(false);await refresh();}}
+  catch(e){failed=failure(e);}
+  finally{
+   if(mounted.current)await refresh();
+   inFlight.current=false;
+   if(mounted.current){
+    setBusy(false);
+    // A successful read must not hide an unsuccessful delivery/financial write.
+    if(failed&&mounted.current){setMessage('');setError(failed);}
+   }
+  }
  }
 
  const active=mine.find(deliveryInProgress)??null;
- const delivered=dashboard?.recent?.filter(o=>o.status==='delivered')??mine.filter(o=>o.status==='delivered');
+ const delivered=driverDeliveredOrders(mine);
  const weekdays=dashboard?.last_7_days??[];
  const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
  const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
@@ -173,8 +207,38 @@ export function DriverPwaWorkflow(){
 
  const doneToday=dashboard?.today?.deliveries;
  useEffect(()=>{if(!active&&proofSheet)setProofSheet(false);},[active?.id,proofSheet]);
+ useEffect(()=>{
+  if(!proofSheet)return;
+  const scroll=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  proofInput.current?.focus();
+  const key=(e:KeyboardEvent)=>{
+   if(e.key==='Escape'&&!busy){e.preventDefault();setProofSheet(false);}
+  };
+  document.addEventListener('keydown',key);
+  return()=>{document.body.style.overflow=scroll;document.removeEventListener('keydown',key);};
+ },[proofSheet,busy]);
  const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);setProofSheet(false);};
+ const openDeliveryProof=(order:Order)=>{
+  if(order.status==='on_the_way'&&canProgress&&!busy){
+   setPin(old=>({...old,[order.id]:''}));
+   setCashReceived(old=>({...old,[order.id]:false}));
+   setProofSheet(true);
+  }
+ };
+ const completeDelivery=async(order:Order)=>{
+  if(!canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true))return;
+  await guardedAction(async()=>{
+   await api.driverComplete(order.id,pin[order.id]??'');
+   if(mounted.current){
+    setProofSheet(false);
+    setPin(old=>{const next={...old};delete next[order.id];return next;});
+    setCashReceived(old=>{const next={...old};delete next[order.id];return next;});
+   }
+  },'Entrega validada por el servidor.',true);
+ };
  const doLogout=async()=>{
+  if(!readiness){setError('No se pudo verificar si tienes una entrega activa. Recupera la conexión antes de cerrar sesión.');return;}
   if(active){setError('Termina la entrega en curso antes de cerrar sesión.');return;}
   if(!window.confirm('¿Cerrar sesión? Dejarás de recibir pedidos hasta que vuelvas a entrar.'))return;
   setBusy(true);
@@ -183,44 +247,59 @@ export function DriverPwaWorkflow(){
    await session.logout();
   }catch(e){setError(failure(e));}finally{setBusy(false);}
  };
- const jobCard=(o:Order,offer=false)=><article key={o.id} className="df-surface df-job">
-   <div className="df-job-head"><span>Pedido #{o.id}</span>
-    <strong className="df-chip">{offer?'Disponible':displayStatus(o.status)}</strong></div>
-   {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
-     role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
-    {Array.from({length:5},(_,i)=>{
-     const progress=o.status==='assigned'?0:o.status==='picked_up'?3:o.status==='on_the_way'?4:5;
-     return <span className={i<progress?'filled':''} key={i}/>;
-    })}
-   </div>}
-   {!offer&&deliveryInProgress(o)&&<div className="df-route-stops">
-    <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
-     <div className="df-stop-icon"><Bike size={19}/></div>
-     <div><small>RECOGER</small><strong>Comercio #{o.restaurant_id}</strong>
-      <span>{o.status==='assigned'?'Ahora':'Recogida confirmada'}</span></div>
-    </div>
-    <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
-     <div className="df-stop-icon"><MapPin size={19}/></div>
-     <div><small>ENTREGAR</small><strong>Destino del cliente</strong>
-      <span>{o.address||'Dirección pendiente del servidor'}</span></div>
-    </div>
-   </div>}
-   <div className="df-job-meta"><span><MapPin size={16}/>{o.address||'Ubicación disponible al aceptar'}</span>
-    <span>{offer?'Ganancia por entrega':'Ganancia estimada'}: <b>{safeAmount(Number(o.driver_earning))}</b></span></div>
-   {offer?actions&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
-    canProgress&&tab!=='inicio'&&<div className="df-job-actions">
-     {o.status==='assigned'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
-     {o.status==='picked_up'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>En camino al cliente</button>}
-     {o.status==='on_the_way'&&<div className="df-pin-action">
-      <label>PIN del cliente<input inputMode="numeric" pattern="[0-9]{4}" autoComplete="off"
-       maxLength={4} placeholder="0000" value={pin[o.id]??''}
-       onChange={e=>setPin(p=>({...p,[o.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
-      <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[o.id]??'')}
-       onClick={()=>void guardedAction(()=>api.driverComplete(o.id,pin[o.id]??''),'Entrega validada por el servidor.',true)}>Confirmar entrega</button>
-      <p className="df-caption">La confirmación requiere el PIN real; el backend determina si la entrega es válida.</p>
-     </div>}
+ const jobCard=(o:Order,offer=false)=>{
+   const details=trustedActiveDriverDetail(dashboard,o);
+   const store=(o as Order & {restaurant?:{name?:string;address?:string}}).restaurant;
+   const storeName=details?.restaurant?.name||store?.name||'Comercio #'+o.restaurant_id;
+   const storeAddressKnown=details?.restaurant?.address||store?.address||null;
+   const storeAddress=storeAddressKnown||'Consulta la ubicación al aceptar';
+   const customerAddress=!offer?(o.address||details?.customer?.address||null):null;
+   const deliveryAddress=customerAddress||'Dirección pendiente del servidor';
+   const storeRoute=!offer?safeDriverMapLink(storeAddressKnown):null;
+   const customerRoute=!offer?safeDriverMapLink(customerAddress):null;
+   const earning=o.driver_earning??details?.earning;
+   const cash=o.payment_method==='cash';
+   return <article key={o.id} className={'df-surface df-job'+(deliveryInProgress(o)?' is-active':'')} aria-label={'Pedido '+o.id}>
+    <div className="df-job-head"><span className="df-order-code">Pedido #{o.id}</span>
+     <strong className={'df-chip'+(offer?' df-chip-offer':'')}>{offer?'Disponible':displayStatus(o.status)}</strong></div>
+    {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
+      role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
+     {Array.from({length:3},(_,i)=>{
+      const progress=o.status==='assigned'?1:o.status==='picked_up'?2:3;
+      return <span className={i<progress?'filled':''} key={i}/>;
+     })}
     </div>}
-  </article>;
+    <div className="df-order-highlights">
+     <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
+     <strong>{earning===undefined?'Ganancia pendiente':safeAmount(Number(earning))}</strong>
+    </div>
+    {deliveryInProgress(o)&&<div className="df-route-stops">
+     <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
+      <div className="df-stop-icon"><Bike size={19}/></div>
+      <div><small>01 · RECOGER</small><strong>{storeName}</strong>
+       <span>{storeAddress}</span>
+       {storeRoute&&<a href={storeRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Cómo llegar <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+     <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
+      <div className="df-stop-icon"><MapPin size={19}/></div>
+      <div><small>02 · ENTREGAR</small><strong>Destino del cliente</strong>
+       <span>{deliveryAddress}</span>
+       {customerRoute&&<a href={customerRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Ver ruta <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+    </div>}
+    {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
+    {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
+    {offer?actions&&<button type="button" className="df-primary" disabled={busy||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
+     canProgress&&tab!=='inicio'&&<div className="df-job-actions">
+      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
+      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>Iniciar ruta al cliente</button>}
+      {o.status==='on_the_way'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>openDeliveryProof(o)}>
+       Validar entrega con PIN <ArrowUpRight size={17}/></button>}
+     </div>}
+   </article>;
+  };
  const homeAction=tab!=='inicio'?null:!online?{
   label:'Conectarme',
   disabled:busy||cannotReceive||!!active,
@@ -233,38 +312,45 @@ export function DriverPwaWorkflow(){
   press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true);}
  }:active?.status==='on_the_way'&&canProgress?{
   label:'Validar entrega con PIN',disabled:busy,
-  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();setProofSheet(true);}}
+  press:()=>{if(!cooldown()){actionCooldown.current=Date.now();openDeliveryProof(active);}}
  }:null;
- const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\\s+/)[0];
- const initial=(session.user?.name||'R').trim().split(/\\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
+ const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
+ const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
- return <div className="df-app" data-driver-pwa="true">
+ return <div className="df-app" data-driver-pwa="true" data-presence={online?'online':readiness?'offline':'unavailable'}>
    <main className="df-content">
+    {!readiness&&!loading&&error&&<section className="df-reconnect df-surface" role="alert">
+     <WifiOff size={24}/><div><strong>No pudimos sincronizar tus entregas</strong>
+      <p>Por seguridad no se aceptarán nuevos pedidos hasta recuperar la conexión con Tala Eats.</p></div>
+     <button type="button" className="df-outline" onClick={()=>void refresh()}>Reintentar</button>
+    </section>}
+    {loading&&!readiness&&<div className="df-initial-loading" role="status"><RefreshCw size={20} className="df-rotate"/> Sincronizando tu cuenta con Tala Eats…</div>}
     {tab==='inicio'&&<>
-      <header className="df-screen-header"><div><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
+      <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
        <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{initial}</button></header>
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
-       <div className="df-availability-text"><strong>{online?'En línea':'Fuera de línea'}</strong>
-        <small>{active?'Entrega en curso':online?(reachable?'Recibiendo pedidos':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
+       <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
+        <small>{active?'Entrega en curso':online?(reachable?'Listo para nuevas asignaciones':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
        <button className={'df-switch '+(online?'on':'')} type="button" role="switch" aria-checked={online}
         aria-label="Cambiar disponibilidad" disabled={busy||!!active||readiness?.presence_enabled!==true||!readiness?.admin_verified}
         onClick={()=>void setOnline(!online)}><span/></button>
       </section>
       {readiness?.admin_verified!==true&&<div className="df-alert df-alert-info"><ShieldCheck size={19}/> Tu cuenta debe estar aprobada por ADMIN antes de conectarte.</div>}
       {readiness?.presence_enabled===false&&<div className="df-alert df-alert-info"><LockKeyhole size={18}/> El servidor todavía no habilitó la presencia en este entorno.</div>}
-      {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén abierta la PWA.</div>}
+      {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén la PWA abierta y permite la ubicación precisa.</div>}
+      {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Estás conectado y verificado. El servidor aún no habilita nuevas asignaciones para este modo de reparto.</div>}
       {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS</button>}
       <section className="df-main-stage">
        {active?<>{jobCard(active)}<p className="df-safety"><ShieldCheck size={17}/> Por seguridad, detente antes de usar la app en ruta.</p></>:
         <div className="df-empty df-surface">
          {online?<Bike size={34}/>:<Moon size={34}/>}
          <h2>{online?'Esperando pedidos':'Estás fuera de línea'}</h2>
-         <p>{online?'Te avisaremos en cuanto tengas una asignación. Mantén la app abierta.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
+         <p>{online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
         </div>}
       </section>
       <section className="df-section">
-       <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias</button></header>
+       <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
        <button className="df-surface df-metrics" onClick={()=>onTab('ganancias')} aria-label="Abrir ganancias">
         <div><small>Ganancias</small><strong>{dashboard?.today?safeAmount(dashboard.today.earnings):'—'}</strong></div>
         <div><small>Entregas</small><strong>{metric(doneToday)}</strong></div>
@@ -277,12 +363,13 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Entregas</h1><p>{dashboard?.today?('Hoy · '+metric(doneToday)+' completadas'):'Historial de entregas'}</p></div>
        <button className="df-icon-button" aria-label="Actualizar entregas" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={21}/></button></header>
       {active&&<section className="df-section"><h2>En curso</h2>{jobCard(active)}</section>}
-      <section className="df-section"><div className="df-section-title"><h2>Historial</h2><small>{delivered.length} pedidos</small></div>
+      <section className="df-section"><div className="df-section-title"><h2>Historial validado</h2><small>{delivered.length} pedidos</small></div>
        {delivered.length?delivered.map(o=>jobCard(o)):
        <div className="df-empty df-surface"><ReceiptText size={32}/><h2>Aún no hay entregas</h2><p>Las entregas que completes aparecerán aquí.</p></div>}
       </section>
       <section className="df-section"><h2>Pedidos disponibles</h2>
        {!actions&&<div className="df-alert df-alert-info"><LockKeyhole size={17}/> Las nuevas asignaciones no están autorizadas por el backend de este entorno.</div>}
+       {offersError&&<div className="df-alert df-alert-info" role="status"><WifiOff size={17}/> No se pudo consultar la lista de pedidos disponibles. Tus entregas asignadas siguen accesibles. <button type="button" className="df-text-button" onClick={()=>void refresh()}>Reintentar</button></div>}
        {available.length?available.map(o=>jobCard(o,true)):<div className="df-surface df-empty df-empty-small"><Bike size={25}/><p>No hay pedidos autorizados para tomar.</p></div>}
       </section>
     </>}
@@ -298,7 +385,7 @@ export function DriverPwaWorkflow(){
        </section>
       <FinanceWeeklyPreview kind="driver"/>
       <DriverCashHandoff orders={delivered}/>
-      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Configura tus retiros</strong></div>
+      <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Cuenta bancaria y retiros</strong></div>
        <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
        <button className="df-outline" disabled>Configurar cuenta bancaria</button>
        <p className="df-caption">Los retiros reales solo se habilitan con saldo confirmado y autorización de Tala Eats.</p></div>
@@ -331,7 +418,7 @@ export function DriverPwaWorkflow(){
       <header className="df-screen-header"><div><h1>Perfil</h1></div></header>
       <div className="df-surface df-profile-identity"><span className="df-avatar df-avatar-static">{initial}</span>
        <div><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
-        <span className="df-chip"><ShieldCheck size={14}/>{profile?.is_verified?'Cuenta verificada':'Verificación pendiente'}</span>
+        <span className="df-chip"><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
        </div></div>
       <section className="df-section"><h2>Trabajo</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('vehicle')}><Bike size={21}/><span><strong>Vehículo</strong><small>{profile?.vehicle||'Sin vehículo'} · {maskedDriverPlate(profile?.plate)}</small></span><ChevronRight size={19}/></button>
@@ -362,18 +449,28 @@ export function DriverPwaWorkflow(){
       <span className="df-nav-icon"><t.Icon size={24} strokeWidth={tab===t.key?2.6:1.9}/>{t.key==='inicio'&&active&&tab!=='inicio'&&<i className="df-active-pip"/>}</span><span className="df-nav-label">{t.label}</span>
      </button>)}
    </nav>
-   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setProofSheet(false)}>
-     <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-label="Confirmar entrega" onClick={e=>e.stopPropagation()}>
-      <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setProofSheet(false)}><X size={21}/></button>
-      <h2>Confirmar entrega</h2>
-      <p>Introduce el PIN de 4 dígitos que te dio el cliente. El servidor verificará la entrega.</p>
-      <label>PIN de entrega<input type="text" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}"
-        placeholder="0000" value={pin[active.id]??''}
-        onChange={e=>setPin(p=>({...p,[active.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
-      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> La evidencia fotográfica continúa pendiente de integración; no se simulan fotografías.</div>
-      <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[active.id]??'')}
-       onClick={()=>void guardedAction(()=>api.driverComplete(active.id,pin[active.id]??''),'Entrega validada por el servidor.',true)}>
-       {busy?'Validando…':'Confirmar entrega'}</button>
+   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>{if(!busy)setProofSheet(false);}}>
+     <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-labelledby="df-proof-title" aria-describedby="df-proof-description" onClick={e=>e.stopPropagation()}>
+      <button type="button" className="df-icon-button df-sheet-close" aria-label="Cerrar" disabled={busy} onClick={()=>setProofSheet(false)}><X size={21}/></button>
+      <span className="df-sheet-handle" aria-hidden="true"/>
+      <span className="df-eyebrow">PEDIDO #{active.id} · ÚLTIMO PASO</span>
+      <h2 id="df-proof-title">Confirmar entrega</h2>
+      <p id="df-proof-description">Solicita al cliente el PIN de 4 dígitos. Solo el servidor puede autorizar el cierre del pedido.</p>
+      {cashCollectionRequired(active)&&<label className="df-cash-ack">
+        <input type="checkbox" checked={cashReceived[active.id]===true} disabled={busy}
+         onChange={e=>setCashReceived(old=>({...old,[active.id]:e.target.checked}))}/>
+        <span><strong>Recibí el efectivo del cliente</strong>
+         <small>Confirmo que conté y recibí {pesos(active.total)}. El backend registrará esta cobranza y quedará pendiente de conciliación; no es mi ganancia.</small></span>
+       </label>}
+      <label className="df-proof-pin-label" htmlFor="df-pin-entry">PIN de entrega
+       <input ref={proofInput} id="df-pin-entry" type="text" inputMode="numeric" autoComplete="off" maxLength={4} pattern="[0-9]{4}"
+        placeholder="••••" value={pin[active.id]??''} disabled={busy}
+        onChange={e=>setPin(old=>({...old,[active.id]:sanitizeDeliveryPin(e.target.value)}))}/>
+      </label>
+      <p className="df-proof-note"><ShieldCheck size={16}/> El PIN no se guarda en este dispositivo. La evidencia fotográfica no está habilitada en esta versión.</p>
+      <button type="button" className="df-primary" disabled={busy||!canProgress||!canSubmitDelivery(active,pin[active.id]??'',cashReceived[active.id]===true)}
+       onClick={()=>void completeDelivery(active)}>
+       {busy?'Validando en el servidor…':'Confirmar entrega de forma segura'}</button>
      </section>
     </div>}
    {sheet&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setSheet(null)}>
@@ -388,8 +485,8 @@ export function DriverPwaWorkflow(){
      </>}
      {sheet==='documents'&&<>
       <p>Estado de tu documentación.</p>
-      <div className="df-doc-empty"><FileCheck2 size={30}/><strong>Aún no hay documentos verificados</strong>
-       <span>Cuando Tala Eats confirme tu registro, aquí aparecerá el estado de cada documento.</span></div>
+      <div className="df-doc-empty"><FileCheck2 size={30}/><strong>{readiness?.admin_verified?'Cuenta aprobada':'Verificación pendiente'}</strong>
+       <span>Esta sección muestra el estado general de tu aprobación. El detalle de cada documento no está disponible en esta vista.</span></div>
      </>}
      {sheet==='security'&&<><p>Acceso y sesión</p>
       <div className="df-detail-row"><span>Correo</span><strong>{session.user?.email||'No disponible'}</strong></div>

@@ -79,7 +79,7 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(pwa).toContain('Configurar cuenta bancaria');
   expect(pwa).toContain('disabled>Configurar cuenta bancaria</button>');
   expect(pwa).toContain("dashboard?.today?");
-  expect(pwa).toContain('api.driverComplete(o.id,pin[o.id]');
+  expect(pwa).toContain('api.driverComplete(order.id,pin[order.id]');
   expect(pwa).toContain('driverCanProgressExistingDelivery');
   expect(signup).toContain("application.status!=='pending'");
   expect(signup).toContain('await session.logout()');
