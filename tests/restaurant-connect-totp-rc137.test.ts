@@ -40,8 +40,8 @@ describe('RC137 Restaurant Connect security step-up',()=>{
  it('does not send invalid codes or bypass preview and error states',async()=>{
   const mock=vi.fn();
   vi.stubGlobal('fetch',mock);
-  await expect(api.ownerConfirmConnect(9,'invalid')).rejects.toThrow('6 dígitos');
-  await expect(api.ownerConnectOnboardingLink(9,'12345')).rejects.toThrow('6 dígitos');
+  expect(()=>api.ownerConfirmConnect(9,'invalid')).toThrow('6 dígitos');
+  expect(()=>api.ownerConnectOnboardingLink(9,'12345')).toThrow('6 dígitos');
   expect(mock).not.toHaveBeenCalled();
  });
  it('guards interactive buttons and forgets one-time codes after actions and merchant changes',()=>{
