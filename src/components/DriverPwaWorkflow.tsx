@@ -7,6 +7,7 @@ import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
+import {DriverCashHandoff} from './CashHandoffV2';
 type DriverDash={user?:{name?:string;phone?:string};profile?:{vehicle?:string;plate?:string;is_verified?:boolean};recent?:Order[];
  today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
  last_7_days?:Array<{date:string;earnings:number;deliveries:number}>;
@@ -296,6 +297,7 @@ export function DriverPwaWorkflow(){
        </div>:<div className="df-no-earnings"><ChartNoAxesCombined size={20}/><span>Aún no tienes ganancias hoy. Se sumarán aquí al completar tu primera entrega.</span></div>}
        </section>
       <FinanceWeeklyPreview kind="driver"/>
+      <DriverCashHandoff orders={delivered}/>
       <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Configura tus retiros</strong></div>
        <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
        <button className="df-outline" disabled>Configurar cuenta bancaria</button>
