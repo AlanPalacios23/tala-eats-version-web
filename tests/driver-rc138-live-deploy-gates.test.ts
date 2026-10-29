@@ -1,5 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
+import {Script} from 'node:vm';
+import {spawnSync} from 'node:child_process';
 const read=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
 describe('RC138 Driver PWA deployment gates are static-only and fail closed',()=>{
  const plan=read('../deploy/rc138-kali-driver-live-preflight.sh');
@@ -17,6 +19,37 @@ describe('RC138 Driver PWA deployment gates are static-only and fail closed',()=
   expect(plan).toContain("DRIVER_RC138_PM2_API_WORKER_EXACT_SHA=PASS");
   expect(plan).toContain("DRIVER_RC138_REAL_ACCOUNT_E2E=NOT_EXECUTED");
   expect(plan).toContain("DRIVER_RC138_API_DB_FINANCIAL_WRITES=ZERO");
+ });
+ it('PM2 inline shell JavaScript stays valid in bash and identifies the exact same SHA',()=>{
+  const bash=spawnSync('bash',['-n','deploy/rc138-kali-driver-live-preflight.sh'],{encoding:'utf8'});
+  expect(bash.status).toBe(0);
+  const scripts=[...plan.matchAll(/pm2 jlist \\| node -e '([\\s\\S]*?)'\\n/g)].map(m=>m[1]);
+  expect(scripts).toHaveLength(2);
+  for(const js of scripts){
+   // The script embeds JS inside a single-quoted bash string. A lone quote
+   // breaks execution even when the JavaScript itself parses correctly.
+   expect(js).not.toContain("'");
+   expect(()=>new Script(js)).not.toThrow();
+  }
+  const sha='a'.repeat(40),w='/home/tala-node-stage/tala-node-releases/'+sha+'/node-backend';
+  const fixtures=[
+   {name:'tala-node-stage-api',pm2_env:{status:'online',pm_cwd:w,pm_exec_path:w+'/dist/server.js'}},
+   {name:'tala-node-stage-worker',pm2_env:{status:'online',pm_cwd:w,pm_exec_path:w+'/dist/live/production-worker.js'}},
+  ];
+  const invoke=(js:string,rows:unknown,env:Record<string,string>={})=>
+   spawnSync(process.execPath,['-e',js],{encoding:'utf8',
+    input:JSON.stringify(rows),env:{...process.env,...env}});
+  const detected=invoke(scripts[0],fixtures);
+  expect(detected.status).toBe(0);
+  expect(detected.stdout).toContain('DRIVER_RC138_CURRENT_LIVE_BACKEND_SHA='+sha);
+  const checked=invoke(scripts[1],fixtures,{DRIVER_EXPECTED_BACK_WORK:w});
+  expect(checked.status).toBe(0);
+  expect(checked.stdout).toContain('DRIVER_RC138_PM2_API_WORKER_EXACT_SHA=PASS');
+  const mismatch=invoke(scripts[1],[fixtures[0],{...fixtures[1],pm2_env:
+   {...fixtures[1].pm2_env,pm_cwd:w.replace(sha,'b'.repeat(40))}}],
+   {DRIVER_EXPECTED_BACK_WORK:w});
+  expect(mismatch.status).not.toBe(0);
+  expect(mismatch.stdout).toContain('DRIVER_RC138_PM2_API_WORKER_EXACT_SHA=HOLD');
  });
  it('inspects actual cash/Stripe release switches without ever enabling them',()=>{
   for(const key of [
