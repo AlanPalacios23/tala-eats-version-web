@@ -21,7 +21,8 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(styles).toContain('--df-bg:#f8f7f5');
   expect(app).toContain('path="/repartidor/acceso"');
   expect(app).toContain('path="/repartidor/registro"');
-  expect(app).toContain('<Protected role="driver"><Driver/></Protected>');
+  expect(app).toContain('<DriverCanonicalRedirect suffix=""/>');
+  expect(read('../src/DriverStandalone.tsx')).toContain('<DriverPwaWorkflow/>');
  });
  it('retains native Material 3 composition and thumb-zone action without decorative auth logo',()=>{
   const mark=readFileSync(new URL('../public/branding/tala-eats-driver-official.png',import.meta.url));
