@@ -242,10 +242,12 @@ export function DriverPwaWorkflow(){
    const details=trustedActiveDriverDetail(dashboard,o);
    const store=(o as Order & {restaurant?:{name?:string;address?:string}}).restaurant;
    const storeName=details?.restaurant?.name||store?.name||'Comercio #'+o.restaurant_id;
-   const storeAddress=details?.restaurant?.address||store?.address||'Consulta la ubicación al aceptar';
-   const deliveryAddress=!offer?(o.address||details?.customer?.address||'Dirección pendiente del servidor'):null;
-   const storeRoute=!offer?safeDriverMapLink(storeAddress):null;
-   const customerRoute=!offer?safeDriverMapLink(deliveryAddress):null;
+   const storeAddressKnown=details?.restaurant?.address||store?.address||null;
+   const storeAddress=storeAddressKnown||'Consulta la ubicación al aceptar';
+   const customerAddress=!offer?(o.address||details?.customer?.address||null):null;
+   const deliveryAddress=customerAddress||'Dirección pendiente del servidor';
+   const storeRoute=!offer?safeDriverMapLink(storeAddressKnown):null;
+   const customerRoute=!offer?safeDriverMapLink(customerAddress):null;
    const earning=o.driver_earning??details?.earning;
    const cash=o.payment_method==='cash';
    return <article key={o.id} className={'df-surface df-job'+(deliveryInProgress(o)?' is-active':'')} aria-label={'Pedido '+o.id}>
