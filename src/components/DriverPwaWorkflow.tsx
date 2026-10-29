@@ -217,44 +217,57 @@ export function DriverPwaWorkflow(){
    await session.logout();
   }catch(e){setError(failure(e));}finally{setBusy(false);}
  };
- const jobCard=(o:Order,offer=false)=><article key={o.id} className="df-surface df-job">
-   <div className="df-job-head"><span>Pedido #{o.id}</span>
-    <strong className="df-chip">{offer?'Disponible':displayStatus(o.status)}</strong></div>
-   {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
-     role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
-    {Array.from({length:5},(_,i)=>{
-     const progress=o.status==='assigned'?0:o.status==='picked_up'?3:o.status==='on_the_way'?4:5;
-     return <span className={i<progress?'filled':''} key={i}/>;
-    })}
-   </div>}
-   {!offer&&deliveryInProgress(o)&&<div className="df-route-stops">
-    <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
-     <div className="df-stop-icon"><Bike size={19}/></div>
-     <div><small>RECOGER</small><strong>Comercio #{o.restaurant_id}</strong>
-      <span>{o.status==='assigned'?'Ahora':'Recogida confirmada'}</span></div>
-    </div>
-    <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
-     <div className="df-stop-icon"><MapPin size={19}/></div>
-     <div><small>ENTREGAR</small><strong>Destino del cliente</strong>
-      <span>{o.address||'Dirección pendiente del servidor'}</span></div>
-    </div>
-   </div>}
-   <div className="df-job-meta"><span><MapPin size={16}/>{o.address||'Ubicación disponible al aceptar'}</span>
-    <span>{offer?'Ganancia por entrega':'Ganancia estimada'}: <b>{safeAmount(Number(o.driver_earning))}</b></span></div>
-   {offer?actions&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
-    canProgress&&tab!=='inicio'&&<div className="df-job-actions">
-     {o.status==='assigned'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
-     {o.status==='picked_up'&&<button className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>En camino al cliente</button>}
-     {o.status==='on_the_way'&&<div className="df-pin-action">
-      <label>PIN del cliente<input inputMode="numeric" pattern="[0-9]{4}" autoComplete="off"
-       maxLength={4} placeholder="0000" value={pin[o.id]??''}
-       onChange={e=>setPin(p=>({...p,[o.id]:e.target.value.replace(/\\D/g,'').slice(0,4)}))}/></label>
-      <button className="df-primary" disabled={busy||!/^[0-9]{4}$/.test(pin[o.id]??'')}
-       onClick={()=>void guardedAction(()=>api.driverComplete(o.id,pin[o.id]??''),'Entrega validada por el servidor.',true)}>Confirmar entrega</button>
-      <p className="df-caption">La confirmación requiere el PIN real; el backend determina si la entrega es válida.</p>
-     </div>}
+ const jobCard=(o:Order,offer=false)=>{
+   const details=trustedActiveDriverDetail(dashboard,o);
+   const store=(o as Order & {restaurant?:{name?:string;address?:string}}).restaurant;
+   const storeName=details?.restaurant?.name||store?.name||'Comercio #'+o.restaurant_id;
+   const storeAddress=details?.restaurant?.address||store?.address||'Consulta la ubicación al aceptar';
+   const deliveryAddress=!offer?(o.address||details?.customer?.address||'Dirección pendiente del servidor'):null;
+   const storeRoute=!offer?safeDriverMapLink(storeAddress):null;
+   const customerRoute=!offer?safeDriverMapLink(deliveryAddress):null;
+   const earning=o.driver_earning??details?.earning;
+   const cash=o.payment_method==='cash';
+   return <article key={o.id} className={'df-surface df-job'+(deliveryInProgress(o)?' is-active':'')} aria-label={'Pedido '+o.id}>
+    <div className="df-job-head"><span className="df-order-code">Pedido #{o.id}</span>
+     <strong className={'df-chip'+(offer?' df-chip-offer':'')}>{offer?'Disponible':displayStatus(o.status)}</strong></div>
+    {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
+      role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
+     {Array.from({length:3},(_,i)=>{
+      const progress=o.status==='assigned'?1:o.status==='picked_up'?2:3;
+      return <span className={i<progress?'filled':''} key={i}/>;
+     })}
     </div>}
-  </article>;
+    <div className="df-order-highlights">
+     <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
+     <strong>{earning===undefined?'Ganancia pendiente':safeAmount(Number(earning))}</strong>
+    </div>
+    {deliveryInProgress(o)&&<div className="df-route-stops">
+     <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
+      <div className="df-stop-icon"><Bike size={19}/></div>
+      <div><small>01 · RECOGER</small><strong>{storeName}</strong>
+       <span>{storeAddress}</span>
+       {storeRoute&&<a href={storeRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Cómo llegar <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+     <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
+      <div className="df-stop-icon"><MapPin size={19}/></div>
+      <div><small>02 · ENTREGAR</small><strong>Destino del cliente</strong>
+       <span>{deliveryAddress}</span>
+       {customerRoute&&<a href={customerRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Ver ruta <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+    </div>}
+    {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
+    {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
+    {offer?actions&&<button type="button" className="df-primary" disabled={busy||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
+     canProgress&&tab!=='inicio'&&<div className="df-job-actions">
+      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
+      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>Iniciar ruta al cliente</button>}
+      {o.status==='on_the_way'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>openDeliveryProof(o)}>
+       Validar entrega con PIN <ArrowUpRight size={17}/></button>}
+     </div>}
+   </article>;
+  };
  const homeAction=tab!=='inicio'?null:!online?{
   label:'Conectarme',
   disabled:busy||cannotReceive||!!active,
