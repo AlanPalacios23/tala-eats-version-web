@@ -34,7 +34,9 @@ describe('RC139 one canonical Driver PWA for ALL old customer-origin links',()=>
   expect(script).toContain('check_routes_retry');
   expect(script).toContain('check_public_retry');
   expect(script).toContain('RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK');
-  expect(script).toContain('RC139_REDIRECT=FAILED_CONFIG_RESTORED_RELOAD_REQUESTED');
+  expect(script).toContain('RC139_REDIRECT=FAILED_BUT_ROLLBACK_HTTP_VERIFIED');
+  expect(script).toContain('RC139_REDIRECT=FAILED_ROLLBACK_HTTP_NOT_VERIFIED');
+  expect(script).toContain('BASELINE_ROUTES="$(probe_routes)"');
   expect(script).toContain('I_APPROVE_RC139_MAIN_DRIVER_REDIRECT_ONLY');
   expect(script).toContain('RC139_REDIRECT=PASS_MAIN_18195_TO_DRIVER_18199');
   expect(script).toContain('systemctl reload "$SERVICE"');
