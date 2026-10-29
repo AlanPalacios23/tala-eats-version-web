@@ -9,7 +9,7 @@ const browser=await chromium.launch({headless:true});
 let captures=0;
 const reply=(route,json,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(json)});
 const driver={id:55,name:'Repartidor Demo',email:'driver@example.test',role:'driver'};
-const dashboard={user:{name:driver.name,phone:''},profile:{vehicle:'Motocicleta',plate:'ABC-1234',is_verified:true},
+const dashboard={user:{id:driver.id,name:driver.name,phone:''},profile:{vehicle:'Motocicleta',plate:'ABC-1234',is_verified:true},
  today:{earnings:0,deliveries:0,distance_km:0,average_earning:0},last_7_days:Array.from({length:7},(_,i)=>({date:'2026-10-'+String(21+i),earnings:0,deliveries:0}))};
 const driverApi=(route)=>{
  const url=new URL(route.request().url());
