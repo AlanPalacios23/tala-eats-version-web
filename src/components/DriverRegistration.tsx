@@ -5,15 +5,13 @@ import {ArrowLeft,CheckCircle2,FileCheck2,ShieldCheck,Smartphone,UploadCloud,Use
 import {api,ApiError} from '../lib/api';
 import {useSession} from '../lib/session';
 import {driverPlateIsValid,normalizeDriverPlate} from '../lib/driver-registration';
+import {onboardingSelectionError,prepareOnboardingDocuments,readableOnboardingSize} from '../lib/onboarding-documents';
 import type {DriverVehicle} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 
 const messageOf=(error:unknown)=>error instanceof Error?error.message:'No pudimos completar la operación. Revisa tu conexión.';
-/** Identical Flutter asset and typographic lockup from widgets/brand.dart. */
-export function DriverBrand(){return <Link to="/" className="df-brand" aria-label="Tala Eats Repartidor, portada">
- <img src="/branding/tala-eats-driver-official.png" alt="" width={72} height={72} decoding="async"/>
- <span className="df-brand-type"><strong>TALA EATS</strong><b>Repartidor</b></span>
- </Link>;}
+/** Minimal text-only mark used during initial loading, never in forms. */
+export function DriverBrand(){return <Link to="/" className="df-brand df-brand-plain" aria-label="Tala Eats, inicio">Tala Eats</Link>;}
 
 export function DriverAccess(){
  const session=useSession();
@@ -38,7 +36,7 @@ export function DriverAccess(){
  if(session.loading)return <div className="df-auth"><p role="status">Verificando sesión…</p></div>;
  if(session.user?.role==='driver')return <Navigate to="/repartidor" replace/>;
  if(session.user){
-  return <div className="df-auth"><main className="df-auth-inner"><DriverBrand/>
+  return <div className="df-auth"><main className="df-auth-inner">
     <h1>Tu acceso de repartidor</h1>
     <p>Hola, {session.user.name}. La plataforma verifica la aprobación de tu solicitud antes de permitir entregas.</p>
     <div className="df-surface df-message"><ShieldCheck size={22}/>
@@ -57,7 +55,6 @@ export function DriverAccess(){
   catch(err){setError(messageOf(err));}finally{setBusy(false);}
  }
  return <div className="df-auth"><main className="df-auth-inner">
-   <DriverBrand/>
    <h1>Entra y empieza tu ruta.</h1>
    <p>Tus entregas, ganancias y recorrido en un solo lugar.</p>
    <form onSubmit={e=>void submit(e)} className="df-auth-form">
@@ -86,6 +83,7 @@ export function DriverRegistration(){
  const [vehicle,setVehicle]=useState<DriverVehicle>('Motocicleta');
  const [plate,setPlate]=useState('');
  const [documents,setDocuments]=useState<File[]>([]);
+ const [uploadProgress,setUploadProgress]=useState('');
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [complete,setComplete]=useState(false);
@@ -115,27 +113,33 @@ export function DriverRegistration(){
   if(!usingSession&&(!name.trim()||name.trim().length<2||!/^\S+@\S+\.\S+$/.test(email)||password.length<8)){
    setError('Revisa nombre, correo y contraseña (mínimo 8 caracteres).');return;
   }
-  if(documents.length>3){setError('Adjunta un máximo de 3 documentos.');return;}
-  if(documents.some(f=>!['image/jpeg','image/png','image/webp','application/pdf'].includes(f.type)||!f.size||f.size>5*1024*1024)){
-   setError('Cada documento debe ser JPG, PNG, WEBP o PDF de máximo 5 MB.');return;
-  }
-  setBusy(true);
+  const selectionIssue=onboardingSelectionError(documents);
+  if(selectionIssue){setError(selectionIssue);return;}
+  setBusy(true);setUploadProgress(documents.length?'Preparando documentos de forma privada en tu dispositivo…':'');
+  let createdThisAttempt=false;
   try{
+   // Validate signature and optimize large mobile photographs BEFORE creating
+   // an account, so an incompatible file cannot leave a half-registered user.
+   const prepared=await prepareOnboardingDocuments(documents);
    if(!usingSession){
     // This can create a customer account only after the plate-capability
     // handshake succeeds. If onboarding fails, re-enter via existing account.
     await session.register(name.trim(),email.trim().toLowerCase(),password);
-    setExisting(true);
+    createdThisAttempt=true;setExisting(true);
    }
    await api.updateProfile(session.user?.name||name.trim(),phone.trim());
    const urls:string[]=[];
-   for(const file of documents)urls.push((await api.driverOnboardingDocument(file)).url);
+   for(const [index,file] of prepared.entries()){
+    setUploadProgress('Subiendo documento '+(index+1)+' de '+prepared.length+'…');
+    urls.push((await api.driverOnboardingDocument(file)).url);
+   }
+   setUploadProgress('Enviando solicitud para aprobación…');
    const application=await api.driverOnboardingSubmit(vehicle,normalized,urls);
    if(application.status!=='pending')throw new Error('No se confirmó que la solicitud esté pendiente. Comprueba tu estado antes de reintentar.');
    await session.logout();
    setComplete(true);
-  }catch(err){setError(messageOf(err)+' Si la cuenta ya se creó, entra con ella en lugar de crear otra.');}
-  finally{setBusy(false);}
+  }catch(err){setError(messageOf(err)+(createdThisAttempt?' La cuenta ya se creó: utiliza esta misma cuenta para reintentar.':''));}
+  finally{setBusy(false);setUploadProgress('');}
  }
  if(complete)return <div className="df-auth"><main className="df-auth-inner df-success"><CheckCircle2 size={52}/>
   <h1>Solicitud enviada</h1><p>Tu cuenta quedó pendiente de revisión de ADMIN. Cuando sea aprobada podrás iniciar sesión como repartidor.</p>
@@ -143,7 +147,6 @@ export function DriverRegistration(){
  </main></div>;
  return <div className="df-auth"><main className="df-auth-inner df-register">
   <Link className="df-back" to="/repartidor/acceso"><ArrowLeft size={18}/> Volver a iniciar sesión</Link>
-  <DriverBrand/>
   <h1>Únete a la red de repartidores.</h1>
   <p>Crea tu cuenta, registra tu vehículo y envía tu solicitud. ADMIN revisará tu información antes de autorizar entregas.</p>
   {!cap&&<div role="status" className="df-message df-surface"><ShieldCheck size={21}/><div><strong>Verificando disponibilidad del registro</strong>
@@ -162,9 +165,11 @@ export function DriverRegistration(){
     value={plate} onChange={e=>setPlate(normalizeDriverPlate(e.target.value))} disabled={busy||!cap}/><small>Se utilizará para la verificación del vehículo. No se publica en entregas.</small></label>}
    <label>Documentos de verificación <span className="df-optional">(opcional, hasta 3)</span>
      <span className="df-file-picker"><UploadCloud size={18}/> Adjuntar identificación, licencia o tarjeta de circulación
-      <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple onChange={e=>setDocuments(Array.from(e.target.files||[]))} disabled={busy||!cap||!cap.driver_documents_supported}/></span>
-      <small>{documents.length?documents.length+' documento(s) seleccionados':'Máximo 5 MB por documento. Solo ADMIN revisa los archivos.'}</small></label>
+      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf" multiple onChange={e=>{setDocuments(Array.from(e.target.files||[]));setError('');}} disabled={busy||!cap||!cap.driver_documents_supported}/></span>
+      <small>{documents.length?documents.length+' documento(s) seleccionados · se subirán al enviar la solicitud':'Máximo 5 MB por documento. Las fotos grandes se optimizan en tu dispositivo.'}</small>
+      {documents.length>0&&<ul className="df-selected-files">{documents.map((file,index)=><li key={index}>{file.name} <span>({readableOnboardingSize(file.size)})</span></li>)}</ul>}</label>
    <div className="df-message df-surface"><FileCheck2 size={21}/><p>Tu solicitud no habilita entregas ni pagos. Solo podrás operar cuando ADMIN apruebe tu información y el servidor valide tu GPS.</p></div>
+   {uploadProgress&&<div role="status" className="df-upload-progress">{uploadProgress}</div>}
    {error&&<div className="df-error" role="alert"><WifiOff size={17}/>{error}</div>}
    <button type="submit" className="df-primary" disabled={!cap||busy}>
     {busy?'Enviando solicitud…':'Crear cuenta y enviar solicitud'}</button>
