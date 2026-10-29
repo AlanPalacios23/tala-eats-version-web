@@ -29,6 +29,12 @@ describe('RC139 one canonical Driver PWA for ALL old customer-origin links',()=>
   const shell=spawnSync('bash',['-n','deploy/rc139-kali-driver-canonical-redirect.sh'],{encoding:'utf8'});
   expect(shell.status).toBe(0);
   expect(script).toContain('RC139_REDIRECT_PLAN=PASS_READ_ONLY');
+  expect(script).toContain('RC139_DIAG=READ_ONLY');
+  expect(script).toContain('RC139_DIAG_PATH=');
+  expect(script).toContain('check_routes_retry');
+  expect(script).toContain('check_public_retry');
+  expect(script).toContain('RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK');
+  expect(script).toContain('RC139_REDIRECT=FAILED_CONFIG_RESTORED_RELOAD_REQUESTED');
   expect(script).toContain('I_APPROVE_RC139_MAIN_DRIVER_REDIRECT_ONLY');
   expect(script).toContain('RC139_REDIRECT=PASS_MAIN_18195_TO_DRIVER_18199');
   expect(script).toContain('systemctl reload "$SERVICE"');
