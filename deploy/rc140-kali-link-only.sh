@@ -25,7 +25,7 @@ ORIGIN=http://127.0.0.1:18195
 SERVICE=talaeats-web-pwa.service
 TARGET_URL=https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso
 SOURCE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-BRIDGE="$SOURCE/public/rc140-driver-link.js"
+BRIDGE="$SOURCE/deploy/rc140-driver-link.js"
 for bin in curl git python3 grep readlink cmp cp mv ln systemctl;do
  command -v "$bin" >/dev/null || { echo "RC140=HOLD_MISSING_$bin";exit 2; }
 done
@@ -71,7 +71,6 @@ fi
 [[ "$(git -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
  -z "$(git -C "$SOURCE" status --porcelain --untracked-files=no)" &&
  -s "$BRIDGE" ]] || { echo RC140=HOLD_SOURCE_SHA_OR_ASSET;exit 2; }
-node_readme_not_needed=true
 [[ ! -e "$OLD/rc140-driver-link.js" ]] || {
  echo RC140=HOLD_BRIDGE_ALREADY_PRESENT;exit 2;
 }
