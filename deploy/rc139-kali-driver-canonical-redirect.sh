@@ -7,7 +7,7 @@ set +x
 umask 077
 [[ "$#" -ge 1 ]] || { echo RC139_REDIRECT=HOLD_USAGE;exit 2; }
 MODE="$1"
-if [[ "$MODE" == --plan ]];then
+if [[ "$MODE" == --plan || "$MODE" == --diagnose ]];then
  [[ "$#" -eq 1 ]] || exit 2
 elif [[ "$MODE" == --apply ]];then
  [[ "$#" -eq 2 && "$2" == I_APPROVE_RC139_MAIN_DRIVER_REDIRECT_ONLY ]] || exit 2
@@ -37,17 +37,54 @@ curl -fsS --max-time 8 -H "Host: $DHOST" "$DRIVER/repartidor/acceso" |
  grep -Fq '<div id="root">' || { echo RC139_REDIRECT=HOLD_DRIVER_TARGET;exit 2; }
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/api/v1/health" |
  python3 -c 'import json,sys;d=json.load(sys.stdin);assert d["status"]=="ok" and d["production"] is True' || exit 2
+# Report only HTTP codes and redirect URLs for public role paths; no cookies,
+# tokens, addresses, PM2 metadata or confidential environment variables.
+probe_routes(){
+ local item path out
+ for item in '/repartidor|/repartidor' '/repartidor/acceso|/repartidor/acceso' \
+  '/repartidor/registro|/repartidor/registro' '/repartidor/extra|/repartidor';do
+  IFS='|' read -r path _ <<< "$item"
+  out="$(curl -sS --connect-timeout 3 --max-time 8 -o /dev/null \
+   -w '%{http_code}|%{redirect_url}' -H "Host: $MHOST" "$MAIN$path")"
+  printf '%s|%s\n' "$path" "$out"
+ done
+}
 check_routes(){
  local item path expected out code url
- for item in '/repartidor|/repartidor' '/repartidor/acceso|/repartidor/acceso' '/repartidor/registro|/repartidor/registro' '/repartidor/extra|/repartidor';do
+ for item in '/repartidor|/repartidor' '/repartidor/acceso|/repartidor/acceso' \
+  '/repartidor/registro|/repartidor/registro' '/repartidor/extra|/repartidor';do
   IFS='|' read -r path expected <<< "$item"
-  out="$(curl -sS --connect-timeout 3 --max-time 8 -o /dev/null -w '%{http_code}|%{redirect_url}' -H "Host: $MHOST" "$MAIN$path")"
+  out="$(curl -sS --connect-timeout 3 --max-time 8 -o /dev/null \
+   -w '%{http_code}|%{redirect_url}' -H "Host: $MHOST" "$MAIN$path")" || return 1
   IFS='|' read -r code url <<< "$out"
   [[ "$code" == 302 && "$url" == "https://$DHOST$expected" ]] || return 1
  done
 }
+check_routes_retry(){
+ local attempt
+ for attempt in 1 2 3 4 5 6 7 8 9 10;do
+  if check_routes;then return 0;fi
+  sleep 1
+ done
+ return 1
+}
+show_diagnostics(){
+ local marker=no
+ grep -Fq RC139_CANONICAL_DRIVER_BEGIN "$CONFIG" && marker=yes
+ echo "RC139_DIAG_CONFIG_MARKER=$marker"
+ while IFS='|' read -r path code location;do
+  [[ -n "$path" ]] || continue
+  echo "RC139_DIAG_PATH=$path HTTP=$code DEST=${location:-NONE}"
+ done < <(probe_routes)
+}
+if [[ "$MODE" == --diagnose ]];then
+ show_diagnostics
+ echo RC139_DIAG=READ_ONLY
+ exit 0
+fi
+
 if grep -Fq RC139_CANONICAL_DRIVER_BEGIN "$CONFIG";then
- check_routes || { echo RC139_REDIRECT=HOLD_MARKED_BUT_NOT_LIVE;exit 2; }
+ check_routes_retry || { show_diagnostics; echo RC139_REDIRECT=HOLD_MARKED_BUT_NOT_LIVE;exit 2; }
  echo RC139_REDIRECT=PASS_ALREADY_APPLIED
  exit 0
 fi
@@ -57,6 +94,7 @@ grep -Eq 'location[[:space:]]+(=|\^~)?[[:space:]]*/repartidor(/|[[:space:]{])' "
 echo RC139_MAIN_AND_DRIVER=PASS
 echo RC139_SCOPE=NGINX_18195_DRIVER_PATHS_ONLY
 if [[ "$MODE" == --plan ]];then
+ show_diagnostics
  echo RC139_REDIRECT_PLAN=PASS_READ_ONLY
  exit 0
 fi
@@ -72,9 +110,13 @@ recover(){
  rm -f -- "$TEMP"
  if [[ "$status" -ne 0 && "$RESTORE" == yes ]];then
   cp -a -- "$BACKUP" "$CONFIG"
-  /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1 || true
-  systemctl reload "$SERVICE" || true
-  echo RC139_REDIRECT=FAILED_PREVIOUS_CONFIG_RESTORED_VERIFY
+  if cmp -s "$BACKUP" "$CONFIG" &&
+   /usr/sbin/nginx -t -c "$MAIN_CONF" >/dev/null 2>&1 &&
+   systemctl reload "$SERVICE";then
+   echo RC139_REDIRECT=FAILED_CONFIG_RESTORED_RELOAD_REQUESTED
+  else
+   echo RC139_REDIRECT=FAILED_ROLLBACK_NOT_VERIFIED
+  fi
  fi
  exit "$status"
 }
@@ -101,11 +143,29 @@ chown --reference="$CONFIG" "$TEMP"
 mv -f -- "$TEMP" "$CONFIG"
 /usr/sbin/nginx -t -c "$MAIN_CONF"
 systemctl reload "$SERVICE"
-check_routes || { echo RC139_REDIRECT=HOLD_POSTCHECK;exit 1; }
+check_routes_retry || { show_diagnostics; echo RC139_REDIRECT=HOLD_POSTCHECK;exit 1; }
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/clientes" |
  grep -Fq '<div id="root">' || exit 1
+# Validate the Cloudflare hostname, not merely localhost; do not follow the
+# redirect into a logged-in application (this remains an unauthenticated GET).
+check_public(){
+ local out code url
+ out="$(curl -sS --connect-timeout 5 --max-time 12 -o /dev/null \
+  -w '%{http_code}|%{redirect_url}' "https://$MHOST/repartidor/acceso")" || return 1
+ IFS='|' read -r code url <<< "$out"
+ [[ "$code" == 302 && "$url" == "https://$DHOST/repartidor/acceso" ]]
+}
+check_public_retry(){
+ local attempt
+ for attempt in 1 2 3 4 5;do
+  if check_public;then return 0;fi
+  sleep 1
+ done
+ return 1
+}
 curl -fsS --max-time 8 -H "Host: $MHOST" "$MAIN/api/v1/health" |
  python3 -c 'import json,sys;d=json.load(sys.stdin);assert d["status"]=="ok"' || exit 1
+check_public_retry || { echo RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK;exit 1; }
 RESTORE=no
 trap - EXIT
 echo RC139_REDIRECT=PASS_MAIN_18195_TO_DRIVER_18199
