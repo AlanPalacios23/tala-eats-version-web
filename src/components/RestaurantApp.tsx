@@ -5,7 +5,7 @@ import {ArrowLeft,ArrowRight,BadgeCheck,Check,ChefHat,CreditCard,
  KeyRound,LogOut,PackageCheck,RefreshCw,ShieldCheck,
  ShoppingBag,Store,UtensilsCrossed,Wallet,AlertCircle,Plus,LockKeyhole,Download} from 'lucide-react';
 import {api,ApiError,pesos,safeImage} from '../lib/api';
-import type {MerchantApplication,MerchantFinance} from '../lib/api';
+import type {AdminRestaurantRecord,MerchantApplication,MerchantFinance} from '../lib/api';
 import {useSession} from '../lib/session';
 import type {Order,Restaurant,MenuItem} from '../lib/types';
 import {PREVIEW_READONLY} from '../lib/preview';
@@ -275,12 +275,18 @@ export function RestaurantOnboarding(){
 }
 export function RestaurantAdminActivation(){
  const [requests,setRequests]=useState<MerchantApplication[]|null>(null);
+ const [shops,setShops]=useState<AdminRestaurantRecord[]|null>(null);
  const [notes,setNotes]=useState<Record<number,string>>({});
  const [busy,setBusy]=useState<number|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const refresh=useCallback(async()=>{
   setError('');
-  try{setRequests((await api.adminRestaurantApplications()).filter(x=>x.entity_type==='restaurant'));}
-  catch(e){setError(e instanceof Error?e.message:'No se pudieron consultar las solicitudes.');}
+  try{
+   const [applications,restaurants]=await Promise.all([
+     api.adminRestaurantApplications(),api.adminRestaurants(),
+   ]);
+   setRequests(applications.filter(x=>x.entity_type==='restaurant'));
+   setShops(restaurants);
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo consultar el estado administrativo de restaurantes.');}
  },[]);
  useEffect(()=>{void refresh();},[refresh]);
  async function review(item:MerchantApplication,status:'approved'|'rejected'|'needs_info'|'suspended'){
@@ -295,6 +301,25 @@ export function RestaurantAdminActivation(){
   }catch(e){setError(e instanceof Error?e.message:'No se pudo revisar la solicitud.');}
   finally{setBusy(null);}
  }
+ async function restore(shop:AdminRestaurantRecord){
+  if(busy!==null||PREVIEW_READONLY)return;
+  if(!['archived','suspended'].includes(shop.verification_status))return;
+  const name=window.prompt('Escribe exactamente el nombre del restaurante para RESTAURARLO. Permanecerá CERRADO hasta que su propietario lo abra.', '');
+  if(name===null)return;
+  if(name!==shop.name){
+   setError('El nombre escrito no coincide con el restaurante. No se realizó ningún cambio.');return;
+  }
+  setBusy(shop.id);setError('');setNotice('');
+  try{
+   const result=await api.adminRestoreRestaurant(
+     shop.id,shop.name,'Restauración solicitada por ADMIN tras archivo o suspensión manual');
+   if(!result.restored||result.verification_status!=='verified'||result.is_open||result.pickup_enabled)
+    throw new Error('El estado devuelto requiere revisión; no intentes de nuevo sin consultar el registro.');
+   setNotice('Restaurante restaurado y verificado. Sigue cerrado y sin recogida hasta que el dueño revise catálogo, stock y decida abrir ventas.');
+   await refresh();
+  }catch(e){setError(e instanceof Error?e.message:'La restauración no pudo verificarse.');}
+  finally{setBusy(null);}
+ }
  return <div className="rp-admin-page"><div className="rp-admin-title">
   <div><span className="rp-eyebrow">ADMIN · VERIFICACIÓN</span><h1>Activación de restaurantes</h1>
    <p>Revisa las solicitudes reales. La aprobación crea o verifica el comercio y asigna el rol Restaurante; Stripe Connect se autoriza por separado.</p></div>
@@ -304,6 +329,21 @@ export function RestaurantAdminActivation(){
    <Link className="rp-muted-link" to={mainTalaEatsPortalHref(window.location.hostname)}>Volver a Tala Eats</Link></div>
   {error&&<Notice kind="error" message={error}/>}
   {notice&&<Notice kind="success" message={notice}/>}
+  <section className="rp-panel-card" aria-label="Restaurantes suspendidos o archivados">
+   <h2>Restaurantes inactivos · Restaurar</h2>
+   <p className="rp-muted">La restauración conserva productos, pedidos y Stripe Connect. No abre el negocio ni permite cobros por sí sola.</p>
+   {shops===null?<p>Consultando restaurantes…</p>:
+    shops.filter(shop=>['archived','suspended'].includes(shop.verification_status)).length===0?
+    <p className="rp-muted">No hay restaurantes suspendidos ni archivados.</p>:
+    shops.filter(shop=>['archived','suspended'].includes(shop.verification_status)).map(shop=>
+     <div className="rp-setting" key={shop.id}>
+      <div><strong>{shop.name}</strong><small>Comercio #{shop.id} · {shop.verification_status==='archived'?'Archivado':'Suspendido'} · Cerrado</small></div>
+      <button className="rp-btn primary small" type="button"
+       disabled={busy!==null||PREVIEW_READONLY||!shop.owner_id||shop.active_orders>0}
+       onClick={()=>void restore(shop)}><RefreshCw size={16}/> Restaurar</button>
+     </div>)}
+   <p className="rp-legal">Solo ADMIN con 2FA puede restaurar un negocio. El servidor confirma el titular y la solicitud previa, bloquea pedidos activos y registra una auditoría.</p>
+  </section>
   {requests===null?<p>Consultando backend administrativo…</p>:
    requests.length===0?<section className="rp-panel-card"><h2>Sin solicitudes de restaurantes</h2><p>Las solicitudes aparecerán aquí en cuanto los comerciantes completen el formulario de alta.</p></section>:
    <div className="rp-admin-grid">{requests.map(item=><article className="rp-panel-card" key={item.id}>
