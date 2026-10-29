@@ -107,6 +107,16 @@ los modos financieros que **ya** están aprobados en el backend realmente
 activo. Si alguno está HOLD, no crear pedidos para probar ese modo ni
 activar banderas durante el despliegue PWA.
 
+**Advertencia de caja:** este build RC138 mantiene
+`VITE_CASH_HANDOFF_V2_ENABLED=false` y no muestra los controles para
+iniciar el acuse del repartidor y confirmar la recepción del restaurante.
+Por ello, **NO puede declararse completo un E2E financiero de efectivo con
+esta compilación**; incluso una entrega validada con PIN dejaría pendiente
+el traspaso físico/conciliación. La implementación de cash handoff existe
+en código pero requiere otro GO de backend + ambas PWAs + auditoría y
+ensayo antes de activarse. La lista siguiente es el criterio a cumplir,
+**no** una autorización para cobrar efectivo en RC138.
+
 1. **Identidades reales:** un restaurante verificado, catálogo real y
    dueño activo; un conductor diferente, verificado por ADMIN y con su
    moto, placas y documentación real. Cliente comprador real distinto.
