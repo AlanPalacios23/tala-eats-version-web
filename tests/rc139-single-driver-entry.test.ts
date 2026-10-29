@@ -32,6 +32,14 @@ describe('RC139 one canonical Driver PWA for ALL old customer-origin links',()=>
   expect(script).toContain('RC139_DIAG=READ_ONLY');
   expect(script).toContain('RC139_DIAG_PATH=');
   expect(script).toContain('check_routes_retry');
+  expect(script).toContain('verify_isolated_nginx');
+  expect(script).toContain('RC139_ISOLATED_NGINX_IDENTITY=PASS');
+  expect(script).toContain('RC139_NGINX_ACTIVATION=PASS_ISOLATED_RESTART');
+  expect(script).toContain('RC139_REDIRECT=HOLD_POST_RESTART');
+  expect(script).toContain('systemctl restart "$SERVICE"');
+  expect(script).not.toContain('systemctl restart talaeats-repartidores');
+  expect(script).not.toContain('systemctl restart talaeats-restaurantes');
+  expect(script).not.toContain('systemctl restart nginx.service');
   expect(script).toContain('check_public_retry');
   expect(script).toContain('RC139_REDIRECT=HOLD_PUBLIC_HTTPS_POSTCHECK');
   expect(script).toContain('RC139_REDIRECT=FAILED_BUT_ROLLBACK_HTTP_VERIFIED');
