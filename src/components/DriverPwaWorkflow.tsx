@@ -45,6 +45,7 @@ export function DriverPwaWorkflow(){
  const [readiness,setReadiness]=useState<DriverPresenceReadiness|null>(null);
  const [mine,setMine]=useState<Order[]>([]);
  const [available,setAvailable]=useState<Order[]>([]);
+ const [offersError,setOffersError]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[message,setMessage]=useState('');
  const [pin,setPin]=useState<Record<number,string>>({});
@@ -72,15 +73,22 @@ export function DriverPwaWorkflow(){
   // can update operational state or a previous merchant/driver's private data.
   const version=++refreshVersion.current;
   try{
-   const [p,proof,jobs,offers]=await Promise.all([
-    api.driverProfile(),api.driverPresenceReadiness(),
-    api.driverMine(),api.driverAvailable(),
+   const [p,proof,jobs]=await Promise.all([
+    api.driverProfile(),api.driverPresenceReadiness(),api.driverMine(),
    ]);
    if(!mounted.current||version!==refreshVersion.current)return;
-   if(!Array.isArray(jobs)||!Array.isArray(offers)||
+   if(!Array.isArray(jobs)||
       typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
     throw new Error('El backend no devolvió un estado de reparto válido.');
-   setProfile(p);setReadiness(proof);setMine(jobs);setAvailable(offers);setError('');
+   setProfile(p);setReadiness(proof);setMine(jobs);setAvailable([]);setOffersError(false);setError('');
+   // An offers outage must not block ongoing deliveries assigned to this driver.
+   void api.driverAvailable().then(offers=>{
+    if(!mounted.current||version!==refreshVersion.current)return;
+    if(!Array.isArray(offers))throw Error('INVALID_DRIVER_OFFERS');
+    setAvailable(offers);setOffersError(false);
+   }).catch(()=>{
+    if(mounted.current&&version===refreshVersion.current){setAvailable([]);setOffersError(true);}
+   });
    // Dashboard has a DIFFERENT order payload: only use it for stats and
    // identity-checked active route details, never as delivery history.
    void api.driverDashboard().then(value=>{
@@ -93,7 +101,7 @@ export function DriverPwaWorkflow(){
    });
   }catch(e){
    if(mounted.current&&version===refreshVersion.current){
-    setReadiness(null);setAvailable([]);setMine([]);setProfile(null);
+    setReadiness(null);setAvailable([]);setMine([]);setProfile(null);setOffersError(false);
     setDashboard(null);setDashboardError(true);setError(failure(e));
    }
   }finally{if(mounted.current&&version===refreshVersion.current)setLoading(false);}
@@ -174,10 +182,10 @@ export function DriverPwaWorkflow(){
   try{await action();if(mounted.current)setMessage(success);}
   catch(e){failed=failure(e);}
   finally{
+   if(mounted.current)await refresh();
    inFlight.current=false;
    if(mounted.current){
     setBusy(false);
-    await refresh();
     // A successful read must not hide an unsuccessful delivery/financial write.
     if(failed&&mounted.current){setMessage('');setError(failed);}
    }
@@ -360,6 +368,7 @@ export function DriverPwaWorkflow(){
       </section>
       <section className="df-section"><h2>Pedidos disponibles</h2>
        {!actions&&<div className="df-alert df-alert-info"><LockKeyhole size={17}/> Las nuevas asignaciones no están autorizadas por el backend de este entorno.</div>}
+       {offersError&&<div className="df-alert df-alert-info" role="status"><WifiOff size={17}/> No se pudo consultar la lista de pedidos disponibles. Tus entregas asignadas siguen accesibles. <button type="button" className="df-text-button" onClick={()=>void refresh()}>Reintentar</button></div>}
        {available.length?available.map(o=>jobCard(o,true)):<div className="df-surface df-empty df-empty-small"><Bike size={25}/><p>No hay pedidos autorizados para tomar.</p></div>}
       </section>
     </>}
