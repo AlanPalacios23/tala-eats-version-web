@@ -8,6 +8,11 @@ import type { CheckoutRequest, CustomerAddress } from './customer-checkout';
 import type { MarketCode } from './markets';
 import type { AuthResponse, DriverProfile, MenuItem, Order, PaymentOptions, Quote, Restaurant, User } from './types';
 
+export interface AdminRestaurantRecord {
+ id:number;name:string;owner_id:number|null;is_open:boolean;
+ verification_status:string;onboarding_status:string;active_orders:number;
+ can_archive:boolean;market_code:string;
+}
 export class ApiError extends Error {
   constructor(readonly status: number, message: string) { super(message); this.name = 'ApiError'; }
 }
@@ -221,6 +226,10 @@ export const api = {
       entity_type:'restaurant',business_name:businessName,tax_id:taxId,
       vehicle:'',payout_account_ref:'',documents,
     })),
+  adminRestaurants: () => request<AdminRestaurantRecord[]>('/admin/restaurants?limit=100'),
+  adminRestoreRestaurant: (id:number,confirmName:string,reason:string) =>
+    request<{id:number;name:string;restored:boolean;verification_status:string;is_open:boolean;pickup_enabled:boolean}>(
+      `/admin/restaurants/${id}/restore`,json('PATCH',{confirm_name:confirmName,reason})),
   adminRestaurantApplications: () => request<MerchantApplication[]>('/admin/onboarding'),
   adminReviewRestaurantApplication: (applicationId:number,status:'approved'|'rejected'|'needs_info'|'suspended',notes:string) =>
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
