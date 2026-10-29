@@ -154,6 +154,17 @@ if [[ "$MODE" == --post ]];then
    echo 'DRIVER_RC138_GATE=HOLD_PWA_ROUTE';exit 2;
   }
  done
+ # Cloudflare public hostname must serve the same immutable driver shell;
+ # the local nginx 200 alone is not proof the public PWA was published.
+ curl -fsS --connect-timeout 5 --max-time 15 "https://$HOST/repartidor" |
+  cmp -s - "$WEB/dist-repartidores/repartidores.html" || {
+   echo 'DRIVER_RC138_GATE=HOLD_PUBLIC_DRIVER_SHA_OR_TUNNEL';exit 2;
+  }
+ curl -fsS --connect-timeout 5 --max-time 15 \
+  "https://$HOST/manifest-repartidor.webmanifest" |
+  python3 -c 'import json,sys;m=json.load(sys.stdin);assert m["start_url"]=="/repartidor"' || {
+   echo 'DRIVER_RC138_GATE=HOLD_PUBLIC_MANIFEST';exit 2;
+  }
 fi
 # Inspect only explicit non-secret boolean keys; never echo entire .env.
 ENV="$HOME/.config/talaeats-node-live.env"
