@@ -28,8 +28,9 @@ describe('RC9.8 Driver Flutter parity and real onboarding',()=>{
   expect(mark.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
   expect(mark.readUInt32BE(16)).toBe(418);
   expect(mark.readUInt32BE(20)).toBe(418);
-  expect(signup).toContain('tala-eats-driver-official.png');
-  expect(signup).toContain('className="df-brand-type"');
+  expect(signup).not.toContain('tala-eats-driver-official.png');
+  expect(signup).not.toContain('className="df-brand-type"');
+  expect(signup).toContain("df-brand-plain");
   expect(styles).toContain('height:calc(70px + env(safe-area-inset-bottom))');
   expect(styles).toContain('background:#fff0e9');
   expect(styles).toContain('.df-home-action{position:fixed');
