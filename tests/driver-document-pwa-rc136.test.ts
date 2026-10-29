@@ -28,7 +28,9 @@ describe('RC136 driver verification documents on mobile',()=>{
    await expect(prepareOnboardingDocument(empty)).rejects.toThrow(/vacío/);
  });
  it('rejects oversized PDF and more than 3 files before account registration',async()=>{
-   const pdf=new File([new Uint8Array(MAX_ONBOARDING_BYTES+1).fill(32)],'tarjeta.pdf',{type:'application/pdf'});
+   const pdfBytes=new Uint8Array(MAX_ONBOARDING_BYTES+1).fill(32);
+   pdfBytes.set(new TextEncoder().encode('%PDF-1.7'),0);
+   const pdf=new File([pdfBytes],'tarjeta.pdf',{type:'application/pdf'});
    await expect(prepareOnboardingDocument(pdf)).rejects.toThrow(/límite es 5 MB/);
    const sample=new File([new Uint8Array([255,216,255])],'documento.jpg',{type:'image/jpeg'});
    expect(onboardingSelectionError([sample,sample,sample,sample])).toMatch(/máximo de 3/);
