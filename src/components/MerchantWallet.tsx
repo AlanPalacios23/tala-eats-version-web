@@ -4,6 +4,8 @@ import {api,pesos} from '../lib/api';
 import type {MerchantEarnings,MerchantFinance} from '../lib/api';
 import type {Order} from '../lib/types';
 import {MerchantFinanceActivity} from './RestaurantParity';
+import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
+import {MerchantCashHandoff} from './CashHandoffV2';
 import {merchantEarningTotals} from '../lib/merchant-wallet';
 import {merchantConnectStage} from '../lib/merchant-connect';
 import type {MerchantConnectStatus,MerchantTab} from '../lib/restaurant-state';
@@ -101,6 +103,8 @@ export function MerchantWallet({restaurantId,finance,connect,orders,go}:Props){
     aria-haspopup="dialog" aria-label="Retirar ganancias, consultar disponibilidad">
     Retirar ganancias</button>
   </section>
+  <FinanceWeeklyPreview kind="restaurant" restaurantId={restaurantId}/>
+  <MerchantCashHandoff/>
   <section className="mw-summary" aria-label="Ganancias del comercio">
    <div>
     <span>Ganancias registradas</span>

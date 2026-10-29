@@ -141,6 +141,19 @@ export interface MerchantApplication {
   business_name:string;tax_id:string;status:'pending'|'needs_info'|'approved'|'rejected'|'suspended';
   notes:string;created_at:string;updated_at:string;
 }
+export interface WeeklyWalletStatement {
+ currency:'MXN';unit:'centavos';kind:'restaurant'|'driver';payee_id:number;
+ period_start:string;period_timezone:'America/Mexico_City';
+ recorded_earnings_cents:string;pending_allocation_cents:string;
+ cash_in_driver_custody_cents:string;
+ cash_in_merchant_custody_unverified_cents:string;withdrawable_cents:string;
+ bank_payout_confirmed:false;payment_to_bank_status:string;
+ release_approved:false;status:string;completeness:string;
+ items:Array<{order_id:number;earned_cents:string;allocation_state:string;
+  payment_method:string;fulfillment:string;delivered_at:string;
+  cash_collector_kind:string|null;cash_collector_id:number|null;
+  cash_custody_status:string|null;financial_hold_reasons:string[]}>;
+}
 export interface MerchantEarnings {
   restaurant_id:number;currency:'MXN';unit:'centavos';
   earnings_by_status:Array<{state:string;total_minor:string;orders:string}>;
@@ -226,6 +239,19 @@ export const api = {
     request<MerchantApplication>(`/admin/onboarding/${applicationId}`,json('PATCH',{status,notes})),
   ownerFinance: () => request<MerchantFinance>('/owner/finance'),
   ownerEarnings: (restaurantId:number) => request<MerchantEarnings>(`/owner/finance/earnings/${restaurantId}`),
+  ownerWeeklyWallet: (id:number) => request<WeeklyWalletStatement>(`/owner/wallet/weekly/${id}`),
+  driverWeeklyWallet: () => request<WeeklyWalletStatement>('/driver/wallet/weekly'),
+  driverCashHandoffStart: (orderId:number) => request<{
+    order_id:number;amount_cents:string;code:string;valid_for_minutes:number;
+    state:string;bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/driver/finance/cash-handoff/${orderId}/start`,json('POST',{})),
+  ownerCashHandoffConfirm: (orderId:number,code:string,amountCents:string) => request<{
+    order_id:number;amount_cents:string;state:string;
+    bank_settlement_verified:false;driver_pay_executed:false;
+  }>(`/owner/finance/cash-handoff/${orderId}/confirm`,json('POST',{
+    code,amount_cents:amountCents
+  })),
+
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=200&offset=0'),
   ownerEmployees: () => request<MerchantStaff[]>('/owner/employees'),
