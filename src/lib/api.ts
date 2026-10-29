@@ -53,6 +53,10 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         LIVE_FINANCIAL_RECONCILIATION_HOLD:'Stripe está conciliando pagos. No vuelvas a cobrar hasta verificar el estado.',
         LIVE_CARD_CHECKOUT_NOT_APPROVED:'El pago con tarjeta LIVE no está habilitado para este comercio.',
         PAYMENT_RECONCILIATION_REQUIRED:'El pago requiere revisión. Comprueba el pedido antes de intentar nuevamente.',
+        CONNECT_FRESH_TOTP_REQUIRED:'Por seguridad, activa 2FA, inicia sesión con ella y escribe un código nuevo de 6 dígitos para este paso.',
+        CONNECT_FRESH_TOTP_INVALID:'El código de tu aplicación de autenticación es incorrecto o expiró. Usa uno nuevo.',
+        CONNECT_FRESH_TOTP_ALREADY_USED:'Este código ya se utilizó en otra operación financiera. Espera el siguiente código de tu autenticador.',
+        TREASURY_TOTP_RATE_LIMITED:'Demasiados intentos de autenticación. Inténtalo más tarde sin repetir el mismo código.',
       };
       const msg=typeof supplied==='string'&&supplied.length<500
         ?known[supplied]??supplied:'No pudimos completar la solicitud.';
@@ -71,6 +75,13 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 }
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+/** Financial identity changes require a fresh authenticator TOTP in the POST body.
+ * Never put it in the URL, query parameters, logs or browser persistence.
+ */
+export function connectStepUpCode(totp:string):string {
+ if(!/^[0-9]{6}$/.test(totp))throw new ApiError(422,'Escribe el código de 6 dígitos de tu autenticador.');
+ return totp;
+}
 async function uploadRestaurantDocument(file:File):Promise<{url:string;name:string}>{
   if(!previewRequestAllowed('/uploads/onboarding-document','POST',PREVIEW_READONLY))
    throw new ApiError(403,'En vista previa no es posible subir documentos.');
@@ -294,10 +305,10 @@ export const api = {
     owner_approved:boolean;transfers_active:boolean;
     payouts_enabled:boolean;details_submitted:boolean;ready?:boolean;
   }>(`/owner/finance/connect/${restaurantId}/status`),
-  ownerConfirmConnect: (restaurantId:number) => request<{owner_confirmed:boolean}>(
-    `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{})),
-  ownerConnectOnboardingLink: (restaurantId:number) => request<{url:string;expires_at:number}>(
-    `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{})),
+  ownerConfirmConnect: (restaurantId:number,totp:string) => request<{owner_confirmed:boolean}>(
+    `/owner/finance/connect/${restaurantId}/confirm`,json('POST',{totp:connectStepUpCode(totp)})),
+  ownerConnectOnboardingLink: (restaurantId:number,totp:string) => request<{url:string;expires_at:number}>(
+    `/owner/finance/connect/${restaurantId}/onboarding-link`,json('POST',{totp:connectStepUpCode(totp)})),
   ownerUpdateRestaurant: (body:Partial<Pick<Restaurant,'name'|'description'|'cuisine'|'eta_min'|'is_open'|'pickup_enabled'|'address'|'lat'|'lng'>>) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'|'category'|'allergens'|'dietary_tags'|'is_combo'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
   ownerAddItem: (body:{name:string;price:string;stock:number;description:string;category:string;is_available:boolean;allergens?:string;dietary_tags?:string;is_combo?:boolean}) => request<MenuItem>('/owner/menu',json('POST',body)),
