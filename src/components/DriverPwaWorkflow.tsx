@@ -238,6 +238,7 @@ export function DriverPwaWorkflow(){
   },'Entrega validada por el servidor.',true);
  };
  const doLogout=async()=>{
+  if(!readiness){setError('No se pudo verificar si tienes una entrega activa. Recupera la conexión antes de cerrar sesión.');return;}
   if(active){setError('Termina la entrega en curso antes de cerrar sesión.');return;}
   if(!window.confirm('¿Cerrar sesión? Dejarás de recibir pedidos hasta que vuelvas a entrar.'))return;
   setBusy(true);
