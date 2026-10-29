@@ -61,8 +61,9 @@ describe('RC9.9: independent native-style Driver PWA',()=>{
   expect(app).toContain('<DriverExternalOrLocal suffix=""><Protected role="driver"><Driver/></Protected></DriverExternalOrLocal>');
   expect(app).toContain('<DriverExternalOrLocal suffix="/acceso"><DriverAccess/></DriverExternalOrLocal>');
   expect(app).toContain('<DriverExternalOrLocal suffix="/registro"><DriverRegistration/></DriverExternalOrLocal>');
-  expect(app).toContain('<a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Repartidores</a>');
-  expect(app).toContain('<a href={driverPortalDestination(import.meta.env.VITE_DRIVER_APP_URL)}>Soy repartidor</a>');
+  expect(app).toContain('<a href="https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso">Repartidores</a>');
+  expect(app).toContain('<a href="https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso">Soy repartidor</a>');
+  expect(app).toContain("item.path==='/repartidor'?'https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso':item.path");
   expect(driverPortalDestination(undefined)).toBe('/repartidor');
   expect(driverPortalDestination('https://repartidores-talaeats.alan-palacios-dev.com/repartidor')).toBe('https://repartidores-talaeats.alan-palacios-dev.com/repartidor');
  });
