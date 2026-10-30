@@ -410,8 +410,8 @@ export function DriverPwaWorkflow(){
        {active?<>{jobCard(active)}<p className="df-safety"><ShieldCheck size={17}/> Por seguridad, detente antes de usar la app en ruta.</p></>:
         <div className="df-empty df-surface">
          {online?<Bike size={34}/>:<Moon size={34}/>}
-         <h2>{online?'Esperando pedidos':'Estás fuera de línea'}</h2>
-         <p>{online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
+         <h2>{online&&actions&&available.length>0?'Hay entregas disponibles':online?'Esperando pedidos':'Estás fuera de línea'}</h2>
+         <p>{online&&actions&&available.length>0?'Revisa los pedidos disponibles y acepta solo cuando puedas hacer la entrega.':online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
         </div>}
       </section>
       {online&&actions&&!active&&available.length>0&&<section className="df-section df-home-offers" aria-labelledby="df-home-offers-heading">
