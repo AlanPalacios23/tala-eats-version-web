@@ -398,8 +398,7 @@ export function DriverPwaWorkflow(){
          <p>{online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
         </div>}
       </section>
-      <section className="df-section">
-       {online&&actions&&!active&&available.length>0&&<section className="df-section df-home-offers" aria-labelledby="df-home-offers-heading">
+      {online&&actions&&!active&&available.length>0&&<section className="df-section df-home-offers" aria-labelledby="df-home-offers-heading">
         <div className="df-section-title"><h2 id="df-home-offers-heading">Pedidos disponibles</h2><button type="button" onClick={()=>onTab('entregas')}>Ver todos <ArrowUpRight size={15}/></button></div>
         {available.slice(0,2).map(o=>jobCard(o,true))}
         <p className="df-caption">Las asignaciones y ganancias se confirman en el servidor.</p>
