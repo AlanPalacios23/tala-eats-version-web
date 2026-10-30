@@ -2,10 +2,12 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import '../styles/driver-pwa.css';
 import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,Navigation,ArrowUpRight,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
 import {api,pesos} from '../lib/api';
+import {prepareDriverAvatar,trustedDriverAvatarUrl} from '../lib/driver-avatar';
 import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
+import '../styles/driver-avatar-rc144.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -40,6 +42,10 @@ export function DriverPwaWorkflow(){
  const closeMap=useCallback(()=>setMapOpen(false),[]);
  const [proofSheet,setProofSheet]=useState(false);
  const proofInput=useRef<HTMLInputElement>(null);
+ const avatarInput=useRef<HTMLInputElement>(null);
+ const [avatarSaving,setAvatarSaving]=useState(false);
+ const [avatarError,setAvatarError]=useState('');
+ const [uploadedAvatar,setUploadedAvatar]=useState<{userId:number;url:string}|null>(null);
  const profileSheetClose=useRef<HTMLButtonElement>(null);
  const [selectedDay,setSelectedDay]=useState<string|null>(null);
  const actionCooldown=useRef(0);
@@ -61,6 +67,11 @@ export function DriverPwaWorkflow(){
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
  const online=readiness?.online===true;
  const operationsBlocked=browserOffline||busy;
+ // Never show a previous courier's image after switching authenticated accounts.
+ const avatarUrl=trustedDriverAvatarUrl(
+  uploadedAvatar?.userId===session.user?.id?uploadedAvatar?.url:
+  dashboard?.user?.id===session.user?.id?dashboard?.user?.avatar_url:null
+ );
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
  const canProgress=driverCanProgressExistingDelivery(readiness,actionOptIn);
@@ -389,6 +400,22 @@ export function DriverPwaWorkflow(){
    label:'Abrir mapa en vivo',disabled:operationsBlocked,
    press:()=>setMapOpen(true)
   }:null;
+ async function changeAvatar(file:File){
+  if(avatarSaving||browserOffline)return;
+  const actorId=session.user?.id;
+  if(!Number.isSafeInteger(actorId))return;
+  setAvatarSaving(true);setAvatarError('');
+  try{
+   const safeBlob=await prepareDriverAvatar(file);
+   const updated=await api.driverUploadAvatar(safeBlob);
+   if(mounted.current){
+    setUploadedAvatar({userId:actorId!,url:updated.avatar_url});
+    setMessage('Fotografía guardada y vinculada a tu perfil.');
+    void refresh();
+   }
+  }catch(e){if(mounted.current)setAvatarError(failure(e));}
+  finally{if(mounted.current)setAvatarSaving(false);}
+ }
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
@@ -404,7 +431,7 @@ export function DriverPwaWorkflow(){
     {tab==='inicio'&&<>
       <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
        <div className="df-header-actions"><button type="button" className="df-icon-button df-sync-button" aria-label="Actualizar estado y pedidos" title="Actualizar" disabled={busy||refreshing} onClick={()=>void manualRefresh()}><RefreshCw size={21} className={refreshing?'df-rotate':undefined}/></button>
-       <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{initial}</button></div></header>
+       <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{avatarUrl?<img src={avatarUrl} alt="" referrerPolicy="no-referrer"/>:initial}</button></div></header>
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
        <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
@@ -505,10 +532,23 @@ export function DriverPwaWorkflow(){
     </>}
     {tab==='perfil'&&<>
       <header className="df-screen-header"><div><h1>Perfil</h1></div></header>
-      <div className="df-surface df-profile-identity"><span className="df-avatar df-avatar-static">{initial}</span>
+      <div className="df-surface df-profile-identity"><span className="df-avatar df-avatar-static">{avatarUrl?<img src={avatarUrl} alt="Foto de perfil del repartidor" referrerPolicy="no-referrer"/>:initial}</span>
        <div><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
         <span className="df-chip"><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
        </div></div>
+      <section className="df-section df-avatar-manager" aria-label="Tu fotografía de perfil">
+       <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        hidden aria-label="Elegir foto de perfil" onChange={e=>{
+          const file=e.currentTarget.files?.[0];e.currentTarget.value='';
+          if(file)void changeAvatar(file);
+        }}/>
+       <div className="df-avatar-copy"><strong>Tu fotografía</strong>
+        <span>Se mostrará en Clientes y Restaurantes cuando te asignen un pedido.</span></div>
+       <button type="button" className="df-avatar-change" disabled={avatarSaving||operationsBlocked}
+        onClick={()=>avatarInput.current?.click()}>{avatarSaving?'Guardando foto…':avatarUrl?'Cambiar foto':'Subir foto'}</button>
+       {avatarError&&<p role="alert" className="df-avatar-error">{avatarError}</p>}
+       <p className="df-caption">JPG, PNG, WEBP o HEIC compatible. El servidor elimina su ubicación y metadatos.</p>
+      </section>
       <section className="df-section"><h2>Trabajo</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('vehicle')}><Bike size={21}/><span><strong>Vehículo</strong><small>{profile?.vehicle||'Sin vehículo'} · {maskedDriverPlate(profile?.plate)}</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('documents')}><FileCheck2 size={21}/><span><strong>Documentos</strong><small>Consultar estado de verificación</small></span><ChevronRight size={19}/></button>

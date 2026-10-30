@@ -31,7 +31,7 @@ export type DriverDetail={
  total?:number;
 };
 export type DriverDashboardPayload={
- user?:{id?:number;name?:string;phone?:string};
+ user?:{id?:number;name?:string;phone?:string;avatar_url?:string|null};
  active?:DriverDetail|null;
  today?:{earnings:number;deliveries:number;distance_km:number;average_earning:number};
  last_7_days?:Array<{date:string;earnings:number;deliveries:number}>;
