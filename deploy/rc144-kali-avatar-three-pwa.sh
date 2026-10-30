@@ -37,7 +37,8 @@ webdiff="$(git -c safe.directory="$WEB" -C "$WEB" diff --name-only "$OLD_WEB" "$
 [[ -n "$webdiff" ]] || { echo 'RC144_PWA=HOLD_EMPTY_DIFF';exit 2; }
 while IFS= read -r item;do
  case "$item" in
-  src/components/CustomerOrders.tsx|src/components/DriverIdentity.tsx|  src/components/DriverPwaWorkflow.tsx|src/components/RestaurantApp.tsx|  src/components/RestaurantParity.tsx|src/lib/api.ts|  src/lib/driver-avatar.ts|src/lib/driver-delivery-ui.ts|  src/lib/types.ts|src/styles/driver-avatar-rc144.css|  tests/rc144-driver-avatar-cross-app.test.ts|  deploy/rc144-kali-avatar-three-pwa.sh|  deploy/RC144-AVATAR-ONLY-DEPLOY.md)
+  src/components/CustomerOrders.tsx|src/components/DriverIdentity.tsx|  src/components/DriverPwaWorkflow.tsx|src/components/RestaurantApp.tsx|  src/components/RestaurantParity.tsx|src/lib/api.ts|  src/lib/driver-avatar.ts|src/lib/driver-delivery-ui.ts|  src/lib/types.ts|src/styles/driver-avatar-rc144.css|  tests/rc144-driver-avatar-cross-app.test.ts|  deploy/rc144-kali-avatar-three-pwa.sh|  deploy/RC144-AVATAR-ONLY-DEPLOY.md|\
+  tests/rc144-avatar-deploy-only.test.ts)
    :;;
   *) echo "RC144_PWA=HOLD_UNRELATED_WEB_FILE:$item";exit 2;;
  esac
