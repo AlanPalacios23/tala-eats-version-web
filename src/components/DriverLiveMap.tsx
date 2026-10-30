@@ -54,6 +54,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
  const hasOffers=offers.length>0;
  const offerCount=readyOffers.length;
  const isOfferVisible=Boolean(eligible&&selected&&!offline);
+ // A newly arrived authorised offer automatically raises its action sheet.
+ // On smaller phones this keeps the Accept action reachable without swiping.
+ useEffect(()=>{setExpanded(Boolean(selected));},[selected?.id]);
 
  // Keep the full-screen operational surface accessible and prevent background
  // scrolling; the existing home and bottom tabs remain intact underneath.
@@ -190,7 +193,11 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
     openOffer(marker.order.id);
    }).addTo(group);
   }
-  if(follow&&position)map.setView([position.lat,position.lng],map.getZoom(),{animate:true});
+  if(follow&&position){
+   map.setView([position.lat,position.lng],map.getZoom(),{animate:false});
+   // Leave the blue courier dot above the bottom sheet, never hidden behind it.
+   map.panBy([0,Math.min(130,Math.round(window.innerHeight*.12))],{animate:false});
+  }
  },[position,markers,selected?.id,follow,loaded]);
 
  function openOffer(id:number){
@@ -200,7 +207,13 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
   setExpanded(true);
   setFollow(false);
   const marker=markers.find(m=>m.order.id===id);
-  if(marker)mapRef.current?.flyTo([marker.point.lat,marker.point.lng],15,{duration:.55});
+  if(marker){
+   const map=mapRef.current;
+   if(map){
+    map.once('moveend',()=>map.panBy([0,Math.min(140,Math.round(window.innerHeight*.16))],{animate:true}));
+    map.flyTo([marker.point.lat,marker.point.lng],15,{duration:.55});
+   }
+  }
  }
  function showOfferPoints(){
   const map=mapRef.current,L=leafletRef.current;
@@ -224,7 +237,11 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
  function centerMe(){
   if(!position)return;
   setFollow(true);
-  mapRef.current?.setView([position.lat,position.lng],15,{animate:true});
+  const map=mapRef.current;
+  if(map){
+   map.setView([position.lat,position.lng],15,{animate:true});
+   map.panBy([0,Math.min(130,Math.round(window.innerHeight*.12))],{animate:true});
+  }
  }
  function focusOffer(order:Order){openOffer(order.id);}
  return <section ref={dialogRef} className="dm-shell dm-immersive" role="dialog" aria-modal="true"
