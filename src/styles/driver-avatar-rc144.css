@@ -1,15 +1,19 @@
 /* RC144: tightly scoped shared driver profile photo surfaces. */
 .df-avatar img,.df-avatar-static img{width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block}
-.df-avatar-manager{background:#fff;border:1px solid #eee7e0;border-radius:19px;padding:18px;
- display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin-top:17px}
-.df-avatar-copy{display:flex;flex:1 1 180px;flex-direction:column;gap:5px}
-.df-avatar-copy strong{font-size:15px;color:#211c19}
-.df-avatar-copy span{font-size:12px;color:#81776e;line-height:1.5}
-.df-avatar-change{border:0;min-height:48px;white-space:nowrap;border-radius:13px;background:#f26932;
- padding:11px 16px;font-weight:850;color:#fff;box-shadow:0 6px 15px #d8623633}
-.df-avatar-change:disabled{opacity:.5}
-.df-avatar-manager .df-caption{flex-basis:100%;font-size:11px;line-height:1.5;margin:2px 0 0}
-.df-avatar-error{flex-basis:100%;margin:0;font-size:12px;color:#ae3b24}
+/* Inline camera: attached to the portrait, not a separate profile card. */
+.df-profile-identity .df-avatar-frame{position:relative;flex:0 0 auto;width:64px;height:64px}
+.df-profile-identity .df-avatar-static{width:64px;height:64px;min-width:64px;font-size:18px;overflow:hidden}
+.df-avatar-edit{position:absolute;right:-7px;bottom:-6px;display:grid;place-items:center;width:36px;height:36px;
+ padding:0;border:3px solid #fff;border-radius:50%;background:#f26932;color:#fff;
+ box-shadow:0 3px 10px #7a371f35;cursor:pointer;transition:transform .16s ease,background .16s ease}
+.df-avatar-edit::after{content:'';position:absolute;inset:-4px;border-radius:50%}
+.df-avatar-edit:hover:not(:disabled){background:#de5425;transform:scale(1.05)}
+.df-avatar-edit:focus-visible{outline:3px solid #a83b12;outline-offset:3px}
+.df-avatar-edit:disabled{opacity:.65;cursor:wait}
+.df-profile-copy{min-width:0;flex:1}
+.df-avatar-saving,.df-avatar-error{display:block;margin-top:7px;font-size:12px;line-height:1.45}
+.df-avatar-saving{color:#6b625b}
+.df-avatar-error{color:#a33425;overflow-wrap:anywhere}
 .te-driver-identity{display:flex;gap:11px;align-items:center;padding:13px;border-radius:16px;
  background:#f7faf6;border:1px solid #e3eee5;margin:13px 0}
 .te-driver-portrait{height:47px;width:47px;min-width:47px;overflow:hidden;border-radius:50%;
@@ -18,8 +22,8 @@
 .te-driver-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
 .te-driver-copy strong{font-size:13px;color:#252720;line-height:1.4}
 .te-driver-copy span{font-size:11px;line-height:1.5;color:#686f69}
-@media(max-width:350px){.df-avatar-manager{padding:14px}.df-avatar-change{width:100%}}
-@media(prefers-reduced-motion:reduce){.df-avatar-change{transition:none}}
+@media(max-width:350px){.df-profile-identity .df-avatar-frame{width:56px;height:56px}.df-profile-identity .df-avatar-static{width:56px;height:56px;min-width:56px}}
+@media(prefers-reduced-motion:reduce){.df-avatar-edit{transition:none}}
 
 .rp-delivery-progress{margin:20px 0;padding:15px;border:1px solid #e4ece4;
  background:#f7faf7;border-radius:19px}
