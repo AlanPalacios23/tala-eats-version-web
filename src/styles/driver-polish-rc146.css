@@ -1,0 +1,228 @@
+/* RC146 | Tala Eats Repartidor PWA — restrained, native-feeling visual system.
+ * Only Driver surfaces and its full-screen map. No backend, customer or merchant styles.
+ * No continuous movement except already-existing verified-presence indicator and short initial load.
+ */
+.df-app{
+ --df146-ink:#222821;
+ --df146-muted:#637067;
+ --df146-orange:#e96025;
+ --df146-orange-deep:#a64519;
+ --df146-outline:#dee6dd;
+}
+.df-app .df-content{
+ max-width:700px;
+}
+.df-app .df-screen-header:not(.df-header-premium){margin-bottom:21px}
+.df-app .df-screen-header h1{color:var(--df146-ink);letter-spacing:-.9px}
+.df-app .df-header-premium{
+ position:relative;isolation:isolate;
+ background:linear-gradient(125deg,#fff 15%,#fffaf5 78%,#fff7f0);
+ border-color:#eee8df;box-shadow:0 12px 36px #2a2d260b;
+}
+.df-app .df-header-premium:before{
+ content:"";position:absolute;left:18px;top:0;width:42px;height:3px;
+ border-radius:0 0 5px 5px;background:#ef783d;
+}
+.df-app .df-header-premium .df-eyebrow{color:#99522e}
+.df-app .df-sync-button{border-color:#e7e6e0;box-shadow:0 3px 10px #2a2d2608}
+.df-app .df-surface{box-shadow:0 5px 23px #1c281009}
+.df-app .df-availability{
+ position:relative;overflow:hidden;border-color:#dfe5dc;
+ box-shadow:0 8px 27px #1c28100a;
+ transition:background-color .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.df-app .df-availability:before{
+ content:"";position:absolute;top:17px;bottom:17px;left:0;width:3px;
+ border-radius:0 3px 3px 0;background:#d4d8d2;
+ transition:background-color .22s ease;
+}
+.df-app .df-availability.is-online:before{background:#229657}
+.df-app .df-availability.is-online{box-shadow:0 10px 25px #2373440b}
+.df-app .df-availability-text{min-width:0}
+.df-app .df-switch{transition:background .2s ease,box-shadow .2s ease}
+.df-app .df-switch>span{transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+.df-app .df-switch:focus-visible{outline:3px solid #ed995f;outline-offset:4px}
+.df-app .df-main-stage .df-empty{
+ padding:31px 23px;min-height:183px;gap:9px;
+ border-color:#e8e9e3;background:#fff;
+}
+.df-app .df-main-stage .df-empty>svg{
+ width:28px;height:28px;color:#a95025;
+ background:#fff1e9;padding:11px;box-sizing:content-box;border-radius:17px;
+}
+.df-app .df-main-stage .df-empty h2{font-size:18px;margin:3px 0 0}
+.df-app .df-main-stage .df-empty p{max-width:340px}
+.df-app .df-section{margin-top:26px}
+.df-app .df-section-title h2,.df-app .df-section>h2{font-size:18px}
+.df-app .df-metrics:not(.df-earnings-metrics){
+ border-color:#e8e9e2;background:linear-gradient(145deg,#fff,#fdfdfa);
+ transition:border-color .17s ease,box-shadow .17s ease,transform .17s ease;
+}
+.df-app button.df-metrics:active{transform:scale(.99)}
+.df-app .df-metrics>div+div{border-color:#ecefe8}
+.df-app .df-metrics small{color:#727a72;font-weight:650}
+.df-app .df-metrics strong{color:#28332a;font-variant-numeric:tabular-nums}
+.df-app .df-job{
+ border-color:#e4e8e0;
+ box-shadow:0 8px 27px #27362809;
+}
+.df-app .df-job.is-active{border-color:#eabf9c;box-shadow:0 10px 28px #cb702211}
+.df-app .df-order-code{font-variant-numeric:tabular-nums}
+.df-app .df-stage-progress>span.filled{
+ background:linear-gradient(90deg,#e86226,#f58a4b);
+ transition:background-color .2s ease;
+}
+.df-app .df-route-stop.current .df-stop-icon{border:1px solid #f1d7c5}
+.df-app .df-route-stop.done .df-stop-icon{border:1px solid #d2e9d8}
+.df-app .df-route-stop .df-stop-icon{transition:background-color .22s ease,border-color .22s ease}
+.df-app .df-route-link:active{background:#fbe1d0}
+.df-app .df-primary:not(:disabled){
+ transition:transform .17s cubic-bezier(.2,.75,.3,1),filter .17s ease,box-shadow .17s ease;
+}
+.df-app .df-primary:active:not(:disabled){transform:scale(.982);filter:brightness(.95)}
+.df-app .df-earnings-main{
+ border-color:#efe8de;
+ background:linear-gradient(135deg,#fff 25%,#fff9f3);
+ box-shadow:0 10px 30px #b866260b;
+}
+.df-app .df-earnings-main>span{color:#9e5b37}
+.df-app .df-earnings-main>strong{font-variant-numeric:tabular-nums}
+.df-app .df-week-selected>strong{
+ margin-left:auto;color:#a94d21;font-variant-numeric:tabular-nums;
+}
+.df-app .df-week-day{transition:background-color .18s ease,transform .18s ease}
+.df-app .df-week-day:active{transform:translateY(1px)}
+.df-app .df-week-day.selected{background:#fff4ec}
+.df-app .df-week-day .df-week-bar>span{
+ transition:height .3s cubic-bezier(.2,.72,.35,1),background-color .18s ease;
+}
+.df-app .df-week-day:focus-visible{
+ outline:3px solid #f2a173;outline-offset:1px;
+}
+.df-app .df-profile-identity{
+ gap:19px;min-height:112px;padding:22px 21px;
+ border-color:#e5e8e0;
+}
+.df-app .df-profile-identity h2{font-size:19px;letter-spacing:-.4px;line-height:1.3;overflow-wrap:anywhere}
+.df-app .df-profile-identity p{color:var(--df146-muted);margin-bottom:10px}
+.df-app .df-profile-identity .df-chip{white-space:normal;max-width:100%;line-height:1.35}
+.df-app .df-profile-verified{background:#e8f7ee;color:#216d43}
+.df-app .df-profile-pending{background:#fff4e6;color:#a35218}
+.df-app .df-settings{border-color:#e6e9e2}
+.df-app .df-settings button{
+ padding:15px 18px;min-height:76px;
+ transition:background-color .17s ease;
+}
+.df-app .df-settings button:active{background:#fff7ef}
+.df-app .df-settings button>svg:first-child{width:21px;color:#b94d1b}
+.df-app .df-settings button strong{font-size:14px;letter-spacing:-.1px}
+.df-app .df-settings button small{line-height:1.45}
+.df-app .df-settings button>svg:last-child{
+ transition:transform .17s ease;flex:none;
+}
+.df-app .df-settings button:active>svg:last-child{transform:translateX(3px)}
+.df-app .df-logout{margin-top:24px}
+.df-app .df-bottom-nav{
+ background:#fffcf9f2;
+ border-top:1px solid #e9e9e4;
+ box-shadow:0 -9px 30px #1c28100b;
+}
+.df-app .df-bottom-nav button{
+ position:relative;min-height:63px;
+ transition:background-color .18s ease,color .18s ease,transform .16s ease;
+}
+.df-app .df-bottom-nav button.selected{
+ background:transparent;color:#b5481b;
+}
+.df-app .df-bottom-nav button.selected .df-nav-icon{
+ background:#fff0e6;box-shadow:inset 0 0 0 1px #fee4d0;
+}
+.df-app .df-bottom-nav button.selected:before{
+ content:"";position:absolute;top:1px;width:20px;height:3px;border-radius:99px;
+ background:#e86830;
+}
+.df-app .df-bottom-nav button:active{transform:scale(.96)}
+.df-app .df-nav-icon{transition:background-color .18s ease,transform .18s ease}
+.df-app .df-nav-label{line-height:1.4;font-weight:700;white-space:nowrap}
+.df-app .df-bottom-nav button.selected .df-nav-label{font-weight:850}
+.df-app .df-sheet{border:1px solid #eae7e2;border-bottom:0}
+.df-app .df-floating-status{box-shadow:0 15px 38px #19291b27}
+.df-app .df-avatar-edit:active:not(:disabled){transform:scale(.94)}
+/* Real waiting state. Never fake offers, balances, GPS or approval in a skeleton. */
+.df-app .df-loading-state{
+ max-width:650px;margin:4px auto 18px;
+}
+.df-app .df-loading-heading{
+ display:flex;align-items:center;justify-content:center;gap:10px;
+ padding:13px 10px 17px;font-size:13px;font-weight:750;color:#606d63;
+}
+.df-app .df-loading-heading svg{color:#b95828}
+.df-app .df-loading-preview{
+ display:grid;gap:11px;padding:23px 21px;background:#fff;
+ border:1px solid #e6eae3;border-radius:24px;box-shadow:0 8px 28px #2534210b;
+}
+.df-app .df-loading-line,.df-app .df-loading-availability>span,
+.df-app .df-loading-availability i,.df-app .df-loading-summary span{
+ display:block;border-radius:9px;background:linear-gradient(100deg,#eef0eb 16%,#fafbf9 40%,#eef0eb 64%);
+ background-size:210% 100%;animation:df146-shimmer 1.7s ease-in-out infinite;
+}
+.df-app .df-loading-line-title{height:25px;width:55%}
+.df-app .df-loading-line-short{height:12px;width:35%;margin-bottom:11px}
+.df-app .df-loading-availability{
+ display:flex;align-items:center;gap:14px;margin:3px 0 11px;padding:17px 12px;
+ border:1px solid #edf0ec;border-radius:17px;
+}
+.df-app .df-loading-availability>span{width:15px;height:15px;border-radius:50%;flex:none}
+.df-app .df-loading-availability>div{display:grid;gap:9px;flex:1}
+.df-app .df-loading-availability i:first-child{height:17px;width:47%}
+.df-app .df-loading-availability i:last-child{height:11px;width:72%}
+.df-app .df-loading-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.df-app .df-loading-summary span{height:45px;border-radius:11px}
+@keyframes df146-shimmer{from{background-position:180% 0}to{background-position:-40% 0}}
+/* Sheet and map: responsive, short tactile interactions, never a distracting moving map. */
+.dm-immersive .dm-online-pill{box-shadow:0 5px 17px #155b3623}
+.dm-immersive .dm-offer-panel{box-shadow:0 -12px 45px #1f302b1f}
+.dm-immersive .dm-offer{box-shadow:0 7px 24px #6c452b0d}
+.dm-immersive .dm-accept:not(:disabled){
+ transition:filter .17s ease,transform .17s ease,box-shadow .17s ease;
+}
+.dm-immersive .dm-accept:active:not(:disabled){filter:brightness(.96);transform:scale(.985)}
+.dm-immersive .dm-mini-offer:active{transform:scale(.98)}
+@media(hover:hover) and (pointer:fine){
+ .df-app .df-settings button:hover{background:#fffaf5}
+ .df-app .df-settings button:hover>svg:last-child{transform:translateX(3px)}
+ .df-app button.df-metrics:hover{border-color:#efcfb9;box-shadow:0 9px 26px #bc692710}
+ .df-app .df-week-day:hover{background:#fff7f1}
+ .df-app .df-primary:hover:not(:disabled){filter:brightness(1.045);box-shadow:0 9px 23px #a8582530}
+ .dm-immersive .dm-accept:hover:not(:disabled){filter:brightness(1.045)}
+}
+@media(max-width:389px){
+ /* Keep every tab discoverable, including Ganancias and Entregas, at 320dp. */
+ .df-app .df-bottom-nav button:not(.selected) .df-nav-label{display:block}
+ .df-app .df-bottom-nav button{width:25%;min-width:0;gap:2px}
+ .df-app .df-nav-label{font-size:10px;letter-spacing:-.12px}
+ .df-app .df-nav-icon{width:54px;max-width:100%;min-height:29px}
+ .df-app .df-profile-identity{gap:14px;padding:20px 15px}
+}
+@media(max-width:340px){
+ .df-app .df-bottom-nav{padding-left:3px;padding-right:3px}
+ .df-app .df-profile-identity h2{font-size:17px}
+ .df-app .df-profile-identity .df-chip{font-size:10px;padding:6px 8px}
+ .df-app .df-settings button{padding-left:14px;padding-right:14px}
+ .df-app .df-loading-preview{padding:18px 15px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-loading-line,.df-app .df-loading-availability>span,
+ .df-app .df-loading-availability i,.df-app .df-loading-summary span{animation:none!important;background:#edf0eb}
+ .df-app .df-availability,.df-app .df-availability:before,.df-app .df-switch,
+ .df-app .df-switch>span,.df-app .df-metrics,.df-app .df-job,
+ .df-app .df-route-stop .df-stop-icon,.df-app .df-primary,.df-app .df-week-day,
+ .df-app .df-week-bar>span,.df-app .df-settings button,.df-app .df-settings button>svg,
+ .df-app .df-bottom-nav button,.df-app .df-nav-icon,.dm-immersive .dm-accept{
+  animation:none!important;transition:none!important;
+ }
+ .df-app .df-settings button:active>svg:last-child,.df-app .df-bottom-nav button:active,
+ .df-app button.df-metrics:active,.df-app .df-primary:active,.dm-immersive .dm-accept:active{
+  transform:none!important;
+ }
+}

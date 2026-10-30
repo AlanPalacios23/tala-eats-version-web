@@ -8,6 +8,7 @@ import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import '../styles/driver-avatar-rc144.css';
+import '../styles/driver-polish-rc146.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -383,7 +384,7 @@ export function DriverPwaWorkflow(){
      </div>}
    </article>;
   };
- const homeAction=tab!=='inicio'?null:!online?{
+ const homeAction=loading&&!readiness?null:tab!=='inicio'?null:!online?{
   label:'Conectarme',
   disabled:operationsBlocked||cannotReceive||!!active,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();void setOnline(true);}}
@@ -420,14 +421,23 @@ export function DriverPwaWorkflow(){
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
  return <div className="df-app" data-driver-pwa="true" data-driver-tab={tab} data-presence={online?'online':readiness?'offline':'unavailable'}>
-   <main className="df-content">
+   <main className="df-content" aria-busy={loading&&!readiness}>
     {!readiness&&!loading&&error&&<section className="df-reconnect df-surface" role="alert">
      <WifiOff size={24}/><div><strong>No pudimos sincronizar tus entregas</strong>
       <p>Por seguridad no se aceptarán nuevos pedidos hasta recuperar la conexión con Tala Eats.</p></div>
      <button type="button" className="df-outline" onClick={()=>void refresh()}>Reintentar</button>
     </section>}
-    {loading&&!readiness&&<div className="df-initial-loading" role="status"><RefreshCw size={20} className="df-rotate"/> Sincronizando tu cuenta con Tala Eats…</div>}
+    {loading&&!readiness&&<div className="df-loading-state" role="status" aria-live="polite">
+     <div className="df-loading-heading"><RefreshCw size={19} className="df-rotate" aria-hidden="true"/><span>Preparando tu jornada…</span></div>
+     <div className="df-loading-preview" aria-hidden="true">
+      <div className="df-loading-line df-loading-line-title"/>
+      <div className="df-loading-line df-loading-line-short"/>
+      <div className="df-loading-availability"><span/><div><i/><i/></div></div>
+      <div className="df-loading-summary"><span/><span/><span/></div>
+     </div>
+    </div>}
     {browserOffline&&<div className="df-network-banner" role="status"><WifiOff size={18}/><span>Tu dispositivo parece estar sin Internet. Los cambios requieren confirmación del servidor.</span><button type="button" onClick={()=>void manualRefresh()} disabled={refreshing||busy}>Reintentar</button></div>}
+    {(!loading||readiness)&&<>
     {tab==='inicio'&&<>
       <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
        <div className="df-header-actions"><button type="button" className="df-icon-button df-sync-button" aria-label="Actualizar estado y pedidos" title="Actualizar" disabled={busy||refreshing} onClick={()=>void manualRefresh()}><RefreshCw size={21} className={refreshing?'df-rotate':undefined}/></button>
@@ -435,7 +445,7 @@ export function DriverPwaWorkflow(){
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
        <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
-        <small id="df-availability-desc">{active?'Entrega en curso':online?(reachable?'Listo para nuevas asignaciones':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
+        <small id="df-availability-desc">{active?'Entrega en curso':online?(!reachable?'Esperando GPS vigente':actions?'Disponible para recibir pedidos':'Esperando autorización de pedidos'):'No recibirás pedidos nuevos'}</small></div>
        <button className={'df-switch '+(online?'on':'')} type="button" role="switch" aria-checked={online}
         aria-label="Cambiar disponibilidad" aria-describedby="df-availability-desc" disabled={operationsBlocked||!!active||readiness?.presence_enabled!==true||!readiness?.admin_verified}
         onClick={()=>void setOnline(!online)}><span/></button>
@@ -531,7 +541,7 @@ export function DriverPwaWorkflow(){
       </section>
     </>}
     {tab==='perfil'&&<>
-      <header className="df-screen-header"><div><h1>Perfil</h1></div></header>
+      <header className="df-screen-header"><div><h1>Perfil</h1><p>Tu información y seguridad</p></div></header>
       <div className="df-surface df-profile-identity">
        <div className="df-avatar-frame">
         <span className="df-avatar df-avatar-static">{avatarUrl?<img src={avatarUrl} alt="Foto de perfil del repartidor" referrerPolicy="no-referrer"/>:initial}</span>
@@ -548,7 +558,7 @@ export function DriverPwaWorkflow(){
         </button>
        </div>
        <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
-        <span className="df-chip"><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
+        <span className={readiness?.admin_verified===true?"df-chip df-profile-verified":"df-chip df-profile-pending"}><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
         {avatarSaving&&<span className="df-avatar-saving" role="status">Guardando foto…</span>}
         {avatarError&&<span className="df-avatar-error" role="alert">{avatarError}</span>}
        </div>
@@ -565,10 +575,11 @@ export function DriverPwaWorkflow(){
       <button className="df-logout" disabled={busy} onClick={()=>void doLogout()}><LogOut size={18}/> Cerrar sesión</button>
       <p className="df-version">Tala Eats Repartidor · Basado en Flutter v1.2.4</p>
     </>}
+    </>}
     {(error||message)&&<div className={'df-floating-status '+(error?'error':'ok')} role={error?'alert':'status'}>
      {error?<WifiOff size={18}/>:<CheckCircle2 size={18}/>}<span>{error||message}</span>
      <button aria-label="Cerrar aviso" onClick={()=>{setError('');setMessage('');}}><X size={16}/></button></div>}
-    {loading&&<p className="df-caption" role="status">Consultando información real del servidor…</p>}
+
    </main>
    {homeAction&&<div className="df-home-action">
       <button type="button" className="df-primary" disabled={homeAction.disabled} onClick={homeAction.press}>
