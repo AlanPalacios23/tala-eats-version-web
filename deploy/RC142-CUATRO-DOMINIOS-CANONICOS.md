@@ -95,3 +95,28 @@ El operador ejecutó un lector de hostnames/puertos con sudo y obtuvo los siguie
 4. Validar quién escucha en 18191 mediante `sudo ss -lntp '( sport = :18191 )'` de sólo lectura; no inferir servicio por un 404.
 5. Tienda sigue sin PWA ni hostname DNS efectivo (HTTP 000); no prometer cuarto sitio instalado.
 6. Durante el futuro cutover del webhook Stripe, preservar POST firmado sin redirección y probar conciliación/eventos duplicados; no eliminar el API viejo por criterio cosmético.
+
+## Cuarto diagnóstico: el puerto 18191 NO es un backend duplicado
+
+Kali `sudo ss -lntp '( sport = :18191 )'` confirmó proceso Python PID `2297251`. Lectura posterior de `/proc/2297251`:
+- ejecutable `python3`
+- script `/usr/local/lib/talaeats-legal/server.py`
+- `cwd=/`, `PPid=1`
+- unidad `/system.slice/talaeats-legal-static.service`
+
+**Deducción limitada:** parece un servicio de páginas legales estáticas, **no** backend de pedidos. No se ha verificado qué rutas sirve ni qué componente las utiliza, no autoriza `systemctl stop/disable`.
+
+El frontend revisado en rama `feat/rc141-driver-native-ux-resilience-20261029` aún declara:
+- términos: `https://web-talaeats.alan-palacios-dev.com/legal/terminos.html`;
+- privacidad: `https://talaeats.alan-palacios-dev.com/privacidad`;
+- eliminación: `https://talaeats.alan-palacios-dev.com/eliminar-cuenta`;
+en `src/lib/legal-links.ts`. Por ello, **la migración legal es un requisito previo a retirar el hostname API antiguo**. El acceso legal publicado puede ser requisito de Play Console. Verificar HTTP 200 + contenido válido antes de repuntar, sin exponer datos personales.
+
+Gate previo de sólo lectura:
+```bash
+sudo systemctl show talaeats-legal-static.service -p ActiveState -p SubState -p ExecStart -p FragmentPath --no-pager
+for url in  http://127.0.0.1:18191/privacidad  http://127.0.0.1:18191/eliminar-cuenta  https://talaeats.alan-palacios-dev.com/privacidad  https://talaeats.alan-palacios-dev.com/eliminar-cuenta  https://web-talaeats.alan-palacios-dev.com/legal/terminos.html; do
+  curl -sS -o /dev/null -w '%{http_code} %{url_effective}\n' --connect-timeout 4 --max-time 12 "$url" || true
+done
+```
+No se modifica systemd, Cloudflared ni archivos locales.
