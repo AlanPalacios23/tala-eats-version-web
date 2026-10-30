@@ -45,6 +45,7 @@ export function DriverPwaWorkflow(){
  const closeMap=useCallback(()=>setMapOpen(false),[]);
  const [proofSheet,setProofSheet]=useState(false);
  const proofInput=useRef<HTMLInputElement>(null);
+ const proofReturnFocus=useRef<HTMLElement|null>(null);
  const avatarInput=useRef<HTMLInputElement>(null);
  const [avatarSaving,setAvatarSaving]=useState(false);
  const [avatarError,setAvatarError]=useState('');
@@ -235,6 +236,7 @@ export function DriverPwaWorkflow(){
  }
 
  const active=mine.find(deliveryInProgress)??null;
+ const activeStage=driverJourneyStage(active?.status);
  // Enter immersive map only on confirmed online state. Back does not
  // disconnect: mapOpen stays false until another online/tab transition.
  useEffect(()=>{
@@ -287,6 +289,16 @@ export function DriverPwaWorkflow(){
   document.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',onKey);previous?.focus();};
  },[sheet,busy]);
+ useEffect(()=>{
+  if(!proofSheet)return;
+  // Return keyboard focus to the exact control that opened PIN validation.
+  // Unlike the keyboard trap, this effect does not re-run on busy changes.
+  return()=>{
+   const previous=proofReturnFocus.current;
+   proofReturnFocus.current=null;
+   if(previous?.isConnected)previous.focus();
+  };
+ },[proofSheet]);
  const closeDeliveryProof=()=>{
   setProofSheet(false);
   setPin({});
@@ -309,6 +321,7 @@ export function DriverPwaWorkflow(){
   if(order.status==='on_the_way'&&canProgress&&!busy){
    setPin(old=>({...old,[order.id]:''}));
    setCashReceived(old=>({...old,[order.id]:false}));
+   proofReturnFocus.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
    setProofSheet(true);
   }
  };
@@ -444,6 +457,14 @@ export function DriverPwaWorkflow(){
     </div>}
     {browserOffline&&<div className="df-network-banner" role="status"><WifiOff size={18}/><span>Tu dispositivo parece estar sin Internet. Los cambios requieren confirmación del servidor.</span><button type="button" onClick={()=>void manualRefresh()} disabled={refreshing||busy}>Reintentar</button></div>}
     {(!loading||readiness)&&<>
+    {active&&tab!=='inicio'&&activeStage&&<button type="button"
+      className="df-active-trip-return" onClick={()=>onTab('inicio')}
+      aria-label={'Volver al seguimiento del pedido '+active.id}>
+      <span className="df-active-trip-icon"><Bike size={19} aria-hidden="true"/></span>
+      <span className="df-active-trip-text"><strong>Entrega en curso · #{active.id}</strong>
+       <small>{activeStage.title}</small></span>
+      <span className="df-active-trip-go">Ver pedido <ChevronRight size={17} aria-hidden="true"/></span>
+    </button>}
     {tab==='inicio'&&<>
       <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
        <div className="df-header-actions"><button type="button" className="df-icon-button df-sync-button" aria-label="Actualizar estado y pedidos" title="Actualizar" disabled={busy||refreshing} onClick={()=>void manualRefresh()}><RefreshCw size={21} className={refreshing?'df-rotate':undefined}/></button>
@@ -464,6 +485,7 @@ export function DriverPwaWorkflow(){
         offers={active?[]:available}
         eligible={actions&&!active}
         offline={browserOffline}
+        refreshing={refreshing}
         busy={operationsBlocked}
         offersError={offersError}
         onRefresh={()=>{void manualRefresh();}}
