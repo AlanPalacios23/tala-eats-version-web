@@ -62,3 +62,17 @@ Acciones seguras:
 4. Antes de retirar un hostname de staging, verificar que no sea destino necesario para integraciones de prueba: retirar publicidad del host puede ser admisible; borrar su backend/BD no lo es.
 
 **NO-GO:** este inventario no autoriza borrado de hostnames, ni redirecciones de webhook Stripe por HTTP 302.
+
+## Auditoría elevada posterior — diagnóstico de duplicados
+
+El operador ejecutó un lector de hostnames/puertos con sudo y obtuvo los siguientes mapeos explícitos:
+- `talaeats.alan-palacios-dev.com` apareció DOS VECES: `127.0.0.1:18191` **y** `127.0.0.1:18190`.
+- `api-stage-talaeats.alan-palacios-dev.com` aparece `127.0.0.1:18190` (mismo destino que backend LIVE).
+- `web-talaeats.alan-palacios-dev.com` -> `127.0.0.1:18195`.
+- `restaurantes-talaeats.alan-palacios-dev.com` -> `127.0.0.1:18197`.
+- `repartidores-talaeats.alan-palacios-dev.com` -> `127.0.0.1:18199`.
+- Comprobación de identidad de las API produjo `NO_VERIFICADO` para los tres hosts: **no** significa backend caído, dado `GET /api/v1/health` anterior HTTP 200.
+
+**Bloqueadores nuevos:** determinar si los dos mapeos del host `talaeats` pertenecen a un mismo config Cloudflared (en tal caso el primer ingress que coincida gana) o a configuraciones/instancias diferentes; determinar qué servicio existe en 18191. Reglas reales se comprueban con `cloudflared tunnel --config PATH ingress rule URL` (ver documentación oficial) y PID/config real activo. Retirar regla duplicada sólo después de pruebas de reglas y backup.
+
+**Seguridad:** exponer producción con nombre `api-stage` es confuso y potencialmente peligroso. Programar su retiro público, pero **no** hacerlo sin comprobar integraciones existentes. Los puertos locales de Nginx y backend son servicios de un único servidor, no cuatro instancias API.
