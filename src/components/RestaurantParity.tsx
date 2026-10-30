@@ -187,6 +187,7 @@ export function MerchantKitchen({orders,busy,run,go,onRefresh}:MerchantExperienc
           (o.order_type==='pickup'?'Efectivo · cobrar al recoger':'Efectivo · cobro en entrega'):
           paymentPending?'Tarjeta · pendiente de conciliación':'Tarjeta · pago confirmado'}
        </span>
+       <DriverIdentity order={o}/>
        {paymentPending&&<div className="rm-ticket-warning"><AlertTriangle size={15}/> Sin pago conciliado. No preparar ni volver a cobrar.</div>}
        {next&&<button disabled={busy} className="rp-btn primary small"
         onClick={()=>void run(()=>api.ownerUpdateStatus(o.id,next),'Pedido #'+o.id+' actualizado en el servidor.')}>
