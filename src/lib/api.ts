@@ -1,4 +1,5 @@
 import { verifyMarketPage } from './markets';
+import {trustedDriverAvatarUrl} from './driver-avatar';
 import { resolveCustomerImage } from './customer-media';
 import { PREVIEW_READONLY, previewRequestAllowed } from './preview';
 import type { StripeTestConfig, StripeIntentReply } from './stripe-test';
@@ -71,6 +72,37 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 }
 const json = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+/** Single own-account photo write; no retries because the server may have
+ * persisted the file even if the network response was interrupted. */
+async function uploadDriverAvatar(blob:Blob):Promise<{avatar_url:string}>{
+ const route='/driver/avatar';
+ if(!previewRequestAllowed(route,'POST',PREVIEW_READONLY))
+  throw new ApiError(403,'La vista previa no permite modificar la foto.');
+ if(!['image/webp','image/jpeg','image/png'].includes(blob.type)||blob.size<100||
+   blob.size>4*1024*1024)
+  throw new ApiError(422,'La fotografía debe ser JPG, PNG o WEBP de máximo 4 MB.');
+ const controller=new AbortController();
+ const timer=globalThis.setTimeout(()=>controller.abort(),45000);
+ try{
+  const response=await fetch(BASE+route,{
+   method:'POST',credentials:'include',cache:'no-store',
+   body:blob,signal:controller.signal,
+   headers:{'Content-Type':blob.type,Accept:'application/json','X-Talaeats-Client':'web-pwa'},
+  });
+  const data=await response.json().catch(()=>null) as {avatar_url?:unknown;detail?:unknown}|null;
+  if(!response.ok)throw new ApiError(response.status,
+   typeof data?.detail==='string'&&data.detail.length<260?data.detail:
+   response.status===503?'El servidor todavía no habilita fotos de perfil.':
+   'No se pudo guardar la foto. Intenta comprobar tu perfil antes de repetir.');
+  const url=trustedDriverAvatarUrl(data?.avatar_url);
+  if(!url)throw new ApiError(502,'El backend no confirmó una fotografía segura.');
+  return {avatar_url:url};
+ }catch(e){
+  if(e instanceof ApiError)throw e;
+  throw new ApiError(503,'No se pudo confirmar la subida. Comprueba tu perfil antes de reintentar.');
+ }finally{globalThis.clearTimeout(timer);}
+}
+
 async function uploadRestaurantDocument(file:File):Promise<{url:string;name:string}>{
   if(!previewRequestAllowed('/uploads/onboarding-document','POST',PREVIEW_READONLY))
    throw new ApiError(403,'En vista previa no es posible subir documentos.');
@@ -315,6 +347,7 @@ export const api = {
     request<{id:number;status:string;entity_type:string}>('/operations/onboarding',
       json('POST',{entity_type:'driver',business_name:'',tax_id:'',
         vehicle,plate,payout_account_ref:'',documents})),
+  driverUploadAvatar: (blob:Blob) => uploadDriverAvatar(blob),
   driverProfile: () => request<DriverProfile>('/driver/profile'),
   driverDashboard: () => request<Record<string,unknown>>('/driver/dashboard'),
   driverMine: () => request<Order[]>('/driver/mine?limit=100'),
