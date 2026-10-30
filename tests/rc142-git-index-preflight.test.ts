@@ -18,7 +18,7 @@ describe('RC142 deployment gate must fail closed on inaccessible Git indexes',()
   expect(script).toContain('HOLD_GIT_REV_PARSE');
   expect(script).toMatch(/\[\[ "\$actual" == "\$(?:expected|SHA)" && -z "\$tracked" \]\]/);
   expect(script).not.toMatch(/-z "\$\(git .*? status --porcelain/);
- }));
+ });
  it('read-only probes report errors instead of masking stderr-only failures',()=>{
   const cmd='value="$(sh -c \'echo fatal-index >&2; exit 128\')" || exit 5; test -z "$value"';
   const result=spawnSync('bash',['-c',cmd],{encoding:'utf8'});
