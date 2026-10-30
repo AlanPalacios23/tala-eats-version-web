@@ -579,7 +579,7 @@ export function DriverPwaWorkflow(){
     {(error||message)&&<div className={'df-floating-status '+(error?'error':'ok')} role={error?'alert':'status'}>
      {error?<WifiOff size={18}/>:<CheckCircle2 size={18}/>}<span>{error||message}</span>
      <button aria-label="Cerrar aviso" onClick={()=>{setError('');setMessage('');}}><X size={16}/></button></div>}
-    {loading&&<p className="df-caption" role="status">Consultando información real del servidor…</p>}
+
    </main>
    {homeAction&&<div className="df-home-action">
       <button type="button" className="df-primary" disabled={homeAction.disabled} onClick={homeAction.press}>
