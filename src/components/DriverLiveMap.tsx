@@ -107,13 +107,10 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
     maxZoom:18,minZoom:11,detectRetina:false,
     attribution:'© OpenStreetMap contributors',
     updateWhenIdle:true,keepBuffer:1,
+    // Leaflet applies this BEFORE setting tile.src, preserving privacy on
+    // other requests while satisfying the OSM tile usage policy.
+    referrerPolicy:'strict-origin-when-cross-origin',
    });
-   const create=tileLayer.createTile.bind(tileLayer);
-   tileLayer.createTile=(coords,done)=>{
-    const img=create(coords,done) as HTMLImageElement;
-    img.referrerPolicy='strict-origin-when-cross-origin';
-    return img;
-   };
    tileLayer.on('tileerror',()=>setMapError('No se pudieron cargar algunas calles. Las ofertas siguen disponibles.'));
    tileLayer.addTo(map);
    L.control.attribution({position:'topright',prefix:false}).addTo(map);
