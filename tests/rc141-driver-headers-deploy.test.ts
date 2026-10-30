@@ -32,7 +32,7 @@ describe('RC141 isolated Nginx 18199 security header release',()=>{
   expect(script).toContain('install -o root -g www-data -m 0640 "$NEW" "$temp"');
   expect(script).toContain('runuser -u www-data -- test -r "$CONF"');
   expect(script).toContain('runuser -u www-data -- /usr/sbin/nginx -t -c "$MAIN"');
-  expect(script).toContain('systemctl kill --kill-who=main -s HUP "$SERVICE"');
+  expect(script).toContain('systemctl kill --kill-whom=main --signal=HUP "$SERVICE"');
   expect(script).toContain('RC141_HEADERS_RESTORED=PREVIOUS_CONFIG');
   expect(script).toContain('ORIGINAL="$CANDIDATE"');
   expect(script).toContain('security_ok=no');
