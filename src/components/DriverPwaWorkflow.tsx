@@ -36,6 +36,8 @@ const failure=(reason:unknown)=>reason instanceof Error?reason.message:'La opera
 export function DriverPwaWorkflow(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
+ const [mapOpen,setMapOpen]=useState(false);
+ const closeMap=useCallback(()=>setMapOpen(false),[]);
  const [proofSheet,setProofSheet]=useState(false);
  const proofInput=useRef<HTMLInputElement>(null);
  const profileSheetClose=useRef<HTMLButtonElement>(null);
@@ -219,6 +221,12 @@ export function DriverPwaWorkflow(){
  }
 
  const active=mine.find(deliveryInProgress)??null;
+ // Enter immersive map only on confirmed online state. Back does not
+ // disconnect: mapOpen stays false until another online/tab transition.
+ useEffect(()=>{
+  if(online&&tab==='inicio'&&!active)setMapOpen(true);
+  else setMapOpen(false);
+ },[online,tab,active?.id]);
  const delivered=driverDeliveredOrders(mine);
  const weekdays=dashboard?.last_7_days??[];
  const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
@@ -377,7 +385,10 @@ export function DriverPwaWorkflow(){
  }:active?.status==='on_the_way'&&canProgress?{
   label:'Validar entrega con PIN',disabled:operationsBlocked,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();openDeliveryProof(active);}}
- }:null;
+ }:online&&!active?{
+   label:'Abrir mapa en vivo',disabled:operationsBlocked,
+   press:()=>setMapOpen(true)
+  }:null;
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
@@ -406,7 +417,7 @@ export function DriverPwaWorkflow(){
       {readiness?.presence_enabled===false&&<div className="df-alert df-alert-info"><LockKeyhole size={18}/> El servidor todavía no habilitó la presencia en este entorno.</div>}
       {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén la PWA abierta y permite la ubicación precisa.</div>}
       {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Estás conectado y verificado. El servidor aún no habilita nuevas asignaciones para este modo de reparto.</div>}
-      {online&&<DriverLiveMap
+      {online&&mapOpen&&!active&&<DriverLiveMap
         offers={active?[]:available}
         eligible={actions&&!active}
         offline={browserOffline}
@@ -414,6 +425,9 @@ export function DriverPwaWorkflow(){
         offersError={offersError}
         onRefresh={()=>{void manualRefresh();}}
         onAccept={order=>{void guardedAction(()=>api.driverAccept(order.id),'Asignación confirmada por el servidor.');}}
+        onClose={closeMap}
+        onGoOffline={()=>{if(!operationsBlocked&&!active)void setOnline(false);}}
+        errorMessage={error}
        />}
       {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS en servidor</button>}
       <section className="df-main-stage">
