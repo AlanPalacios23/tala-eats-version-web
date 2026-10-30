@@ -110,7 +110,7 @@ restore(){
  if [[ "$code" -ne 0 && "$changed" == yes ]];then
   local tmp
   tmp="$(mktemp /etc/talaeats-repartidores-pwa/.server-restore.XXXXXX)" || exit 3
-  if install -o root -g www-data -m 0640 "$ORIGINAL" "$tmp";then
+  if install -o root -g root -m 0644 "$ORIGINAL" "$tmp";then
    mv -f -- "$tmp" "$CONF"
    if [[ "$reload_happened" == yes ]];then
     systemctl kill --kill-whom=main --signal=HUP "$SERVICE" || true
@@ -124,7 +124,7 @@ restore(){
 }
 trap restore EXIT
 temp="$(mktemp /etc/talaeats-repartidores-pwa/.server-candidate.XXXXXX)"
-install -o root -g www-data -m 0640 "$NEW" "$temp"
+install -o root -g root -m 0644 "$NEW" "$temp"
 runuser -u www-data -- test -r "$temp" || {
  echo RC141_HEADERS=HOLD_WWW_DATA_CANNOT_READ_TEMP;exit 2;
 }
