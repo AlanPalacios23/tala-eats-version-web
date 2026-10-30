@@ -28,7 +28,7 @@
 .dm-immersive .dm-map-placeholder span{font-size:13px;line-height:1.6;color:#69756e;max-width:300px}
 .dm-waiting-orbit{width:75px;height:75px;border-radius:50%;display:grid;place-items:center;
  color:#ec6c34;background:#fff;box-shadow:0 0 0 14px #fff7,0 0 0 32px #fff4,0 10px 26px #597c7d1c}
-.dm-immersive .dm-floating-header{position:absolute;z-index:820;pointer-events:none;
+.dm-immersive .dm-floating-header{position:absolute;z-index:820;pointer-events:auto;
  left:0;right:0;top:0;padding:calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left));
  background:linear-gradient(180deg,#172d204a 0%,#1e35200b 74%,transparent 100%)}
 .dm-header-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:53px}
