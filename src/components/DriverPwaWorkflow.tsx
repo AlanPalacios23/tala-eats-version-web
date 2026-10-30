@@ -147,7 +147,7 @@ export function DriverPwaWorkflow(){
    const gps=await currentDriverPosition();
    await api.driverLocation(gps.lat,gps.lng);
    const next=await api.driverPresenceReadiness();
-   if(mounted.current){setReadiness(next);setError('');}
+   if(mounted.current){setReadiness(next); /* GPS success must not erase unrelated failed writes. */}
   }catch(e){
    if(mounted.current){setError('No se confirmó GPS reciente: '+failure(e));setReadiness(old=>old?{...old,fresh_gps:false}:old);}
   }finally{gpsInFlight.current=false;}
@@ -364,7 +364,7 @@ export function DriverPwaWorkflow(){
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
- return <div className="df-app" data-driver-pwa="true" data-presence={online?'online':readiness?'offline':'unavailable'}>
+ return <div className="df-app" data-driver-pwa="true" data-driver-tab={tab} data-presence={online?'online':readiness?'offline':'unavailable'}>
    <main className="df-content">
     {!readiness&&!loading&&error&&<section className="df-reconnect df-surface" role="alert">
      <WifiOff size={24}/><div><strong>No pudimos sincronizar tus entregas</strong>
