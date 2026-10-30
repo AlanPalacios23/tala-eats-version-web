@@ -33,7 +33,9 @@ describe('RC141: isolated courier web security and rollout gates',()=>{
    '/manifest-repartidor.webmanifest','/api/v1/driver/profile',
    '/api/v1/driver/mine',"if 'no-store' not in cache:",
    "RC141_SECURITY_READ_ONLY=PASS"])expect(audit).toContain(token);
-  expect(audit).not.toMatch(/\b(systemctl\s+(?:reload|restart|stop|start)|chmod|chown|pm2\s|psql\s|nginx\s+-s|curl\s+.*\-X\s+POST)\b/);
+  // Security commentary names forbidden operations; verify executable lines only.
+  const statements=audit.split('\n').filter(line=>!/^\s*#/.test(line)).join('\n');
+  expect(statements).not.toMatch(/\b(systemctl\s+(?:reload|restart|stop|start)|chmod|chown|pm2\s|psql\s|nginx\s+-s|curl\s+.*\-X\s+POST)\b/);
   expect(audit).not.toContain('source /home/tala-node-stage/.config/talaeats-node-live.env');
  });
  it('does not persist customer delivery PIN, clears it when hidden and prevents offline writes',()=>{
