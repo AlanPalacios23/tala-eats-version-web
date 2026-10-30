@@ -9,11 +9,13 @@ import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import '../styles/driver-avatar-rc144.css';
 import '../styles/driver-polish-rc146.css';
+import '../styles/driver-journey-rc147.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
 import {DriverLiveMap} from './DriverLiveMap';
 import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
+import {driverJourneyStage,driverJourneyNavigationHref} from '../lib/driver-journey-ux';
 import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
 type DriverDash=DriverDashboardPayload;
 type DriverTab='inicio'|'entregas'|'ganancias'|'perfil';
@@ -332,6 +334,7 @@ export function DriverPwaWorkflow(){
   }catch(e){setError(failure(e));}finally{setBusy(false);}
  };
  const jobCard=(o:Order,offer=false)=>{
+   const stage=offer?null:driverJourneyStage(o.status);
    const details=trustedActiveDriverDetail(dashboard,o);
    const store=(o as Order & {restaurant?:{name?:string;address?:string}}).restaurant;
    const storeName=details?.restaurant?.name||store?.name||'Comercio #'+o.restaurant_id;
@@ -346,12 +349,14 @@ export function DriverPwaWorkflow(){
    return <article key={o.id} className={'df-surface df-job'+(deliveryInProgress(o)?' is-active':'')} aria-label={'Pedido '+o.id}>
     <div className="df-job-head"><span className="df-order-code">Pedido #{o.id}</span>
      <strong className={'df-chip'+(offer?' df-chip-offer':'')}>{offer?'Disponible':displayStatus(o.status)}</strong></div>
-    {!offer&&deliveryInProgress(o)&&<div className="df-stage-progress"
-      role="img" aria-label={'Progreso de entrega: '+displayStatus(o.status)}>
-     {Array.from({length:3},(_,i)=>{
-      const progress=o.status==='assigned'?1:o.status==='picked_up'?2:3;
-      return <span className={i<progress?'filled':''} key={i}/>;
-     })}
+    {stage&&<div className="df-trip-progress">
+     <div className="df-trip-progress-heading">
+      <div><strong>{stage.title}</strong><small>{stage.hint}</small></div>
+      <span aria-hidden="true">{stage.step} / 3</span>
+     </div>
+     <div className="df-stage-progress" role="img" aria-label={'Progreso de entrega: paso '+stage.step+' de 3, '+stage.title}>
+      {Array.from({length:3},(_,i)=><span className={i<stage.step?'filled':''} key={i}/>)}
+     </div>
     </div>}
     <div className="df-order-highlights">
      <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
@@ -417,6 +422,7 @@ export function DriverPwaWorkflow(){
   }catch(e){if(mounted.current)setAvatarError(failure(e));}
   finally{if(mounted.current)setAvatarSaving(false);}
  }
+ const activeNavigationHref=driverJourneyNavigationHref(active,dashboard);
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
  const initial=(session.user?.name||'R').trim().split(/\s+/).map(x=>x.slice(0,1)).slice(0,2).join('').toUpperCase();
  const metric=(v:unknown,suffix='')=>typeof v==='number'&&Number.isFinite(v)?String(Math.round(v*10)/10)+suffix:'—';
@@ -581,7 +587,11 @@ export function DriverPwaWorkflow(){
      <button aria-label="Cerrar aviso" onClick={()=>{setError('');setMessage('');}}><X size={16}/></button></div>}
 
    </main>
-   {homeAction&&<div className="df-home-action">
+   {homeAction&&<div className={'df-home-action'+(activeNavigationHref?' df-home-action-route':'')}>
+      {activeNavigationHref&&<a className="df-route-quick" href={activeNavigationHref}
+       target="_blank" rel="noopener noreferrer" aria-label="Abrir indicaciones para el siguiente destino en Google Maps">
+       <Navigation size={20} aria-hidden="true"/><span>Ruta</span>
+      </a>}
       <button type="button" className="df-primary" disabled={homeAction.disabled} onClick={homeAction.press}>
        {busy?'Actualizando…':homeAction.label}
       </button>
