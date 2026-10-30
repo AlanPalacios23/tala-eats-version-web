@@ -38,3 +38,7 @@
  .dd-standalone:has(.df-bottom-nav) .di-notice{bottom:calc(133px + env(safe-area-inset-bottom))}}
 @media(max-height:600px){.di-notice{max-height:53dvh}}
 @media(prefers-reduced-motion:reduce){.di-notice{animation:none}.di-install:active{transform:none}}
+
+.df-driver-install-entry{display:flex;align-items:center;justify-content:center;margin:16px 0 12px}
+.df-install-inline{display:flex;justify-content:center;margin:16px 0 8px}
+.df-driver-install-entry .di-reopen,.df-install-inline .di-reopen{width:100%;max-width:370px}
