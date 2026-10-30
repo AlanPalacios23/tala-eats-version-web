@@ -120,3 +120,25 @@ for url in  http://127.0.0.1:18191/privacidad  http://127.0.0.1:18191/eliminar-c
 done
 ```
 No se modifica systemd, Cloudflared ni archivos locales.
+
+## Quinta auditoría: páginas legales todas responden HTTP 200
+
+El operador confirmó los cinco endpoints por `curl -L` sin errores:
+- `http://127.0.0.1:18191/privacidad` -> 200
+- `http://127.0.0.1:18191/eliminar-cuenta` -> 200
+- `https://talaeats.alan-palacios-dev.com/privacidad` -> 200
+- `https://talaeats.alan-palacios-dev.com/eliminar-cuenta` -> 200
+- `https://web-talaeats.alan-palacios-dev.com/legal/terminos.html` -> 200
+La unidad `talaeats-legal-static.service` está `active/running`. HTTP 200 comprueba **disponibilidad**, no funcionalidad de formulario o equivalencia de contenido.
+
+El PR prepara **solamente en plantilla, SIN aplicar en Kali**, los dos bloques nginx de ruta exacta:
+`/privacidad` y `/eliminar-cuenta` -> `http://127.0.0.1:18191` bajo `web-talaeats`.
+Mantiene intactos `/api/v1` -> `18190`, `LEGAL_LINKS` históricos y `talaeats-legal-static.service`, de manera que no existe transición parcial por un despliegue estático de la PWA.
+
+**Gate para activar esa plantilla**:
+1. Inspeccionar si `/eliminar-cuenta` incluye formulario, método POST, CSRF, `Origin`/Host y scripts inline; revisar CSP compatible. No sustituirlo por una copia HTML estática.
+2. Respaldar exactamente `/etc/talaeats-web-pwa/server.conf`, comprobar que sigue siendo la instancia aislada 18195, aplicar únicamente el snippet con rollback y `nginx -t -c /etc/talaeats-web-pwa/nginx.conf`; recargar SOLO `talaeats-web-pwa.service`, nunca el nginx global.
+3. Verificar URL legal canónica con HTML real y formulario válido, no respuesta SPA/index.html falsamente exitosa con 200.
+4. Después de verificar HTTPS y flujo de eliminación, actualizar `src/lib/legal-links.ts` y `public/legal/terminos.html` a URLs canónicas en un commit posterior, con tests.
+5. Mantener los enlaces viejos y la ruta original hasta migrar Google Play, aplicaciones móviles, correos y proveedores.
+
