@@ -33,15 +33,15 @@ CANDIDATE="$SOURCE/deploy/nginx-repartidores-isolated-server.conf"
 AUDIT="$SOURCE/deploy/rc141-kali-driver-security-audit.sh"
 BACKUP_DIR=/var/backups/talaeats-repartidores
 BACKUP="$BACKUP_DIR/rc141-before-$SHA.conf"
-for bin in git grep cmp runuser systemctl curl stat readlink install mktemp mv rm;do
+for bin in git grep cmp runuser systemctl curl stat readlink install mktemp mv rm ps sleep;do
  command -v "$bin" >/dev/null || { echo RC141_HEADERS=HOLD_TOOL;exit 2; }
 done
 [[ -f "$CONF" && ! -L "$CONF" && -f "$MAIN" && ! -L "$MAIN" &&
  -f "$CANDIDATE" && ! -L "$CANDIDATE" && -f "$AUDIT" && ! -L "$AUDIT" ]] || {
  echo RC141_HEADERS=HOLD_FILES;exit 2;
 }
-[[ "$(git -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
+[[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
+ -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
  echo RC141_HEADERS=HOLD_SOURCE_SHA;exit 2;
 }
 [[ "$(systemctl show "$SERVICE" -p User --value)" == www-data &&
@@ -53,7 +53,7 @@ PID="$(systemctl show "$SERVICE" -p MainPID --value)"
 [[ "$PID" =~ ^[1-9][0-9]*$ && -r "/proc/$PID/cmdline" ]] || {
  echo RC141_HEADERS=HOLD_MASTER_PID;exit 2;
 }
-tr '\\0' ' ' < "/proc/$PID/cmdline" | grep -Fq '/usr/sbin/nginx -c /etc/talaeats-repartidores-pwa/nginx.conf' || {
+ps -p "$PID" -o args= | grep -Fq '/usr/sbin/nginx -c /etc/talaeats-repartidores-pwa/nginx.conf' || {
  echo RC141_HEADERS=HOLD_UNEXPECTED_NGINX_MASTER;exit 2;
 }
 for item in 'listen 127.0.0.1:18199;' \
@@ -96,6 +96,9 @@ fi
 ORIGINAL="$BACKUP"
 NEW="$CANDIDATE"
 if [[ "$MODE" == --rollback ]];then
+ # On a failed rollback, recover the actually active hardened template,
+ # rather than re-applying the old backup by mistake.
+ ORIGINAL="$CANDIDATE"
  NEW="$BACKUP"
 fi
 # Save no other configuration; restore backup with mode readable by www-data.
@@ -142,8 +145,14 @@ systemctl is-active --quiet "$SERVICE" || { echo RC141_HEADERS=HOLD_SERVICE_AFTE
  echo RC141_HEADERS=HOLD_MASTER_CHANGED;exit 2;
 }
 if [[ "$MODE" == --apply ]];then
- bash "$AUDIT" --audit || { echo RC141_HEADERS=HOLD_SECURITY_AUDIT;exit 2; }
- bash "$AUDIT" --public || { echo RC141_HEADERS=HOLD_PUBLIC_SECURITY_AUDIT;exit 2; }
+ security_ok=no
+ for attempt in 1 2 3 4 5;do
+  if bash "$AUDIT" --audit && bash "$AUDIT" --public;then
+   security_ok=yes;break
+  fi
+  sleep 1
+ done
+ [[ "$security_ok" == yes ]] || { echo RC141_HEADERS=HOLD_SECURITY_AUDIT;exit 2; }
 else
  code="$(curl -sS --max-time 8 -o /dev/null -w '%{http_code}' \
    -H "Host: $HOST" http://127.0.0.1:18199/repartidor/acceso)" || exit 2
