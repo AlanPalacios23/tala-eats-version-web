@@ -101,6 +101,7 @@ export function DriverPwaInstallNotice(){
   // Must call prompt() directly from the click gesture, never from a timer.
   const event=deferred.current;
   if(!event||platform!=='android'){
+   if(help){close();return;}
    setHelp(true);return;
   }
   deferred.current=null;
@@ -140,7 +141,7 @@ export function DriverPwaInstallNotice(){
   <div className="di-actions">
    <button type="button" className="di-install" disabled={busy} onClick={()=>void install()}>
     {canPrompt&&platform==='android'?<><ArrowDownToLine size={18}/> {busy?'Abriendo…':'Instalar en Android'}</>:
-     help?<><CheckCircle2 size={18}/> Entendido</>:<><Share2 size={18}/> {platform==='ios'?'Instalar en iPhone':'Cómo instalar'}</>}
+     help?<><CheckCircle2 size={18}/> Entendido</>:<><Share2 size={18}/> {platform==='ios'?'Cómo instalar en iPhone':'Cómo instalar'}</>}
    </button>
    <button type="button" className="di-later" onClick={close}>Ahora no</button>
   </div>
