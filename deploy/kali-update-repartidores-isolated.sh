@@ -77,8 +77,13 @@ DEST="$ROOT/releases/$SHA"
 [[ -d "$SOURCE" && ! -L "$SOURCE" && -d "$SOURCE/dist-repartidores" && ! -L "$SOURCE/dist-repartidores" ]] || {
  echo 'REPARTIDORES_STATIC_ABORT=PINNED_BUILD_MISSING';exit 2;
 }
-[[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
+actual="$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" || {
+ echo 'REPARTIDORES_STATIC_ABORT=HOLD_GIT_REV_PARSE';exit 2;
+}
+tracked="$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" || {
+ echo 'REPARTIDORES_STATIC_ABORT=HOLD_GIT_INDEX_UNREADABLE';exit 2;
+}
+[[ "$actual" == "$SHA" && -z "$tracked" ]] || {
  echo 'REPARTIDORES_STATIC_ABORT=PINNED_SHA_OR_TREE_UNSAFE';exit 2;
 }
 for asset in repartidores.html sw-repartidor.js manifest-repartidor.webmanifest;do
