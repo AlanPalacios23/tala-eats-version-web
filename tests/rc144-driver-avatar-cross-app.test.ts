@@ -33,10 +33,12 @@ describe('RC144 persistent courier profile image',()=>{
   expect(app).toContain('setUploadedAvatar({userId:actorId!,url:updated.avatar_url})');
   expect(app).toContain('uploadedAvatar?.userId===session.user?.id');
   expect(app).toContain('dashboard?.user?.id===session.user?.id');
-  expect(app).toContain("avatarUrl?'Cambiar foto':'Subir foto'");
+  expect(app).toContain("avatarUrl?'Cambiar foto de perfil':'Subir foto de perfil'");
   expect(app).toContain("accept=\"image/jpeg,image/png,image/webp,image/heic,image/heif\"");
-  expect(app).toContain('role="alert" className="df-avatar-error"');
+  expect(app).toContain('className="df-avatar-error" role="alert"');
   expect(app).toContain('referrerPolicy="no-referrer"');
+  expect(app).toContain('className="df-avatar-edit"');
+  expect(app).toContain('onClick={()=>avatarInput.current?.click()}');
   expect(css).toContain('.df-avatar img');
  });
  it('customer and restaurant see assigned driver identity only',()=>{
