@@ -6,6 +6,7 @@ import {
  ShoppingBag,Store,Users
 } from 'lucide-react';
 import {api,pesos,safeImage} from '../lib/api';
+import {DriverIdentity} from './DriverIdentity';
 import type {MerchantFinance} from '../lib/api';
 import {nextMerchantState} from '../lib/restaurant-state';
 import {kitchenOrders,orderElapsedLabel,kitchenOrderTypeLabel} from '../lib/merchant-kitchen';
