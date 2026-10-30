@@ -1,0 +1,51 @@
+/* RC147 — concise delivery journey UI. Keep the RC146 design language intact. */
+.df-app .df-trip-progress{
+ margin:6px 0 15px;padding:12px 13px 10px;
+ border:1px solid #e9ebe5;background:#fafbf9;border-radius:15px;
+}
+.df-app .df-trip-progress-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.df-app .df-trip-progress-heading>div{display:grid;gap:3px;min-width:0}
+.df-app .df-trip-progress-heading strong{font-size:13px;font-weight:850;color:#26342a;line-height:1.35}
+.df-app .df-trip-progress-heading small{font-size:11px;line-height:1.4;color:#6a786c}
+.df-app .df-trip-progress-heading>span{
+ display:block;flex:none;font-weight:850;font-variant-numeric:tabular-nums;font-size:12px;
+ color:#b3511f;background:#fff2e8;border-radius:999px;padding:5px 9px;
+}
+.df-app .df-trip-progress .df-stage-progress{margin:10px 0 0;gap:6px;min-height:5px}
+.df-app .df-trip-progress .df-stage-progress>span{height:5px}
+.df-app .df-home-action-route{
+ gap:10px;flex-direction:row;align-items:center;
+ padding-left:max(14px,env(safe-area-inset-left));
+ padding-right:max(14px,env(safe-area-inset-right));
+}
+.df-app .df-home-action-route>.df-primary{
+ width:auto;max-width:590px;min-width:0;flex:1;
+}
+.df-app .df-route-quick{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ min-height:56px;min-width:102px;flex:none;
+ padding:10px 14px;border-radius:15px;border:1px solid #edd1bc;
+ background:#fff6ed;color:#a64d1c;text-decoration:none;
+ font-size:13px;font-weight:850;
+ transition:background-color .17s ease,transform .17s ease,border-color .17s ease;
+}
+.df-app .df-route-quick:focus-visible{outline:3px solid #ef9c66;outline-offset:2px}
+.df-app .df-route-quick:active{background:#ffe9d7;transform:scale(.97)}
+.dm-immersive .dm-online-pill.is-disconnected{
+ color:#775f4b;background:#fff7ec;border-color:#efd6be;
+ box-shadow:0 3px 12px #49392313;
+}
+.dm-immersive .dm-online-pill.is-disconnected .dm-live-dot{
+ background:#c99b62;box-shadow:0 0 0 4px #f5e2c8;
+}
+@media(max-width:380px){
+ .df-app .df-home-action-route{gap:7px;padding-left:10px;padding-right:10px}
+ .df-app .df-route-quick{min-width:76px;padding:8px 9px;gap:5px;font-size:12px}
+ .df-app .df-route-quick svg{height:17px;width:17px}
+ .df-app .df-home-action-route>.df-primary{font-size:13px;padding:10px 8px;letter-spacing:-.2px}
+ .df-app .df-trip-progress{padding:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-route-quick{transition:none!important}
+ .df-app .df-route-quick:active{transform:none!important}
+}

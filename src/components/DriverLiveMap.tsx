@@ -24,6 +24,7 @@ export interface DriverLiveMapProps{
 }
 
 const tiles='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const motionAllowed=()=>!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /** Opt-in foreground map: never caches coordinates, location history, or
  * private order payloads. External map tiles see a viewport, not our API data.
@@ -210,8 +211,14 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
   if(marker){
    const map=mapRef.current;
    if(map){
-    map.once('moveend',()=>map.panBy([0,Math.min(140,Math.round(window.innerHeight*.16))],{animate:true}));
-    map.flyTo([marker.point.lat,marker.point.lng],15,{duration:.55});
+    const offset=[0,Math.min(140,Math.round(window.innerHeight*.16))] as [number,number];
+    if(motionAllowed()){
+     map.once('moveend',()=>map.panBy(offset,{animate:true}));
+     map.flyTo([marker.point.lat,marker.point.lng],15,{duration:.55});
+    }else{
+     map.setView([marker.point.lat,marker.point.lng],15,{animate:false});
+     map.panBy(offset,{animate:false});
+    }
    }
   }
  }
@@ -222,9 +229,13 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
   if(position)points.push([position.lat,position.lng]);
   if(!points.length)return;
   setFollow(false);
-  if(points.length===1){map.flyTo(points[0],15,{duration:.5});return;}
+  if(points.length===1){
+   if(motionAllowed())map.flyTo(points[0],15,{duration:.5});
+   else map.setView(points[0],15,{animate:false});
+   return;
+  }
   map.fitBounds(L.latLngBounds(points),{
-   paddingTopLeft:[36,140],paddingBottomRight:[36,250],maxZoom:15,animate:true
+   paddingTopLeft:[36,140],paddingBottomRight:[36,250],maxZoom:15,animate:motionAllowed()
   });
  }
  function touchEnd(y:number){
@@ -239,8 +250,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
   setFollow(true);
   const map=mapRef.current;
   if(map){
-   map.setView([position.lat,position.lng],15,{animate:true});
-   map.panBy([0,Math.min(130,Math.round(window.innerHeight*.12))],{animate:true});
+   const animate=motionAllowed();
+   map.setView([position.lat,position.lng],15,{animate});
+   map.panBy([0,Math.min(130,Math.round(window.innerHeight*.12))],{animate});
   }
  }
  function focusOffer(order:Order){openOffer(order.id);}
@@ -260,7 +272,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
   <header className="dm-floating-header">
    <div className="dm-header-row">
     <button ref={closeRef} type="button" className="dm-round-button dm-back" onClick={onClose} aria-label="Volver al inicio sin desconectarte"><ArrowLeft size={22}/></button>
-    <div className="dm-online-pill"><span className="dm-live-dot"/> EN LÍNEA</div>
+    <div className={'dm-online-pill'+(offline?' is-disconnected':'')} aria-live="polite" title={offline?'Conexión no disponible en este dispositivo':'Disponibilidad confirmada previamente por el servidor'}><span className="dm-live-dot"/> {offline?'SIN RED':'EN LÍNEA'}</div>
     <span className="dm-counter" aria-live="polite">{eligible?offerCount:0} {offerCount===1?'oferta':'ofertas'}</span>
    </div>
    <div className="dm-location-pill"><Compass size={15}/>
