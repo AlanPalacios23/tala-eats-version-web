@@ -7,9 +7,11 @@ const styles=read('src/styles/driver-flutter.css');
 
 describe('RC141 Repartidores PWA: native experience without bypassing backend',()=>{
  it('shows available orders on Home only when dispatch is approved and no delivery is active',()=>{
-  expect(app).toContain("online&&actions&&!active&&available.length>0");
-  expect(app).toContain("available.slice(0,2).map(o=>jobCard(o,true))");
-  expect(app).toContain("api.driverAccept(o.id)");
+  // RC142 replaced the two static Home cards with a live, server-gated map.
+  expect(app).toContain("{online&&<DriverLiveMap");
+  expect(app).toContain("eligible={actions&&!active}");
+  expect(app).toContain("offers={active?[]:available}");
+  expect(app).toContain("api.driverAccept(order.id)");
   expect(app).toContain("driverActionsAvailable(readiness,actionOptIn)");
   expect(app).toContain("driverCanProgressExistingDelivery(readiness,actionOptIn)");
   expect(app).toContain("canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true)");
