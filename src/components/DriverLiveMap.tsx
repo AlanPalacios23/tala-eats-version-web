@@ -20,6 +20,7 @@ export interface DriverLiveMapProps{
  onRefresh:()=>void;
  onClose:()=>void;
  onGoOffline:()=>void;
+ errorMessage?:string;
 }
 
 const tiles='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -27,7 +28,7 @@ const tiles='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 /** Opt-in foreground map: never caches coordinates, location history, or
  * private order payloads. External map tiles see a viewport, not our API data.
  * Server dispatch/acceptance rules are authoritative. */
-export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept,onRefresh,onClose,onGoOffline}:DriverLiveMapProps){
+export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept,onRefresh,onClose,onGoOffline,errorMessage}:DriverLiveMapProps){
  const target=useRef<HTMLDivElement>(null);
  const dialogRef=useRef<HTMLElement>(null);
  const closeRef=useRef<HTMLButtonElement>(null);
@@ -276,6 +277,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
     </div>
     {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
       <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
+    {errorMessage&&<div className="dm-warning-line" role="alert"><ShieldCheck size={17}/> {errorMessage}</div>}
     {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline} onClick={onRefresh}>Reintentar</button></div>}
     {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
     {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
