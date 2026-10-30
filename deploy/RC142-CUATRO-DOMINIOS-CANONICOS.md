@@ -40,3 +40,25 @@ Eliminar DNS/cloudflared de dicho hostname sin migración provocaría caída par
 - `api-stage-talaeats...` y preview son **candidatos** a retirar de exposición pública, no se supone que estén actualmente activos.
 
 **Gate comercial:** cuatro dominios visibles, API consistente, login y callbacks probados; nada de inventar tiendas o habilitar cash/delivery/payouts durante la limpieza.
+
+## Diagnóstico real de Kali del 29 de octubre (segunda auditoría)
+
+| Hostname | GET / | GET /api/v1/health |
+|---|---:|---:|
+| web-talaeats | 200 | 200 |
+| repartidores-talaeats | 302 | 200 |
+| restaurantes-talaeats | 302 | 200 |
+| tienda-talaeats | 000 | 000 |
+| talaeats (API legado) | 404 | 200 |
+| api-stage-talaeats | 404 | 200 |
+| preview-talaeats | 000 | 000 |
+
+También: `TALAEATS_CLOUDFLARED_READABLE_CONFIG_COUNT=1`; un config remoto no legible para `alan`, sin hostname de Tala Eats expuesto por los archivos legibles; dos `server_name` localizados (restaurantes y repartidores); uno de Nginx no legible. Ningún archivo / contenido privado fue mostrado. **NO se verificó el mapeo completo de Cloudflare**.
+
+Acciones seguras:
+1. Consultar únicamente campos `version/status/production/environment` del `/api/v1/health` en `web`, `talaeats`, `api-stage`; nunca imprimir tokens del backend ni confiar sólo en códigos HTTP para identificar un entorno.
+2. Auditor de mapeos host=>servicio desde cuentas con permisos adecuados, limitando impresión a hostnames Tala Eats y puertos locales. Si cloudflared es remoto, inventario manual desde Zero Trust.
+3. Determinar si `api-stage` y API legado apuntan a servicios diferentes de 18190. Mantener ambos hasta que llamadas móviles, callbacks/Stripe/webhook y acceso antiguo se migren de forma supervisada.
+4. Antes de retirar un hostname de staging, verificar que no sea destino necesario para integraciones de prueba: retirar publicidad del host puede ser admisible; borrar su backend/BD no lo es.
+
+**NO-GO:** este inventario no autoriza borrado de hostnames, ni redirecciones de webhook Stripe por HTTP 302.
