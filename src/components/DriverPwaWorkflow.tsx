@@ -36,6 +36,7 @@ export function DriverPwaWorkflow(){
  const [tab,setTab]=useState<DriverTab>('inicio');
  const [proofSheet,setProofSheet]=useState(false);
  const proofInput=useRef<HTMLInputElement>(null);
+ const profileSheetClose=useRef<HTMLButtonElement>(null);
  const [selectedDay,setSelectedDay]=useState<string|null>(null);
  const actionCooldown=useRef(0);
  const [sheet,setSheet]=useState<'vehicle'|'documents'|'security'|'help'|null>(null);
@@ -46,6 +47,8 @@ export function DriverPwaWorkflow(){
  const [mine,setMine]=useState<Order[]>([]);
  const [available,setAvailable]=useState<Order[]>([]);
  const [offersError,setOffersError]=useState(false);
+ const [browserOffline,setBrowserOffline]=useState(typeof navigator!=='undefined'&&!navigator.onLine);
+ const [refreshing,setRefreshing]=useState(false);
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[message,setMessage]=useState('');
  const [pin,setPin]=useState<Record<number,string>>({});
@@ -80,7 +83,8 @@ export function DriverPwaWorkflow(){
    if(!Array.isArray(jobs)||
       typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
     throw new Error('El backend no devolvió un estado de reparto válido.');
-   setProfile(p);setReadiness(proof);setMine(jobs);setAvailable([]);setOffersError(false);setError('');
+   setProfile(p);setReadiness(proof);setMine(jobs);
+   // Keep action errors visible and avoid offer flicker on every background sync.
    // An offers outage must not block ongoing deliveries assigned to this driver.
    void api.driverAvailable().then(offers=>{
     if(!mounted.current||version!==refreshVersion.current)return;
@@ -102,7 +106,7 @@ export function DriverPwaWorkflow(){
   }catch(e){
    if(mounted.current&&version===refreshVersion.current){
     setReadiness(null);setAvailable([]);setMine([]);setProfile(null);setOffersError(false);
-    setDashboard(null);setDashboardError(true);setError(failure(e));
+    setDashboard(null);setDashboardError(true);setError(old=>old||failure(e));
    }
   }finally{if(mounted.current&&version===refreshVersion.current)setLoading(false);}
  },[session.user?.id]);
@@ -114,6 +118,25 @@ export function DriverPwaWorkflow(){
   },15000);
   return()=>{mounted.current=false;refreshVersion.current++;window.clearInterval(interval);};
  },[refresh]);
+ useEffect(()=>{
+  // Browser connectivity is a hint, never proof of online dispatch readiness.
+  const updateConnection=()=>{
+   const offline=!navigator.onLine;
+   setBrowserOffline(offline);
+   if(!offline&&!inFlight.current)void refresh();
+  };
+  window.addEventListener('offline',updateConnection);
+  window.addEventListener('online',updateConnection);
+  return()=>{
+   window.removeEventListener('offline',updateConnection);
+   window.removeEventListener('online',updateConnection);
+  };
+ },[refresh]);
+ const manualRefresh=async()=>{
+  if(busy||refreshing)return;
+  setRefreshing(true);
+  try{await refresh();}finally{if(mounted.current)setRefreshing(false);}
+ };
 
  // Browser GPS is foreground-only. Expired TTL means "unavailable" even if
  // PostgreSQL still says online; no fake movement or cached positions.
@@ -214,11 +237,35 @@ export function DriverPwaWorkflow(){
   proofInput.current?.focus();
   const key=(e:KeyboardEvent)=>{
    if(e.key==='Escape'&&!busy){e.preventDefault();setProofSheet(false);}
+   if(e.key==='Tab'){
+    const dialog=proofInput.current?.closest('[role="dialog"]');
+    const elements=dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),a[href]');
+    if(!elements?.length)return;
+    const first=elements[0],last=elements[elements.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+   }
   };
   document.addEventListener('keydown',key);
   return()=>{document.body.style.overflow=scroll;document.removeEventListener('keydown',key);};
  },[proofSheet,busy]);
- const onTab=(t:DriverTab)=>{setTab(t);setSheet(null);setProofSheet(false);};
+ useEffect(()=>{
+  if(!sheet)return;
+  const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
+  const overflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  profileSheetClose.current?.focus();
+  const onKey=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'&&!busy){event.preventDefault();setSheet(null);}
+   if(event.key==='Tab'){event.preventDefault();profileSheetClose.current?.focus();}
+  };
+  document.addEventListener('keydown',onKey);
+  return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',onKey);previous?.focus();};
+ },[sheet,busy]);
+ const onTab=(t:DriverTab)=>{
+  if(t!==tab){setTab(t);window.scrollTo(0,0);}
+  setSheet(null);setProofSheet(false);
+ };
  const openDeliveryProof=(order:Order)=>{
   if(order.status==='on_the_way'&&canProgress&&!busy){
    setPin(old=>({...old,[order.id]:''}));
@@ -325,9 +372,11 @@ export function DriverPwaWorkflow(){
      <button type="button" className="df-outline" onClick={()=>void refresh()}>Reintentar</button>
     </section>}
     {loading&&!readiness&&<div className="df-initial-loading" role="status"><RefreshCw size={20} className="df-rotate"/> Sincronizando tu cuenta con Tala Eats…</div>}
+    {browserOffline&&<div className="df-network-banner" role="status"><WifiOff size={18}/><span>Tu dispositivo parece estar sin Internet. Los cambios requieren confirmación del servidor.</span><button type="button" onClick={()=>void manualRefresh()} disabled={refreshing||busy}>Reintentar</button></div>}
     {tab==='inicio'&&<>
       <header className="df-screen-header df-header-premium"><div><span className="df-eyebrow">TALA EATS · REPARTIDOR</span><h1>Hola, {fname}</h1><p>{todayLabel()}</p></div>
-       <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{initial}</button></header>
+       <div className="df-header-actions"><button type="button" className="df-icon-button df-sync-button" aria-label="Actualizar estado y pedidos" title="Actualizar" disabled={busy||refreshing} onClick={()=>void manualRefresh()}><RefreshCw size={21} className={refreshing?'df-rotate':undefined}/></button>
+       <button className="df-avatar" aria-label="Abrir perfil" onClick={()=>onTab('perfil')}>{initial}</button></div></header>
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
        <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
@@ -350,7 +399,13 @@ export function DriverPwaWorkflow(){
         </div>}
       </section>
       <section className="df-section">
-       <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
+       {online&&actions&&!active&&available.length>0&&<section className="df-section df-home-offers" aria-labelledby="df-home-offers-heading">
+        <div className="df-section-title"><h2 id="df-home-offers-heading">Pedidos disponibles</h2><button type="button" onClick={()=>onTab('entregas')}>Ver todos <ArrowUpRight size={15}/></button></div>
+        {available.slice(0,2).map(o=>jobCard(o,true))}
+        <p className="df-caption">Las asignaciones y ganancias se confirman en el servidor.</p>
+       </section>}
+       <section className="df-section">
+        <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
        <button className="df-surface df-metrics" onClick={()=>onTab('ganancias')} aria-label="Abrir ganancias">
         <div><small>Ganancias</small><strong>{dashboard?.today?safeAmount(dashboard.today.earnings):'—'}</strong></div>
         <div><small>Entregas</small><strong>{metric(doneToday)}</strong></div>
@@ -361,7 +416,7 @@ export function DriverPwaWorkflow(){
     </>}
     {tab==='entregas'&&<>
       <header className="df-screen-header"><div><h1>Entregas</h1><p>{dashboard?.today?('Hoy · '+metric(doneToday)+' completadas'):'Historial de entregas'}</p></div>
-       <button className="df-icon-button" aria-label="Actualizar entregas" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={21}/></button></header>
+       <button className="df-icon-button" aria-label="Actualizar entregas" disabled={busy||refreshing} onClick={()=>void manualRefresh()}><RefreshCw size={21} className={refreshing?'df-rotate':undefined}/></button></header>
       {active&&<section className="df-section"><h2>En curso</h2>{jobCard(active)}</section>}
       <section className="df-section"><div className="df-section-title"><h2>Historial validado</h2><small>{delivered.length} pedidos</small></div>
        {delivered.length?delivered.map(o=>jobCard(o)):
@@ -475,7 +530,7 @@ export function DriverPwaWorkflow(){
     </div>}
    {sheet&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>setSheet(null)}>
     <section className="df-sheet" role="dialog" aria-modal="true" aria-label="Detalle de perfil" onClick={e=>e.stopPropagation()}>
-     <button className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setSheet(null)}><X size={21}/></button>
+     <button ref={profileSheetClose} type="button" className="df-icon-button df-sheet-close" aria-label="Cerrar" onClick={()=>setSheet(null)}><X size={21}/></button>
      <span className="df-sheet-handle" aria-hidden="true"/><h2>{sheet==='vehicle'?'Mi vehículo':sheet==='documents'?'Mis documentos':sheet==='security'?'Seguridad':'Centro de ayuda'}</h2>
      {sheet==='vehicle'&&<>
       <p>Datos registrados para tus entregas.</p>
