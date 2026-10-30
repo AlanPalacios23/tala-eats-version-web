@@ -16,7 +16,7 @@ interface DeferredDriverInstall extends Event {
  userChoice?:Promise<InstallChoice>;
 }
 type IOSNavigator=Navigator&{standalone?:boolean};
-const platform:DriverInstallPlatform=typeof navigator==='undefined'?'other':driverInstallPlatform(navigator.userAgent);
+const platform:DriverInstallPlatform=typeof navigator==='undefined'?'other':driverInstallPlatform(navigator.userAgent,navigator.maxTouchPoints);
 
 function isInstalled():boolean {
  if(typeof window==='undefined')return false;
