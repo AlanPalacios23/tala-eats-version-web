@@ -1,0 +1,39 @@
+/* RC149: opt-in display ordering of real authorised offers; no new backend or GPS calls. */
+.dm-immersive .dm-offer-sort{
+ display:flex;flex-wrap:wrap;align-items:center;gap:7px;
+ margin:0 0 12px;padding:8px;border:1px solid #ebe9e3;border-radius:15px;
+ background:#f9f9f7;
+}
+.dm-immersive .dm-offer-sort-caption{
+ color:#7d756d;font-size:11px;font-weight:850;padding:0 5px 0 4px;
+}
+.dm-immersive .dm-offer-sort-option{
+ border:1px solid transparent;border-radius:11px;min-height:40px;
+ background:transparent;color:#5c625c;padding:8px 10px;
+ font-size:12px;font-weight:850;white-space:nowrap;
+ transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease;
+}
+.dm-immersive .dm-offer-sort-option.is-selected{
+ color:#ab4b1d;background:#fff;border-color:#f0d8c5;
+ box-shadow:0 2px 7px #3e281c0a;
+}
+.dm-immersive .dm-offer-sort-option:disabled{
+ color:#a8aaa3;background:transparent;opacity:.7;
+}
+.dm-immersive .dm-offer-sort-option:active:not(:disabled){transform:scale(.97)}
+.dm-immersive .dm-offer-sort-note{
+ flex:1 0 100%;color:#7b786f;font-size:10px;line-height:1.45;
+ padding:0 6px 2px;
+}
+@media(max-width:370px){
+ .dm-immersive .dm-offer-sort{gap:4px;padding:7px}
+ .dm-immersive .dm-offer-sort-caption{width:100%;font-size:10px;padding:0 4px}
+ .dm-immersive .dm-offer-sort-option{min-height:42px;font-size:11px;padding:7px 9px}
+}
+@media(hover:hover) and (pointer:fine){
+ .dm-immersive .dm-offer-sort-option:hover:not(:disabled){background:#fff1e5;color:#a84c1e}
+}
+@media(prefers-reduced-motion:reduce){
+ .dm-immersive .dm-offer-sort-option{transition:none!important}
+ .dm-immersive .dm-offer-sort-option:active:not(:disabled){transform:none!important}
+}

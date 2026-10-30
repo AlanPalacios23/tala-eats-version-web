@@ -2,13 +2,16 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Map as LeafletMap,LayerGroup} from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/driver-live-map.css';
-import {ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
+import '../styles/driver-offer-choice-rc149.css';
+import {AlertCircle,ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {Order,Restaurant} from '../lib/types';
 import {
  availableMapOffers,driverOfferMarkers,straightLineKm,validLivePosition
 } from '../lib/driver-live-map';
 import type {DriverMapPoint} from '../lib/driver-live-map';
+import {canSortOffersByProximity,sortDriverOffers} from '../lib/driver-offer-choice';
+import type {DriverOfferOrder} from '../lib/driver-offer-choice';
 
 export interface DriverLiveMapProps{
  offers:readonly Order[];
@@ -47,11 +50,15 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
  const [follow,setFollow]=useState(true);
  const [loaded,setLoaded]=useState(false);
  const [expanded,setExpanded]=useState(false);
+ const [offerOrder,setOfferOrder]=useState<DriverOfferOrder>('received');
 
  const readyOffers=useMemo(()=>availableMapOffers(offers,dismissed,eligible&&!offline),[offers,dismissed,eligible,offline]);
  const markers=useMemo(()=>driverOfferMarkers(readyOffers,catalog),[readyOffers,catalog]);
+ const canSortNearby=canSortOffersByProximity(position,markers);
+ const effectiveOfferOrder=offerOrder==='nearby'&&!canSortNearby?'received':offerOrder;
+ const sortedOffers=useMemo(()=>sortDriverOffers(readyOffers,effectiveOfferOrder,markers,position),[readyOffers,effectiveOfferOrder,markers,position]);
  const center=position??markers[0]?.point??null;
- const selected=readyOffers.find(o=>o.id===selectedId)??readyOffers[0]??null;
+ const selected=sortedOffers.find(o=>o.id===selectedId)??sortedOffers[0]??null;
  const selectedMarker=markers.find(m=>m.order.id===selected?.id);
  const hasOffers=offers.length>0;
  const offerCount=readyOffers.length;
@@ -310,9 +317,21 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     </div>
     {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
       <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
-    {errorMessage&&<div className="dm-warning-line" role="alert"><ShieldCheck size={17}/> {errorMessage}</div>}
+    {errorMessage&&<div className="dm-warning-line" role="alert"><AlertCircle size={17}/> {errorMessage}</div>}
     {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline||refreshing} onClick={onRefresh}>Reintentar</button></div>}
     {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
+    {eligible&&sortedOffers.length>1&&<div className="dm-offer-sort" role="group" aria-label="Ordenar pedidos disponibles">
+     <span className="dm-offer-sort-caption">Ordenar</span>
+     {([{key:'received',label:'Recibidos'},{key:'earnings',label:'Ganancia'},{key:'nearby',label:'Cercanía'}] as const).map(item=>
+      <button key={item.key} type="button" className={'dm-offer-sort-option'+(effectiveOfferOrder===item.key?' is-selected':'')}
+       aria-pressed={effectiveOfferOrder===item.key}
+       disabled={item.key==='nearby'&&!canSortNearby}
+       title={item.key==='nearby'?'Distancia en línea recta a la recogida, requiere GPS y ubicación pública':undefined}
+       onClick={()=>setOfferOrder(item.key)}>{item.label}</button>)}
+     {(!canSortNearby||effectiveOfferOrder==='nearby')&&<small className="dm-offer-sort-note">
+      {canSortNearby?'Cercanía calcula solo distancia en línea recta, no tiempo de viaje.':'Para ordenar por cercanía necesitas GPS y ubicaciones públicas de los comercios.'}
+     </small>}
+    </div>}
     {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
      <div className="dm-offer-row">
       <span className="dm-order">PEDIDO #{selected.id}</span>
@@ -336,8 +355,8 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      </div>
      <p className="dm-privacy">Descartar solo oculta la oferta en esta sesión; no la rechaza en el servidor.</p>
     </article>}
-    {eligible&&readyOffers.length>1&&<div className="dm-offer-strip" aria-label="Cambiar de oferta">
-     {readyOffers.filter(o=>o.id!==selected?.id).slice(0,8).map(o=>
+    {eligible&&sortedOffers.length>1&&<div className="dm-offer-strip" aria-label="Cambiar de oferta">
+     {sortedOffers.filter(o=>o.id!==selected?.id).slice(0,8).map(o=>
       <button type="button" key={o.id} onClick={()=>focusOffer(o)}
        className="dm-mini-offer"><span>#{o.id}</span> <strong>{o.driver_earning!=null?pesos(o.driver_earning):'Ver pedido'}</strong><ArrowRight size={15}/></button>)}
     </div>}
