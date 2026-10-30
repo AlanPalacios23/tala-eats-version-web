@@ -15,6 +15,7 @@ export interface DriverLiveMapProps{
  eligible:boolean;
  offline:boolean;
  busy:boolean;
+ refreshing:boolean;
  offersError:boolean;
  onAccept:(order:Order)=>void;
  onRefresh:()=>void;
@@ -29,7 +30,7 @@ const motionAllowed=()=>!window.matchMedia?.('(prefers-reduced-motion: reduce)')
 /** Opt-in foreground map: never caches coordinates, location history, or
  * private order payloads. External map tiles see a viewport, not our API data.
  * Server dispatch/acceptance rules are authoritative. */
-export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept,onRefresh,onClose,onGoOffline,errorMessage}:DriverLiveMapProps){
+export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersError,onAccept,onRefresh,onClose,onGoOffline,errorMessage}:DriverLiveMapProps){
  const target=useRef<HTMLDivElement>(null);
  const dialogRef=useRef<HTMLElement>(null);
  const closeRef=useRef<HTMLButtonElement>(null);
@@ -285,8 +286,11 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
       title="Ver todos los puntos de recogida" aria-label="Ver todos los pedidos en el mapa"><MapPin size={20}/></button>}
    <button type="button" className="dm-round-button" disabled={!position} onClick={centerMe}
      title="Mi ubicación" aria-label="Centrar mapa en mi ubicación"><LocateFixed size={22}/></button>
-   <button type="button" className="dm-round-button" onClick={onRefresh} disabled={busy||offline}
-     title="Actualizar pedidos" aria-label="Actualizar los pedidos disponibles"><RefreshCw size={19}/></button>
+   <button type="button" className="dm-round-button dm-refresh-button" onClick={onRefresh}
+     disabled={busy||offline||refreshing} aria-busy={refreshing}
+     title={refreshing?'Actualizando pedidos…':'Actualizar pedidos'}
+     aria-label={refreshing?'Actualizando los pedidos disponibles':'Actualizar los pedidos disponibles'}>
+     <RefreshCw size={19} className={refreshing?'dm-refresh-icon is-refreshing':undefined}/></button>
   </div>
 
   <section className="dm-offer-panel" aria-label="Panel inferior de pedidos disponibles">
@@ -307,7 +311,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
     {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
       <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
     {errorMessage&&<div className="dm-warning-line" role="alert"><ShieldCheck size={17}/> {errorMessage}</div>}
-    {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline} onClick={onRefresh}>Reintentar</button></div>}
+    {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline||refreshing} onClick={onRefresh}>Reintentar</button></div>}
     {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
     {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
      <div className="dm-offer-row">

@@ -1,0 +1,48 @@
+/* RC148 — small workflow refinements, no restructuring of RC146/147 surfaces. */
+.df-app .df-active-trip-return{
+ display:flex;align-items:center;gap:12px;width:100%;
+ padding:12px 14px;margin:0 0 19px;
+ text-align:left;border:1px solid #efd7c5;border-radius:18px;
+ background:linear-gradient(115deg,#fffaf5 0%,#fff 90%);
+ color:#293229;box-shadow:0 5px 17px #9f57200b;
+ cursor:pointer;touch-action:manipulation;
+ transition:background-color .17s ease,border-color .17s ease,transform .17s ease;
+}
+.df-app .df-active-trip-icon{
+ display:grid;place-items:center;flex:none;
+ width:43px;height:43px;border-radius:14px;
+ background:#fff0e6;color:#b45020;
+}
+.df-app .df-active-trip-text{display:grid;gap:3px;min-width:0;flex:1}
+.df-app .df-active-trip-text strong{font-size:13px;font-weight:850;line-height:1.35;overflow-wrap:anywhere}
+.df-app .df-active-trip-text small{font-size:12px;line-height:1.35;color:#637065}
+.df-app .df-active-trip-go{
+ display:inline-flex;align-items:center;gap:3px;flex:none;
+ font-size:12px;font-weight:850;color:#a54c1f;
+}
+.df-app .df-active-trip-return:focus-visible{
+ outline:3px solid #f4a679;outline-offset:3px;
+}
+.df-app .df-active-trip-return:active{background:#fff2e7;transform:scale(.988)}
+.dm-immersive .dm-refresh-button[aria-busy="true"]{
+ color:#a9572b;opacity:.82;
+}
+.dm-immersive .dm-refresh-icon.is-refreshing{
+ animation:dm148-refresh 1s linear infinite;transform-origin:center;
+}
+@keyframes dm148-refresh{to{transform:rotate(360deg)}}
+@media(hover:hover) and (pointer:fine){
+ .df-app .df-active-trip-return:hover{background:#fff7ee;border-color:#eac5a9}
+}
+@media(max-width:350px){
+ .df-app .df-active-trip-return{padding:10px;gap:8px}
+ .df-app .df-active-trip-icon{width:39px;height:39px}
+ .df-app .df-active-trip-go{font-size:11px;gap:1px}
+ .df-app .df-active-trip-text strong{font-size:12px}
+ .df-app .df-active-trip-text small{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-active-trip-return{transition:none!important}
+ .df-app .df-active-trip-return:active{transform:none!important}
+ .dm-immersive .dm-refresh-icon.is-refreshing{animation:none!important}
+}
