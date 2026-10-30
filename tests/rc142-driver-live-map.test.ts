@@ -52,7 +52,7 @@ describe('RC142 live driver map: verified dispatch and map privacy',()=>{
   expect(map).not.toContain('setInterval(');
  });
  it('only renders on confirmed online presence; accepting always calls existing guarded API',()=>{
-  expect(app).toContain('{online&&<DriverLiveMap');
+  expect(app).toContain('{online&&mapOpen&&!active&&<DriverLiveMap');
   expect(app).toContain('eligible={actions&&!active}');
   expect(app).toContain('offers={active?[]:available}');
   expect(app).toContain("onAccept={order=>{void guardedAction(()=>api.driverAccept(order.id)");
