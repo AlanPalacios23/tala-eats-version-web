@@ -9,6 +9,7 @@ const read=(p:string)=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const map=read('src/components/DriverLiveMap.tsx');
 const app=read('src/components/DriverPwaWorkflow.tsx');
 const nginx=read('deploy/nginx-repartidores-isolated-server.conf');
+const audit=read('deploy/rc141-kali-driver-security-audit.sh');
 const sw=read('public/sw-repartidor.js');
 const makeOrder=(id=10,restaurant_id=5):Order=>({
  id,restaurant_id,status:'ready',order_type:'delivery',payment_method:'cash',
@@ -70,6 +71,7 @@ describe('RC142 live driver map: verified dispatch and map privacy',()=>{
  });
  it('requires explicit map-tile CSP and OSM attribution, with private app policies intact',()=>{
   expect(nginx.match(/img-src 'self' data: blob: https:\/\/tile\.openstreetmap\.org;/g)?.length).toBe(8);
+  expect(audit).toContain("img-src 'self' data: blob: https://tile.openstreetmap.org");
   expect(map).toContain("referrerPolicy:'strict-origin-when-cross-origin'");
   expect(map).toContain("https://tile.openstreetmap.org/{z}/{x}/{y}.png");
   expect(map).toContain('© OpenStreetMap');
