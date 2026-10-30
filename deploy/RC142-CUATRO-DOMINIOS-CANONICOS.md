@@ -76,3 +76,22 @@ El operador ejecutó un lector de hostnames/puertos con sudo y obtuvo los siguie
 **Bloqueadores nuevos:** determinar si los dos mapeos del host `talaeats` pertenecen a un mismo config Cloudflared (en tal caso el primer ingress que coincida gana) o a configuraciones/instancias diferentes; determinar qué servicio existe en 18191. Reglas reales se comprueban con `cloudflared tunnel --config PATH ingress rule URL` (ver documentación oficial) y PID/config real activo. Retirar regla duplicada sólo después de pruebas de reglas y backup.
 
 **Seguridad:** exponer producción con nombre `api-stage` es confuso y potencialmente peligroso. Programar su retiro público, pero **no** hacerlo sin comprobar integraciones existentes. Los puertos locales de Nginx y backend son servicios de un único servidor, no cuatro instancias API.
+
+## Tercer diagnóstico: ruta ACTIVA de Cloudflared (verificada por operador)
+
+**El proceso Cloudflared en ejecución está usando `/etc/cloudflared/config.yml`.** El comando `cloudflared tunnel --config /etc/cloudflared/config.yml ingress rule ...` confirmó:
+- `talaeats.alan-palacios-dev.com` => primera regla que coincide **#1**, `http://127.0.0.1:18190`.
+- `api-stage-talaeats.alan-palacios-dev.com` => regla **#2**, `http://127.0.0.1:18190` (alias de producción, **no staging aislado**).
+- `web-talaeats.alan-palacios-dev.com` => regla **#3**, `http://127.0.0.1:18195`.
+- La configuración `/home/alan/.cloudflared/config.yml` respondió para dichos hosts sólo con su regla genérica **#4 `http_status:404`**; no es la configuración Cloudflared en ejecución.
+- HTTP local `18190/api/v1/health`: **200** con `status=ok`, `version=rc8.13-unified-live`, `production=true`. Este campo de versión es una etiqueta de aplicación, **no prueba por sí solo el SHA del commit LIVE**.
+- HTTP local `18191/api/v1/health`: **404**; no se infiere que el puerto entero esté libre ni que el proceso pueda borrarse.
+- Las consultas al endpoint `/api/v1/health` por Python `urlopen` externo devolvieron `NO_VERIFICADO`, mientras que el auditor `curl` anterior había confirmado HTTP 200 para web/restaurantes/repartidores/talaeats/api-stage.
+
+### Acciones aprobables por orden, todavía NO ejecutadas
+1. Conservar inmediatamente los tres orígenes PWA 18195/18197/18199 y API LIVE 18190. No modificar el tunnel ni PM2 por este diagnóstico.
+2. Investigar consumidores de `api-stage-talaeats`, pues apunta a dinero LIVE bajo un nombre de staging. Bloquear su exposición pública sólo después de confirmar llamadas y dependencias, conservando rollback.
+3. Mantener `talaeats` público por ahora: Flutter Clientes/Restaurantes/Repartidor lo usan por defecto, así como callbacks Stripe Connect y recuperación de contraseña. Migrar dependencias y emitir nuevas apps antes del retiro.
+4. Validar quién escucha en 18191 mediante `sudo ss -lntp '( sport = :18191 )'` de sólo lectura; no inferir servicio por un 404.
+5. Tienda sigue sin PWA ni hostname DNS efectivo (HTTP 000); no prometer cuarto sitio instalado.
+6. Durante el futuro cutover del webhook Stripe, preservar POST firmado sin redirección y probar conciliación/eventos duplicados; no eliminar el API viejo por criterio cosmético.
