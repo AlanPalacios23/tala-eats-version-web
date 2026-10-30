@@ -1,0 +1,44 @@
+name: "RC14.2 | Domain audit syntax and Python parse"
+on:
+  push:
+    branches: [chore/four-canonical-domains-audit-20261029]
+    paths:
+      - deploy/rc142-auditar-dominios-solo-lectura.sh
+      - .github/workflows/rc142-domain-audit-ci.yml
+  pull_request:
+    branches: [feat/rc141-driver-native-ux-resilience-20261029]
+permissions:
+  contents: read
+jobs:
+  readonly-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n deploy/rc142-auditar-dominios-solo-lectura.sh
+      - name: Embedded Python syntax
+        run: |
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          p=Path('deploy/rc142-auditar-dominios-solo-lectura.sh').read_text()
+          marker="python3 <<'PY'\n"
+          assert p.count(marker)==1
+          python=p.split(marker,1)[1].split("\nPY\n",1)[0]
+          ast.parse(python)
+          print('TALAEATS_DOMAIN_PYTHON_SYNTAX=PASS')
+          PY
+      - name: No TLS bypass and no destructive DNS/nginx commands
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('deploy/rc142-auditar-dominios-solo-lectura.sh').read_text()
+          assert 'curl -k' not in p
+          assert 'TALAEATS_API_HEALTH_HTTP=' in p
+          assert 'if not path.is_file():' in p
+          assert 'except (OSError, PermissionError):' in p
+          for forbidden in ('cloudflared tunnel delete','systemctl restart','rm -rf /etc','nginx -s reload','stripe transfers create'):
+              assert forbidden not in p
+          print('TALAEATS_DOMAIN_AUDIT_READ_ONLY_GATES=PASS')
+          PY
