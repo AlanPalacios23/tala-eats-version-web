@@ -1,0 +1,44 @@
+/* Native-feeling, dismissible PWA install card for the isolated Driver origin. */
+.di-notice{position:fixed;z-index:145;bottom:calc(14px + env(safe-area-inset-bottom));
+ left:50%;transform:translateX(-50%);width:min(calc(100% - 24px),450px);max-height:min(68dvh,360px);
+ overflow:auto;background:#fff;border:1px solid #ece3da;border-radius:24px;
+ color:#25211f;box-shadow:0 17px 55px #23130f2a;padding:18px 18px 16px;
+ font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+ animation:di-enter .26s cubic-bezier(.2,.8,.2,1) both}
+.dd-standalone:has(.df-bottom-nav) .di-notice{bottom:calc(152px + env(safe-area-inset-bottom))}
+.di-heading{display:flex;align-items:center;gap:11px}
+.di-heading>img{width:46px;height:46px;border-radius:14px;object-fit:cover;flex:none;background:#fff3e8}
+.di-heading>div{min-width:0;flex:1;display:grid;gap:4px}
+.di-eyebrow{color:#a75c35;font-size:10px;font-weight:900;letter-spacing:1.05px}
+.di-heading strong{font-size:16px;font-weight:850;letter-spacing:-.4px;display:flex;align-items:center;gap:7px}
+.di-heading strong>svg{color:#e8712d;flex:none}
+.di-close{flex:none;align-self:flex-start;width:38px;height:38px;display:grid;place-items:center;
+ border:0;border-radius:12px;background:#f6f4f1;color:#6b625d}
+.di-notice>p{font-size:13px;line-height:1.55;color:#66615d;margin:13px 0 14px}
+.di-steps{display:flex;align-items:flex-start;gap:11px;padding:12px;background:#fff7f0;
+ border:1px solid #f2dfcf;border-radius:14px;color:#68442e;font-size:12px;line-height:1.6;margin:0 0 12px}
+.di-steps>svg{flex:none;margin-top:2px;color:#d76829}
+.di-actions{display:flex;gap:8px}
+.di-install{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:1;
+ min-height:49px;padding:10px 12px;background:#ef6b2b;color:white;border:0;border-radius:13px;
+ font-size:14px;font-weight:850;line-height:1.25}
+.di-install:active:not(:disabled){transform:scale(.985)}
+.di-install:disabled{opacity:.65}
+.di-later{min-height:49px;padding:10px 15px;border:1px solid #e6e2dc;border-radius:13px;
+ color:#625d57;background:#fff;font-size:13px;font-weight:800}
+.di-reopen{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ min-height:46px;padding:10px 15px;border-radius:13px;border:1px solid #eddacc;
+ color:#aa5024;background:#fffaf6;font-size:13px;font-weight:800}
+.di-reopen:active{background:#ffede0}
+.di-notice :is(button):focus-visible,.di-reopen:focus-visible{outline:3px solid #f7a56d;outline-offset:2px}
+@keyframes di-enter{from{opacity:0;transform:translate(-50%,15px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(max-width:360px){.di-notice{padding:15px 14px;border-radius:19px}
+ .di-heading strong{font-size:14px}.di-actions{gap:6px}.di-install{font-size:13px}
+ .di-later{padding-inline:10px}
+ .dd-standalone:has(.df-bottom-nav) .di-notice{bottom:calc(133px + env(safe-area-inset-bottom))}}
+@media(max-height:600px){.di-notice{max-height:53dvh}}
+@media(prefers-reduced-motion:reduce){.di-notice{animation:none}.di-install:active{transform:none}}
+
+.df-driver-install-entry{display:flex;align-items:center;justify-content:center;margin:16px 0 12px}
+.df-install-inline{display:flex;justify-content:center;margin:16px 0 8px}
+.df-driver-install-entry .di-reopen,.df-install-inline .di-reopen{width:100%;max-width:370px}

@@ -4,6 +4,7 @@ import {useSession} from './lib/session';
 import {DriverPwaWorkflow} from './components/DriverPwaWorkflow';
 import {DriverAccess,DriverRegistration,DriverBrand} from './components/DriverRegistration';
 import {PREVIEW_READONLY} from './lib/preview';
+import {DriverPwaInstallNotice} from './components/DriverPwaInstall';
 
 /** Dedicated driver origin. It does not import customer checkout or restaurant UIs.
  * Role is verified via SAME-ORIGIN authenticated /api/v1/auth/me and on every API action.
@@ -30,5 +31,6 @@ export default function DriverStandalone(){
     <p>Accede a tus entregas desde la aplicación de Repartidores.</p><Link to="/repartidor">Ir a Repartidor</Link>
     <a href="https://web-talaeats.alan-palacios-dev.com/">Ir al portal Tala Eats</a></main>}/>
   </Routes>
+  <DriverPwaInstallNotice/>
  </div>;
 }
