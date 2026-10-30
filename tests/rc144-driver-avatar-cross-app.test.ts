@@ -30,7 +30,9 @@ describe('RC144 persistent courier profile image',()=>{
  it('driver profile UI supports uploading, changing, error and avatar propagation',()=>{
   expect(app).toContain('prepareDriverAvatar(file)');
   expect(app).toContain('await api.driverUploadAvatar(safeBlob)');
-  expect(app).toContain('setUploadedAvatar(updated.avatar_url)');
+  expect(app).toContain('setUploadedAvatar({userId:actorId!,url:updated.avatar_url})');
+  expect(app).toContain('uploadedAvatar?.userId===session.user?.id');
+  expect(app).toContain('dashboard?.user?.id===session.user?.id');
   expect(app).toContain("avatarUrl?'Cambiar foto':'Subir foto'");
   expect(app).toContain("accept=\"image/jpeg,image/png,image/webp,image/heic,image/heif\"");
   expect(app).toContain('role="alert" className="df-avatar-error"');
