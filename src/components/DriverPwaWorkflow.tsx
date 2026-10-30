@@ -57,6 +57,7 @@ export function DriverPwaWorkflow(){
  const refreshVersion=useRef(0);
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
  const online=readiness?.online===true;
+ const operationsBlocked=browserOffline||busy;
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
  const canProgress=driverCanProgressExistingDelivery(readiness,actionOptIn);
@@ -237,7 +238,7 @@ export function DriverPwaWorkflow(){
   document.body.style.overflow='hidden';
   proofInput.current?.focus();
   const key=(e:KeyboardEvent)=>{
-   if(e.key==='Escape'&&!busy){e.preventDefault();setProofSheet(false);}
+   if(e.key==='Escape'&&!busy){e.preventDefault();closeDeliveryProof();}
    if(e.key==='Tab'){
     const dialog=proofInput.current?.closest('[role="dialog"]');
     const elements=dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),a[href]');
@@ -263,9 +264,23 @@ export function DriverPwaWorkflow(){
   document.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',onKey);previous?.focus();};
  },[sheet,busy]);
+ const closeDeliveryProof=()=>{
+  setProofSheet(false);
+  setPin({});
+  setCashReceived({});
+ };
+ useEffect(()=>{
+  const onHidden=()=>{
+   if(document.visibilityState==='hidden'){
+    setProofSheet(false);setPin({});setCashReceived({});
+   }
+  };
+  document.addEventListener('visibilitychange',onHidden);
+  return()=>document.removeEventListener('visibilitychange',onHidden);
+ },[]);
  const onTab=(t:DriverTab)=>{
   if(t!==tab){setTab(t);window.scrollTo(0,0);}
-  setSheet(null);setProofSheet(false);
+  setSheet(null);closeDeliveryProof();
  };
  const openDeliveryProof=(order:Order)=>{
   if(order.status==='on_the_way'&&canProgress&&!busy){
@@ -275,7 +290,7 @@ export function DriverPwaWorkflow(){
   }
  };
  const completeDelivery=async(order:Order)=>{
-  if(!canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true))return;
+  if(browserOffline||!canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true))return;
   await guardedAction(async()=>{
    await api.driverComplete(order.id,pin[order.id]??'');
    if(mounted.current){
@@ -339,27 +354,27 @@ export function DriverPwaWorkflow(){
     </div>}
     {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
     {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
-    {offer?actions&&<button type="button" className="df-primary" disabled={busy||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
+    {offer?actions&&<button type="button" className="df-primary" disabled={operationsBlocked||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
      canProgress&&tab!=='inicio'&&<div className="df-job-actions">
-      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
-      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>Iniciar ruta al cliente</button>}
-      {o.status==='on_the_way'&&<button type="button" className="df-primary" disabled={busy} onClick={()=>openDeliveryProof(o)}>
+      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
+      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>Iniciar ruta al cliente</button>}
+      {o.status==='on_the_way'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>openDeliveryProof(o)}>
        Validar entrega con PIN <ArrowUpRight size={17}/></button>}
      </div>}
    </article>;
   };
  const homeAction=tab!=='inicio'?null:!online?{
   label:'Conectarme',
-  disabled:busy||cannotReceive||!!active,
+  disabled:operationsBlocked||cannotReceive||!!active,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();void setOnline(true);}}
  }:active?.status==='assigned'&&canProgress?{
-  label:'Confirmar recogida',disabled:busy,
+  label:'Confirmar recogida',disabled:operationsBlocked,
   press:()=>{void guardedAction(()=>api.driverStatus(active.id,'picked_up'),'Recogida confirmada por el servidor.',true);}
  }:active?.status==='picked_up'&&canProgress?{
-  label:'En camino al cliente',disabled:busy,
+  label:'En camino al cliente',disabled:operationsBlocked,
   press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true);}
  }:active?.status==='on_the_way'&&canProgress?{
-  label:'Validar entrega con PIN',disabled:busy,
+  label:'Validar entrega con PIN',disabled:operationsBlocked,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();openDeliveryProof(active);}}
  }:null;
  const fname=(session.user?.name||dashboard?.user?.name||'Repartidor').trim().split(/\s+/)[0];
@@ -381,9 +396,9 @@ export function DriverPwaWorkflow(){
       <section className={'df-availability df-surface '+(online?'is-online':'')} aria-label="Tu disponibilidad">
        <span className={'df-status-dot '+(online?'active':'')}/>
        <div className="df-availability-text"><strong>{!readiness?'Sin conexión':online?'En línea':'Fuera de línea'}</strong>
-        <small>{active?'Entrega en curso':online?(reachable?'Listo para nuevas asignaciones':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
+        <small id="df-availability-desc">{active?'Entrega en curso':online?(reachable?'Listo para nuevas asignaciones':'Esperando GPS vigente'):'No recibirás pedidos nuevos'}</small></div>
        <button className={'df-switch '+(online?'on':'')} type="button" role="switch" aria-checked={online}
-        aria-label="Cambiar disponibilidad" disabled={busy||!!active||readiness?.presence_enabled!==true||!readiness?.admin_verified}
+        aria-label="Cambiar disponibilidad" aria-describedby="df-availability-desc" disabled={operationsBlocked||!!active||readiness?.presence_enabled!==true||!readiness?.admin_verified}
         onClick={()=>void setOnline(!online)}><span/></button>
       </section>
       {readiness?.admin_verified!==true&&<div className="df-alert df-alert-info"><ShieldCheck size={19}/> Tu cuenta debe estar aprobada por ADMIN antes de conectarte.</div>}
@@ -505,9 +520,9 @@ export function DriverPwaWorkflow(){
       <span className="df-nav-icon"><t.Icon size={24} strokeWidth={tab===t.key?2.6:1.9}/>{t.key==='inicio'&&active&&tab!=='inicio'&&<i className="df-active-pip"/>}</span><span className="df-nav-label">{t.label}</span>
      </button>)}
    </nav>
-   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>{if(!busy)setProofSheet(false);}}>
+   {proofSheet&&active?.status==='on_the_way'&&<div className="df-sheet-backdrop" role="presentation" onClick={()=>{if(!busy)closeDeliveryProof();}}>
      <section className="df-sheet df-proof-sheet" role="dialog" aria-modal="true" aria-labelledby="df-proof-title" aria-describedby="df-proof-description" onClick={e=>e.stopPropagation()}>
-      <button type="button" className="df-icon-button df-sheet-close" aria-label="Cerrar" disabled={busy} onClick={()=>setProofSheet(false)}><X size={21}/></button>
+      <button type="button" className="df-icon-button df-sheet-close" aria-label="Cerrar" disabled={busy} onClick={closeDeliveryProof}><X size={21}/></button>
       <span className="df-sheet-handle" aria-hidden="true"/>
       <span className="df-eyebrow">PEDIDO #{active.id} · ÚLTIMO PASO</span>
       <h2 id="df-proof-title">Confirmar entrega</h2>
@@ -524,7 +539,7 @@ export function DriverPwaWorkflow(){
         onChange={e=>setPin(old=>({...old,[active.id]:sanitizeDeliveryPin(e.target.value)}))}/>
       </label>
       <p className="df-proof-note"><ShieldCheck size={16}/> El PIN no se guarda en este dispositivo. La evidencia fotográfica no está habilitada en esta versión.</p>
-      <button type="button" className="df-primary" disabled={busy||!canProgress||!canSubmitDelivery(active,pin[active.id]??'',cashReceived[active.id]===true)}
+      <button type="button" className="df-primary" disabled={operationsBlocked||!canProgress||!canSubmitDelivery(active,pin[active.id]??'',cashReceived[active.id]===true)}
        onClick={()=>void completeDelivery(active)}>
        {busy?'Validando en el servidor…':'Confirmar entrega de forma segura'}</button>
      </section>
