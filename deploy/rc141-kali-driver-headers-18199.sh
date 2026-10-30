@@ -5,6 +5,9 @@
 # the existing isolated Nginx master; failed checks restore old config.
 set -Eeuo pipefail
 set +x
+# These scripts may run as root. Never let read-only git status refresh or
+# replace tala-node-stage's .git/index with a root-owned file.
+export GIT_OPTIONAL_LOCKS=0
 umask 077
 MODE="${1:-}" SHA="${2:-}" TOKEN="${3:-}"
 APPROVE_APPLY=I_APPROVE_RC141_DRIVER_HEADERS_18199_ONLY
