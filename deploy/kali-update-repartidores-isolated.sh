@@ -2,6 +2,9 @@
 # Update/rollback ONLY Restaurante isolated static site 18199; no config reload.
 set -Eeuo pipefail
 set +x
+# These scripts may run as root. Never let read-only git status refresh or
+# replace tala-node-stage's .git/index with a root-owned file.
+export GIT_OPTIONAL_LOCKS=0
 umask 022
 MODE="${1:-}" SHA="${2:-}" APPROVAL="${3:-}"
 ROOT='/srv/talaeats-repartidores-pwa'
