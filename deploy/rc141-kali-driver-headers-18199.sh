@@ -40,8 +40,13 @@ done
  -f "$CANDIDATE" && ! -L "$CANDIDATE" && -f "$AUDIT" && ! -L "$AUDIT" ]] || {
  echo RC141_HEADERS=HOLD_FILES;exit 2;
 }
-[[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
+actual="$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" || {
+ echo RC141_HEADERS=HOLD_GIT_REV_PARSE;exit 2;
+}
+tracked="$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" || {
+ echo RC141_HEADERS=HOLD_GIT_INDEX_UNREADABLE;exit 2;
+}
+[[ "$actual" == "$SHA" && -z "$tracked" ]] || {
  echo RC141_HEADERS=HOLD_SOURCE_SHA;exit 2;
 }
 [[ "$(systemctl show "$SERVICE" -p User --value)" == www-data &&
