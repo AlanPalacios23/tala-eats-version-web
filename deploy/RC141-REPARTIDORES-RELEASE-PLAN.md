@@ -30,11 +30,32 @@ sudo bash /home/tala-node-stage/tala-eats-web-releases/<WEB_SHA40>/deploy/rc141-
 sudo bash /home/tala-node-stage/tala-eats-web-releases/<WEB_SHA40>/deploy/rc141-kali-driver-security-audit.sh --public
 ```
 
-If either returns `RC141_SECURITY=HOLD_...`, record it. It is evidence of
-a server-side gap and requires a separately reviewed, isolated
-`18199`-only config change. **Do not run an unreviewed config update,
-chmod 600 or restart the public 18195 Nginx service.**
-Successful status is `RC141_SECURITY_READ_ONLY=PASS`.
+The currently installed Nginx configuration may legitimately report
+`RC141_SECURITY=HOLD_...` before we apply the new security template. This is
+a security finding, not a reason to restart the portal or ignore the header gap.
+
+After the exact SHA build and main/driver health preflight are PASS, the
+separate **driver-only headers** tool provides a safe, isolated
+`--plan` / `--apply` / `--rollback` path. It validates the exact Nginx
+master PID and config identity, preserves a root-only backup outside the
+served directory, installs `root:www-data 0640`, performs `nginx -t` as
+`www-data`, sends HUP **only** to the active 18199 service and runs the
+HTTP security audits. It automatically restores the prior config on a HOLD.
+
+```bash
+WEB_SHA='<WEB_SHA40>'
+HDR="/home/tala-node-stage/tala-eats-web-releases/$WEB_SHA/deploy/rc141-kali-driver-headers-18199.sh"
+sudo bash "$HDR" --plan "$WEB_SHA"
+# Only after a PASS and explicit operator consent, activate headers:
+sudo bash "$HDR" --apply "$WEB_SHA" I_APPROVE_RC141_DRIVER_HEADERS_18199_ONLY
+# Separate recovery command if needed:
+sudo bash "$HDR" --rollback "$WEB_SHA" I_APPROVE_RC141_DRIVER_HEADERS_ROLLBACK
+```
+
+**Never run --rollback after a failed --apply if the script already restored
+the previous config.** Do not change `/etc/talaeats-web-pwa`, the 18195
+service or any other PWA. Successful status is
+`RC141_SECURITY_READ_ONLY=PASS` in both local and public audits.
 
 ## Phase 1: pinned checkout and isolated build (service user, no LIVE writes)
 
