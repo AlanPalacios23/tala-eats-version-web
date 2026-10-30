@@ -8,6 +8,7 @@ import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
+import {DriverPwaInstallButton} from './DriverPwaInstall';
 import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
 import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
 type DriverDash=DriverDashboardPayload;
@@ -482,6 +483,7 @@ export function DriverPwaWorkflow(){
        <button onClick={()=>setSheet('security')}><ShieldCheck size={21}/><span><strong>Seguridad</strong><small>Acceso y sesión</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('help')}><HelpCircle size={21}/><span><strong>Ayuda</strong><small>Problemas frecuentes en una entrega</small></span><ChevronRight size={19}/></button>
       </div></section>
+      <div className="df-driver-install-entry"><DriverPwaInstallButton/></div>
       <button className="df-logout" disabled={busy} onClick={()=>void doLogout()}><LogOut size={18}/> Cerrar sesión</button>
       <p className="df-version">Tala Eats Repartidor · Basado en Flutter v1.2.4</p>
     </>}
