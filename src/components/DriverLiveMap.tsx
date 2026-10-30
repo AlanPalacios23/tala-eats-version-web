@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Map as LeafletMap,LayerGroup} from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/driver-live-map.css';
+import '../styles/driver-offer-choice-rc149.css';
 import {AlertCircle,ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {Order,Restaurant} from '../lib/types';
@@ -327,6 +328,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
        disabled={item.key==='nearby'&&!canSortNearby}
        title={item.key==='nearby'?'Distancia en línea recta a la recogida, requiere GPS y ubicación pública':undefined}
        onClick={()=>setOfferOrder(item.key)}>{item.label}</button>)}
+     {(!canSortNearby||effectiveOfferOrder==='nearby')&&<small className="dm-offer-sort-note">
+      {canSortNearby?'Cercanía calcula solo distancia en línea recta, no tiempo de viaje.':'Para ordenar por cercanía necesitas GPS y ubicaciones públicas de los comercios.'}
+     </small>}
     </div>}
     {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
      <div className="dm-offer-row">
