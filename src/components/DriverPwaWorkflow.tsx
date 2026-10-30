@@ -45,7 +45,7 @@ export function DriverPwaWorkflow(){
  const avatarInput=useRef<HTMLInputElement>(null);
  const [avatarSaving,setAvatarSaving]=useState(false);
  const [avatarError,setAvatarError]=useState('');
- const [uploadedAvatar,setUploadedAvatar]=useState<string|null>(null);
+ const [uploadedAvatar,setUploadedAvatar]=useState<{userId:number;url:string}|null>(null);
  const profileSheetClose=useRef<HTMLButtonElement>(null);
  const [selectedDay,setSelectedDay]=useState<string|null>(null);
  const actionCooldown=useRef(0);
@@ -67,7 +67,11 @@ export function DriverPwaWorkflow(){
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
  const online=readiness?.online===true;
  const operationsBlocked=browserOffline||busy;
- const avatarUrl=trustedDriverAvatarUrl(uploadedAvatar??dashboard?.user?.avatar_url);
+ // Never show a previous courier's image after switching authenticated accounts.
+ const avatarUrl=trustedDriverAvatarUrl(
+  uploadedAvatar?.userId===session.user?.id?uploadedAvatar.url:
+  dashboard?.user?.id===session.user?.id?dashboard.user.avatar_url:null
+ );
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
  const canProgress=driverCanProgressExistingDelivery(readiness,actionOptIn);
@@ -398,12 +402,14 @@ export function DriverPwaWorkflow(){
   }:null;
  async function changeAvatar(file:File){
   if(avatarSaving||browserOffline)return;
+  const actorId=session.user?.id;
+  if(!Number.isSafeInteger(actorId))return;
   setAvatarSaving(true);setAvatarError('');
   try{
    const safeBlob=await prepareDriverAvatar(file);
    const updated=await api.driverUploadAvatar(safeBlob);
    if(mounted.current){
-    setUploadedAvatar(updated.avatar_url);
+    setUploadedAvatar({userId:actorId!,url:updated.avatar_url});
     setMessage('Fotografía guardada y vinculada a tu perfil.');
     void refresh();
    }
