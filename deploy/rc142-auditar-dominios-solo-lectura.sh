@@ -24,7 +24,7 @@ echo 'TALAEATS_API_OLD_HOST=DO_NOT_REMOVE_BEFORE_MOBILE_STRIPE_CALLBACK_MIGRATIO
 if command -v curl >/dev/null 2>&1;then
   for h in "${canonical[@]}" "${legacy[@]}";do
     # Codes only: no response body, cookies, headers or credentials.
-    code="$(curl -k -sS -o /dev/null -w '%{http_code}' \
+    code="$(curl -sS -o /dev/null -w '%{http_code}' \
       --connect-timeout 4 --max-time 9 "https://$h/" 2>/dev/null || true)"
     [[ "$code" =~ ^[0-9]{3}$ ]] || code=000
     printf 'TALAEATS_HTTP=%s:%s\n' "$h" "$code"
