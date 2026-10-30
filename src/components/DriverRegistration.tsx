@@ -8,6 +8,7 @@ import {driverPlateIsValid,normalizeDriverPlate} from '../lib/driver-registratio
 import {onboardingSelectionError,prepareOnboardingDocuments,readableOnboardingSize} from '../lib/onboarding-documents';
 import type {DriverVehicle} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
+import {DriverPwaInstallButton} from './DriverPwaInstall';
 
 const messageOf=(error:unknown)=>error instanceof Error?error.message:'No pudimos completar la operación. Revisa tu conexión.';
 /** Minimal text-only mark used during initial loading, never in forms. */
@@ -64,6 +65,7 @@ export function DriverAccess(){
     {error&&<div className="df-error" role="alert"><WifiOff size={17}/>{error}</div>}
     <button className="df-primary" type="submit" disabled={busy}>{busy?'Verificando acceso…':'Iniciar sesión'}</button>
    </form>
+   <div className="df-install-inline"><DriverPwaInstallButton/></div>
    <div className="df-auth-footer"><span>¿Quieres repartir con Tala Eats?</span>
      <Link to="/repartidor/registro">Crear cuenta de repartidor</Link></div>
  </main></div>;
@@ -200,6 +202,7 @@ export function DriverRegistration(){
     {busy?'Enviando solicitud…':'Crear cuenta y enviar solicitud'}</button>
   </form>
   {existing&&<p className="df-warning"><Smartphone size={17}/> Tu cuenta ya pudo haberse creado; no la registres de nuevo si hay un error.</p>}
+  <div className="df-install-inline"><DriverPwaInstallButton/></div>
   <button type="button" className="df-text-button" onClick={()=>navigate('/repartidor/acceso')}>Ya tengo una cuenta</button>
  </main></div>;
 }
