@@ -113,6 +113,7 @@ export function CustomerOrderDetail(){
    <><section className="mobile-order-detail-hero"><span className="mobile-order-mini">Estado del pedido</span><h2>{ORDER_LABELS[order.status]||order.status}</h2><p>{order.order_type==='delivery'?'Entrega a domicilio':'Recoger en establecimiento'} · {pesos(order.total)}</p></section>
     {order.status!=='cancelled'&&order.payment_method==='stripe'&&order.payment_status!=='paid'&&<Link to={'/pago/'+order.id} className="mobile-order-support">Pago pendiente · Consultar <ChevronRight size={18}/></Link>}
     {order.status!=='cancelled'&&<section className="mobile-order-timeline"><h3>Seguimiento</h3>{orderProgress(order.status,order.order_type).steps.map((step,i)=>{const current=orderProgress(order.status,order.order_type).index;return <div className={'mobile-order-timeline-step '+(i<current?'done':i===current?'current':'future')} key={step.label}><div className="mobile-order-step-indicator">{i<current?<Check size={14}/>:null}</div><span>{step.label}</span>{i===current&&<b>Ahora</b>}</div>;})}</section>}
+    <DriverIdentity order={order}/>
     {order.status==='cancelled'&&<p className="mobile-order-cancelled">Este pedido fue cancelado.</p>}
     <section className="mobile-order-products"><h3>Tu pedido</h3>{order.items?.map((item,i)=><div key={i}><span>{item.quantity} × {item.name_snapshot}</span><strong>{verifiedLineTotal(item.unit_price,item.quantity)}</strong></div>)}
     <div className="mobile-detail-total"><span>Total</span><strong>{pesos(order.total)}</strong></div></section>
