@@ -20,3 +20,13 @@
 .te-driver-copy span{font-size:11px;line-height:1.5;color:#686f69}
 @media(max-width:350px){.df-avatar-manager{padding:14px}.df-avatar-change{width:100%}}
 @media(prefers-reduced-motion:reduce){.df-avatar-change{transition:none}}
+
+.rp-delivery-progress{margin:20px 0;padding:15px;border:1px solid #e4ece4;
+ background:#f7faf7;border-radius:19px}
+.rp-delivery-progress>header{display:flex;align-items:center;justify-content:space-between;
+ gap:8px;margin-bottom:13px;color:#213f2d;font-size:15px}
+.rp-delivery-progress>header span{font-size:11px;font-weight:800;color:#49835d}
+.rp-delivery-progress-card{border-radius:15px;background:#fff;border:1px solid #edf0e9;
+ padding:11px 12px;margin-bottom:9px}
+.rp-delivery-progress-card>strong{font-size:12px}
+.rp-delivery-progress-card .te-driver-identity{margin:10px 0 0}
