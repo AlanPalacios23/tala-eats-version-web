@@ -5,8 +5,8 @@ export const DRIVER_INSTALL_HELP_EVENT='tala-eats-driver-open-install-help';
 export const DRIVER_INSTALL_PROMPT_DELAY_MS=1600;
 export const DRIVER_INSTALL_SNOOZE_DAYS=7;
 
-export function driverInstallPlatform(agent:string):DriverInstallPlatform {
- if(/iPad|iPhone|iPod/i.test(agent)||/Macintosh/i.test(agent)&&/Mobile/i.test(agent))return 'ios';
+export function driverInstallPlatform(agent:string,maxTouchPoints=0):DriverInstallPlatform {
+ if(/iPad|iPhone|iPod/i.test(agent)||/Macintosh/i.test(agent)&&(maxTouchPoints>1||/Mobile/i.test(agent)))return 'ios';
  if(/Android/i.test(agent))return 'android';
  return 'other';
 }
