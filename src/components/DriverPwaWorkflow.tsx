@@ -7,6 +7,7 @@ import type {DriverProfile,Order} from '../lib/types';
 import {useSession} from '../lib/session';
 import {maskedDriverPlate} from '../lib/driver-registration';
 import '../styles/driver-flutter.css';
+import '../styles/driver-avatar-rc144.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
