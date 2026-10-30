@@ -113,7 +113,7 @@ restore(){
   if install -o root -g www-data -m 0640 "$ORIGINAL" "$tmp";then
    mv -f -- "$tmp" "$CONF"
    if [[ "$reload_happened" == yes ]];then
-    systemctl kill --kill-who=main -s HUP "$SERVICE" || true
+    systemctl kill --kill-whom=main --signal=HUP "$SERVICE" || true
    fi
    echo RC141_HEADERS_RESTORED=PREVIOUS_CONFIG
   else
@@ -137,8 +137,8 @@ runuser -u www-data -- test -r "$CONF" || {
 runuser -u www-data -- /usr/sbin/nginx -t -c "$MAIN" || {
  echo RC141_HEADERS=HOLD_NGINX_TEST_AS_WWW_DATA;exit 2;
 }
-systemctl kill --kill-who=main -s HUP "$SERVICE"
 reload_happened=yes
+systemctl kill --kill-whom=main --signal=HUP "$SERVICE"
 # Confirm master remains alive; no systemd restart permitted.
 systemctl is-active --quiet "$SERVICE" || { echo RC141_HEADERS=HOLD_SERVICE_AFTER_HUP;exit 2; }
 [[ "$(systemctl show "$SERVICE" -p MainPID --value)" == "$PID" ]] || {
