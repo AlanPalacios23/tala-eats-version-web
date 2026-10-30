@@ -74,8 +74,15 @@ ROOT='/srv/talaeats-repartidores-pwa'
 for item in "$WORK/.." "$WEB";do
  expected="$BACK_SHA"
  [[ "$item" == "$WEB" ]] && expected="$WEB_SHA"
- [[ "$(git -C "$item" rev-parse HEAD)" == "$expected" &&
-    -z "$(git -C "$item" status --porcelain --untracked-files=no)" ]] || {
+ # Command substitution inside [[ ... ]] can mask a failed git status by
+ # producing an empty string. Check each command exit status independently.
+ actual="$(git -C "$item" rev-parse HEAD)" || {
+  echo 'DRIVER_RC138_GATE=HOLD_GIT_REV_PARSE';exit 2;
+ }
+ tracked="$(git -C "$item" status --porcelain --untracked-files=no)" || {
+  echo 'DRIVER_RC138_GATE=HOLD_GIT_INDEX_UNREADABLE';exit 2;
+ }
+ [[ "$actual" == "$expected" && -z "$tracked" ]] || {
   echo 'DRIVER_RC138_GATE=HOLD_SHA_OR_DIRTY_TRACKED_TREE';exit 2;
  }
 done

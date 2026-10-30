@@ -34,8 +34,13 @@ mkdir -p "$BASE"
 git clone --no-checkout https://github.com/AlanPalacios23/tala-eats-version-web.git "$TARGET"
 git -C "$TARGET" fetch origin "$SHA"
 git -C "$TARGET" checkout --detach "$SHA"
-[[ "$(git -C "$TARGET" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -C "$TARGET" status --porcelain --untracked-files=no)" ]] || {
+actual="$(git -C "$TARGET" rev-parse HEAD)" || {
+ echo 'DRIVER_RC138_BUILD=HOLD_GIT_REV_PARSE';exit 2;
+}
+tracked="$(git -C "$TARGET" status --porcelain --untracked-files=no)" || {
+ echo 'DRIVER_RC138_BUILD=HOLD_GIT_INDEX_UNREADABLE';exit 2;
+}
+[[ "$actual" == "$SHA" && -z "$tracked" ]] || {
  echo 'DRIVER_RC138_BUILD=HOLD_UNTRUSTED_TREE';exit 2;
 }
 cd "$TARGET"

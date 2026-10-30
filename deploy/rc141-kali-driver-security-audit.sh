@@ -55,7 +55,7 @@ for key,part in mandatory.items():
   print('RC141_SECURITY=HOLD_MISSING_HEADER_'+key.replace('-','_').upper())
   raise SystemExit(2)
 csp=headers['content-security-policy'].lower()
-for required in ["script-src 'self'","img-src 'self' data: blob:","connect-src 'self'","frame-ancestors 'none'","object-src 'none'"]:
+for required in ["script-src 'self'","img-src 'self' data: blob: https://tile.openstreetmap.org","connect-src 'self'","frame-ancestors 'none'","object-src 'none'"]:
  if required not in csp:
   print('RC141_SECURITY=HOLD_CSP_POLICY')
   raise SystemExit(2)

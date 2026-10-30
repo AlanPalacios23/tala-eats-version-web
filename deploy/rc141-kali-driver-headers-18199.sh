@@ -5,6 +5,9 @@
 # the existing isolated Nginx master; failed checks restore old config.
 set -Eeuo pipefail
 set +x
+# These scripts may run as root. Never let read-only git status refresh or
+# replace tala-node-stage's .git/index with a root-owned file.
+export GIT_OPTIONAL_LOCKS=0
 umask 077
 MODE="${1:-}" SHA="${2:-}" TOKEN="${3:-}"
 APPROVE_APPLY=I_APPROVE_RC141_DRIVER_HEADERS_18199_ONLY
@@ -40,8 +43,13 @@ done
  -f "$CANDIDATE" && ! -L "$CANDIDATE" && -f "$AUDIT" && ! -L "$AUDIT" ]] || {
  echo RC141_HEADERS=HOLD_FILES;exit 2;
 }
-[[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
+actual="$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" || {
+ echo RC141_HEADERS=HOLD_GIT_REV_PARSE;exit 2;
+}
+tracked="$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" || {
+ echo RC141_HEADERS=HOLD_GIT_INDEX_UNREADABLE;exit 2;
+}
+[[ "$actual" == "$SHA" && -z "$tracked" ]] || {
  echo RC141_HEADERS=HOLD_SOURCE_SHA;exit 2;
 }
 [[ "$(systemctl show "$SERVICE" -p User --value)" == www-data &&
@@ -110,7 +118,7 @@ restore(){
  if [[ "$code" -ne 0 && "$changed" == yes ]];then
   local tmp
   tmp="$(mktemp /etc/talaeats-repartidores-pwa/.server-restore.XXXXXX)" || exit 3
-  if install -o root -g www-data -m 0640 "$ORIGINAL" "$tmp";then
+  if install -o root -g root -m 0644 "$ORIGINAL" "$tmp";then
    mv -f -- "$tmp" "$CONF"
    if [[ "$reload_happened" == yes ]];then
     systemctl kill --kill-whom=main --signal=HUP "$SERVICE" || true
@@ -124,7 +132,7 @@ restore(){
 }
 trap restore EXIT
 temp="$(mktemp /etc/talaeats-repartidores-pwa/.server-candidate.XXXXXX)"
-install -o root -g www-data -m 0640 "$NEW" "$temp"
+install -o root -g root -m 0644 "$NEW" "$temp"
 runuser -u www-data -- test -r "$temp" || {
  echo RC141_HEADERS=HOLD_WWW_DATA_CANNOT_READ_TEMP;exit 2;
 }

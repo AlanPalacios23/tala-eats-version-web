@@ -2,6 +2,9 @@
 # Update/rollback ONLY Restaurante isolated static site 18199; no config reload.
 set -Eeuo pipefail
 set +x
+# These scripts may run as root. Never let read-only git status refresh or
+# replace tala-node-stage's .git/index with a root-owned file.
+export GIT_OPTIONAL_LOCKS=0
 umask 022
 MODE="${1:-}" SHA="${2:-}" APPROVAL="${3:-}"
 ROOT='/srv/talaeats-repartidores-pwa'
@@ -77,8 +80,13 @@ DEST="$ROOT/releases/$SHA"
 [[ -d "$SOURCE" && ! -L "$SOURCE" && -d "$SOURCE/dist-repartidores" && ! -L "$SOURCE/dist-repartidores" ]] || {
  echo 'REPARTIDORES_STATIC_ABORT=PINNED_BUILD_MISSING';exit 2;
 }
-[[ "$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" == "$SHA" &&
- -z "$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" ]] || {
+actual="$(git -c safe.directory="$SOURCE" -C "$SOURCE" rev-parse HEAD)" || {
+ echo 'REPARTIDORES_STATIC_ABORT=HOLD_GIT_REV_PARSE';exit 2;
+}
+tracked="$(git -c safe.directory="$SOURCE" -C "$SOURCE" status --porcelain --untracked-files=no)" || {
+ echo 'REPARTIDORES_STATIC_ABORT=HOLD_GIT_INDEX_UNREADABLE';exit 2;
+}
+[[ "$actual" == "$SHA" && -z "$tracked" ]] || {
  echo 'REPARTIDORES_STATIC_ABORT=PINNED_SHA_OR_TREE_UNSAFE';exit 2;
 }
 for asset in repartidores.html sw-repartidor.js manifest-repartidor.webmanifest;do

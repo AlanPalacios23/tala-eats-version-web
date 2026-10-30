@@ -9,6 +9,7 @@ import '../styles/driver-flutter.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
+import {DriverLiveMap} from './DriverLiveMap';
 import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
 import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
 type DriverDash=DriverDashboardPayload;
@@ -405,20 +406,24 @@ export function DriverPwaWorkflow(){
       {readiness?.presence_enabled===false&&<div className="df-alert df-alert-info"><LockKeyhole size={18}/> El servidor todavía no habilitó la presencia en este entorno.</div>}
       {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén la PWA abierta y permite la ubicación precisa.</div>}
       {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Estás conectado y verificado. El servidor aún no habilita nuevas asignaciones para este modo de reparto.</div>}
-      {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS</button>}
+      {online&&<DriverLiveMap
+        offers={active?[]:available}
+        eligible={actions&&!active}
+        offline={browserOffline}
+        busy={operationsBlocked}
+        offersError={offersError}
+        onRefresh={()=>{void manualRefresh();}}
+        onAccept={order=>{void guardedAction(()=>api.driverAccept(order.id),'Asignación confirmada por el servidor.');}}
+       />}
+      {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS en servidor</button>}
       <section className="df-main-stage">
        {active?<>{jobCard(active)}<p className="df-safety"><ShieldCheck size={17}/> Por seguridad, detente antes de usar la app en ruta.</p></>:
-        <div className="df-empty df-surface">
-         {online?<Bike size={34}/>:<Moon size={34}/>}
-         <h2>{online&&actions&&available.length>0?'Hay entregas disponibles':online?'Esperando pedidos':'Estás fuera de línea'}</h2>
-         <p>{online&&actions&&available.length>0?'Revisa los pedidos disponibles y acepta solo cuando puedas hacer la entrega.':online?'Consulta tus entregas y mantén la app abierta para recibir actualizaciones.':'Conéctate cuando estés listo para recibir pedidos.'}</p>
+        !online&&<div className="df-empty df-surface">
+         <Moon size={34}/>
+         <h2>Estás fuera de línea</h2>
+         <p>Conéctate cuando estés listo para recibir pedidos. El mapa aparecerá cuando el servidor confirme tu disponibilidad.</p>
         </div>}
       </section>
-      {online&&actions&&!active&&available.length>0&&<section className="df-section df-home-offers" aria-labelledby="df-home-offers-heading">
-        <div className="df-section-title"><h2 id="df-home-offers-heading">Pedidos disponibles</h2><button type="button" onClick={()=>onTab('entregas')}>Ver todos <ArrowUpRight size={15}/></button></div>
-        {available.slice(0,2).map(o=>jobCard(o,true))}
-        <p className="df-caption">Las asignaciones y ganancias se confirman en el servidor.</p>
-       </section>}
        <section className="df-section">
         <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
        <button className="df-surface df-metrics" onClick={()=>onTab('ganancias')} aria-label="Abrir ganancias">
