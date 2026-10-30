@@ -69,8 +69,8 @@ export function DriverPwaWorkflow(){
  const operationsBlocked=browserOffline||busy;
  // Never show a previous courier's image after switching authenticated accounts.
  const avatarUrl=trustedDriverAvatarUrl(
-  uploadedAvatar?.userId===session.user?.id?uploadedAvatar.url:
-  dashboard?.user?.id===session.user?.id?dashboard.user.avatar_url:null
+  uploadedAvatar?.userId===session.user?.id?uploadedAvatar?.url:
+  dashboard?.user?.id===session.user?.id?dashboard?.user?.avatar_url:null
  );
  const reachable=verifiedOnlinePresence(readiness);
  const actions=driverActionsAvailable(readiness,actionOptIn);
