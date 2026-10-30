@@ -69,6 +69,26 @@ export function DriverAccess(){
  </main></div>;
 }
 
+/** Temporary, on-device document previews. URLs are revoked on replacement/unmount. */
+function DriverDocumentPreviews({files}:{files:File[]}){
+ const [previews,setPreviews]=useState<Array<{name:string;size:number;url:string|null}>>([]);
+ useEffect(()=>{
+  const current=files.map(file=>({
+   name:file.name,size:file.size,
+   url:/^image\/(jpeg|png|webp)$/.test(file.type)?URL.createObjectURL(file):null,
+  }));
+  setPreviews(current);
+  return()=>current.forEach(item=>{if(item.url)URL.revokeObjectURL(item.url);});
+ },[files]);
+ if(!previews.length)return null;
+ return <ul className="df-document-previews" aria-label="Documentos seleccionados">
+  {previews.map((preview,index)=><li key={index}>
+   {preview.url?<img src={preview.url} alt={'Vista previa del documento '+(index+1)} loading="lazy"/>:
+     <span className="df-document-file-icon"><FileCheck2 size={24}/></span>}
+   <span className="df-document-filename"><strong>{preview.name}</strong><small>{readableOnboardingSize(preview.size)} · Solo en tu dispositivo hasta enviar</small></span>
+  </li>)}
+ </ul>;
+}
 type Capabilities={driver_plate_supported:boolean;driver_documents_supported:boolean;driver_admin_approval_required:boolean};
 
 export function DriverRegistration(){
@@ -165,9 +185,14 @@ export function DriverRegistration(){
     value={plate} onChange={e=>setPlate(normalizeDriverPlate(e.target.value))} disabled={busy||!cap}/><small>Se utilizará para la verificación del vehículo. No se publica en entregas.</small></label>}
    <label>Documentos de verificación <span className="df-optional">(opcional, hasta 3)</span>
      <span className="df-file-picker"><UploadCloud size={18}/> Adjuntar identificación, licencia o tarjeta de circulación
-      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf" multiple onChange={e=>{setDocuments(Array.from(e.target.files||[]));setError('');}} disabled={busy||!cap||!cap.driver_documents_supported}/></span>
+      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf" multiple onChange={e=>{
+       const next=Array.from(e.target.files||[]);
+       const issue=onboardingSelectionError(next);
+       if(issue){setDocuments([]);e.currentTarget.value='';setError(issue);}
+       else{setDocuments(next);setError('');}
+      }} disabled={busy||!cap||!cap.driver_documents_supported}/></span>
       <small>{documents.length?documents.length+' documento(s) seleccionados · se subirán al enviar la solicitud':'Máximo 5 MB por documento. Las fotos grandes se optimizan en tu dispositivo.'}</small>
-      {documents.length>0&&<ul className="df-selected-files">{documents.map((file,index)=><li key={index}>{file.name} <span>({readableOnboardingSize(file.size)})</span></li>)}</ul>}</label>
+      <DriverDocumentPreviews files={documents}/></label>
    <div className="df-message df-surface"><FileCheck2 size={21}/><p>Tu solicitud no habilita entregas ni pagos. Solo podrás operar cuando ADMIN apruebe tu información y el servidor valide tu GPS.</p></div>
    {uploadProgress&&<div role="status" className="df-upload-progress">{uploadProgress}</div>}
    {error&&<div className="df-error" role="alert"><WifiOff size={17}/>{error}</div>}
