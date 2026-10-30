@@ -2,7 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Map as LeafletMap,LayerGroup} from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/driver-live-map.css';
-import {Bike,CheckCircle2,Compass,LocateFixed,MapPin,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
+import {ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {Order,Restaurant} from '../lib/types';
 import {
@@ -18,6 +18,8 @@ export interface DriverLiveMapProps{
  offersError:boolean;
  onAccept:(order:Order)=>void;
  onRefresh:()=>void;
+ onClose:()=>void;
+ onGoOffline:()=>void;
 }
 
 const tiles='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -25,8 +27,11 @@ const tiles='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 /** Opt-in foreground map: never caches coordinates, location history, or
  * private order payloads. External map tiles see a viewport, not our API data.
  * Server dispatch/acceptance rules are authoritative. */
-export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept,onRefresh}:DriverLiveMapProps){
+export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept,onRefresh,onClose,onGoOffline}:DriverLiveMapProps){
  const target=useRef<HTMLDivElement>(null);
+ const dialogRef=useRef<HTMLElement>(null);
+ const closeRef=useRef<HTMLButtonElement>(null);
+ const touchStart=useRef<number|null>(null);
  const mapRef=useRef<LeafletMap|null>(null);
  const leafletRef=useRef<typeof import('leaflet')|null>(null);
  const layerRef=useRef<LayerGroup|null>(null);
@@ -38,6 +43,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
  const [selectedId,setSelectedId]=useState<number|null>(null);
  const [follow,setFollow]=useState(true);
  const [loaded,setLoaded]=useState(false);
+ const [expanded,setExpanded]=useState(false);
 
  const readyOffers=useMemo(()=>availableMapOffers(offers,dismissed,eligible&&!offline),[offers,dismissed,eligible,offline]);
  const markers=useMemo(()=>driverOfferMarkers(readyOffers,catalog),[readyOffers,catalog]);
@@ -45,8 +51,48 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
  const selected=readyOffers.find(o=>o.id===selectedId)??readyOffers[0]??null;
  const selectedMarker=markers.find(m=>m.order.id===selected?.id);
  const hasOffers=offers.length>0;
+ const offerCount=readyOffers.length;
+ const isOfferVisible=Boolean(eligible&&selected&&!offline);
 
- // Only catalogue locations of existing server-authorized offers.
+ // Keep the full-screen operational surface accessible and prevent background
+ // scrolling; the existing home and bottom tabs remain intact underneath.
+ useEffect(()=>{
+  const previous=document.activeElement;
+  const oldOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  closeRef.current?.focus();
+  const keys=(event:KeyboardEvent)=>{
+   if(event.key==='Escape'){event.preventDefault();onClose();return;}
+   if(event.key!=='Tab')return;
+   const root=dialogRef.current;
+   if(!root)return;
+   const controls=Array.from(root.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+   )).filter(element=>element.getClientRects().length>0);
+   if(!controls.length)return;
+   const first=controls[0],last=controls[controls.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  };
+  document.addEventListener('keydown',keys);
+  return()=>{
+   document.removeEventListener('keydown',keys);
+   document.body.style.overflow=oldOverflow;
+   if(previous instanceof HTMLElement)previous.focus();
+  };
+ },[onClose]);
+
+ // Resize after bottom-sheet expansion and on screen rotation, preserving
+ // map gestures and preventing blank Leaflet tiles on iOS PWA.
+ useEffect(()=>{
+  const canvas=target.current;
+  if(!canvas||typeof ResizeObserver==='undefined')return;
+  const observer=new ResizeObserver(()=>mapRef.current?.invalidateSize({pan:false}));
+  observer.observe(canvas);
+  return()=>observer.disconnect();
+ },[loaded]);
+
+  // Only catalogue locations of existing server-authorized offers.
  useEffect(()=>{
   if(!hasOffers||!eligible||offline){setCatalog([]);return;}
   let alive=true;
@@ -140,67 +186,141 @@ export function DriverLiveMap({offers,eligible,offline,busy,offersError,onAccept
    L.circleMarker([marker.point.lat,marker.point.lng],{
     radius:chosen?15:12,weight:3,color:'#fff',fillColor:'#ff682e',fillOpacity:1
    }).bindTooltip('Pedido #'+marker.order.id).on('click',()=>{
-    setSelectedId(marker.order.id);
-    setFollow(false);
+    openOffer(marker.order.id);
    }).addTo(group);
   }
   if(follow&&position)map.setView([position.lat,position.lng],map.getZoom(),{animate:true});
  },[position,markers,selected?.id,follow,loaded]);
 
+ function openOffer(id:number){
+  const offer=readyOffers.find(o=>o.id===id);
+  if(!offer)return;
+  setSelectedId(id);
+  setExpanded(true);
+  setFollow(false);
+  const marker=markers.find(m=>m.order.id===id);
+  if(marker)mapRef.current?.flyTo([marker.point.lat,marker.point.lng],15,{duration:.55});
+ }
+ function showOfferPoints(){
+  const map=mapRef.current,L=leafletRef.current;
+  if(!map||!L)return;
+  const points=markers.map(m=>[m.point.lat,m.point.lng] as [number,number]);
+  if(position)points.push([position.lat,position.lng]);
+  if(!points.length)return;
+  setFollow(false);
+  if(points.length===1){map.flyTo(points[0],15,{duration:.5});return;}
+  map.fitBounds(L.latLngBounds(points),{
+   paddingTopLeft:[36,140],paddingBottomRight:[36,250],maxZoom:15,animate:true
+  });
+ }
+ function touchEnd(y:number){
+  if(touchStart.current===null)return;
+  const delta=y-touchStart.current;
+  touchStart.current=null;
+  if(delta< -45)setExpanded(true);
+  else if(delta>45)setExpanded(false);
+ }
  function centerMe(){
   if(!position)return;
   setFollow(true);
   mapRef.current?.setView([position.lat,position.lng],15,{animate:true});
  }
- function focusOffer(order:Order){
-  setSelectedId(order.id);
-  const location=markers.find(m=>m.order.id===order.id);
-  if(location){setFollow(false);mapRef.current?.setView([location.point.lat,location.point.lng],15,{animate:true});}
- }
- return <section className="dm-shell" aria-label="Mapa de reparto en vivo" data-driver-live-map="true">
-  <div className="dm-topline">
-   <div><span className="dm-eyebrow"><span className="dm-live-dot"/> EN LÍNEA · MAPA EN VIVO</span>
-    <h2>Tu zona de reparto</h2></div>
-   <span className="dm-counter">{eligible?readyOffers.length:0} {readyOffers.length===1?'oferta':'ofertas'}</span>
-  </div>
+ function focusOffer(order:Order){openOffer(order.id);}
+ return <section ref={dialogRef} className="dm-shell dm-immersive" role="dialog" aria-modal="true"
+  aria-label="Modo repartidor en línea, mapa a pantalla completa" data-driver-live-map="true"
+  data-map-mode="immersive" data-sheet={expanded?'expanded':'peek'}>
   <div className="dm-map-wrap">
-   {hasCenter&&<div className="dm-canvas" ref={target} role="application" aria-label="Mapa interactivo de tu ubicación y puntos de recogida"/>}
+   {hasCenter&&<div className="dm-canvas" ref={target} role="application" aria-label="Mapa interactivo de tu ubicación GPS y puntos de recogida verificados"/>}
    {!hasCenter&&<div className="dm-map-placeholder">
-    <MapPin size={30}/><strong>Preparando mapa de tu zona</strong>
-    <span>{gpsError||'Esperando GPS o coordenadas verificadas de un comercio…'}</span>
+    <div className="dm-waiting-orbit"><MapPin size={29}/></div>
+    <strong>Buscando tu ubicación</strong>
+    <span>{gpsError||'Esperando GPS preciso o coordenadas verificadas del comercio…'}</span>
    </div>}
-   {loaded&&position&&<button type="button" className="dm-recenter" onClick={centerMe} aria-label="Centrar mapa en mi ubicación"><LocateFixed size={21}/></button>}
-   <div className="dm-map-info"><Compass size={14}/> {position?'GPS activo · Solo mientras usas la app':'Ubicación pendiente'}</div>
    {(mapError||gpsError)&&<div className="dm-map-warning" role="status"><WifiOff size={15}/>{mapError||gpsError}</div>}
   </div>
-  <div className="dm-offer-panel">
-   <div className="dm-offer-header"><strong>Pedidos disponibles</strong>
-    <button type="button" aria-label="Actualizar ofertas" disabled={busy||offline} onClick={onRefresh}><RefreshCw size={18}/> Actualizar</button></div>
-   {!eligible&&<div className="dm-notice"><ShieldCheck size={19}/> Las nuevas asignaciones todavía no están autorizadas por el servidor. Puedes ver tu ubicación sin aceptar pedidos.</div>}
-   {offersError&&<p className="dm-notice" role="status">No se pudieron consultar los pedidos. Intenta actualizar.</p>}
-   {offline&&<p className="dm-notice" role="status">Sin conexión. No se pueden aceptar pedidos.</p>}
-   {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
-    <div className="dm-offer-row"><span className="dm-order">PEDIDO #{selected.id}</span>
-     <strong className="dm-earning">{selected.driver_earning!=null?pesos(selected.driver_earning):'Ganancia pendiente'}</strong></div>
-    <strong className="dm-store">{selectedMarker?.name||'Comercio #'+selected.restaurant_id}</strong>
-    <div className="dm-offer-meta"><span><Bike size={16}/> {selected.payment_method==='cash'?'Efectivo':'Tarjeta'}</span>
-     <span><MapPin size={16}/>{selectedMarker?(position?straightLineKm(position,selectedMarker.point).toFixed(1)+' km en línea recta':'Punto de recogida en mapa'):'Ubicación no disponible'}</span></div>
-    <div className="dm-actions">
-     <button type="button" className="dm-accept" disabled={busy||offline} onClick={()=>onAccept(selected)}><CheckCircle2 size={18}/> Aceptar pedido</button>
-     <button type="button" className="dm-dismiss" disabled={busy} onClick={()=>{
-      setDismissed(old=>new Set([...old,selected.id]));setSelectedId(null);
-     }}><X size={17}/> Descartar</button>
-    </div>
-    <p className="dm-privacy">Descartar solo oculta esta oferta en esta sesión; no la rechaza en el servidor.</p>
-   </article>}
-   {eligible&&readyOffers.length>1&&<div className="dm-offer-strip" aria-label="Otras ofertas">
-    {readyOffers.filter(o=>o.id!==selected?.id).slice(0,5).map(o=>
-     <button type="button" key={o.id} onClick={()=>focusOffer(o)} className="dm-mini-offer">Pedido #{o.id} <span>{o.driver_earning!=null?pesos(o.driver_earning):'Ver oferta'}</span></button>)}
-   </div>}
-   {eligible&&!readyOffers.length&&<div className="dm-none"><Bike size={21}/>{offers.length>0?'Descartaste las ofertas visibles.':'No hay pedidos disponibles en este momento.'}
-    {dismissed.size>0&&<button type="button" onClick={()=>{setDismissed(new Set());setSelectedId(null);}}>Volver a mostrar</button>}
-   </div>}
-   <p className="dm-footer"><ShieldCheck size={15}/> La asignación se confirma con el backend. Mapa externo: <a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>.</p>
+
+  <header className="dm-floating-header">
+   <div className="dm-header-row">
+    <button ref={closeRef} type="button" className="dm-round-button dm-back" onClick={onClose} aria-label="Volver al inicio sin desconectarte"><ArrowLeft size={22}/></button>
+    <div className="dm-online-pill"><span className="dm-live-dot"/> EN LÍNEA</div>
+    <span className="dm-counter" aria-live="polite">{eligible?offerCount:0} {offerCount===1?'oferta':'ofertas'}</span>
+   </div>
+   <div className="dm-location-pill"><Compass size={15}/>
+    {position?'GPS activo · Ubicación reciente':gpsError?'GPS pendiente':'Obteniendo GPS…'}
+   </div>
+  </header>
+
+  <div className="dm-map-tools">
+   {markers.length>0&&<button type="button" className="dm-round-button" onClick={showOfferPoints}
+      title="Ver todos los puntos de recogida" aria-label="Ver todos los pedidos en el mapa"><MapPin size={20}/></button>}
+   <button type="button" className="dm-round-button" disabled={!position} onClick={centerMe}
+     title="Mi ubicación" aria-label="Centrar mapa en mi ubicación"><LocateFixed size={22}/></button>
+   <button type="button" className="dm-round-button" onClick={onRefresh} disabled={busy||offline}
+     title="Actualizar pedidos" aria-label="Actualizar los pedidos disponibles"><RefreshCw size={19}/></button>
   </div>
+
+  <section className="dm-offer-panel" aria-label="Panel inferior de pedidos disponibles">
+   <button type="button" className="dm-sheet-grab" aria-label={expanded?'Contraer panel de pedidos':'Ampliar panel de pedidos'}
+      aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}
+      onTouchStart={e=>{touchStart.current=e.touches[0]?.clientY??null;}}
+      onTouchEnd={e=>touchEnd(e.changedTouches[0]?.clientY??0)}>
+     <span className="dm-grab-line"/>{expanded?<ChevronDown size={18}/>:<ChevronUp size={18}/>}
+   </button>
+   <div className="dm-panel-body">
+    <div className="dm-offer-header">
+     <div className="dm-panel-heading">
+      <span className="dm-overline">{eligible?'EN BUSCA DE ENTREGAS':'ESPERANDO AUTORIZACIÓN'}</span>
+      <h2>{isOfferVisible?'Nueva oportunidad':eligible?'Explorando tu zona':'Estás conectado'}</h2>
+     </div>
+     {eligible&&<span className="dm-panel-count">{offerCount} {offerCount===1?'disponible':'disponibles'}</span>}
+    </div>
+    {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
+      <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
+    {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline} onClick={onRefresh}>Reintentar</button></div>}
+    {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
+    {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
+     <div className="dm-offer-row">
+      <span className="dm-order">PEDIDO #{selected.id}</span>
+      <span className="dm-pickup-chip"><MapPin size={13}/> Recogida</span>
+     </div>
+     <div className="dm-offer-primary"><div><span className="dm-label">RECOGER EN</span>
+       <strong className="dm-store">{selectedMarker?.name||'Comercio #'+selected.restaurant_id}</strong></div>
+       <div className="dm-earning-block"><span className="dm-label">GANANCIA</span>
+        <strong className="dm-earning">{selected.driver_earning!=null?pesos(selected.driver_earning):'Por confirmar'}</strong></div>
+     </div>
+     <div className="dm-offer-meta">
+      <span><Bike size={16}/>{selected.payment_method==='cash'?'Pago en efectivo':'Pago con tarjeta'}</span>
+      <span><MapPin size={16}/>{selectedMarker?(position?straightLineKm(position,selectedMarker.point).toFixed(1)+' km en línea recta':'Recogida en mapa'):'Ubicación no disponible'}</span>
+     </div>
+     <div className="dm-actions">
+      <button type="button" className="dm-accept" disabled={busy||offline}
+       onClick={()=>onAccept(selected)}><CheckCircle2 size={19}/> {busy?'Confirmando…':'Aceptar pedido'} <ArrowRight size={18}/></button>
+      <button type="button" className="dm-dismiss" disabled={busy} onClick={()=>{
+       setDismissed(old=>new Set([...old,selected.id]));setSelectedId(null);
+      }} aria-label={'Descartar oferta '+selected.id}><X size={18}/> Descartar</button>
+     </div>
+     <p className="dm-privacy">Descartar solo oculta la oferta en esta sesión; no la rechaza en el servidor.</p>
+    </article>}
+    {eligible&&readyOffers.length>1&&<div className="dm-offer-strip" aria-label="Cambiar de oferta">
+     {readyOffers.filter(o=>o.id!==selected?.id).slice(0,8).map(o=>
+      <button type="button" key={o.id} onClick={()=>focusOffer(o)}
+       className="dm-mini-offer"><span>#{o.id}</span> <strong>{o.driver_earning!=null?pesos(o.driver_earning):'Ver pedido'}</strong><ArrowRight size={15}/></button>)}
+    </div>}
+    {eligible&&!readyOffers.length&&<div className="dm-none">
+      <span className="dm-radar-icon"><Bike size={21}/></span>
+      <div><strong>{dismissed.size&&offers.length?'Ofertas ocultas':'Buscando pedidos cerca de ti'}</strong>
+       <span>{dismissed.size&&offers.length?'Puedes recuperar las ofertas descartadas.':'Cuando haya pedidos autorizados, aparecerán aquí y sobre el mapa.'}</span></div>
+      {dismissed.size>0&&<button type="button" onClick={()=>{setDismissed(new Set());setSelectedId(null);}}>Mostrar</button>}
+    </div>}
+    {expanded&&<div className="dm-details">
+      <div><ShieldCheck size={16}/> La asignación solo se completa cuando el backend la confirma.</div>
+      <button type="button" className="dm-go-offline" disabled={busy||offline}
+        onClick={onGoOffline}><Power size={17}/> Desconectarme</button>
+      <small>Mapa externo de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. Solo GPS en primer plano.</small>
+    </div>}
+    {!expanded&&<button type="button" className="dm-expand-hint" onClick={()=>setExpanded(true)}>
+      Ver detalles y opciones <ChevronUp size={15}/></button>}
+   </div>
+  </section>
  </section>;
 }
