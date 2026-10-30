@@ -7,6 +7,7 @@ const api=read('src/lib/api.ts');
 const types=read('src/lib/types.ts');
 const customer=read('src/components/CustomerOrders.tsx');
 const restaurant=read('src/components/RestaurantParity.tsx');
+const restaurantOrders=read('src/components/RestaurantApp.tsx');
 const identity=read('src/components/DriverIdentity.tsx');
 const css=read('src/styles/driver-avatar-rc144.css');
 const key='a'.repeat(40);
@@ -39,6 +40,8 @@ describe('RC144 persistent courier profile image',()=>{
  it('customer and restaurant see assigned driver identity only',()=>{
   expect(customer).toContain('<DriverIdentity order={order}/>');
   expect(restaurant).toContain('<DriverIdentity order={o}/>');
+  expect(restaurantOrders).toContain("const inTransit=orders.filter(o=>o.order_type==='delivery'");
+  expect(restaurantOrders).toContain('<DriverIdentity order={o}/>');
   expect(types).toContain('driver_info?:{id:number;name:string;avatar_url?:string|null');
   expect(identity).toContain("order.order_type!=='delivery'");
   expect(identity).toContain("['assigned','picked_up','on_the_way','delivered']");
