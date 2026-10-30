@@ -29,7 +29,7 @@ describe('RC141 isolated Nginx 18199 security header release',()=>{
   expect(script).not.toContain('talaeats-restaurantes-pwa.service');
  });
  it('tests active include as www-data before HUP and auto-restores on failed checks',()=>{
-  expect(script).toContain('install -o root -g www-data -m 0640 "$NEW" "$temp"');
+  expect(script).toContain('install -o root -g root -m 0644 "$NEW" "$temp"');
   expect(script).toContain('runuser -u www-data -- test -r "$CONF"');
   expect(script).toContain('runuser -u www-data -- /usr/sbin/nginx -t -c "$MAIN"');
   expect(script).toContain('systemctl kill --kill-whom=main --signal=HUP "$SERVICE"');
