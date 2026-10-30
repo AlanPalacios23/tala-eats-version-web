@@ -18,6 +18,7 @@ import '../styles/restaurant.css';
 import '../styles/restaurant-polish.css';
 import {MerchantOverview,MerchantKitchen,MerchantMore} from './RestaurantParity';
 import {MerchantWallet} from './MerchantWallet';
+import {DriverIdentity} from './DriverIdentity';
 import {RestaurantOrderAlerts} from './RestaurantOrderAlerts';
 import {Home as HomeIcon,MoreHorizontal,ReceiptText,Search as SearchIcon} from 'lucide-react';
 import '../styles/restaurant-flutter-parity.css';
@@ -539,6 +540,7 @@ export function RestaurantWorkspace(){
  }
  const activeOrders=orders.filter(o=>['received','confirmed','preparing','ready'].includes(o.status));
  const incomingCount=activeOrders.filter(o=>o.status==='received').length;
+ const inTransit=orders.filter(o=>o.order_type==='delivery'&&['assigned','picked_up','on_the_way'].includes(o.status));
  const waitingPayment=orders.filter(o=>o.status==='awaiting_payment'||(o.status==='received'&&o.payment_method==='stripe'&&o.payment_status!=='paid'));
  const matchesOrder=(o:Order)=>!orderQuery.trim()||String(o.id).includes(orderQuery.trim())||
    (o.items??[]).some(item=>item.name_snapshot.toLocaleLowerCase('es-MX').includes(orderQuery.trim().toLocaleLowerCase('es-MX')));
@@ -703,6 +705,13 @@ export function RestaurantWorkspace(){
         </section>;
        })}
       </div>}
+      {orderFilter==='all'&&inTransit.filter(matchesOrder).length>0&&<section className="rp-delivery-progress" aria-label="Pedidos en reparto">
+       <header><strong>En reparto</strong><span>{inTransit.filter(matchesOrder).length} pedidos</span></header>
+       {inTransit.filter(matchesOrder).map(o=><article key={o.id} className="rp-delivery-progress-card">
+        <strong>Pedido #{o.id} · {merchantStateLabel(o.status)}</strong>
+        <DriverIdentity order={o}/>
+       </article>)}
+      </section>}
       {(orderFilter==='all'||orderFilter==='history')&&<section className={'rp-history '+(orderFilter==='all'?'rp-history-secondary':'')}>
        <div className="rp-history-head"><div><span className="rp-eyebrow">REGISTRO CONSULTADO</span><h3>Últimos pedidos finalizados</h3></div>
         <span>{matchingCompletedOrders.length} de {completedOrders.length} registros recientes</span></div>
