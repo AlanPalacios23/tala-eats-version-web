@@ -384,7 +384,7 @@ export function DriverPwaWorkflow(){
      </div>}
    </article>;
   };
- const homeAction=tab!=='inicio'?null:!online?{
+ const homeAction=loading&&!readiness?null:tab!=='inicio'?null:!online?{
   label:'Conectarme',
   disabled:operationsBlocked||cannotReceive||!!active,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();void setOnline(true);}}
