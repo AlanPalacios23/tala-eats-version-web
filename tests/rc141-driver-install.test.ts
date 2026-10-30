@@ -18,6 +18,8 @@ describe('RC141 Driver PWA native install experience',()=>{
   expect(driverInstallPlatform('Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)')).toBe('ios');
   expect(driverInstallPlatform('Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36')).toBe('android');
   expect(driverInstallPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).toBe('other');
+  expect(driverInstallPlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',5)).toBe('ios');
+  expect(driverInstallPlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',0)).toBe('other');
   expect(install).toContain("if(!event||platform!=='android')");
   expect(install).toContain('Añadir a pantalla de inicio');
   expect(install).toContain('iOS necesita tu confirmación.');
