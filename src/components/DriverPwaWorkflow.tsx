@@ -10,6 +10,7 @@ import '../styles/driver-flutter.css';
 import '../styles/driver-avatar-rc144.css';
 import '../styles/driver-polish-rc146.css';
 import '../styles/driver-journey-rc147.css';
+import '../styles/driver-trip-rc148.css';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
