@@ -1,0 +1,29 @@
+/* RC150 — one optional pickup preview and stable offer selection. */
+.dm-immersive .dm-pickup-directions{
+ display:inline-flex;align-items:center;gap:7px;
+ max-width:100%;min-height:42px;margin:4px 0 0;
+ padding:7px 10px;border:1px solid #eddfd4;border-radius:12px;
+ background:#fffaf5;color:#a74a1b;text-decoration:none;
+ font-size:11.5px;line-height:1.35;font-weight:850;
+ transition:background-color .17s ease,border-color .17s ease,transform .17s ease;
+}
+.dm-immersive .dm-pickup-directions svg{flex:none}
+.dm-immersive .dm-pickup-directions:focus-visible{
+ outline:3px solid #f7a46a;outline-offset:3px;
+}
+.dm-immersive .dm-pickup-directions:active{
+ transform:scale(.985);background:#ffefe2;
+}
+.dm-immersive .dm-offer-sort-option.is-selected{
+ box-shadow:0 2px 8px #7e491412;
+}
+.dm-immersive .dm-offer:has(.dm-pickup-directions){
+ border-color:#e9d9cb;
+}
+@media(max-width:370px){
+ .dm-immersive .dm-pickup-directions{font-size:11px;padding:8px 9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .dm-immersive .dm-pickup-directions{transition:none!important}
+ .dm-immersive .dm-pickup-directions:active{transform:none!important}
+}

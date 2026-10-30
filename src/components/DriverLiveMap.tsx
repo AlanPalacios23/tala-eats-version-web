@@ -3,6 +3,7 @@ import type {Map as LeafletMap,LayerGroup} from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/driver-live-map.css';
 import '../styles/driver-offer-choice-rc149.css';
+import '../styles/driver-offer-stability-rc150.css';
 import {AlertCircle,ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import type {Order,Restaurant} from '../lib/types';
@@ -10,7 +11,7 @@ import {
  availableMapOffers,driverOfferMarkers,straightLineKm,validLivePosition
 } from '../lib/driver-live-map';
 import type {DriverMapPoint} from '../lib/driver-live-map';
-import {canSortOffersByProximity,sortDriverOffers} from '../lib/driver-offer-choice';
+import {canSortOffersByProximity,driverOfferPickupDirectionsHref,selectedDriverOffer,sortDriverOffers} from '../lib/driver-offer-choice';
 import type {DriverOfferOrder} from '../lib/driver-offer-choice';
 
 export interface DriverLiveMapProps{
@@ -58,8 +59,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
  const effectiveOfferOrder=offerOrder==='nearby'&&!canSortNearby?'received':offerOrder;
  const sortedOffers=useMemo(()=>sortDriverOffers(readyOffers,effectiveOfferOrder,markers,position),[readyOffers,effectiveOfferOrder,markers,position]);
  const center=position??markers[0]?.point??null;
- const selected=sortedOffers.find(o=>o.id===selectedId)??sortedOffers[0]??null;
- const selectedMarker=markers.find(m=>m.order.id===selected?.id);
+ const selected=selectedDriverOffer(sortedOffers,selectedId);
+ const selectedMarker=markers.find(m=>m.order.id===selected?.id)??null;
+ const pickupDirectionsHref=driverOfferPickupDirectionsHref(selectedMarker);
  const hasOffers=offers.length>0;
  const offerCount=readyOffers.length;
  const isOfferVisible=Boolean(eligible&&selected&&!offline);
@@ -131,7 +133,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     p=>{
      const {latitude:lat,longitude:lng,accuracy}=p.coords;
      if(!validLivePosition(lat,lng,accuracy,p.timestamp,Date.now())){
-      setGpsError('Esperando una ubicación GPS precisa y reciente.');return;
+      setGpsError('Esperando una ubicación GPS precisa y reciente.');setPosition(null);return;
      }
      setGpsError('');setPosition({lat,lng});
     },
@@ -327,7 +329,12 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
        aria-pressed={effectiveOfferOrder===item.key}
        disabled={item.key==='nearby'&&!canSortNearby}
        title={item.key==='nearby'?'Distancia en línea recta a la recogida, requiere GPS y ubicación pública':undefined}
-       onClick={()=>setOfferOrder(item.key)}>{item.label}</button>)}
+       onClick={()=>{
+        if(item.key==='nearby'&&!canSortNearby)return;
+        const next=sortDriverOffers(readyOffers,item.key,markers,position);
+        setOfferOrder(item.key);
+        setSelectedId(next[0]?.id??null);
+       }}>{item.label}</button>)}
      {(!canSortNearby||effectiveOfferOrder==='nearby')&&<small className="dm-offer-sort-note">
       {canSortNearby?'Cercanía calcula solo distancia en línea recta, no tiempo de viaje.':'Para ordenar por cercanía necesitas GPS y ubicaciones públicas de los comercios.'}
      </small>}
@@ -346,7 +353,12 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
       <span><Bike size={16}/>{selected.payment_method==='cash'?'Pago en efectivo':'Pago con tarjeta'}</span>
       <span><MapPin size={16}/>{selectedMarker?(position?straightLineKm(position,selectedMarker.point).toFixed(1)+' km en línea recta':'Recogida en mapa'):'Ubicación no disponible'}</span>
      </div>
-     <div className="dm-actions">
+     {pickupDirectionsHref&&<a className="dm-pickup-directions"
+      href={pickupDirectionsHref} target="_blank" rel="noopener noreferrer"
+      aria-label={'Ver indicaciones al comercio para el pedido '+selected.id}>
+      <MapPin size={15} aria-hidden="true"/> Ver recogida en el mapa <ArrowRight size={15} aria-hidden="true"/>
+    </a>}
+    <div className="dm-actions">
       <button type="button" className="dm-accept" disabled={busy||offline}
        onClick={()=>onAccept(selected)}><CheckCircle2 size={19}/> {busy?'Confirmando…':'Aceptar pedido'} <ArrowRight size={18}/></button>
       <button type="button" className="dm-dismiss" disabled={busy} onClick={()=>{
@@ -360,7 +372,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
       <button type="button" key={o.id} onClick={()=>focusOffer(o)}
        className="dm-mini-offer"><span>#{o.id}</span> <strong>{o.driver_earning!=null?pesos(o.driver_earning):'Ver pedido'}</strong><ArrowRight size={15}/></button>)}
     </div>}
-    {eligible&&!readyOffers.length&&<div className="dm-none">
+    {eligible&&!offline&&!readyOffers.length&&<div className="dm-none">
       <span className="dm-radar-icon"><Bike size={21}/></span>
       <div><strong>{dismissed.size&&offers.length?'Ofertas ocultas':'Buscando pedidos cerca de ti'}</strong>
        <span>{dismissed.size&&offers.length?'Puedes recuperar las ofertas descartadas.':'Cuando haya pedidos autorizados, aparecerán aquí y sobre el mapa.'}</span></div>

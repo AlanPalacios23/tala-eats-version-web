@@ -51,3 +51,21 @@ export function sortDriverOffers(
  });
  return scored.map(x=>x.item);
 }
+
+/** A rider's chosen offer stays selected as GPS updates rearrange nearby offers.
+ * If the server removes that offer, fall back to the first still-authorised one.
+ */
+export function selectedDriverOffer(offers:readonly Order[],selectedId:number|null):Order|null {
+ return offers.find(o=>o.id===selectedId)??offers[0]??null;
+}
+
+/** Opt-in directions use only authorised public merchant coordinates.
+ * Never puts the customer's address or the courier GPS into the outbound URL.
+ */
+export function driverOfferPickupDirectionsHref(marker:DriverOfferMarker|null):string|null {
+ if(!marker)return null;
+ const point=safeMapPoint(marker.point.lat,marker.point.lng);
+ if(!point)return null;
+ return 'https://www.google.com/maps/dir/?api=1&destination='+
+  encodeURIComponent(point.lat+','+point.lng);
+}
