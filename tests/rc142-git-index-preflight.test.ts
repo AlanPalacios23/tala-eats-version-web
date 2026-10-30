@@ -19,6 +19,14 @@ describe('RC142 deployment gate must fail closed on inaccessible Git indexes',()
   expect(script).toMatch(/\[\[ "\$actual" == "\$(?:expected|SHA)" && -z "\$tracked" \]\]/);
   expect(script).not.toMatch(/-z "\$\(git .*? status --porcelain/);
  });
+ it('root-level Nginx header and static plan reads must never mutate the service-user git index',()=>{
+  for(const file of ['deploy/rc141-kali-driver-headers-18199.sh',
+                     'deploy/kali-update-repartidores-isolated.sh']){
+   const script=read(file);
+   expect(script).toContain('export GIT_OPTIONAL_LOCKS=0');
+   expect(script).toContain('status --porcelain --untracked-files=no');
+  }
+ });
  it('read-only probes report errors instead of masking stderr-only failures',()=>{
   const cmd='value="$(sh -c \'echo fatal-index >&2; exit 128\')" || exit 5; test -z "$value"';
   const result=spawnSync('bash',['-c',cmd],{encoding:'utf8'});
