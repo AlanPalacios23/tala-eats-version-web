@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import '../styles/driver-pwa.css';
-import {Bike,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,Navigation,ArrowUpRight,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
+import {Bike,Camera,CheckCircle2,MapPin,RefreshCw,ShieldCheck,WifiOff,Home,ReceiptText,Wallet,Navigation,ArrowUpRight,UserRound,Moon,LockKeyhole,HelpCircle,FileCheck2,ChevronRight,X,LogOut,ChartNoAxesCombined} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import {prepareDriverAvatar,trustedDriverAvatarUrl} from '../lib/driver-avatar';
 import type {DriverProfile,Order} from '../lib/types';
@@ -532,23 +532,27 @@ export function DriverPwaWorkflow(){
     </>}
     {tab==='perfil'&&<>
       <header className="df-screen-header"><div><h1>Perfil</h1></div></header>
-      <div className="df-surface df-profile-identity"><span className="df-avatar df-avatar-static">{avatarUrl?<img src={avatarUrl} alt="Foto de perfil del repartidor" referrerPolicy="no-referrer"/>:initial}</span>
-       <div><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
+      <div className="df-surface df-profile-identity">
+       <div className="df-avatar-frame">
+        <span className="df-avatar df-avatar-static">{avatarUrl?<img src={avatarUrl} alt="Foto de perfil del repartidor" referrerPolicy="no-referrer"/>:initial}</span>
+        <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+         hidden aria-label="Elegir foto de perfil" onChange={e=>{
+           const file=e.currentTarget.files?.[0];e.currentTarget.value='';
+           if(file)void changeAvatar(file);
+         }}/>
+        <button type="button" className="df-avatar-edit"
+         aria-label={avatarUrl?'Cambiar foto de perfil':'Subir foto de perfil'}
+         title={avatarUrl?'Cambiar foto de perfil':'Subir foto de perfil'}
+         disabled={avatarSaving||operationsBlocked} onClick={()=>avatarInput.current?.click()}>
+         {avatarSaving?<RefreshCw size={16} className="spin" aria-hidden="true"/>:<Camera size={16} strokeWidth={2.3} aria-hidden="true"/>}
+        </button>
+       </div>
+       <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
         <span className="df-chip"><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
-       </div></div>
-      <section className="df-section df-avatar-manager" aria-label="Tu fotografía de perfil">
-       <input ref={avatarInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        hidden aria-label="Elegir foto de perfil" onChange={e=>{
-          const file=e.currentTarget.files?.[0];e.currentTarget.value='';
-          if(file)void changeAvatar(file);
-        }}/>
-       <div className="df-avatar-copy"><strong>Tu fotografía</strong>
-        <span>Se mostrará en Clientes y Restaurantes cuando te asignen un pedido.</span></div>
-       <button type="button" className="df-avatar-change" disabled={avatarSaving||operationsBlocked}
-        onClick={()=>avatarInput.current?.click()}>{avatarSaving?'Guardando foto…':avatarUrl?'Cambiar foto':'Subir foto'}</button>
-       {avatarError&&<p role="alert" className="df-avatar-error">{avatarError}</p>}
-       <p className="df-caption">JPG, PNG, WEBP o HEIC compatible. El servidor elimina su ubicación y metadatos.</p>
-      </section>
+        {avatarSaving&&<span className="df-avatar-saving" role="status">Guardando foto…</span>}
+        {avatarError&&<span className="df-avatar-error" role="alert">{avatarError}</span>}
+       </div>
+      </div>
       <section className="df-section"><h2>Trabajo</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('vehicle')}><Bike size={21}/><span><strong>Vehículo</strong><small>{profile?.vehicle||'Sin vehículo'} · {maskedDriverPlate(profile?.plate)}</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('documents')}><FileCheck2 size={21}/><span><strong>Documentos</strong><small>Consultar estado de verificación</small></span><ChevronRight size={19}/></button>
