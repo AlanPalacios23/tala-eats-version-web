@@ -24,6 +24,8 @@ export function DriverSupportForm({activeOrderId,offline,accountId}:Props){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [ticketId,setTicketId]=useState<number|null>(null);
+ const [confirmedOrderId,setConfirmedOrderId]=useState<number|null>(null);
+ const [verifyRevision,setVerifyRevision]=useState(0);
  const [capability,setCapability]=useState(false);
  const [checking,setChecking]=useState(true);
  const mounted=useRef(true);
@@ -42,30 +44,34 @@ export function DriverSupportForm({activeOrderId,offline,accountId}:Props){
    if(alive)setCapability(false);
   }).finally(()=>{if(alive)setChecking(false);});
   return()=>{alive=false;};
- },[accountId,offline]);
+ },[accountId,offline,verifyRevision]);
  const valid=description.trim().length>=12&&description.trim().length<=1200;
  const allowed=capability&&!offline&&!!accountId&&Number.isSafeInteger(accountId)&&accountId>0;
  const linkedOrderId=linkedDriverTicketOrderId(activeOrderId,allowed);
  const submit=async(e:FormEvent<HTMLFormElement>)=>{
   e.preventDefault();
   if(inFlight.current||busy||!allowed||!valid)return;
-  inFlight.current=true;setBusy(true);setError('');setTicketId(null);
+  inFlight.current=true;setBusy(true);setError('');setTicketId(null);setConfirmedOrderId(null);
   try{
    const result=await api.createSupportTicket(category,description.trim(),linkedOrderId);
    if(!Number.isSafeInteger(result?.id)||result.id<=0||
      result.user_id!==accountId||result.order_id!==linkedOrderId)
     throw Error('El servidor no confirmó la autoría y la vinculación del ticket.');
-   if(mounted.current){setTicketId(result.id);setDescription('');}
+   if(mounted.current){setTicketId(result.id);setConfirmedOrderId(linkedOrderId);setDescription('');}
   }catch(reason){
-   if(mounted.current)setError(reason instanceof Error?reason.message:'No se pudo registrar la incidencia en el servidor.');
+   if(mounted.current)setError((reason instanceof Error?reason.message:'No se pudo verificar el registro.')+' Si perdiste conexión después de enviar, revisa Mis reportes antes de repetir la solicitud.');
   }finally{inFlight.current=false;if(mounted.current)setBusy(false);}
  };
  return <div className="df-driver-support">
   <p className="df-driver-support-intro"><ShieldCheck size={17} aria-hidden="true"/>
    Reporta una incidencia a soporte Tala Eats. El registro requiere confirmación del servidor.</p>
   {checking&&<p className="df-driver-support-context" role="status"><RefreshCw size={15} aria-hidden="true"/> Verificando permiso de soporte…</p>}
-  {!checking&&!capability&&<p className="df-driver-support-warning" role="status">
-   Soporte vinculado a pedidos no autorizado en este servidor. No se enviará ningún reporte hasta habilitarlo de forma segura.</p>}
+  {!checking&&!capability&&<div className="df-driver-support-unavailable" role="status">
+   <p className="df-driver-support-warning">Soporte vinculado a pedidos no autorizado en este servidor. No se enviará ningún reporte hasta habilitarlo de forma segura.</p>
+   {!offline&&Number.isSafeInteger(accountId)&&!!accountId&&accountId>0&&
+    <button type="button" className="df-support-recheck" disabled={busy}
+     onClick={()=>setVerifyRevision(v=>v+1)}><RefreshCw size={15} aria-hidden="true"/> Comprobar otra vez</button>}
+  </div>}
   {activeOrderId&&capability&&<p className="df-driver-support-context">
    Entrega #{activeOrderId} · Se vinculará únicamente si el servidor confirma que eres su repartidor asignado.</p>}
   <form onSubmit={e=>void submit(e)}>
@@ -86,7 +92,7 @@ export function DriverSupportForm({activeOrderId,offline,accountId}:Props){
   {offline&&<p className="df-driver-support-warning" role="status">Sin conexión: el reporte no se puede enviar.</p>}
   {error&&<p className="df-driver-support-warning" role="alert"><AlertTriangle size={16} aria-hidden="true"/>{error}</p>}
   {ticketId!==null&&<p className="df-driver-support-success" role="status"><CheckCircle2 size={16} aria-hidden="true"/>
-   Ticket #{ticketId} confirmado por el servidor{linkedOrderId?' y vinculado a entrega #'+linkedOrderId:''}.</p>}
+   Ticket #{ticketId} confirmado por el servidor{confirmedOrderId?' y vinculado a entrega #'+confirmedOrderId:''}.</p>}
   {capability&&<DriverSupportHistory key={ticketId??'initial'} accountId={accountId}/>}
   <p className="df-driver-support-note">Este canal no reemplaza a los servicios de emergencia. No confirmes recogidas ni entregas que no hayan ocurrido.</p>
  </div>;

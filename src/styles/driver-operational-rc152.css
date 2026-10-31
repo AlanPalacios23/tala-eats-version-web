@@ -40,3 +40,16 @@
 .df-app .df-driver-ticket-row{display:grid;gap:3px;border:1px solid #e6eae5;border-radius:12px;padding:9px 11px;background:#fafcf9}
 .df-app .df-driver-ticket-row strong{font-size:12px}
 .df-app .df-driver-ticket-row span{color:#68746d;font-size:11px}
+
+/* RC154: the same support surface now exposes verified status and replies. */
+.df-app .df-driver-ticket-reply{display:grid;gap:5px;margin:7px 0 0;
+ padding:10px;background:#eff7ef;border:1px solid #d9eadb;border-radius:10px;
+ font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.df-app .df-driver-ticket-reply strong{font-size:11px;color:#3e704c}
+.df-app .df-driver-ticket-reply span{white-space:pre-wrap;color:#37523e}
+.df-app .df-driver-support-unavailable{display:grid;gap:9px}
+.df-app .df-support-recheck{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ width:max-content;max-width:100%;min-height:44px;border-radius:12px;
+ background:#fff;border:1px solid #d7e3d7;padding:9px 12px;color:#315f45;
+ font-weight:800;font-size:12px}
+.df-app .df-support-recheck:focus-visible{outline:3px solid #f4a97a;outline-offset:3px}
