@@ -26,6 +26,8 @@ import {DriverPwaInstallButton} from './DriverPwaInstall';
 import {DriverLiveMap} from './DriverLiveMap';
 import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
 import {driverJourneyStage,driverJourneyNavigationHref} from '../lib/driver-journey-ux';
+import {hasConfirmedDriverStage,isUncertainDriverWrite} from '../lib/driver-action-confirmation';
+import type {DriverConfirmedStage} from '../lib/driver-action-confirmation';
 import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
 import '../styles/driver-motion-rc160.css';
 type DriverDash=DriverDashboardPayload;
@@ -251,19 +253,44 @@ function DriverPwaWorkflowSession(){
    if(mounted.current){setBusy(false);await refresh();}
   }
  }
- async function doAction(action:()=>Promise<unknown>,success:string,existing=false){
+ type ExpectedDriverChange={orderId:number;status:DriverConfirmedStage};
+ async function doAction(
+  action:()=>Promise<unknown>,success:string,existing=false,expected?:ExpectedDriverChange,
+ ){
   if(inFlight.current||!(existing?canProgress:actions))return;
   inFlight.current=true;setBusy(true);setMessage('');setError('');
-  let failed:string|null=null;
-  try{await action();if(mounted.current)setMessage(success);}
-  catch(e){failed=failure(e);}
-  finally{
+  let failed:string|null=null,confirmed=false,recovered=false;
+  try{
+   await action();
+   confirmed=true;
+  }catch(e){
+   if(expected&&isUncertainDriverWrite(e)){
+    // A timeout/5xx may happen AFTER COMMIT. Read our own orders once;
+    // never resend accept/pickup/PIN as an automatic retry.
+    try{
+     const authoritative=await api.driverMine();
+     confirmed=hasConfirmedDriverStage(authoritative,expected.orderId,expected.status);
+     recovered=confirmed;
+     if(!confirmed)failed='No se pudo confirmar el cambio. Revisa el pedido antes de volver a intentarlo.';
+    }catch{
+     failed='No conocemos el resultado de esta operación. Recupera la conexión y verifica el pedido antes de repetirla.';
+    }
+   }else failed=failure(e);
+  }finally{
+   if(mounted.current&&confirmed){
+    setMessage(success+(recovered?' Estado verificado nuevamente.':''));
+    if(expected?.status==='delivered'){
+     setProofSheet(false);
+     setPin(old=>{const next={...old};delete next[expected.orderId];return next;});
+     setCashReceived(old=>{const next={...old};delete next[expected.orderId];return next;});
+    }
+   }
    if(mounted.current)await refresh();
    inFlight.current=false;
    if(mounted.current){
     setBusy(false);
-    // A successful read must not hide an unsuccessful delivery/financial write.
-    if(failed&&mounted.current){setMessage('');setError(failed);}
+    // An unconfirmed result is not a successful payment, pickup or delivery.
+    if(failed){setMessage('');setError(failed);}
    }
   }
  }
@@ -283,10 +310,13 @@ function DriverPwaWorkflowSession(){
  const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
  const cannotReceive=readiness?.admin_verified!==true||readiness?.presence_enabled!==true;
  const cooldown=()=>Date.now()-actionCooldown.current<650;
- async function guardedAction(action:()=>Promise<unknown>,success:string,existing=false) {
+ async function guardedAction(
+  action:()=>Promise<unknown>,success:string,existing=false,
+  expected?:{orderId:number;status:DriverConfirmedStage},
+ ) {
   if(cooldown()||busy)return;
   actionCooldown.current=Date.now();
-  await doAction(action,success,existing);
+  await doAction(action,success,existing,expected);
  }
 
  const doneToday=dashboard?.today?.deliveries;
@@ -370,14 +400,8 @@ function DriverPwaWorkflowSession(){
  };
  const completeDelivery=async(order:Order)=>{
   if(browserOffline||!canSubmitDelivery(order,pin[order.id]??'',cashReceived[order.id]===true))return;
-  await guardedAction(async()=>{
-   await api.driverComplete(order.id,pin[order.id]??'');
-   if(mounted.current){
-    setProofSheet(false);
-    setPin(old=>{const next={...old};delete next[order.id];return next;});
-    setCashReceived(old=>{const next={...old};delete next[order.id];return next;});
-   }
-  },'Entrega validada por el servidor.',true);
+  await guardedAction(()=>api.driverComplete(order.id,pin[order.id]??''),
+   'Entrega validada por el servidor.',true,{orderId:order.id,status:'delivered'});
  };
  const doLogout=async()=>{
   if(!readiness){setError('No se pudo verificar si tienes una entrega activa. Recupera la conexión antes de cerrar sesión.');return;}
@@ -449,10 +473,10 @@ function DriverPwaWorkflowSession(){
     {!offer&&deliveryInProgress(o)&&driverSupportEnabled&&<button type="button" className="df-report-help"
       onClick={()=>setSheet('help')}><HelpCircle size={16} aria-hidden="true"/> Reportar incidencia</button>}
     {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
-    {offer?actions&&<button type="button" className="df-primary" disabled={operationsBlocked||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
+    {offer?actions&&<button type="button" className="df-primary" disabled={operationsBlocked||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.',false,{orderId:o.id,status:'assigned'})}>Aceptar entrega</button>:
      canProgress&&tab!=='inicio'&&<div className="df-job-actions">
-      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true)}>Confirmar recogida</button>}
-      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true)}>Iniciar ruta al cliente</button>}
+      {o.status==='assigned'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'picked_up'),'Recogida confirmada por el servidor.',true,{orderId:o.id,status:'picked_up'})}>Confirmar recogida</button>}
+      {o.status==='picked_up'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>void guardedAction(()=>api.driverStatus(o.id,'on_the_way'),'Ruta al cliente confirmada.',true,{orderId:o.id,status:'on_the_way'})}>Iniciar ruta al cliente</button>}
       {o.status==='on_the_way'&&<button type="button" className="df-primary" disabled={operationsBlocked} onClick={()=>openDeliveryProof(o)}>
        Validar entrega con PIN <ArrowUpRight size={17}/></button>}
      </div>}
@@ -464,10 +488,10 @@ function DriverPwaWorkflowSession(){
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();void setOnline(true);}}
  }:active?.status==='assigned'&&canProgress?{
   label:'Confirmar recogida',disabled:operationsBlocked,
-  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'picked_up'),'Recogida confirmada por el servidor.',true);}
+  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'picked_up'),'Recogida confirmada por el servidor.',true,{orderId:active.id,status:'picked_up'});}
  }:active?.status==='picked_up'&&canProgress?{
   label:'En camino al cliente',disabled:operationsBlocked,
-  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true);}
+  press:()=>{void guardedAction(()=>api.driverStatus(active.id,'on_the_way'),'Ruta al cliente confirmada.',true,{orderId:active.id,status:'on_the_way'});}
  }:active?.status==='on_the_way'&&canProgress?{
   label:'Validar entrega con PIN',disabled:operationsBlocked,
   press:()=>{if(!cooldown()){actionCooldown.current=Date.now();openDeliveryProof(active);}}
@@ -545,7 +569,7 @@ function DriverPwaWorkflowSession(){
         busy={operationsBlocked}
         offersError={offersError}
         onRefresh={()=>{void manualRefresh();}}
-        onAccept={order=>{void guardedAction(()=>api.driverAccept(order.id),'Asignación confirmada por el servidor.');}}
+        onAccept={order=>{void guardedAction(()=>api.driverAccept(order.id),'Asignación confirmada por el servidor.',false,{orderId:order.id,status:'assigned'});}}
         onClose={closeMap}
         onGoOffline={()=>{if(!operationsBlocked&&!active)void setOnline(false);}}
         errorMessage={error}
