@@ -1,8 +1,9 @@
 import {useEffect,useState} from 'react';
 import {RefreshCw} from 'lucide-react';
 import {api} from '../lib/api';
+import {driverTicketStatusLabel,verifiedTicketReply} from '../lib/driver-support-presentation';
 
-type Entry={id:number;user_id?:number;category?:string;status?:string;created_at?:string};
+type Entry={id:number;user_id?:number;category?:string;status?:string;created_at?:string;admin_reply?:string;responded_at?:string|null};
 /** Only verified own support tickets; backend may return heterogeneous/legacy
  * records and this PWA must NEVER show another account's information.
  */
@@ -41,7 +42,11 @@ export function DriverSupportHistory({accountId}:{accountId:number|null}){
   {!loading&&!error&&visibleRows.length===0&&<p>No hay reportes verificables para esta cuenta.</p>}
   {!loading&&!error&&visibleRows.map(item=><div className="df-driver-ticket-row" key={item.id}>
    <strong>Ticket #{item.id}</strong>
-   <span>{item.status||'Registrado'} · {item.category||'Incidencia'}</span>
+   <span>{driverTicketStatusLabel(item.status)} · {item.category||'Incidencia'}</span>
+   {verifiedTicketReply(item.admin_reply)&&<p className="df-driver-ticket-reply">
+    <strong>Respuesta de soporte</strong>
+    <span>{verifiedTicketReply(item.admin_reply)}</span>
+   </p>}
   </div>)}
  </section>;
 }
