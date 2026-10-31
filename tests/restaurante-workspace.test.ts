@@ -35,6 +35,27 @@ describe('PWA Restaurantes: centro de operaciones',()=>{
     expect(css).toContain('env(safe-area-inset-bottom,0px)');
     expect(css).toContain('prefers-reduced-motion:reduce');
   });
+  it('renderiza colas reales por etapas y hoja de detalles accesible',()=>{
+    expect(workspace).toContain('merchant-board');
+    expect(workspace).toContain('merchant-queue-column');
+    expect(workspace).toContain("['received']");
+    expect(workspace).toContain("['confirmed','preparing']");
+    expect(workspace).toContain("['ready','assigned','picked_up','on_the_way']");
+    expect(workspace).toContain('merchant-detail-sheet');
+    expect(workspace).toContain('aria-modal="true"');
+    expect(workspace).toContain('aria-label="Ver tablero"');
+    expect(workspace).toContain('aria-label="Ver lista"');
+    expect(css).toContain('.merchant-detail-backdrop');
+    expect(css).toContain('.merchant-board');
+  });
+  it('usa el manifest standalone existente sin aislar autenticación ni API',()=>{
+    const file=readFileSync(new URL('../public/manifest-restaurante.webmanifest',import.meta.url),'utf8');
+    const manifest=JSON.parse(file);
+    expect(manifest.display).toBe('standalone');
+    expect(manifest.start_url).toBe('/restaurante');
+    expect(manifest.theme_color).toBe('#ffffff');
+    expect(app).toContain('<Protected role="restaurant">');
+  });
   it('consulta pedidos periódicamente sin efectuar escrituras automáticas',()=>{
     expect(workspace).toContain("document.visibilityState==='visible'&&section==='pedidos'");
     expect(workspace).toContain('},30000)');
