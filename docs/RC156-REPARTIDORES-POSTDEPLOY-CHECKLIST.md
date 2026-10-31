@@ -33,6 +33,16 @@ node scripts/rc156-postdeploy-readonly.mjs --mode=live --with-pwas
 ```
 El script visita API `health`, `ready`, exige 401 sin sesión en las rutas de soporte y verifica el HTML de las tres PWAs. **No envía pedidos, PIN, imágenes ni pagos**. Una validación PASS no verifica SHA de despliegue ni pruebas de sesión: corroborar ambos manualmente en Kali.
 
+## Posdespliegue en el propio Kali: verificar bytes servidos y SHA (solo GET)
+Con el SHA exacto de la release que fue aprobada e instalada, **sin sudo**:
+```bash
+SHA="<SHA_REAL_40_HEX>"
+bash "/home/tala-node-stage/tala-eats-web-releases/$SHA/deploy/rc156-kali-readonly-postcheck.sh" --sha="$SHA"
+```
+Este segundo gate verifica que el symlink activo de Repartidores está en esa release, que Nginx 18199 sirve exactamente el HTML, service worker y manifest del directorio activo, que el servicio está arriba y que el proxy backend responde protegido/ready.
+No ejecuta rollback, no altera symlinks, no inspecciona secretos y no autoriza flujos financieros.
+**Si hay FAIL, no publicar cambios adicionales hasta investigar/volver a la versión anterior mediante el procedimiento aprobado.**
+
 ## Validación visual y funcional después de la publicación
 1. Abrir `https://repartidores-talaeats.alan-palacios-dev.com/repartidor/acceso` en ventana limpia y dispositivo Android/iOS.
 2. Confirmar PWA standalone, ruta original, login, identidad del usuario correcto, actualización de SW sin perder assets de sesiones anteriores y ausencia de pantalla blanca.
