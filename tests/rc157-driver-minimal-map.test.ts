@@ -14,7 +14,7 @@ describe('RC157 · clutter-free Tala Eats courier UX',()=>{
   expect(mapCss).toContain('.dm-immersive');
   expect(shell).not.toContain('.customer-');
   expect(shell).not.toContain('.restaurant-');
-  expect(mapCss).not.toContain('body{');
+  expect(mapCss).not.toMatch(/(^|\n)\s*body\s*\{/);
   expect(mapCss).not.toContain('html{');
  });
  it('keeps a direct, truthful offline start and visible account status while reducing repeated copy',()=>{
