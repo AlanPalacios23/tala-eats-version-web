@@ -1,0 +1,190 @@
+/* RC160 — Tala Eats Repartidores motion and visual finishing layer.
+ * Scoped exclusively to driver UI; no decoration pretends that an order or
+ * payment succeeded. All movement is short, intentional, and opt-out ready.
+ */
+.df-app{
+ --df160-ink:#19231e;
+ --df160-accent:#ef6b31;
+ --df160-green:#208153;
+ --df160-ease:cubic-bezier(.2,.75,.25,1);
+}
+.df-app .df-screen-header h1{
+ font-kerning:normal;letter-spacing:-.7px;text-wrap:balance;
+}
+.df-app .df-availability{
+ position:relative;isolation:isolate;
+ transition:border-color .22s var(--df160-ease),background-color .22s var(--df160-ease);
+}
+.df-app .df-availability.is-online{border-color:#cfe5d6;background:#fcfffd}
+.df-app .df-availability.is-online .df-availability-text strong{color:#175e3d}
+.df-app .df-status-dot.active{
+ background:#218650;
+ animation:df160-online-breath 3.1s ease-in-out infinite;
+}
+@keyframes df160-online-breath{
+ 0%,100%{box-shadow:0 0 0 4px #238d5515}
+ 50%{box-shadow:0 0 0 7px #238d550b}
+}
+.df-app .df-switch{
+ transition:background-color .22s var(--df160-ease),box-shadow .22s var(--df160-ease);
+}
+.df-app .df-switch>span{transition:transform .22s var(--df160-ease),background-color .22s var(--df160-ease)}
+.df-app .df-switch:active:not(:disabled)>span{transform:scale(.93)}
+.df-app .df-bottom-nav{box-shadow:0 -4px 18px #101c1608}
+.df-app .df-bottom-nav button.selected .df-nav-icon{
+ position:relative;
+ transition:background-color .2s ease,color .2s ease,transform .2s ease;
+}
+.df-app .df-bottom-nav button.selected .df-nav-icon:after{
+ content:"";position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+ width:5px;height:5px;background:var(--df160-accent);border-radius:50%;
+}
+.df-app .df-bottom-nav button:active:not(:disabled) .df-nav-icon{transform:scale(.93)}
+.df-app .df-primary:not(:disabled){
+ transition:transform .16s var(--df160-ease),background-color .18s ease,box-shadow .18s ease;
+}
+.df-app .df-primary:active:not(:disabled){
+ transform:scale(.985);box-shadow:0 2px 7px #13271a20;
+}
+.df-app .df-job.is-active{
+ border-color:#d4e1d8;box-shadow:0 5px 19px #1e473310;
+}
+.df-app .df-trip-progress .df-stage-progress span{
+ transition:background-color .27s var(--df160-ease),opacity .27s var(--df160-ease);
+}
+.df-app .df-trip-progress .df-stage-progress span.filled{background:#259461}
+.df-app .df-route-platform-links a{
+ transition:border-color .17s ease,background-color .17s ease,transform .17s ease;
+}
+.df-app .df-route-platform-links a:active{
+ transform:scale(.98);background:#f0f8f2;
+}
+.df-app .df-trip-more[open] .df-route-stops{
+ animation:df160-details-reveal .18s var(--df160-ease) both;
+}
+@keyframes df160-details-reveal{
+ from{opacity:.55;transform:translateY(-4px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.df-app .df-floating-status{
+ border:1px solid #dfe8e0;box-shadow:0 10px 28px #15312418;
+ animation:df160-toast-enter .23s var(--df160-ease) both;
+}
+@keyframes df160-toast-enter{
+ from{opacity:0;transform:translateY(10px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.df-app .df-week-bar>span{
+ transition:height .25s var(--df160-ease),background-color .2s ease;
+}
+.dm-immersive{
+ --dm160-ease:cubic-bezier(.2,.75,.25,1);
+}
+.dm-immersive .dm-offer-panel{
+ background:#fff;
+ box-shadow:0 -9px 34px #10281f1c;
+}
+.dm-immersive .dm-grab-line{
+ background:#c8d5ce;
+ transition:width .18s ease,background-color .18s ease;
+}
+.dm-immersive .dm-sheet-grab:active .dm-grab-line{width:50px;background:#92a89a}
+.dm-immersive .dm-offer{
+ animation:dm160-card-reveal .22s var(--dm160-ease) both;
+ box-shadow:0 2px 12px #142a190a;
+}
+@keyframes dm160-card-reveal{
+ from{opacity:.68;transform:translateY(9px)}
+ to{opacity:1;transform:translateY(0)}
+}
+.dm-immersive .dm-offer .dm-store{letter-spacing:-.55px}
+.dm-immersive .dm-earning{font-variant-numeric:tabular-nums}
+.dm-immersive .dm-accept:not(:disabled){
+ background:#192720;
+ box-shadow:0 4px 13px #19362624;
+ transition:background-color .18s ease,transform .18s var(--dm160-ease),box-shadow .18s ease;
+}
+.dm-immersive .dm-accept:active:not(:disabled){
+ background:#273e31;transform:scale(.985);box-shadow:0 1px 3px #19362618;
+}
+.dm-immersive .dm-round-button:not(:disabled){
+ transition:background-color .16s ease,box-shadow .16s ease,transform .16s var(--dm160-ease);
+}
+.dm-immersive .dm-round-button:active:not(:disabled){
+ background:#f2f6f3;transform:scale(.94);box-shadow:0 2px 9px #1d342817;
+}
+.dm-immersive .dm-online-pill:not(.is-disconnected) .dm-live-dot{
+ animation:dm160-live-indicator 3.4s ease-in-out infinite;
+}
+@keyframes dm160-live-indicator{
+ 0%,100%{box-shadow:0 0 0 4px #1aaf6430}
+ 50%{box-shadow:0 0 0 7px #1aaf640a}
+}
+.dm-immersive .dm-online-pill.is-disconnected{
+ color:#855b3c;background:#fff8f1;border-color:#f0dfcf;
+}
+.dm-immersive .dm-online-pill.is-disconnected .dm-live-dot{
+ background:#c1875d;box-shadow:0 0 0 4px #d1a58223;animation:none;
+}
+.dm-immersive .dm-map-marker-selected{
+ filter:drop-shadow(0 1px 5px #df753c80);
+ animation:dm160-marker-focus .28s var(--dm160-ease) both;
+}
+@keyframes dm160-marker-focus{
+ from{opacity:.52}
+ to{opacity:1}
+}
+.dm-immersive .dm-map-marker{
+ filter:drop-shadow(0 2px 3px #4e4c4426);
+}
+.dm-immersive .dm-mini-offer,
+.dm-immersive .dm-sort-details>summary{
+ transition:background-color .16s ease,border-color .16s ease;
+}
+.dm-immersive .dm-mini-offer:active{
+ background:#f4f8f5;transform:scale(.985);
+}
+.dm-immersive .dm-sort-details[open] .dm-offer-sort{
+ animation:dm160-options-in .18s var(--dm160-ease) both;
+}
+@keyframes dm160-options-in{
+ from{opacity:.65}
+ to{opacity:1}
+}
+.dm-immersive .dm-none .dm-radar-icon{
+ animation:dm160-wait 3.8s ease-in-out infinite;
+}
+@keyframes dm160-wait{
+ 0%,100%{box-shadow:0 0 0 0 #268b4b12}
+ 50%{box-shadow:0 0 0 8px #268b4b09}
+}
+.dm-immersive .dm-map-warning{box-shadow:0 3px 10px #3320130d}
+@media(hover:hover) and (pointer:fine){
+ .df-app .df-primary:hover:not(:disabled){background:#263a2c;box-shadow:0 5px 15px #15271a20}
+ .dm-immersive .dm-round-button:hover:not(:disabled){background:#f7faf8}
+ .dm-immersive .dm-mini-offer:hover{background:#f7faf8;border-color:#d1e0d5}
+}
+@media(max-width:370px){
+ .dm-immersive .dm-offer{padding:12px}
+ .dm-immersive .dm-online-pill{font-size:10px}
+ .df-app .df-bottom-nav button.selected .df-nav-icon:after{bottom:-3px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-status-dot.active,
+ .df-app .df-floating-status,
+ .df-app .df-trip-more[open] .df-route-stops,
+ .dm-immersive .dm-offer,
+ .dm-immersive .dm-live-dot,
+ .dm-immersive .dm-map-marker-selected,
+ .dm-immersive .dm-sort-details[open] .dm-offer-sort,
+ .dm-immersive .dm-none .dm-radar-icon{animation:none!important}
+ .df-app .df-switch,.df-app .df-switch>span,.df-app .df-bottom-nav button.selected .df-nav-icon,
+ .df-app .df-availability,.df-app .df-primary,.df-app .df-week-bar>span,
+ .df-app .df-route-platform-links a,.df-app .df-trip-progress .df-stage-progress span,
+ .dm-immersive .dm-grab-line,.dm-immersive .dm-accept,.dm-immersive .dm-round-button,
+ .dm-immersive .dm-mini-offer,.dm-immersive .dm-sort-details>summary{transition:none!important}
+ .df-app .df-primary:active,.df-app .df-switch:active>span,
+ .df-app .df-route-platform-links a:active,
+ .dm-immersive .dm-accept:active,.dm-immersive .dm-round-button:active,
+ .dm-immersive .dm-mini-offer:active{transform:none!important}
+}
