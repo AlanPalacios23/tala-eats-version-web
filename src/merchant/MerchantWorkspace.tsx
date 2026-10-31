@@ -188,26 +188,26 @@ export default function MerchantWorkspace(){
   const products=useMemo(()=> (restaurant?.menu_items??[]).filter(p=>(p.name+' '+(p.category||'')).toLocaleLowerCase('es-MX').includes(menuSearch.trim().toLocaleLowerCase('es-MX'))),[restaurant,menuSearch]);
 
   const changeStatus=async(id:number,status:StatusAction)=>{
-    if(mutationInFlight.current)return;
-    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
+    if(mutationInFlight.current||!navigator.onLine)return;
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setBusyOrder(id);setNotice('');
     try{await api.ownerUpdateStatus(id,status);await refresh(false);setNotice('Pedido #'+id+' actualizado correctamente.');}
     catch(e){setNotice('Pedido #'+id+': '+errorMessage(e));}
     finally{setBusyOrder(null);mutationInFlight.current=false;}
   };
   const toggleStore=async()=>{
-    if(!restaurant||mutationInFlight.current)return;
-    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
+    if(!restaurant||mutationInFlight.current||!navigator.onLine)return;
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setSavingStore(true);setNotice('');
     try{await api.ownerUpdateRestaurant({is_open:!restaurant.is_open});await refresh(false);setNotice('Disponibilidad actualizada en el servidor.');}
     catch(e){setNotice(errorMessage(e));}
     finally{setSavingStore(false);mutationInFlight.current=false;}
   };
   const addProduct=async(e:FormEvent)=>{
-    e.preventDefault();if(mutationInFlight.current)return;
+    e.preventDefault();if(mutationInFlight.current||!navigator.onLine)return;
     const price=Number(newPrice);
     if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNotice('Revisa el nombre, precio y existencias.');return;}
-    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setSubmitting(true);setNotice('');
     try{
       await api.ownerAddItem({name:newName.trim(),price:newPrice,stock:newStock,description:newDescription.trim(),category:newCategory.trim()||'General',is_available:true});
@@ -289,7 +289,7 @@ export default function MerchantWorkspace(){
             <div className="merchant-menu-info"><span><UtensilsCrossed size={18}/>{restaurant?.menu_items?.length??0} productos</span><span><SlidersHorizontal size={18}/>{stockLow} con 5 unidades o menos</span></div>
             {addOpen&&<form onSubmit={e=>void addProduct(e)} className="merchant-add-form"><h2>Nuevo producto</h2><div className="merchant-add-grid"><label>Nombre<input required maxLength={150} minLength={2} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nombre del producto"/></label><label>Categoría<input maxLength={80} value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="General"/></label><label>Precio (MXN)<input required value={newPrice} onChange={e=>setNewPrice(e.target.value)} inputMode="decimal" placeholder="89.00"/></label><label>Existencias<input required type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><label className="merchant-add-full">Descripción<input maxLength={500} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Opcional"/></label></div><div className="merchant-add-actions"><button className="merchant-small-button" disabled={submitting||!online}>{submitting?'Agregando…':'Guardar producto'}</button><button type="button" className="merchant-neutral-button" onClick={()=>setAddOpen(false)}>Cancelar</button></div></form>}
             <div className="merchant-menu-toolbar"><h2>Productos publicados</h2><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
-            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} onSaved={()=>refresh(true)}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos">{menuSearch?'Cambia tu búsqueda.':'Agrega tu primer producto para comenzar.'}</ScreenEmpty>}
+            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} onSaved={()=>refresh(false)}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos">{menuSearch?'Cambia tu búsqueda.':'Agrega tu primer producto para comenzar.'}</ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">DATOS DEL NEGOCIO</span><h1>Rendimiento</h1><p>Indicadores históricos del backend. No son ventas estimadas ni cifras del día.</p></div></div>
