@@ -17,6 +17,7 @@ import {DriverOperationsOverview} from './DriverOperationsOverview';
 import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
 import '../styles/driver-operational-rc152.css';
 import '../styles/driver-focus-shell-rc157.css';
+import '../styles/driver-journey-focus-rc158.css';
 import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
