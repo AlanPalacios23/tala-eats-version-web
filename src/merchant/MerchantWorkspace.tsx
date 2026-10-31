@@ -350,6 +350,17 @@ export default function MerchantWorkspace(){
           </>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CONFIGURACIÓN</span><h1>Mi negocio</h1><p>Controla tu disponibilidad y consulta la información verificada del comercio.</p></div></div>
+            <section className="merchant-store-hero">
+              {restaurant?.cover_image_url&&safeImage(restaurant.cover_image_url)&&<img className="merchant-store-cover" src={safeImage(restaurant.cover_image_url)} alt="" loading="lazy"/>}
+              <div className="merchant-store-hero-shade"/>
+              <div className="merchant-store-hero-content">
+                <span className="merchant-store-hero-kicker"><Store size={15}/> TU ESTABLECIMIENTO</span>
+                <h2>{restaurant?.name||'Mi comercio'}</h2>
+                <p>{restaurant?.cuisine||'Comercio local'}{restaurant?.address?' · '+restaurant.address:''}</p>
+                <span className={'merchant-store-state '+(restaurant?.is_open?'open':'')}><span/>{restaurant?.is_open?'Aceptando pedidos según configuración':'Comercio cerrado'}</span>
+              </div>
+              <button type="button" className="merchant-store-hero-action" onClick={()=>setSection('menu')}>Gestionar productos <ChevronRight size={18}/></button>
+            </section>
             <div className="merchant-settings-grid"><section className="merchant-setting-card"><span className="merchant-setting-icon"><Store size={23}/></span><h2>{restaurant?.name||'Mi comercio'}</h2><p><MapPin size={16}/>{restaurant?.address||'Dirección sin publicar'}</p><div className="merchant-setting-row"><span>Verificación</span><strong>{restaurant?.verification_status||'Sin información'}</strong></div><div className="merchant-setting-row"><span>Pedidos para recoger</span><strong>{restaurant?.pickup_enabled?'Habilitados':'Deshabilitados'}</strong></div></section>
               <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
           </>}
