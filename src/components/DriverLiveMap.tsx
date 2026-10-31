@@ -325,7 +325,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     {errorMessage&&<div className="dm-warning-line" role="alert"><AlertCircle size={17}/> {errorMessage}</div>}
     {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline||refreshing} onClick={onRefresh}>Reintentar</button></div>}
     {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
-    {eligible&&sortedOffers.length>1&&<div className="dm-offer-sort" role="group" aria-label="Ordenar pedidos disponibles">
+    {eligible&&sortedOffers.length>1&&<details className="dm-sort-details">
+     <summary>Ordenar ofertas</summary>
+     <div className="dm-offer-sort" role="group" aria-label="Ordenar pedidos disponibles">
      <span className="dm-offer-sort-caption">Ordenar</span>
      {([{key:'received',label:'Recibidos'},{key:'earnings',label:'Ganancia'},{key:'nearby',label:'Cercanía'}] as const).map(item=>
       <button key={item.key} type="button" className={'dm-offer-sort-option'+(effectiveOfferOrder===item.key?' is-selected':'')}
@@ -341,7 +343,8 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      {(!canSortNearby||effectiveOfferOrder==='nearby')&&<small className="dm-offer-sort-note">
       {canSortNearby?'Cercanía calcula solo distancia en línea recta, no tiempo de viaje.':'Para ordenar por cercanía necesitas GPS y ubicaciones públicas de los comercios.'}
      </small>}
-    </div>}
+     </div>
+    </details>}
     {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
      <div className="dm-offer-row">
       <span className="dm-order">PEDIDO #{selected.id}</span>
