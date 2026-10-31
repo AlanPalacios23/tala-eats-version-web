@@ -318,7 +318,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      </div>
      {eligible&&<span className="dm-panel-count">{offerCount} {offerCount===1?'disponible':'disponibles'}</span>}
     </div>
-    <DriverOfferAttention offers={readyOffers} eligible={eligible} offline={offline}/>
+    <DriverOfferAttention offers={readyOffers} eligible={eligible} offline={offline} onFocusOffer={openOffer}/>
     {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
       <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
     {errorMessage&&<div className="dm-warning-line" role="alert"><AlertCircle size={17}/> {errorMessage}</div>}
