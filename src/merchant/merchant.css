@@ -332,3 +332,68 @@
 @media(prefers-reduced-motion:reduce){
   .merchant-detail-backdrop,.merchant-detail-sheet,.merchant-order-card,.merchant-attention{animation:none!important;transition:none!important}
 }
+
+
+/* RC159 · Detalles que distinguen una consola de operaciones de una web genérica */
+.merchant-connection{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:750;color:#78838f;padding:8px 0;white-space:nowrap}
+.merchant-connection>span{width:7px;height:7px;border-radius:50%;background:#25a46f}
+.merchant-connection.offline{color:#ac4b34}
+.merchant-connection.offline>span{background:#df6d4d}
+.merchant-open-pill{border:0;cursor:pointer;font-family:inherit}
+.merchant-open-pill:hover{filter:brightness(.96)}
+.merchant-order-header>div{gap:5px}
+.merchant-age{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#737d86;margin-top:4px}
+.merchant-order-card.is-new .merchant-age{color:#c3662c}
+.merchant-product-heading>div{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.merchant-stock-indicator{font-size:10px;display:inline-flex;color:#627b66;background:#edf8ef;border-radius:6px;padding:4px 7px;font-weight:750;line-height:1}
+.merchant-stock-indicator.low{color:#ad691a;background:#fff3df}
+.merchant-quick-button{min-height:38px;padding:9px 12px;border-radius:10px;color:#313a43;border:1px solid #e3e7ea;background:#f5f6f7;font-weight:800;font-size:11px;transition:background .16s}
+.merchant-quick-button:hover:not(:disabled){background:#e8ecef}
+.merchant-quick-button:disabled{opacity:.48}
+.merchant-product-controls{align-items:flex-end}
+.merchant-detail-actions{display:flex;flex-direction:column;gap:9px}
+.merchant-print-button{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 16px;border:1px solid #dfe5e9;background:#fff;color:#303a43;border-radius:11px;font-size:12px;font-weight:800;min-height:46px}
+.merchant-print-button:hover{background:#f4f6f7}
+.merchant-detail-header button:focus-visible,.merchant-detail-sheet button:focus-visible{outline:3px solid #f5af81;outline-offset:2px}
+.merchant-detail-lines>div{align-items:center}
+.merchant-detail-item-qty{font-variant-numeric:tabular-nums}
+.merchant-order-card,.merchant-product,.merchant-metric,.merchant-setting-card{box-shadow:0 1px 2px #18202c08}
+.merchant-main-button,.merchant-order-action,.merchant-small-button{font-weight:850;letter-spacing:-.005em}
+.merchant-order-action:active:not(:disabled),.merchant-detail-button:active{transform:scale(.992)}
+.merchant-mobile-nav button,.merchant-chips button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.merchant-shell{overscroll-behavior-x:none}
+.merchant-shell :is(button,input){font-family:inherit}
+@media(max-width:1120px){
+ .merchant-connection{font-size:0;padding:9px 3px}
+ .merchant-connection>span{width:9px;height:9px}
+ .merchant-product-controls .merchant-quick-button{flex:0 1 auto}
+}
+@media(max-width:760px){
+ .merchant-order-card{border-radius:16px;padding:17px}
+ .merchant-age{font-size:10px;margin-top:2px}
+ .merchant-toolbar-actions{gap:12px}
+ .merchant-connection{display:none}
+ .merchant-stock-indicator{font-size:10px}
+ .merchant-product-controls .merchant-quick-button{width:100%;flex:1 1 100%}
+ .merchant-product-controls input{height:44px}
+ .merchant-product-controls .merchant-small-button{min-height:44px}
+ .merchant-quick-button{min-height:44px}
+ .merchant-print-button{min-height:48px}
+ .merchant-detail-sheet{max-height:94dvh}
+}
+@media print{
+ @page{size:auto;margin:14mm}
+ body{background:#fff!important;color:#000!important}
+ body *{visibility:hidden!important}
+ .merchant-detail-backdrop,.merchant-detail-backdrop *{visibility:visible!important}
+ .merchant-detail-backdrop{position:absolute!important;inset:0!important;z-index:10000!important;display:block!important;background:#fff!important;animation:none!important}
+ .merchant-detail-sheet{position:absolute!important;top:0!important;left:0!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;animation:none!important}
+ .merchant-detail-scroll{overflow:visible!important;padding:20px 8px!important}
+ .merchant-detail-header{padding:15px 8px!important}
+ .merchant-detail-header button,.merchant-detail-actions,.merchant-detail-hint{display:none!important}
+ .merchant-detail-lines>div{break-inside:avoid}
+ .merchant-detail-info,.merchant-detail-total{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+@media(prefers-reduced-motion:reduce){
+ .merchant-order-action,.merchant-quick-button,.merchant-open-pill{transition:none!important}
+}
