@@ -550,3 +550,105 @@
 /* La línea hacia la siguiente etapa no debe verse completada antes de llegar. */
 .merchant-kitchen-step.current:not(:last-child)::after{background:#e2e7e9}
 @media(max-width:420px){.merchant-arrival>div:nth-child(2){padding-right:20px}}
+
+
+/* RC161 — Wallet de restaurante: lectura bancaria separada de la contabilidad. */
+.merchant-wallet{animation:merchant-enter .23s ease-out both;max-width:1350px}
+.merchant-wallet-heading{margin-bottom:22px}
+.merchant-wallet-heading h1{font-size:clamp(30px,3vw,42px)}
+.merchant-wallet-refresh{border:1px solid #dde3e7;background:#fff;color:#263039;padding:11px 16px;min-height:43px;border-radius:11px;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:9px;white-space:nowrap}
+.merchant-wallet-refresh:hover:not(:disabled){background:#f3f5f6}
+.merchant-wallet-refresh:disabled{opacity:.54}
+.merchant-wallet-notice{background:#edf5fb;color:#315775;border:1px solid #dbe9f3;border-radius:13px;display:flex;align-items:flex-start;gap:11px;padding:15px 17px;margin-bottom:21px}
+.merchant-wallet-notice svg{flex-shrink:0;margin-top:2px}
+.merchant-wallet-notice>div{display:flex;flex-direction:column;gap:4px}
+.merchant-wallet-notice strong{font-size:12px;font-weight:850}
+.merchant-wallet-notice span{font-size:11px;line-height:1.55}
+.merchant-wallet-skeleton{min-height:180px;display:flex;align-items:center;justify-content:center;gap:11px;color:#707d88;font-size:13px}
+.merchant-wallet-hero{background:#1c2227;border:1px solid #252c32;color:#fff;border-radius:19px;padding:30px 30px 23px;margin-bottom:23px;min-width:0;overflow:hidden;position:relative}
+.merchant-wallet-hero::before{content:'';position:absolute;right:-120px;top:-180px;height:350px;width:350px;border-radius:50%;background:radial-gradient(circle,#f3883a22 0,transparent 68%);pointer-events:none}
+.merchant-wallet-hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}
+.merchant-wallet-hero-top>span:first-child{display:flex;align-items:center;gap:10px;color:#e5eaf0;font-size:13px;font-weight:750}
+.merchant-wallet-hero-top svg{color:#f99a56}
+.merchant-wallet-status{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:850;padding:8px 11px;border-radius:99px;background:#ffffff18;color:#c9d2db;white-space:nowrap}
+.merchant-wallet-status.verified{background:#215338;color:#b4f6ca}
+.merchant-wallet-status.verified svg{color:#a2ebba}
+.merchant-wallet-main-amount{font:850 clamp(39px,4vw,58px) Outfit,system-ui,sans-serif;display:block;line-height:1.1;letter-spacing:-.065em;overflow-wrap:anywhere}
+.merchant-wallet-hero>p{font-size:11px;color:#b4bec7;max-width:600px;line-height:1.55;margin:10px 0 23px}
+.merchant-wallet-balance-meta{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 24px}
+.merchant-wallet-balance-meta span{font-size:11px;color:#c2cbd4;background:#ffffff13;border:1px solid #ffffff13;border-radius:9px;padding:11px 12px}
+.merchant-wallet-balance-meta strong{color:#fff;font-weight:800;margin-left:4px}
+.merchant-wallet-hero-foot{border-top:1px solid #ffffff24;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:10px;color:#a5b1bb}
+.merchant-wallet-hero-foot>span:first-child{display:flex;align-items:center;gap:7px}
+.merchant-wallet-inline-warning{display:flex;gap:10px;align-items:flex-start;background:#fff7ec;border:1px solid #f2dfc7;color:#8b5a2a;padding:12px 15px;border-radius:11px;margin:-7px 0 23px;font-size:11px;line-height:1.5}
+.merchant-wallet-inline-warning svg{flex-shrink:0}
+.merchant-wallet-inline-warning strong{font-weight:900}
+.merchant-wallet-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:27px 0 13px}
+.merchant-wallet-section-heading h2{font-size:21px;margin:0 0 4px}
+.merchant-wallet-section-heading p{color:#8a959e;font-size:11px;margin:0;line-height:1.5}
+.merchant-wallet-section-heading>svg{color:#7b858e}
+.merchant-wallet-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.merchant-wallet-stat{min-width:0;display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #e6ebee;border-radius:15px;padding:20px}
+.merchant-wallet-stat>span{font-size:11px;color:#84909b;font-weight:750}
+.merchant-wallet-stat>strong{font:800 clamp(22px,2.4vw,32px) Outfit,sans-serif;color:#21282e;line-height:1.05;letter-spacing:-.04em;overflow-wrap:anywhere}
+.merchant-wallet-stat>small{font-size:10px;color:#a1aab3;line-height:1.4}
+.merchant-wallet-two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:24px 0}
+.merchant-wallet-panel{min-width:0;background:#fff;border:1px solid #e7ebee;border-radius:16px;padding:22px}
+.merchant-wallet-panel-heading{display:flex;align-items:center;gap:12px;margin-bottom:17px}
+.merchant-wallet-panel-heading h2{font-size:18px;margin:0 0 4px}
+.merchant-wallet-panel-heading p{margin:0;font-size:11px;color:#929ca4}
+.merchant-wallet-panel-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#fff1e8;color:#e3702a;flex-shrink:0}
+.merchant-wallet-detail-row{display:flex;justify-content:space-between;align-items:center;gap:18px;border-top:1px solid #f0f2f4;padding:15px 0;font-size:11px;color:#8b959f}
+.merchant-wallet-detail-row strong{color:#3a444e;text-align:right;overflow-wrap:anywhere;font-size:11px}
+.merchant-wallet-panel-foot{font-size:10px;color:#9ca6af;line-height:1.55;margin:14px 0 0}
+.merchant-wallet-withdraw-disabled{display:flex;gap:9px;align-items:flex-start;background:#f2f3f5;color:#747f89;padding:14px;border-radius:11px;font-size:11px;line-height:1.55;margin-top:12px}
+.merchant-wallet-withdraw-disabled svg{flex-shrink:0}
+.merchant-wallet-history{background:#fff;border:1px solid #e6eaee;border-radius:16px;overflow:hidden}
+.merchant-wallet-history-row{display:flex;gap:14px;align-items:center;padding:16px 20px;border-bottom:1px solid #edf0f2}
+.merchant-wallet-history-row:last-child{border-bottom:0}
+.merchant-wallet-history-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#f2f4f6;color:#687682;flex-shrink:0}
+.merchant-wallet-history-row>div:nth-child(2){display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.merchant-wallet-history-row strong{font-size:12px;color:#35414a;line-height:1.3}
+.merchant-wallet-history-row small{font-size:10px;color:#94a0a9}
+.merchant-wallet-history-right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.merchant-wallet-history-right strong{font:800 16px Outfit,sans-serif;color:#212b32}
+.merchant-wallet-error-inline{font-size:11px;line-height:1.5;color:#985c2d;margin-top:11px}
+.merchant-wallet-empty{background:#fff;border:1px dashed #dce1e6;border-radius:13px;padding:25px;text-align:center;font-size:12px;color:#939fa9}
+.merchant-wallet-route{display:inline-flex;justify-content:space-between;align-items:center;gap:9px;background:#20262b;color:#fff;border:0;border-radius:11px;padding:12px 17px;font-size:12px;font-weight:850;min-height:45px;margin:0 0 18px}
+.merchant-wallet-route:hover{background:#353b40}
+@media(max-width:1050px){
+ .merchant-wallet-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .merchant-wallet-stats>.merchant-wallet-stat:last-child{grid-column:1/-1}
+ .merchant-wallet-two-col{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+ .merchant-mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr));padding-left:4px;padding-right:4px}
+ .merchant-mobile-nav button{font-size:9px;gap:5px;min-width:0;padding:0 2px}
+ .merchant-mobile-nav button span{white-space:nowrap}
+ .merchant-wallet-heading{gap:14px}
+ .merchant-wallet-heading h1{font-size:32px}
+ .merchant-wallet-refresh{width:100%;justify-content:center;min-height:44px}
+ .merchant-wallet-hero{padding:22px 18px 18px;border-radius:15px}
+ .merchant-wallet-main-amount{font-size:42px}
+ .merchant-wallet-hero-top{align-items:flex-start}
+ .merchant-wallet-status{font-size:9px;padding:7px 9px}
+ .merchant-wallet-balance-meta{display:grid;grid-template-columns:1fr;gap:6px}
+ .merchant-wallet-balance-meta span{display:flex;justify-content:space-between;gap:10px;padding:10px 12px}
+ .merchant-wallet-stats{grid-template-columns:1fr;gap:10px}
+ .merchant-wallet-stats>.merchant-wallet-stat:last-child{grid-column:auto}
+ .merchant-wallet-stat{padding:18px}
+ .merchant-wallet-stat>strong{font-size:29px}
+ .merchant-wallet-two-col{gap:11px}
+ .merchant-wallet-panel{padding:19px}
+ .merchant-wallet-section-heading h2{font-size:19px}
+ .merchant-wallet-history-row{padding:13px;gap:11px}
+ .merchant-wallet-history-icon{width:34px;height:34px}
+ .merchant-wallet-notice{padding:13px}
+}
+@media(max-width:350px){
+ .merchant-mobile-nav button{font-size:8px}
+ .merchant-wallet-hero-top{flex-direction:column}
+ .merchant-wallet-main-amount{font-size:37px}
+}
+@media(prefers-reduced-motion:reduce){.merchant-wallet{animation:none!important}}
+@media print{.merchant-wallet{display:none!important}}
