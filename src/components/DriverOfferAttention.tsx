@@ -4,11 +4,11 @@ import type {Order} from '../lib/types';
 import {freshAuthorisedOfferIds} from '../lib/driver-operations-core';
 import '../styles/driver-operations-rc151.css';
 
-type Props={offers:readonly Order[];eligible:boolean;offline:boolean};
+type Props={offers:readonly Order[];eligible:boolean;offline:boolean;onFocusOffer?:(id:number)=>void};
 /** Foreground-only, explicit opt-in. Does NOT claim background push or wake iOS.
  * Notifications originate only from freshly fetched backend-authorised offers.
  */
-export function DriverOfferAttention({offers,eligible,offline}:Props){
+export function DriverOfferAttention({offers,eligible,offline,onFocusOffer}:Props){
  const [enabled,setEnabled]=useState(false);
  const [latest,setLatest]=useState<number|null>(null);
  const seen=useRef<Set<number>|null>(null);
@@ -57,6 +57,7 @@ export function DriverOfferAttention({offers,eligible,offline}:Props){
   {latest!==null&&enabled&&eligible&&!offline&&<div className="dm-attention-new" role="status" aria-live="polite">
    <CheckCircle2 size={18} aria-hidden="true"/>
    <span>Hay una nueva oferta autorizada: pedido #{latest}. Consulta sus datos antes de aceptar.</span>
+   {onFocusOffer&&<button type="button" className="dm-attention-focus" onClick={()=>{onFocusOffer(latest);setLatest(null);}}>Ver oferta</button>}
    <button type="button" onClick={()=>setLatest(null)} aria-label="Cerrar aviso de nueva oferta"><X size={16}/></button>
   </div>}
  </div>;

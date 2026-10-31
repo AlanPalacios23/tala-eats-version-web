@@ -43,7 +43,7 @@ describe('RC151 · driver real operations and support boundaries',()=>{
   expect(safeDriverPerformanceSummary([{date:'today',deliveries:1}])).toBeNull();
   expect(main).toContain('safeDriverPerformanceSummary(dashboard?.last_7_days)');
   expect(main).toContain('no representan saldo disponible para retiro');
-  expect(main).toContain('<FinanceWeeklyPreview kind="driver"/>');
+  expect(main).toContain('<FinanceWeeklyPreview key={session.user?.id??"unknown"} kind="driver" actorId={session.user?.id}/>');
   expect(main).toContain('<DriverCashHandoff orders={delivered}/>');
  });
  it('uses authenticated support only with explicit driver permission flag; avoids unsafe order binding',()=>{
@@ -53,7 +53,7 @@ describe('RC151 · driver real operations and support boundaries',()=>{
   expect(support).toContain('api.createSupportTicket(category,message,null)');
   expect(support).toContain('Number.isSafeInteger(result?.id)');
   expect(support).toContain('setTicketId(result.id)');
-  expect(support).toContain('if(busy||offline||!valid)return;');
+  expect(support).toContain('if(inFlight.current||busy||offline||!valid)return;');
   expect(support).toContain('no se vincula automáticamente'); // guard informative notice
   expect(support).not.toContain('localStorage');
   expect(support).not.toContain('api.driverComplete(');

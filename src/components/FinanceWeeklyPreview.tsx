@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {api,type WeeklyWalletStatement} from '../lib/api';
 
-type Props={kind:'restaurant'|'driver';restaurantId?:number};
+type Props={kind:'restaurant'|'driver';restaurantId?:number;actorId?:number};
 const financeEnabled=import.meta.env.VITE_FINANCE_WALLET_V2_ENABLED==='true';
 const numberMoney=(raw:string)=>{
  if(!/^\d{1,16}$/.test(raw)||BigInt(raw)>9_000_000_000_000n)return '—';
@@ -10,7 +10,7 @@ const numberMoney=(raw:string)=>{
 };
 
 /** Read-only, never advertises an available balance or banking settlement. */
-export function FinanceWeeklyPreview({kind,restaurantId}:Props){
+export function FinanceWeeklyPreview({kind,restaurantId,actorId}:Props){
  const [data,setData]=useState<WeeklyWalletStatement|null>(null);
  const [error,setError]=useState('');
  const [loading,setLoading]=useState(false);
@@ -18,6 +18,10 @@ export function FinanceWeeklyPreview({kind,restaurantId}:Props){
   if(!financeEnabled)return;
   let current=true;
   setData(null);setError('');setLoading(true);
+  if(kind==='driver'&&(!Number.isSafeInteger(actorId)||!actorId||actorId<=0)){
+   setLoading(false);setError('No se pudo verificar la cuenta para mostrar el corte semanal.');
+   return;
+  }
   const load=kind==='driver'?api.driverWeeklyWallet():
    restaurantId&&Number.isSafeInteger(restaurantId)?
     api.ownerWeeklyWallet(restaurantId):Promise.reject(new Error('Restaurante no válido'));
@@ -34,7 +38,7 @@ export function FinanceWeeklyPreview({kind,restaurantId}:Props){
    if(current)setError(e instanceof Error?e.message:'Consulta semanal no disponible.');
   }).finally(()=>{if(current)setLoading(false);});
   return()=>{current=false;};
- },[kind,restaurantId]);
+ },[kind,restaurantId,actorId]);
  if(!financeEnabled)return null;
  return <section aria-label="Corte semanal del servidor" style={{
   border:'1px solid var(--border,#e8e8e8)',borderRadius:18,
