@@ -17,6 +17,7 @@ import {DriverOperationsOverview} from './DriverOperationsOverview';
 import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
 import '../styles/driver-operational-rc152.css';
 import '../styles/driver-focus-shell-rc157.css';
+import '../styles/driver-journey-focus-rc158.css';
 import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
@@ -389,6 +390,22 @@ function DriverPwaWorkflowSession(){
    const customerRoute=!offer?safeDriverMapLink(customerAddress):null;
    const earning=o.driver_earning??details?.earning;
    const cash=o.payment_method==='cash';
+   const tripStops=deliveryInProgress(o)?<div className="df-route-stops">
+     <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
+      <div className="df-stop-icon"><Bike size={19}/></div>
+      <div><small>01 · RECOGER</small><strong>{storeName}</strong>
+       <span>{storeAddress}</span>
+       {storeRoute&&<a href={storeRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Cómo llegar <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+     <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
+      <div className="df-stop-icon"><MapPin size={19}/></div>
+      <div><small>02 · ENTREGAR</small><strong>Destino del cliente</strong>
+       <span>{deliveryAddress}</span>
+       {customerRoute&&<a href={customerRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Ver ruta <ArrowUpRight size={14}/></a>}
+      </div>
+     </div>
+    </div>:null;
    return <article key={o.id} className={'df-surface df-job'+(deliveryInProgress(o)?' is-active':'')} aria-label={'Pedido '+o.id}>
     <div className="df-job-head"><span className="df-order-code">Pedido #{o.id}</span>
      <strong className={'df-chip'+(offer?' df-chip-offer':'')}>{offer?'Disponible':displayStatus(o.status)}</strong></div>
@@ -412,22 +429,9 @@ function DriverPwaWorkflowSession(){
       <a href={routeChoices.apple} target="_blank" rel="noopener noreferrer">Apple Maps <ArrowUpRight size={14} aria-hidden="true"/></a>
      </div>
     </div>}
-    {deliveryInProgress(o)&&<div className="df-route-stops">
-     <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
-      <div className="df-stop-icon"><Bike size={19}/></div>
-      <div><small>01 · RECOGER</small><strong>{storeName}</strong>
-       <span>{storeAddress}</span>
-       {storeRoute&&<a href={storeRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Cómo llegar <ArrowUpRight size={14}/></a>}
-      </div>
-     </div>
-     <div className={'df-route-stop'+(o.status==='on_the_way'?' current':' upcoming')}>
-      <div className="df-stop-icon"><MapPin size={19}/></div>
-      <div><small>02 · ENTREGAR</small><strong>Destino del cliente</strong>
-       <span>{deliveryAddress}</span>
-       {customerRoute&&<a href={customerRoute} target="_blank" rel="noopener noreferrer" className="df-route-link"><Navigation size={15}/> Ver ruta <ArrowUpRight size={14}/></a>}
-      </div>
-     </div>
-    </div>}
+    {tripStops&&(tab==='inicio'?<details className="df-trip-more">
+     <summary>Ver paradas y direcciones</summary>{tripStops}
+    </details>:tripStops)}
     {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
     {!offer&&deliveryInProgress(o)&&driverSupportEnabled&&<button type="button" className="df-report-help"
       onClick={()=>setSheet('help')}><HelpCircle size={16} aria-hidden="true"/> Reportar incidencia</button>}
