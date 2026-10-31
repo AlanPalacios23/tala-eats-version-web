@@ -13,6 +13,9 @@ import '../styles/driver-journey-rc147.css';
 import '../styles/driver-trip-rc148.css';
 import '../styles/driver-operations-rc151.css';
 import {DriverSupportForm} from './DriverSupportForm';
+import {DriverOperationsOverview} from './DriverOperationsOverview';
+import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
+import '../styles/driver-operational-rc152.css';
 import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
@@ -364,6 +367,7 @@ export function DriverPwaWorkflow(){
  };
  const jobCard=(o:Order,offer=false)=>{
    const stage=offer?null:driverJourneyStage(o.status);
+   const routeChoices=!offer&&deliveryInProgress(o)?driverNavigationChoices(o,dashboard):null;
    const details=trustedActiveDriverDetail(dashboard,o);
    const store=(o as Order & {restaurant?:{name?:string;address?:string}}).restaurant;
    const storeName=details?.restaurant?.name||store?.name||'Comercio #'+o.restaurant_id;
@@ -391,6 +395,13 @@ export function DriverPwaWorkflow(){
      <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
      <strong>{earning===undefined?'Ganancia pendiente':safeAmount(Number(earning))}</strong>
     </div>
+    {routeChoices&&<div className="df-route-platforms" aria-label={'Navegación al siguiente destino: '+routeChoices.destination}>
+     <div><Navigation size={17} aria-hidden="true"/><span>Rumbo a {routeChoices.destination==='Comercio'?'recogida':'entrega'}</span></div>
+     <div className="df-route-platform-links">
+      <a href={routeChoices.google} target="_blank" rel="noopener noreferrer">Google Maps <ArrowUpRight size={14} aria-hidden="true"/></a>
+      <a href={routeChoices.apple} target="_blank" rel="noopener noreferrer">Apple Maps <ArrowUpRight size={14} aria-hidden="true"/></a>
+     </div>
+    </div>}
     {deliveryInProgress(o)&&<div className="df-route-stops">
      <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
       <div className="df-stop-icon"><Bike size={19}/></div>
@@ -559,6 +570,7 @@ export function DriverPwaWorkflow(){
        <div className="df-performance-brief" aria-label="Actividad real de los últimos días">
         <div><small>Entregas · período consultado</small><strong>{performance?.deliveries??'—'}</strong></div>
         <div><small>Días con entregas</small><strong>{performance?.activeDays??'—'}</strong></div>
+        <div><small>Promedio por día activo</small><strong>{performance&&performance.activeDays>0?(performance.deliveries/performance.activeDays).toFixed(1):'—'}</strong></div>
        </div>
        <p className="df-performance-caption">Datos de {performance?.days??'—'} días devueltos por el servidor; no representan saldo disponible para retiro.</p>
       </section>
@@ -620,6 +632,8 @@ export function DriverPwaWorkflow(){
        <button onClick={()=>setSheet('vehicle')}><Bike size={21}/><span><strong>Vehículo</strong><small>{profile?.vehicle||'Sin vehículo'} · {maskedDriverPlate(profile?.plate)}</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('documents')}><FileCheck2 size={21}/><span><strong>Documentos</strong><small>Consultar estado de verificación</small></span><ChevronRight size={19}/></button>
       </div></section>
+      <DriverOperationsOverview readiness={readiness} offline={browserOffline} hasActive={!!active}
+       offersError={offersError} dashboardError={dashboardError}/>
       <section className="df-section"><h2>Cuenta</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('security')}><ShieldCheck size={21}/><span><strong>Seguridad</strong><small>Acceso y sesión</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('help')}><HelpCircle size={21}/><span><strong>Ayuda</strong><small>Problemas frecuentes en una entrega</small></span><ChevronRight size={19}/></button>
