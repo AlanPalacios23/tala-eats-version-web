@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
   BarChart3, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3,
-  Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
+  BellRing, Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
   WifiOff, X
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import './merchant.css';
 
 type Section = 'pedidos' | 'menu' | 'rendimiento' | 'negocio';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
+type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
 type StatusAction = 'confirmed' | 'preparing' | 'ready';
 const ACTIVE = new Set(['received', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'on_the_way']);
@@ -37,6 +38,19 @@ export function elapsedOrderTime(date:string, now:number):string {
   if(hours<24)return `Hace ${hours} h ${mins%60} min`;
   return `Hace ${Math.floor(hours/24)} d`;
 }
+export function filterMerchantMenu(items: MenuItem[], query: string, status: MenuFilter, category: string): MenuItem[] {
+  const search=query.trim().toLocaleLowerCase('es-MX');
+  return items.filter(item=>{
+    const text=(item.name+' '+(item.category||'')+' '+(item.description||'')).toLocaleLowerCase('es-MX');
+    const stock=Number(item.stock);
+    const matchStatus=status==='todos'||(status==='disponibles'&&item.is_available&&stock>0)||(status==='bajo'&&stock<=5)||(status==='agotados'&&stock===0)||(status==='pausados'&&!item.is_available);
+    return matchStatus&&(!category||(item.category||'General')===category)&&(!search||text.includes(search));
+  });
+}
+export function historicalDeliveryRate(total: number, delivered: number): number | null {
+  if(!Number.isFinite(total)||!Number.isFinite(delivered)||total<=0||delivered<0)return null;
+  return Math.max(0,Math.min(100,Math.round(delivered/total*100)));
+}
 const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'No pudimos consultar el servidor.';
 const orderTime = (date: string) => {
   const d = new Date(date);
@@ -48,7 +62,7 @@ function ScreenEmpty({icon, title, children}:{icon: ReactNode;title:string;child
 function Metric({label,value,note,icon}:{label:string;value:string|number;note:string;icon:ReactNode}) {
   return <div className="merchant-metric"><div className="merchant-metric-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{note}</small></div>;
 }
-function MenuRow({item,onSaved}:{item:MenuItem;onSaved:()=>Promise<void>}) {
+function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;online:boolean}) {
   const [price,setPrice]=useState(String(item.price));
   const [stock,setStock]=useState(item.stock);
   const [available,setAvailable]=useState(item.is_available);
@@ -59,13 +73,13 @@ function MenuRow({item,onSaved}:{item:MenuItem;onSaved:()=>Promise<void>}) {
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
   const valid=Number.isFinite(Number(price))&&Number(price)>=0&&/^\d+(\.\d{1,2})?$/.test(price)&&Number.isSafeInteger(stock)&&stock>=0;
   const save=async()=>{
-    if(!dirty||!valid||rowWriteLock.current)return;
+    if(!dirty||!valid||rowWriteLock.current||!online)return;
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try {await api.ownerUpdateItem(item.id,{price,stock,is_available:available});await onSaved();setNotice('Cambios guardados');}
     catch(e){setNotice(errorMessage(e));}finally{setSaving(false);rowWriteLock.current=false;}
   };
   const quickAvailability=async()=>{
-    if(rowWriteLock.current)return;
+    if(rowWriteLock.current||!online)return;
     if(dirty){setNotice('Guarda primero los cambios pendientes.');return;}
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try{await api.ownerUpdateItem(item.id,{is_available:!item.is_available});await onSaved();setNotice(item.is_available?'Producto pausado':'Producto disponible');}
@@ -79,7 +93,7 @@ function MenuRow({item,onSaved}:{item:MenuItem;onSaved:()=>Promise<void>}) {
       <div className="merchant-product-controls">
         <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)} /></label>
         <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
-        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
+        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
       </div>
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
@@ -93,6 +107,9 @@ export default function MerchantWorkspace(){
   const [selectedOrderId,setSelectedOrderId]=useState<number|null>(null);
   const [search,setSearch]=useState('');
   const [menuSearch,setMenuSearch]=useState('');
+  const [menuFilter,setMenuFilter]=useState<MenuFilter>('todos');
+  const [menuCategory,setMenuCategory]=useState('');
+  const [freshOrderIds,setFreshOrderIds]=useState<number[]>([]);
   const [restaurant,setRestaurant]=useState<Restaurant|null>(null);
   const [orders,setOrders]=useState<Order[]>([]);
   const [analytics,setAnalytics]=useState<OwnerAnalytics|null>(null);
@@ -113,6 +130,7 @@ export default function MerchantWorkspace(){
   const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
   const [clock,setClock]=useState(()=>Date.now());
   const readGeneration=useRef(0);
+  const knownReceivedIds=useRef<Set<number>|null>(null);
   const readInFlight=useRef(false);
   const mutationInFlight=useRef(false);
   const detailRef=useRef<HTMLElement|null>(null);
@@ -143,7 +161,7 @@ export default function MerchantWorkspace(){
   },[]);
 
   const refresh=useCallback(async (quiet=false) => {
-    // Sinpeticiones duplicadas ni lecturas que compitan con escrituras.
+    // Sin peticiones duplicadas ni lecturas que compitan con escrituras.
     if(quiet&&(readInFlight.current||mutationInFlight.current))return;
     const generation=++readGeneration.current;
     readInFlight.current=true;
@@ -153,7 +171,16 @@ export default function MerchantWorkspace(){
       if(generation!==readGeneration.current)return;
       const nextErrors: {restaurant?:string;orders?:string;analytics?:string}={};
       if(r.status==='fulfilled')setRestaurant(r.value);else nextErrors.restaurant=errorMessage(r.reason);
-      if(o.status==='fulfilled'){setOrders(o.value);setLastSync(new Date());}else nextErrors.orders=errorMessage(o.reason);
+      if(o.status==='fulfilled'){
+        const receivedIds=o.value.filter(order=>order.status==='received').map(order=>order.id);
+        if(knownReceivedIds.current===null)knownReceivedIds.current=new Set(receivedIds);
+        else {
+          const arriving=receivedIds.filter(id=>!knownReceivedIds.current?.has(id));
+          receivedIds.forEach(id=>knownReceivedIds.current?.add(id));
+          if(arriving.length)setFreshOrderIds(prev=>Array.from(new Set([...prev,...arriving])));
+        }
+        setOrders(o.value);setLastSync(new Date());
+      }else nextErrors.orders=errorMessage(o.reason);
       if(a.status==='fulfilled')setAnalytics(a.value);else nextErrors.analytics=errorMessage(a.reason);
       setErrors(nextErrors);
     }finally {
@@ -172,6 +199,9 @@ export default function MerchantWorkspace(){
   const newCount=orders.filter(o=>o.status==='received').length;
   const activeCount=orders.filter(o=>ACTIVE.has(o.status)).length;
   const stockLow=restaurant?.menu_items?.filter(p=>p.stock<=5).length??0;
+  const activeFreshOrders=freshOrderIds.filter(id=>orders.some(o=>o.id===id&&o.status==='received'));
+  const categories=useMemo(()=>Array.from(new Set((restaurant?.menu_items??[]).map(p=>p.category||'General'))).sort((a,b)=>a.localeCompare(b,'es-MX')),[restaurant]);
+  const deliveredRate=analytics?historicalDeliveryRate(analytics.orders,analytics.delivered):null;
   const filteredOrders=useMemo(()=>{
     const text=search.trim().toLocaleLowerCase('es-MX');
     return orders.filter(o=>{
@@ -185,7 +215,7 @@ export default function MerchantWorkspace(){
   },[orders,filter,search]);
   const selectedOrder=selectedOrderId===null?null:orders.find(o=>o.id===selectedOrderId)??null;
   const boardAllowed=filter==='activos'&&!search.trim()&&orderView==='board';
-  const products=useMemo(()=> (restaurant?.menu_items??[]).filter(p=>(p.name+' '+(p.category||'')).toLocaleLowerCase('es-MX').includes(menuSearch.trim().toLocaleLowerCase('es-MX'))),[restaurant,menuSearch]);
+  const products=useMemo(()=>filterMerchantMenu(restaurant?.menu_items??[],menuSearch,menuFilter,menuCategory),[restaurant,menuSearch,menuFilter,menuCategory]);
 
   const changeStatus=async(id:number,status:StatusAction)=>{
     if(mutationInFlight.current||!navigator.onLine)return;
@@ -257,6 +287,12 @@ export default function MerchantWorkspace(){
       <div className="merchant-content">
         {loading?<div className="merchant-loading"><RefreshCw className="merchant-spin" size={22}/> Consultando tu negocio…</div>:<>
           {!online&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/> Sin conexión: los datos pueden estar desactualizados y no se permiten cambios hasta volver a conectar.</div>}
+          {activeFreshOrders.length>0&&<div className="merchant-arrival" role="status" aria-live="polite">
+            <div className="merchant-arrival-icon"><BellRing size={20}/></div>
+            <div><strong>{activeFreshOrders.length===1?'Llegó un nuevo pedido':`Llegaron ${activeFreshOrders.length} pedidos nuevos`}</strong><span>Hay pedidos pendientes de aceptar.</span></div>
+            <button type="button" className="merchant-arrival-open" onClick={()=>{setSection('pedidos');setFilter('nuevos');setOrderView('list');setFreshOrderIds([])}}>Ver pedidos <ChevronRight size={17}/></button>
+            <button type="button" className="merchant-arrival-close" aria-label="Descartar aviso de pedidos nuevos" onClick={()=>setFreshOrderIds([])}><X size={18}/></button>
+          </div>}
           {errors.restaurant&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/><span>No fue posible cargar el comercio: {errors.restaurant}</span><button onClick={()=>void refresh()}>Reintentar</button></div>}
           {notice&&<div className="merchant-feedback" role="status"><CheckCircle2 size={18}/>{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
           {section==='pedidos'&&<>
@@ -288,13 +324,28 @@ export default function MerchantWorkspace(){
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CATÁLOGO</span><h1>Menú y productos</h1><p>Actualiza precios, existencias y disponibilidad sin salir de esta pantalla.</p></div><button className="merchant-main-button" onClick={()=>setAddOpen(v=>!v)}><Plus size={19}/>{addOpen?'Cerrar formulario':'Agregar producto'}</button></div>
             <div className="merchant-menu-info"><span><UtensilsCrossed size={18}/>{restaurant?.menu_items?.length??0} productos</span><span><SlidersHorizontal size={18}/>{stockLow} con 5 unidades o menos</span></div>
             {addOpen&&<form onSubmit={e=>void addProduct(e)} className="merchant-add-form"><h2>Nuevo producto</h2><div className="merchant-add-grid"><label>Nombre<input required maxLength={150} minLength={2} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nombre del producto"/></label><label>Categoría<input maxLength={80} value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="General"/></label><label>Precio (MXN)<input required value={newPrice} onChange={e=>setNewPrice(e.target.value)} inputMode="decimal" placeholder="89.00"/></label><label>Existencias<input required type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><label className="merchant-add-full">Descripción<input maxLength={500} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Opcional"/></label></div><div className="merchant-add-actions"><button className="merchant-small-button" disabled={submitting||!online}>{submitting?'Agregando…':'Guardar producto'}</button><button type="button" className="merchant-neutral-button" onClick={()=>setAddOpen(false)}>Cancelar</button></div></form>}
-            <div className="merchant-menu-toolbar"><h2>Productos publicados</h2><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
-            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} onSaved={()=>refresh(false)}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos">{menuSearch?'Cambia tu búsqueda.':'Agrega tu primer producto para comenzar.'}</ScreenEmpty>}
+            <div className="merchant-menu-toolbar"><div><h2>Productos publicados</h2><p>{products.length} de {restaurant?.menu_items?.length??0} productos</p></div><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
+            <div className="merchant-menu-filterbar">
+              <div className="merchant-menu-filters" aria-label="Estado de productos">{([['todos','Todos'],['disponibles','Disponibles'],['bajo','Stock bajo'],['agotados','Agotados'],['pausados','Pausados']] as const).map(([id,label])=><button type="button" key={id} className={menuFilter===id?'active':''} aria-pressed={menuFilter===id} onClick={()=>setMenuFilter(id)}>{label}</button>)}</div>
+              <label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>
+            </div>
+            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={()=>refresh(false)}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">DATOS DEL NEGOCIO</span><h1>Rendimiento</h1><p>Indicadores históricos del backend. No son ventas estimadas ni cifras del día.</p></div></div>
             {errors.analytics&&<div className="merchant-feedback error" role="alert">Métricas no disponibles: {errors.analytics}</div>}
             <div className="merchant-overview"><Metric label="Total de pedidos" value={analytics?.orders??'—'} note="Histórico" icon={<ClipboardList size={20}/>}/><Metric label="Entregados" value={analytics?.delivered??'—'} note="Histórico" icon={<Check size={20}/>}/><Metric label="Ventas entregadas" value={analytics?pesos(analytics.gross_sales):'—'} note="Cifra del backend" icon={<BarChart3 size={20}/>}/><Metric label="Inventario bajo" value={analytics?.inventory_low??'—'} note="Cifra del backend" icon={<ShoppingBag size={20}/>}/></div>
+            <div className="merchant-insights">
+              <section className="merchant-insight-card">
+                <div className="merchant-insight-top"><div><small>EFECTIVIDAD HISTÓRICA</small><h2>Pedidos entregados</h2></div><span className="merchant-insight-number">{deliveredRate===null?'—':deliveredRate+'%'}</span></div>
+                <div className="merchant-progress-track" role="progressbar" aria-label="Porcentaje histórico de pedidos entregados" aria-valuemin={0} aria-valuemax={100} aria-valuenow={deliveredRate??undefined}><div style={{width:(deliveredRate??0)+'%'}}/></div>
+                <p>{deliveredRate===null?'No hay suficientes pedidos históricos para calcular esta proporción.':`${analytics?.delivered} de ${analytics?.orders} pedidos históricos registrados como entregados.`}</p>
+              </section>
+              <section className="merchant-insight-card"><div className="merchant-insight-top"><div><small>CONTROL DE INVENTARIO</small><h2>Productos por revisar</h2></div><span className="merchant-insight-number">{stockLow}</span></div>
+                <p>Productos con 5 unidades o menos, calculados del catálogo actual.</p>
+                <button type="button" className="merchant-insight-button" onClick={()=>{setSection('menu');setMenuFilter('bajo');setMenuSearch('');setMenuCategory('')}}>Revisar existencias <ChevronRight size={17}/></button>
+              </section>
+            </div>
             <div className="merchant-info-panel"><LayoutDashboard size={24}/><div><h3>Información conectada a tu comercio</h3><p>Estas cifras se actualizan desde la API de Tala Eats. Los reportes financieros detallados, pagos y liquidaciones requieren endpoints verificados adicionales; no se muestran saldos inventados.</p></div></div>
           </>}
           {section==='negocio'&&<>
