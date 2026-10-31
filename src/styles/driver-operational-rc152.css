@@ -30,3 +30,13 @@
 @media(prefers-reduced-motion:reduce){
  .df-app .df-route-platform-links a:active{transform:none}
 }
+
+.df-app .df-driver-ticket-history{display:grid;gap:8px;border-top:1px solid #e5eae3;padding-top:13px;margin-top:4px}
+.df-app .df-driver-ticket-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.df-app .df-driver-ticket-head strong{font-size:13px}
+.df-app .df-driver-ticket-head button{min-height:40px;display:inline-flex;align-items:center;gap:5px;border:1px solid #dbe4da;background:#f9fbf8;border-radius:11px;padding:8px;color:#396b4c;font-size:12px;font-weight:800}
+.df-app .df-driver-ticket-head button:focus-visible{outline:3px solid #f4aa7c;outline-offset:3px}
+.df-app .df-driver-ticket-history>p{font-size:12px!important;line-height:1.45!important;margin:0}
+.df-app .df-driver-ticket-row{display:grid;gap:3px;border:1px solid #e6eae5;border-radius:12px;padding:9px 11px;background:#fafcf9}
+.df-app .df-driver-ticket-row strong{font-size:12px}
+.df-app .df-driver-ticket-row span{color:#68746d;font-size:11px}
