@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
+import type {FormEvent} from 'react';
 import {AlertTriangle,CheckCircle2,Send,ShieldCheck} from 'lucide-react';
 import {api} from '../lib/api';
 
@@ -24,7 +25,7 @@ export function DriverSupportForm({activeOrderId,offline}:Props){
  const mounted=useRef(true);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const valid=description.trim().length>=12&&description.trim().length<=1200;
- const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+ const submit=async(e:FormEvent<HTMLFormElement>)=>{
   e.preventDefault();
   if(busy||offline||!valid)return;
   setBusy(true);setError('');setTicketId(null);
