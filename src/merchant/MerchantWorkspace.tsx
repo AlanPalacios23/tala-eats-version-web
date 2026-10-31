@@ -367,7 +367,7 @@ export default function MerchantWorkspace(){
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CONFIGURACIÓN</span><h1>Mi negocio</h1><p>Controla tu disponibilidad y consulta la información verificada del comercio.</p></div></div>
             <section className="merchant-store-hero">
-              {restaurant?.cover_image_url&&safeImage(restaurant.cover_image_url)&&<img className="merchant-store-cover" src={safeImage(restaurant.cover_image_url)} alt="" loading="lazy"/>}
+              {restaurant?.cover_image_url&&safeImage(restaurant.cover_image_url)&&<img className="merchant-store-cover" src={safeImage(restaurant.cover_image_url)||undefined} alt="" loading="lazy"/>}
               <div className="merchant-store-hero-shade"/>
               <div className="merchant-store-hero-content">
                 <span className="merchant-store-hero-kicker"><Store size={15}/> TU ESTABLECIMIENTO</span>
