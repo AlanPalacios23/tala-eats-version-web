@@ -65,6 +65,7 @@ describe('RC152 operational experience, never simulated finance or dispatch',()=
  it('limits support visibility to the authenticated driver and blocks duplicate writes',()=>{
   expect(workflow).toContain("VITE_DRIVER_SUPPORT_ENABLED==='true'");
   expect(workflow).toContain('accountId={session.user?.id??null}');
+  expect(workflow).toContain('key={session.user?.id??"unknown"} activeOrderId=');
   expect(help).toContain('if(inFlight.current||busy||offline||!valid)return;');
   expect(help).toContain('api.createSupportTicket(category,message,null)');
   expect(help).toContain('<DriverSupportHistory key={ticketId??\'initial\'} accountId={accountId}/>');
@@ -74,7 +75,7 @@ describe('RC152 operational experience, never simulated finance or dispatch',()=
   expect(help).toContain('servicios de emergencia');
  });
  it('keeps wallet read-only and resets it on authenticated driver account changes',()=>{
-  expect(workflow).toContain('<FinanceWeeklyPreview kind="driver" actorId={session.user?.id}/>');
+  expect(workflow).toContain('<FinanceWeeklyPreview key={session.user?.id??"unknown"} kind="driver" actorId={session.user?.id}/>');
   expect(wallet).toContain("if(kind==='driver'&&(!Number.isSafeInteger(actorId)||!actorId||actorId<=0))");
   expect(wallet).toContain('},[kind,restaurantId,actorId]);');
   expect(wallet).toContain("value.withdrawable_cents!=='0'");
