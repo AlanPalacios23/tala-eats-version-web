@@ -18,7 +18,8 @@ describe('PWA Restaurantes: centro de operaciones',()=>{
     expect(workspace).toContain('api.ownerOrders()');
     expect(workspace).toContain('api.ownerAnalytics()');
     expect(workspace).toContain("analytics?.delivered??'—'");
-    expect(workspace).toContain('Histórico del servidor');
+    expect(workspace).toContain('note="Histórico"');
+    expect(workspace).toContain('api.ownerAnalytics()');
   });
   it('conserva el flujo aprobado de estados y el backend como autoridad',()=>{
     expect(workspace).toContain('api.ownerUpdateStatus(id,status)');
