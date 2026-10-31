@@ -7,11 +7,12 @@ type Props={
  hasActive:boolean;
  offersError:boolean;
  dashboardError:boolean;
+ dashboardAvailable:boolean;
 };
 /** A read-only diagnostic of authoritative backend flags. Does not change
  * availability, location or payments, and never infers dispatch from UI flags.
  */
-export function DriverOperationsOverview({readiness,offline,hasActive,offersError,dashboardError}:Props){
+export function DriverOperationsOverview({readiness,offline,hasActive,offersError,dashboardError,dashboardAvailable}:Props){
  const verified=readiness?.admin_verified===true;
  const online=readiness?.online===true&&readiness?.presence_enabled===true;
  const fresh=readiness?.fresh_gps===true;
@@ -20,7 +21,7 @@ export function DriverOperationsOverview({readiness,offline,hasActive,offersErro
   {name:'Cuenta',value:!readiness?'Sin verificar':verified?'Aprobada':'Pendiente'},
   {name:'Ubicación',value:!readiness?'Sin verificar':fresh?'GPS vigente':'GPS pendiente'},
   {name:'Nuevos pedidos',value:!readiness?'Sin verificar':dispatch&&!offline?'Autorizados':'No autorizados'},
-  {name:'Datos de jornada',value:dashboardError?'Sin actualizar':'Consulta disponible'},
+  {name:'Datos de jornada',value:dashboardError?'Sin actualizar':dashboardAvailable?'Consulta disponible':'Sin confirmar'},
  ];
  return <section className="df-section df-operational-overview" aria-label="Estado operativo del repartidor">
   <div className="df-section-title"><h2>Estado operativo</h2><span className="df-operational-readonly"><ShieldCheck size={14} aria-hidden="true"/> Solo lectura</span></div>
