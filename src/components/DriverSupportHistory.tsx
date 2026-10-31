@@ -22,7 +22,7 @@ export function DriverSupportHistory({accountId}:{accountId:number|null}){
   void api.supportTickets().then(items=>{
    if(!active)return;
    if(!Array.isArray(items))throw new Error('Respuesta de soporte no válida.');
-   const verified=items.filter((item):item is Entry=>
+   const verified:Entry[]=items.filter(item=>
     item!==null&&Number.isSafeInteger(item.id)&&item.id>0&&item.user_id===accountId);
    setRows(verified.slice(0,8));
   }).catch(()=>{
