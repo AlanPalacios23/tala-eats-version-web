@@ -6,6 +6,7 @@ import '../styles/driver-offer-choice-rc149.css';
 import '../styles/driver-offer-stability-rc150.css';
 import {AlertCircle,ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
+import {DriverOfferAttention} from './DriverOfferAttention';
 import type {Order,Restaurant} from '../lib/types';
 import {
  availableMapOffers,driverOfferMarkers,straightLineKm,validLivePosition
@@ -317,6 +318,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      </div>
      {eligible&&<span className="dm-panel-count">{offerCount} {offerCount===1?'disponible':'disponibles'}</span>}
     </div>
+    <DriverOfferAttention offers={readyOffers} eligible={eligible} offline={offline}/>
     {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
       <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
     {errorMessage&&<div className="dm-warning-line" role="alert"><AlertCircle size={17}/> {errorMessage}</div>}

@@ -1,0 +1,79 @@
+/* RC151 — operational capabilities, scoped to Repartidores Web only. */
+.dm-immersive .dm-attention-wrap{margin:0 0 14px}
+.dm-immersive .dm-attention-control{
+ display:flex;align-items:center;justify-content:space-between;gap:9px;
+ padding:10px 11px;border-radius:14px;background:#f5f8f4;
+ border:1px solid #e2e9de
+}
+.dm-immersive .dm-attention-copy{display:flex;align-items:center;gap:9px;min-width:0}
+.dm-immersive .dm-attention-copy>svg{flex:none;color:#357f55}
+.dm-immersive .dm-attention-copy>span{display:grid;gap:2px;min-width:0}
+.dm-immersive .dm-attention-copy strong{font-size:12px;color:#29392d;line-height:1.3}
+.dm-immersive .dm-attention-copy small{font-size:10px;color:#67736a;line-height:1.4}
+.dm-immersive .dm-attention-toggle{
+ flex:none;min-height:42px;min-width:77px;padding:8px 11px;
+ background:#fff;border:1px solid #d4e4d4;border-radius:12px;
+ color:#306d43;font-weight:850;font-size:11px;
+}
+.dm-immersive .dm-attention-toggle.is-on{color:#fff;background:#267747;border-color:#267747}
+.dm-immersive .dm-attention-new{
+ display:flex;gap:8px;align-items:center;min-height:45px;margin-top:7px;
+ background:#edfaf0;border:1px solid #cdebd3;color:#266d42;
+ border-radius:13px;padding:10px 11px;font-size:11px;line-height:1.45;font-weight:750
+}
+.dm-immersive .dm-attention-new>svg{flex:none}
+.dm-immersive .dm-attention-new>span{flex:1}
+.dm-immersive .dm-attention-new button{
+ border:0;background:transparent;color:inherit;min-height:36px;min-width:36px;
+ display:grid;place-items:center;border-radius:10px
+}
+.df-app .df-driver-support{display:grid;gap:10px;color:inherit}
+.df-app .df-driver-support-intro,.df-app .df-driver-support-context{
+ display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;margin:0
+}
+.df-app .df-driver-support-intro svg{flex:none;color:#2c8d57}
+.df-app .df-driver-support-context{color:#796b5d;background:#fff8ed;border-radius:12px;padding:10px}
+.df-app .df-driver-support form{display:grid;gap:9px}
+.df-app .df-driver-support label{font-size:12px;font-weight:850;color:#333e35}
+.df-app .df-driver-support textarea,.df-app .df-driver-support select{
+ display:block;width:100%;max-width:100%;font:inherit;font-size:14px;line-height:1.5;
+ color:#243229;background:#fff;border:1px solid #d6dfd5;border-radius:12px;
+ padding:12px;outline-offset:3px;resize:vertical
+}
+.df-app .df-driver-support select{min-height:48px}
+.df-app .df-driver-support textarea{min-height:110px}
+.df-app .df-driver-support textarea:focus-visible,.df-app .df-driver-support select:focus-visible{
+ outline:3px solid #f4a679;border-color:#dfad8b
+}
+.df-app .df-driver-support-count{color:#69776a;font-size:11px;text-align:right}
+.df-app .df-driver-support form>.df-primary{display:flex;justify-content:center;align-items:center;gap:9px;min-height:50px}
+.df-app .df-driver-support-warning,.df-app .df-driver-support-success{
+ display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.5;
+ padding:11px;border-radius:12px;margin:0;overflow-wrap:anywhere
+}
+.df-app .df-driver-support-warning{background:#fff2e8;color:#984923}
+.df-app .df-driver-support-success{background:#ebf8ef;color:#236a3a}
+.df-app .df-driver-support-note{color:#716f69;font-size:11px;line-height:1.5;margin:0}
+.df-app .df-report-help{
+ display:inline-flex;align-items:center;gap:7px;min-height:44px;
+ margin-top:10px;padding:8px 11px;border-radius:12px;
+ border:1px solid #dfe6df;background:#f8faf8;color:#356a48;
+ font-weight:800;font-size:12px;
+}
+.df-app .df-report-help:focus-visible{outline:3px solid #eeae7e;outline-offset:3px}
+.df-app .df-performance-brief{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px
+}
+.df-app .df-performance-brief>div{display:grid;gap:5px;padding:12px;border:1px solid #e6eae4;border-radius:13px;background:#f8faf7}
+.df-app .df-performance-brief small{font-size:11px;color:#617065}
+.df-app .df-performance-brief strong{font-size:21px;font-weight:900;font-variant-numeric:tabular-nums}
+.df-app .df-performance-caption{margin:8px 0 0;color:#69756c;font-size:11px;line-height:1.5}
+@media(max-width:350px){
+ .dm-immersive .dm-attention-control{padding:8px;gap:5px}
+ .dm-immersive .dm-attention-copy{gap:6px}
+ .dm-immersive .dm-attention-toggle{min-width:68px;padding:6px;font-size:10px}
+ .df-app .df-performance-brief{gap:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .dm-immersive .dm-attention-wrap *,.df-app .df-driver-support *{transition:none!important;animation:none!important}
+}
