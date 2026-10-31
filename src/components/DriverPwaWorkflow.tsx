@@ -27,6 +27,7 @@ import {DriverLiveMap} from './DriverLiveMap';
 import {canSubmitDelivery,cashCollectionRequired,driverDeliveredOrders,safeDriverMapLink,sanitizeDeliveryPin,trustedActiveDriverDetail} from '../lib/driver-delivery-ui';
 import {driverJourneyStage,driverJourneyNavigationHref} from '../lib/driver-journey-ux';
 import type {DriverDashboardPayload} from '../lib/driver-delivery-ui';
+import '../styles/driver-motion-rc160.css';
 type DriverDash=DriverDashboardPayload;
 type DriverTab='inicio'|'entregas'|'ganancias'|'perfil';
 const todayLabel=()=>new Intl.DateTimeFormat('es-MX',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
