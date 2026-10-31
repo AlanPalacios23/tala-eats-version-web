@@ -7,7 +7,7 @@ import type {DriverMapPoint,DriverOfferMarker} from './driver-live-map';
  */
 export type DriverOfferOrder='received'|'earnings'|'nearby';
 
-function safeEarning(value:unknown):number|null{
+export function verifiedDriverEarning(value:unknown):number|null{
  if(typeof value!=='string'&&typeof value!=='number')return null;
  const text=String(value).trim();
  if(!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(text))return null;
@@ -37,7 +37,7 @@ export function sortDriverOffers(
   return copy.map(x=>x.item);
  const pickup=new Map(markers.map(m=>[m.order.id,m.point]));
  const metric=(item:Order):number|null=>{
-  if(order==='earnings')return safeEarning(item.driver_earning);
+  if(order==='earnings')return verifiedDriverEarning(item.driver_earning);
   if(!position)return null;
   const point=pickup.get(item.id);
   return point?straightLineKm(position,point):null;
