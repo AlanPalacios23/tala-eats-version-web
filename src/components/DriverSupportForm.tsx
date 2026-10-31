@@ -2,9 +2,10 @@ import {useEffect,useRef,useState} from 'react';
 import type {FormEvent} from 'react';
 import {AlertTriangle,CheckCircle2,Send,ShieldCheck} from 'lucide-react';
 import {api} from '../lib/api';
+import {DriverSupportHistory} from './DriverSupportHistory';
 
 type Category='delivery_issue'|'merchant_issue'|'safety_issue'|'finance_question';
-type Props={activeOrderId:number|null;offline:boolean};
+type Props={activeOrderId:number|null;offline:boolean;accountId:number|null};
 const categoryLabel:Record<Category,string>={
  delivery_issue:'Problema con la entrega',
  merchant_issue:'Problema en el comercio',
@@ -16,18 +17,20 @@ const categoryLabel:Record<Category,string>={
  * by order_id, so the reference goes in text and order_id is always null.
  * Never represents the ticket as a server-linked delivery event.
  */
-export function DriverSupportForm({activeOrderId,offline}:Props){
+export function DriverSupportForm({activeOrderId,offline,accountId}:Props){
  const [category,setCategory]=useState<Category>('delivery_issue');
  const [description,setDescription]=useState('');
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [ticketId,setTicketId]=useState<number|null>(null);
  const mounted=useRef(true);
+ const inFlight=useRef(false);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const valid=description.trim().length>=12&&description.trim().length<=1200;
  const submit=async(e:FormEvent<HTMLFormElement>)=>{
   e.preventDefault();
-  if(busy||offline||!valid)return;
+  if(inFlight.current||busy||offline||!valid)return;
+  inFlight.current=true;
   setBusy(true);setError('');setTicketId(null);
   try{
    // Deliberately NULL: old server authorises order-linked tickets only for
@@ -39,7 +42,7 @@ export function DriverSupportForm({activeOrderId,offline}:Props){
    if(mounted.current){setTicketId(result.id);setDescription('');}
   }catch(reason){
    if(mounted.current)setError(reason instanceof Error?reason.message:'No se pudo registrar la incidencia en el servidor.');
-  }finally{if(mounted.current)setBusy(false);}
+  }finally{inFlight.current=false;if(mounted.current)setBusy(false);}
  };
  return <div className="df-driver-support">
   <p className="df-driver-support-intro"><ShieldCheck size={17} aria-hidden="true"/>
@@ -63,6 +66,7 @@ export function DriverSupportForm({activeOrderId,offline}:Props){
   {offline&&<p className="df-driver-support-warning" role="status">Sin conexión: el reporte no se puede enviar.</p>}
   {error&&<p className="df-driver-support-warning" role="alert"><AlertTriangle size={16} aria-hidden="true"/>{error}</p>}
   {ticketId!==null&&<p className="df-driver-support-success" role="status"><CheckCircle2 size={16} aria-hidden="true"/>Ticket #{ticketId} confirmado por el servidor.</p>}
+  <DriverSupportHistory key={ticketId??'initial'} accountId={accountId}/>
   <p className="df-driver-support-note">Este canal no reemplaza a los servicios de emergencia. No confirmes recogidas ni entregas que no hayan ocurrido.</p>
  </div>;
 }
