@@ -1,0 +1,63 @@
+/* RC158 — Reveal detail on demand without suppressing active courier safety data.
+ * Scope strictly limited to the courier workflow and map.
+ */
+.df-app .df-trip-more{
+ margin:9px 0 14px;border:1px solid #e5ebe6;background:#fbfcfb;
+ border-radius:13px;overflow:hidden;
+}
+.df-app .df-trip-more>summary{
+ display:flex;align-items:center;justify-content:space-between;
+ min-height:46px;padding:11px 13px;color:#394b3f;
+ cursor:pointer;font-size:12px;font-weight:780;list-style:none;
+}
+.df-app .df-trip-more>summary::-webkit-details-marker{display:none}
+.df-app .df-trip-more>summary::after{
+ content:"⌄";font-size:19px;line-height:1;color:#61776a;
+ transition:transform .15s ease;
+}
+.df-app .df-trip-more[open]>summary::after{transform:rotate(180deg)}
+.df-app .df-trip-more .df-route-stops{
+ padding:13px 13px 5px;margin:0;
+ border-top:1px solid #e5ebe6;
+}
+.df-app .df-trip-more .df-route-stop:last-child{min-height:55px}
+.df-app .df-trip-more>summary:focus-visible{
+ outline:3px solid #e77b46;outline-offset:-3px;border-radius:12px;
+}
+.dm-immersive .dm-sort-details{
+ margin:6px 0 10px;border:1px solid #e7ece8;
+ background:#fff;border-radius:12px;
+}
+.dm-immersive .dm-sort-details>summary{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:9px 12px;min-height:44px;
+ color:#5b6b61;font-size:11.5px;font-weight:800;
+ list-style:none;cursor:pointer;
+}
+.dm-immersive .dm-sort-details>summary::-webkit-details-marker{display:none}
+.dm-immersive .dm-sort-details>summary::after{
+ content:"⌄";font-size:18px;color:#66786c;line-height:1;
+ transition:transform .15s ease;
+}
+.dm-immersive .dm-sort-details[open]>summary::after{transform:rotate(180deg)}
+.dm-immersive .dm-sort-details .dm-offer-sort{
+ margin:0;border:0;border-top:1px solid #e7ece8;
+ background:#f8faf8;border-radius:0 0 12px 12px;
+ padding:8px;gap:5px;
+}
+.dm-immersive .dm-sort-details .dm-offer-sort-caption{display:none}
+.dm-immersive .dm-sort-details .dm-offer-sort-option{
+ min-height:40px;flex:1 0 auto;
+}
+.dm-immersive .dm-sort-details>summary:focus-visible{
+ outline:3px solid #f0905f;outline-offset:-3px;border-radius:11px;
+}
+@media(max-width:370px){
+ .df-app .df-trip-more>summary{min-height:45px;padding-inline:10px}
+ .dm-immersive .dm-sort-details .dm-offer-sort{gap:3px;padding:6px}
+ .dm-immersive .dm-sort-details .dm-offer-sort-option{padding:7px;font-size:10.5px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-trip-more>summary::after,
+ .dm-immersive .dm-sort-details>summary::after{transition:none!important}
+}
