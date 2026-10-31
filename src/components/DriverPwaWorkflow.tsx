@@ -34,6 +34,8 @@ const shipmentStatus:Record<string,string>={
  delivered:'Entregado',ready:'Listo para recoger',
 };
 const actionOptIn=import.meta.env.VITE_DRIVER_ACTIONS_ENABLED==='true';
+// The connected Node production API must explicitly validate driver support before enabling writes.
+const driverSupportEnabled=import.meta.env.VITE_DRIVER_SUPPORT_ENABLED==='true';
 const failure=(reason:unknown)=>reason instanceof Error?reason.message:'La operación fue rechazada por el servidor.';
 
 /**
@@ -408,7 +410,7 @@ export function DriverPwaWorkflow(){
      </div>
     </div>}
     {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
-    {!offer&&deliveryInProgress(o)&&<button type="button" className="df-report-help"
+    {!offer&&deliveryInProgress(o)&&driverSupportEnabled&&<button type="button" className="df-report-help"
       onClick={()=>setSheet('help')}><HelpCircle size={16} aria-hidden="true"/> Reportar incidencia</button>}
     {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
     {offer?actions&&<button type="button" className="df-primary" disabled={operationsBlocked||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
@@ -694,7 +696,12 @@ export function DriverPwaWorkflow(){
       <div className="df-detail-row"><span>Correo</span><strong>{session.user?.email||'No disponible'}</strong></div>
       <div className="df-alert df-alert-info"><ShieldCheck size={17}/> El 2FA y las sesiones se administran desde el servidor. Nunca compartas tus credenciales.</div>
      </>}
-     {sheet==='help'&&<DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline}/>} 
+     {sheet==='help'&&(driverSupportEnabled?
+      <DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline}/>:
+      <div className="df-driver-support">
+       <p>Las incidencias desde Repartidores se habilitarán cuando el backend confirme permisos y trazabilidad.</p>
+       <p className="df-driver-support-note">Si tienes una entrega en curso, no confirmes estados ni cobros que no hayan ocurrido.</p>
+      </div>)} 
     </section></div>}
   </div>;
 }
