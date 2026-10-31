@@ -49,6 +49,11 @@ export const api = {
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
+  // Finanzas: solo GET de lectura; no se crea ni solicita ningún payout desde esta PWA.
+  ownerFinance: () => request<unknown>('/owner/finance'),
+  merchantWithdrawalBalance: (id:number) => request<unknown>(`/withdrawals/restaurant/${id}/balance`),
+  merchantWithdrawalHistory: (id:number) => request<unknown[]>(`/withdrawals/restaurant/${id}/history`),
+  merchantConnectStatus: (id:number) => request<unknown>(`/withdrawals/restaurant/${id}/connect/status`),
   ownerUpdateStatus: (id:number,status:'confirmed'|'preparing'|'ready') => request<Order>(`/owner/orders/${id}/status`,json('PATCH',{status})),
   ownerUpdateRestaurant: (body:{is_open:boolean}) => request<Restaurant>('/owner/restaurant',json('PATCH',body)),
   ownerUpdateItem: (id:number, body:Partial<Pick<MenuItem,'stock'|'is_available'|'price'|'name'|'description'>>) => request<MenuItem>(`/owner/menu/${id}`,json('PATCH',body)),
