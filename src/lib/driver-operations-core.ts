@@ -26,3 +26,12 @@ export function safeDriverPerformanceSummary(value:unknown):DriverPerformanceSum
   days:rows.length,
  };
 }
+
+/** The driver's local civil day, not the UTC day. Avoids calling yesterday
+ * "Hoy" for couriers working close to local midnight. */
+export function driverLocalDayKey(at:Date=new Date()):string{
+ const year=at.getFullYear();
+ const month=String(at.getMonth()+1).padStart(2,'0');
+ const day=String(at.getDate()).padStart(2,'0');
+ return `${year}-${month}-${day}`;
+}
