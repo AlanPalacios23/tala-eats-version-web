@@ -18,7 +18,8 @@ import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
 import '../styles/driver-operational-rc152.css';
 import '../styles/driver-focus-shell-rc157.css';
 import '../styles/driver-journey-focus-rc158.css';
-import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
+import {driverLocalDayKey,safeDriverPerformanceSummary} from '../lib/driver-operations-core';
+import {verifiedDriverEarning} from '../lib/driver-offer-choice';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -89,6 +90,7 @@ function DriverPwaWorkflowSession(){
  const [cashReceived,setCashReceived]=useState<Record<number,boolean>>({});
  const refreshVersion=useRef(0);
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
+ const pollingRefreshInFlight=useRef(false);
  const online=readiness?.online===true;
  const operationsBlocked=browserOffline||busy;
  // Never show a previous courier's image after switching authenticated accounts.
@@ -124,9 +126,11 @@ function DriverPwaWorkflowSession(){
       typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
     throw new Error('El backend no devolvió un estado de reparto válido.');
    setProfile(p);setReadiness(proof);setMine(jobs);
+   // Verified core delivery state can render even if optional GETs are slow.
+   setLoading(false);
    // Keep action errors visible and avoid offer flicker on every background sync.
    // An offers outage must not block ongoing deliveries assigned to this driver.
-   void api.driverAvailable().then(offers=>{
+   const offersRead=api.driverAvailable().then(offers=>{
     if(!mounted.current||version!==refreshVersion.current)return;
     if(!Array.isArray(offers))throw Error('INVALID_DRIVER_OFFERS');
     setAvailable(offers);setOffersError(false);
@@ -135,7 +139,7 @@ function DriverPwaWorkflowSession(){
    });
    // Dashboard has a DIFFERENT order payload: only use it for stats and
    // identity-checked active route details, never as delivery history.
-   void api.driverDashboard().then(value=>{
+   const dashboardRead=api.driverDashboard().then(value=>{
     if(!mounted.current||version!==refreshVersion.current)return;
     const data=value as DriverDash;
     if(data.user?.id!==session.user?.id)throw new Error('Resumen no autorizado');
@@ -143,6 +147,9 @@ function DriverPwaWorkflowSession(){
    }).catch(()=>{
     if(mounted.current&&version===refreshVersion.current){setDashboard(null);setDashboardError(true);}
    });
+   // All five GETs settle before the next background poll is allowed.
+   // Individual offer/dashboard failures are handled independently above.
+   await Promise.all([offersRead,dashboardRead]);
   }catch(e){
    if(mounted.current&&version===refreshVersion.current){
     setReadiness(null);setAvailable([]);setMine([]);setProfile(null);setOffersError(false);
@@ -154,7 +161,12 @@ function DriverPwaWorkflowSession(){
   mounted.current=true;
   void refresh();
   const interval=window.setInterval(()=>{
-   if(document.visibilityState==='visible'&&!inFlight.current)void refresh();
+   // A slow server read must not stack repeated 15-second background requests.
+   // Manual refresh and post-write reconciliation retain priority.
+   if(document.visibilityState==='visible'&&!inFlight.current&&!pollingRefreshInFlight.current){
+    pollingRefreshInFlight.current=true;
+    void refresh().finally(()=>{pollingRefreshInFlight.current=false;});
+   }
   },15000);
   return()=>{mounted.current=false;refreshVersion.current++;window.clearInterval(interval);};
  },[refresh]);
@@ -388,7 +400,7 @@ function DriverPwaWorkflowSession(){
    const deliveryAddress=customerAddress||'Dirección pendiente del servidor';
    const storeRoute=!offer?safeDriverMapLink(storeAddressKnown):null;
    const customerRoute=!offer?safeDriverMapLink(customerAddress):null;
-   const earning=o.driver_earning??details?.earning;
+   const earning=verifiedDriverEarning(o.driver_earning??details?.earning);
    const cash=o.payment_method==='cash';
    const tripStops=deliveryInProgress(o)?<div className="df-route-stops">
      <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
@@ -420,7 +432,7 @@ function DriverPwaWorkflowSession(){
     </div>}
     <div className="df-order-highlights">
      <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
-     <strong>{earning===undefined?'Ganancia pendiente':safeAmount(Number(earning))}</strong>
+     <strong>{earning===null?'Ganancia pendiente':pesos(earning)}</strong>
     </div>
     {routeChoices&&<div className="df-route-platforms" aria-label={'Navegación al siguiente destino: '+routeChoices.destination}>
      <div><Navigation size={17} aria-hidden="true"/><span>Rumbo a {routeChoices.destination==='Comercio'?'recogida':'entrega'}</span></div>
@@ -598,7 +610,7 @@ function DriverPwaWorkflowSession(){
        <div className="df-section-title"><h2>Esta semana</h2><strong>{dashboard?.last_7_days?safeAmount(dashboard.last_7_days.reduce((sum,d)=>sum+(Number(d.earnings)||0),0)):'—'}</strong></div>
        <div className="df-surface df-week-panel">
          <div className="df-week-selected" aria-live="polite">
-          <span>{selectedEarningDay?.date===new Date().toISOString().slice(0,10)?'Hoy':selectedEarningDay?.date?
+          <span>{selectedEarningDay?.date===driverLocalDayKey()?'Hoy':selectedEarningDay?.date?
             new Date(selectedEarningDay.date+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long'}):'Esta semana'}</span>
           <strong>{selectedEarningDay?safeAmount(selectedEarningDay.earnings):'—'}</strong>
          </div>
