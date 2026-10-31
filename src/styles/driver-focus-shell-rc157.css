@@ -1,0 +1,118 @@
+/* RC157 — Quiet, practical courier UI. Scoped to the driver shell only.
+ * Follows map-first delivery patterns without reusing Uber/DiDi/Rappi brand assets.
+ * Preserves server-owned availability, PIN and financial controls.
+ */
+.df-app{
+ --df-ink:#18221e;
+ --df-muted:#66716d;
+ --df-line:#e7ece9;
+ --df-bg:#f7f8f7;
+ --df-orange:#ed6a32;
+ background:var(--df-bg);
+ color:var(--df-ink);
+}
+.df-app .df-content{
+ width:min(100%,660px);
+ padding: max(17px,env(safe-area-inset-top)) 16px calc(130px + env(safe-area-inset-bottom));
+}
+.df-app .df-header-premium{
+ margin:0 0 14px;padding:4px 0;
+ background:transparent;border:0;border-radius:0;
+ box-shadow:none;min-height:55px;align-items:center;
+}
+.df-app .df-header-premium::before{display:none}
+.df-app .df-header-premium .df-eyebrow{display:none}
+.df-app .df-header-premium h1{font-size:clamp(22px,5.8vw,27px);font-weight:850;letter-spacing:-.7px;margin:0 0 3px}
+.df-app .df-header-premium p{font-size:11px;color:#7f8a83;margin:0}
+.df-app .df-header-actions{display:flex;gap:8px;align-items:center}
+.df-app .df-header-actions .df-icon-button,
+.df-app .df-header-actions .df-avatar{
+ border:1px solid var(--df-line);box-shadow:none;background:#fff;
+ width:44px;height:44px;min-width:44px;color:#304139;
+}
+.df-app .df-header-actions .df-icon-button:active{background:#f0f3f1}
+.df-app .df-availability{
+ min-height:76px;margin:0 0 14px;padding:12px 15px;
+ border:1px solid var(--df-line);background:#fff;
+ box-shadow:none;border-radius:17px;gap:12px;
+}
+.df-app .df-availability.is-online{background:#fff;border-color:#dfeae2}
+.df-app .df-availability-text strong,
+.df-app .df-availability.is-online .df-availability-text strong{font-size:16px;color:var(--df-ink)}
+.df-app .df-availability-text small{
+ font-size:11px;line-height:1.45;max-width:330px;
+ white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+ overflow:hidden;
+}
+.df-app .df-availability .df-status-dot{width:9px;height:9px}
+.df-app .df-status-dot.active{background:#21945a;box-shadow:0 0 0 4px #259d5e16}
+.df-app .df-switch{width:50px;height:30px;background:#d9e0db}
+.df-app .df-switch.on{background:#259d5e}
+.df-app .df-switch>span{height:24px;width:24px}
+.df-app .df-alert-info{
+ margin:8px 0 10px;padding:10px 12px;border:1px solid #e4ebe6;
+ background:#f0f4f1;color:#51645a;border-radius:12px;box-shadow:none;
+ font-size:12px;line-height:1.5;
+}
+.df-app .df-alert-info>svg{width:16px;height:16px;flex-shrink:0;color:#557563}
+.df-app .df-gps-refresh{margin:0 0 10px;min-height:40px;color:#40614e}
+.df-app[data-driver-tab="inicio"] .df-main-stage{margin-top:12px}
+.df-app[data-driver-tab="inicio"] .df-empty.df-surface{
+ background:transparent;border:0;box-shadow:none;
+ border-radius:18px;min-height:168px;padding:23px 14px;
+}
+.df-app[data-driver-tab="inicio"] .df-empty>svg{width:26px;height:26px;color:#7b8b80}
+.df-app[data-driver-tab="inicio"] .df-empty h2{font-size:19px;letter-spacing:-.45px;margin:2px 0}
+.df-app[data-driver-tab="inicio"] .df-empty p{max-width:305px;line-height:1.5}
+.df-app[data-driver-tab="inicio"] .df-section{margin-top:12px}
+.df-app[data-driver-tab="inicio"] .df-section-title{margin-bottom:5px}
+.df-app[data-driver-tab="inicio"] .df-section-title h2{font-size:14px;letter-spacing:0}
+.df-app[data-driver-tab="inicio"] .df-section-title button{font-size:12px;color:#4b6252;text-decoration:none}
+.df-app[data-driver-tab="inicio"] .df-metrics{
+ padding:14px 6px;border-radius:16px;border-color:var(--df-line);background:#fff;
+ box-shadow:none;text-align:center;gap:0;
+}
+.df-app[data-driver-tab="inicio"] .df-metrics>div{padding:0 6px}
+.df-app[data-driver-tab="inicio"] .df-metrics small{font-size:10px;margin-bottom:3px;color:#758078}
+.df-app[data-driver-tab="inicio"] .df-metrics strong{font-size:clamp(13px,3.6vw,17px);font-weight:850}
+.df-app .df-home-action{background:linear-gradient(180deg,#ffffffde,#fff 25%);
+ border-top:1px solid #e7ece9;box-shadow:none;padding:10px 16px;min-height:74px}
+.df-app .df-home-action .df-primary{background:#181e1c;border-radius:15px;min-height:52px;box-shadow:none;letter-spacing:0}
+.df-app .df-home-action .df-primary:disabled{background:#737d77;color:white}
+.df-app .df-bottom-nav{background:#fff;border-top:1px solid #e7ece9;box-shadow:none}
+.df-app .df-bottom-nav button,
+.df-app .df-bottom-nav button.selected{color:#66736c;min-width:0;width:25%;border-radius:0;gap:2px}
+.df-app .df-bottom-nav button.selected{color:#1b2720}
+.df-app .df-bottom-nav button.selected .df-nav-icon{color:#e86630;background:#fff0e8}
+.df-app .df-bottom-nav .df-nav-label{font-size:11px;font-weight:700}
+.df-app .df-job,
+.df-app .df-wallet,
+.df-app .df-profile-identity,
+.df-app .df-settings,
+.df-app .df-earnings-main{box-shadow:none;border-color:var(--df-line);border-radius:18px}
+.df-app .df-screen-header:not(.df-header-premium) h1{font-size:clamp(24px,6vw,28px)}
+.df-app .df-section-title h2{letter-spacing:-.3px}
+.df-app .df-job .df-order-highlights{border-radius:12px}
+.df-app .df-primary{background:#1b2520}
+.df-app .df-settings button{min-height:64px}
+.df-app button:focus-visible,.df-app a:focus-visible,
+.df-app input:focus-visible{outline:3px solid #e77b46;outline-offset:3px}
+@media(max-width:389px){
+ .df-app .df-bottom-nav button:not(.selected) .df-nav-label{display:block}
+ .df-app[data-driver-tab="inicio"] .df-metrics>div{padding:0 4px}
+ .df-app .df-content{padding-inline:14px}
+}
+@media(max-width:320px){
+ .df-app .df-header-actions{gap:5px}
+ .df-app .df-header-actions .df-icon-button,.df-app .df-header-actions .df-avatar{
+  width:40px;height:40px;min-width:40px}
+ .df-app .df-availability{padding-inline:11px}
+ .df-app .df-availability-text small{font-size:10px}
+}
+@media(min-width:800px){
+ .df-app .df-content{padding-top:29px}
+ .df-app .df-bottom-nav{max-width:760px}
+}
+@media(prefers-reduced-motion:reduce){
+ .df-app .df-switch,.df-app .df-primary,.df-app .df-bottom-nav button{transition:none!important}
+}
