@@ -30,6 +30,7 @@ export function DriverSupportHistory({accountId}:{accountId:number|null}){
   }).finally(()=>{if(active)setLoading(false);});
   return()=>{active=false;};
  },[accountId,revision]);
+ const visibleRows=rows.filter(item=>item.user_id===accountId);
  return <section className="df-driver-ticket-history" aria-label="Reportes registrados">
   <div className="df-driver-ticket-head"><strong>Mis reportes</strong>
    <button type="button" onClick={()=>setRevision(v=>v+1)} disabled={loading||!accountId}>
@@ -37,8 +38,8 @@ export function DriverSupportHistory({accountId}:{accountId:number|null}){
    </button></div>
   {loading&&<p role="status">Consultando tickets del servidor…</p>}
   {error&&<p role="status">{error}</p>}
-  {!loading&&!error&&rows.length===0&&<p>No hay reportes verificables para esta cuenta.</p>}
-  {!loading&&!error&&rows.map(item=><div className="df-driver-ticket-row" key={item.id}>
+  {!loading&&!error&&visibleRows.length===0&&<p>No hay reportes verificables para esta cuenta.</p>}
+  {!loading&&!error&&visibleRows.map(item=><div className="df-driver-ticket-row" key={item.id}>
    <strong>Ticket #{item.id}</strong>
    <span>{item.status||'Registrado'} · {item.category||'Incidencia'}</span>
   </div>)}
