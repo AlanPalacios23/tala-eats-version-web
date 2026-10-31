@@ -16,6 +16,7 @@ import {DriverSupportForm} from './DriverSupportForm';
 import {DriverOperationsOverview} from './DriverOperationsOverview';
 import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
 import '../styles/driver-operational-rc152.css';
+import '../styles/driver-focus-shell-rc157.css';
 import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
@@ -518,7 +519,7 @@ function DriverPwaWorkflowSession(){
       {readiness?.admin_verified!==true&&<div className="df-alert df-alert-info"><ShieldCheck size={19}/> Tu cuenta debe estar aprobada por ADMIN antes de conectarte.</div>}
       {readiness?.presence_enabled===false&&<div className="df-alert df-alert-info"><LockKeyhole size={18}/> El servidor todavía no habilitó la presencia en este entorno.</div>}
       {online&&!reachable&&<div className="df-alert df-alert-info"><MapPin size={18}/> No hay GPS reciente confirmado. Mantén la PWA abierta y permite la ubicación precisa.</div>}
-      {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Estás conectado y verificado. El servidor aún no habilita nuevas asignaciones para este modo de reparto.</div>}
+      {online&&reachable&&!actions&&!active&&<div className="df-alert df-alert-info"><ShieldCheck size={18}/> Conectado. Las nuevas asignaciones aún no están habilitadas.</div>}
       {online&&mapOpen&&!active&&<DriverLiveMap
         offers={active?[]:available}
         eligible={actions&&!active}
@@ -532,17 +533,17 @@ function DriverPwaWorkflowSession(){
         onGoOffline={()=>{if(!operationsBlocked&&!active)void setOnline(false);}}
         errorMessage={error}
        />}
-      {online&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS en servidor</button>}
+      {online&&!reachable&&<button className="df-text-button df-gps-refresh" disabled={busy} onClick={()=>void heartbeat()}><RefreshCw size={16}/> Actualizar ubicación GPS en servidor</button>}
       <section className="df-main-stage">
        {active?<>{jobCard(active)}<p className="df-safety"><ShieldCheck size={17}/> Por seguridad, detente antes de usar la app en ruta.</p></>:
         !online&&<div className="df-empty df-surface">
          <Moon size={34}/>
-         <h2>Estás fuera de línea</h2>
-         <p>Conéctate cuando estés listo para recibir pedidos. El mapa aparecerá cuando el servidor confirme tu disponibilidad.</p>
+         <h2>Listo para salir</h2>
+         <p>Conéctate para ver tu ubicación y los pedidos que autorice Tala Eats.</p>
         </div>}
       </section>
        <section className="df-section">
-        <header className="df-section-title"><h2>Tu jornada</h2><button onClick={()=>onTab('ganancias')}>Ver ganancias <ArrowUpRight size={15}/></button></header>
+        <header className="df-section-title"><h2>Resumen de hoy</h2><button onClick={()=>onTab('ganancias')}>Ver detalle <ArrowUpRight size={15}/></button></header>
        <button className="df-surface df-metrics" onClick={()=>onTab('ganancias')} aria-label="Abrir ganancias">
         <div><small>Ganancias</small><strong>{dashboard?.today?safeAmount(dashboard.today.earnings):'—'}</strong></div>
         <div><small>Entregas</small><strong>{metric(doneToday)}</strong></div>
