@@ -709,7 +709,7 @@ export function DriverPwaWorkflow(){
       <div className="df-alert df-alert-info"><ShieldCheck size={17}/> El 2FA y las sesiones se administran desde el servidor. Nunca compartas tus credenciales.</div>
      </>}
      {sheet==='help'&&(driverSupportEnabled?
-      <DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline}/>:
+      <DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline} accountId={session.user?.id??null}/>:
       <div className="df-driver-support">
        <p>Las incidencias desde Repartidores se habilitarán cuando el backend confirme permisos y trazabilidad.</p>
        <p className="df-driver-support-note">Si tienes una entrega en curso, no confirmes estados ni cobros que no hayan ocurrido.</p>
