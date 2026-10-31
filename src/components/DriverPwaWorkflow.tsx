@@ -574,7 +574,7 @@ export function DriverPwaWorkflow(){
        </div>
        <p className="df-performance-caption">Datos de {performance?.days??'—'} días devueltos por el servidor; no representan saldo disponible para retiro.</p>
       </section>
-      <FinanceWeeklyPreview kind="driver" actorId={session.user?.id}/>
+      <FinanceWeeklyPreview key={session.user?.id??"unknown"} kind="driver" actorId={session.user?.id}/>
       <DriverCashHandoff orders={delivered}/>
       <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Cuenta bancaria y retiros</strong></div>
        <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
@@ -709,7 +709,7 @@ export function DriverPwaWorkflow(){
       <div className="df-alert df-alert-info"><ShieldCheck size={17}/> El 2FA y las sesiones se administran desde el servidor. Nunca compartas tus credenciales.</div>
      </>}
      {sheet==='help'&&(driverSupportEnabled?
-      <DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline} accountId={session.user?.id??null}/>:
+      <DriverSupportForm key={session.user?.id??"unknown"} activeOrderId={active?.id??null} offline={browserOffline} accountId={session.user?.id??null}/>:
       <div className="df-driver-support">
        <p>Las incidencias desde Repartidores se habilitarán cuando el backend confirme permisos y trazabilidad.</p>
        <p className="df-driver-support-note">Si tienes una entrega en curso, no confirmes estados ni cobros que no hayan ocurrido.</p>
