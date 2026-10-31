@@ -18,7 +18,8 @@ import {driverNavigationChoices} from '../lib/driver-route-options-rc152';
 import '../styles/driver-operational-rc152.css';
 import '../styles/driver-focus-shell-rc157.css';
 import '../styles/driver-journey-focus-rc158.css';
-import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
+import {driverLocalDayKey,safeDriverPerformanceSummary} from '../lib/driver-operations-core';
+import {verifiedDriverEarning} from '../lib/driver-offer-choice';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -89,6 +90,7 @@ function DriverPwaWorkflowSession(){
  const [cashReceived,setCashReceived]=useState<Record<number,boolean>>({});
  const refreshVersion=useRef(0);
  const mounted=useRef(true),inFlight=useRef(false),gpsInFlight=useRef(false);
+ const pollingRefreshInFlight=useRef(false);
  const online=readiness?.online===true;
  const operationsBlocked=browserOffline||busy;
  // Never show a previous courier's image after switching authenticated accounts.
@@ -154,7 +156,12 @@ function DriverPwaWorkflowSession(){
   mounted.current=true;
   void refresh();
   const interval=window.setInterval(()=>{
-   if(document.visibilityState==='visible'&&!inFlight.current)void refresh();
+   // A slow server read must not stack repeated 15-second background requests.
+   // Manual refresh and post-write reconciliation retain priority.
+   if(document.visibilityState==='visible'&&!inFlight.current&&!pollingRefreshInFlight.current){
+    pollingRefreshInFlight.current=true;
+    void refresh().finally(()=>{pollingRefreshInFlight.current=false;});
+   }
   },15000);
   return()=>{mounted.current=false;refreshVersion.current++;window.clearInterval(interval);};
  },[refresh]);
@@ -388,7 +395,7 @@ function DriverPwaWorkflowSession(){
    const deliveryAddress=customerAddress||'Dirección pendiente del servidor';
    const storeRoute=!offer?safeDriverMapLink(storeAddressKnown):null;
    const customerRoute=!offer?safeDriverMapLink(customerAddress):null;
-   const earning=o.driver_earning??details?.earning;
+   const earning=verifiedDriverEarning(o.driver_earning??details?.earning);
    const cash=o.payment_method==='cash';
    const tripStops=deliveryInProgress(o)?<div className="df-route-stops">
      <div className={'df-route-stop'+(o.status==='assigned'?' current':' done')}>
@@ -420,7 +427,7 @@ function DriverPwaWorkflowSession(){
     </div>}
     <div className="df-order-highlights">
      <span><Bike size={15}/>{cash?'Cobro en efectivo':'Pedido con tarjeta'}</span>
-     <strong>{earning===undefined?'Ganancia pendiente':safeAmount(Number(earning))}</strong>
+     <strong>{earning===null?'Ganancia pendiente':pesos(earning)}</strong>
     </div>
     {routeChoices&&<div className="df-route-platforms" aria-label={'Navegación al siguiente destino: '+routeChoices.destination}>
      <div><Navigation size={17} aria-hidden="true"/><span>Rumbo a {routeChoices.destination==='Comercio'?'recogida':'entrega'}</span></div>
@@ -598,7 +605,7 @@ function DriverPwaWorkflowSession(){
        <div className="df-section-title"><h2>Esta semana</h2><strong>{dashboard?.last_7_days?safeAmount(dashboard.last_7_days.reduce((sum,d)=>sum+(Number(d.earnings)||0),0)):'—'}</strong></div>
        <div className="df-surface df-week-panel">
          <div className="df-week-selected" aria-live="polite">
-          <span>{selectedEarningDay?.date===new Date().toISOString().slice(0,10)?'Hoy':selectedEarningDay?.date?
+          <span>{selectedEarningDay?.date===driverLocalDayKey()?'Hoy':selectedEarningDay?.date?
             new Date(selectedEarningDay.date+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long'}):'Esta semana'}</span>
           <strong>{selectedEarningDay?safeAmount(selectedEarningDay.earnings):'—'}</strong>
          </div>
