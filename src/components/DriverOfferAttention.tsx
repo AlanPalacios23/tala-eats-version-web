@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Bell,BellOff,CheckCircle2,X} from 'lucide-react';
 import type {Order} from '../lib/types';
+import {freshAuthorisedOfferIds} from '../lib/driver-operations-core';
 import '../styles/driver-operations-rc151.css';
 
 type Props={offers:readonly Order[];eligible:boolean;offline:boolean};
@@ -29,9 +30,9 @@ export function DriverOfferAttention({offers,eligible,offline}:Props){
   }
   if(!continuous||!previous)return; // first eligible sync / reconnect is baseline
   if(!enabled)return;
-  const fresh=currentIds.find(id=>!previous.has(id));
-  if(fresh===undefined)return;
-  setLatest(fresh);
+  const fresh=freshAuthorisedOfferIds(currentIds,previous,enabled&&active&&continuous);
+  if(!fresh.length)return;
+  setLatest(fresh[0]);
   if(document.visibilityState==='visible'){
    try{navigator.vibrate?.(90);}catch{/* optional on supported devices */}
   }
