@@ -52,7 +52,7 @@ describe('RC157 · clutter-free Tala Eats courier UX',()=>{
   expect(home).toContain('api.driverComplete(order.id');
   expect(home).toContain('VITE_DRIVER_SUPPORT_ENABLED');
   expect(home).toContain('VITE_DRIVER_ACTIONS_ENABLED');
-  expect(home).toContain('VITE_FINANCE_WALLET_V2_ENABLED').toBe(false);
+  expect(home).not.toContain('STRIPE_SECRET_KEY');
   expect(map).not.toContain('localStorage.setItem');
  });
  it('fits mobile 320dp with safe areas, focus outlines and reduced motion',()=>{
