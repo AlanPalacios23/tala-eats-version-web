@@ -165,7 +165,7 @@ export default function MerchantWorkspace(){
           <button className="merchant-refresh" type="button" disabled={refreshing} onClick={()=>void refresh()} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18} className={refreshing?'merchant-spin':''}/></button>
         </div>
       </header>
-      <main className="merchant-content">
+      <div className="merchant-content">
         {loading?<div className="merchant-loading"><RefreshCw className="merchant-spin" size={22}/> Consultando tu negocio…</div>:<>
           {errors.restaurant&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/><span>No fue posible cargar el comercio: {errors.restaurant}</span><button onClick={()=>void refresh()}>Reintentar</button></div>}
           {notice&&<div className="merchant-feedback" role="status"><CheckCircle2 size={18}/>{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
@@ -214,7 +214,7 @@ export default function MerchantWorkspace(){
               <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||!restaurant} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
           </>}
         </>}
-      </main>
+      </div>
     </div>
     <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.label}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
   </div>;
