@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import '../styles/driver-live-map.css';
 import '../styles/driver-offer-choice-rc149.css';
 import '../styles/driver-offer-stability-rc150.css';
+import '../styles/driver-focus-map-rc157.css';
 import {AlertCircle,ArrowLeft,ArrowRight,Bike,CheckCircle2,ChevronDown,ChevronUp,Compass,LocateFixed,MapPin,Power,RefreshCw,ShieldCheck,WifiOff,X} from 'lucide-react';
 import {api,pesos} from '../lib/api';
 import {DriverOfferAttention} from './DriverOfferAttention';
@@ -314,13 +315,13 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     <div className="dm-offer-header">
      <div className="dm-panel-heading">
       <span className="dm-overline">{eligible?'EN BUSCA DE ENTREGAS':'ESPERANDO AUTORIZACIÓN'}</span>
-      <h2>{isOfferVisible?'Nueva oportunidad':eligible?'Explorando tu zona':'Estás conectado'}</h2>
+      <h2>{isOfferVisible?'Pedido disponible':eligible?'Buscando pedidos':'Mapa disponible'}</h2>
      </div>
      {eligible&&<span className="dm-panel-count">{offerCount} {offerCount===1?'disponible':'disponibles'}</span>}
     </div>
     <DriverOfferAttention offers={readyOffers} eligible={eligible} offline={offline} onFocusOffer={openOffer}/>
-    {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Tu mapa está listo</strong>
-      <span>El servidor todavía no autoriza nuevas asignaciones. Puedes seguir viendo tu ubicación.</span></div></div>}
+    {!eligible&&<div className="dm-notice"><ShieldCheck size={20}/><div><strong>Sin pedidos disponibles todavía</strong>
+      <span>Tala Eats aún no ha habilitado nuevas asignaciones en tu cuenta.</span></div></div>}
     {errorMessage&&<div className="dm-warning-line" role="alert"><AlertCircle size={17}/> {errorMessage}</div>}
     {offersError&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> No se pudieron actualizar las ofertas. <button type="button" disabled={busy||offline||refreshing} onClick={onRefresh}>Reintentar</button></div>}
     {offline&&<div className="dm-warning-line" role="status"><WifiOff size={17}/> Sin Internet. No puedes aceptar pedidos.</div>}
@@ -365,9 +366,9 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
        onClick={()=>onAccept(selected)}><CheckCircle2 size={19}/> {busy?'Confirmando…':'Aceptar pedido'} <ArrowRight size={18}/></button>
       <button type="button" className="dm-dismiss" disabled={busy} onClick={()=>{
        setDismissed(old=>new Set([...old,selected.id]));setSelectedId(null);
-      }} aria-label={'Descartar oferta '+selected.id}><X size={18}/> Descartar</button>
+      }} aria-label={'Descartar oferta '+selected.id}><X size={18}/> Ocultar</button>
      </div>
-     <p className="dm-privacy">Descartar solo oculta la oferta en esta sesión; no la rechaza en el servidor.</p>
+     <p className="dm-privacy">Ocultar retira la oferta de tu vista, no la rechaza en el servidor.</p>
     </article>}
     {eligible&&sortedOffers.length>1&&<div className="dm-offer-strip" aria-label="Cambiar de oferta">
      {sortedOffers.filter(o=>o.id!==selected?.id).slice(0,8).map(o=>
@@ -387,7 +388,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
       <small>Mapa externo de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>. Solo GPS en primer plano.</small>
     </div>}
     {!expanded&&<button type="button" className="dm-expand-hint" onClick={()=>setExpanded(true)}>
-      Ver detalles y opciones <ChevronUp size={15}/></button>}
+      Más opciones <ChevronUp size={15}/></button>}
    </div>
   </section>
  </section>;
