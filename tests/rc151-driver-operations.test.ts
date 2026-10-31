@@ -43,7 +43,7 @@ describe('RC151 · driver real operations and support boundaries',()=>{
   expect(safeDriverPerformanceSummary([{date:'today',deliveries:1}])).toBeNull();
   expect(main).toContain('safeDriverPerformanceSummary(dashboard?.last_7_days)');
   expect(main).toContain('no representan saldo disponible para retiro');
-  expect(main).toContain('<FinanceWeeklyPreview kind="driver" actorId={session.user?.id}/>');
+  expect(main).toContain('<FinanceWeeklyPreview key={session.user?.id??"unknown"} kind="driver" actorId={session.user?.id}/>');
   expect(main).toContain('<DriverCashHandoff orders={delivered}/>');
  });
  it('uses authenticated support only with explicit driver permission flag; avoids unsafe order binding',()=>{
