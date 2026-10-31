@@ -47,7 +47,16 @@ const failure=(reason:unknown)=>reason instanceof Error?reason.message:'La opera
  * or the browser GPS alone. PostgreSQL approval + Redis heartbeat drive the UI.
  * Inactive delivery/Stripe endpoints remain locked by RC9.5 server guards.
  */
+/** Account-scoped mount. A session switch must discard all previous
+ * courier-only memory: PINs, cash attestations, offers, GPS readiness, maps,
+ * alerts and ticket state. Child effects also abort stale async UI updates.
+ */
 export function DriverPwaWorkflow(){
+ const session=useSession();
+ return <DriverPwaWorkflowSession key={session.user?.id??'signed-out'}/>;
+}
+
+function DriverPwaWorkflowSession(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
  const [mapOpen,setMapOpen]=useState(false);
