@@ -126,9 +126,11 @@ function DriverPwaWorkflowSession(){
       typeof proof?.admin_verified!=='boolean'||typeof proof?.online!=='boolean')
     throw new Error('El backend no devolvió un estado de reparto válido.');
    setProfile(p);setReadiness(proof);setMine(jobs);
+   // Verified core delivery state can render even if optional GETs are slow.
+   setLoading(false);
    // Keep action errors visible and avoid offer flicker on every background sync.
    // An offers outage must not block ongoing deliveries assigned to this driver.
-   void api.driverAvailable().then(offers=>{
+   const offersRead=api.driverAvailable().then(offers=>{
     if(!mounted.current||version!==refreshVersion.current)return;
     if(!Array.isArray(offers))throw Error('INVALID_DRIVER_OFFERS');
     setAvailable(offers);setOffersError(false);
@@ -137,7 +139,7 @@ function DriverPwaWorkflowSession(){
    });
    // Dashboard has a DIFFERENT order payload: only use it for stats and
    // identity-checked active route details, never as delivery history.
-   void api.driverDashboard().then(value=>{
+   const dashboardRead=api.driverDashboard().then(value=>{
     if(!mounted.current||version!==refreshVersion.current)return;
     const data=value as DriverDash;
     if(data.user?.id!==session.user?.id)throw new Error('Resumen no autorizado');
@@ -145,6 +147,9 @@ function DriverPwaWorkflowSession(){
    }).catch(()=>{
     if(mounted.current&&version===refreshVersion.current){setDashboard(null);setDashboardError(true);}
    });
+   // All five GETs settle before the next background poll is allowed.
+   // Individual offer/dashboard failures are handled independently above.
+   await Promise.all([offersRead,dashboardRead]);
   }catch(e){
    if(mounted.current&&version===refreshVersion.current){
     setReadiness(null);setAvailable([]);setMine([]);setProfile(null);setOffersError(false);
