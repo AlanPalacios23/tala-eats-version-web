@@ -13,7 +13,7 @@ import {
  availableMapOffers,driverOfferMarkers,straightLineKm,validLivePosition
 } from '../lib/driver-live-map';
 import type {DriverMapPoint} from '../lib/driver-live-map';
-import {canSortOffersByProximity,driverOfferPickupDirectionsHref,selectedDriverOffer,sortDriverOffers} from '../lib/driver-offer-choice';
+import {canSortOffersByProximity,driverOfferPickupDirectionsHref,selectedDriverOffer,sortDriverOffers,verifiedDriverEarning} from '../lib/driver-offer-choice';
 import type {DriverOfferOrder} from '../lib/driver-offer-choice';
 
 export interface DriverLiveMapProps{
@@ -62,6 +62,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
  const sortedOffers=useMemo(()=>sortDriverOffers(readyOffers,effectiveOfferOrder,markers,position),[readyOffers,effectiveOfferOrder,markers,position]);
  const center=position??markers[0]?.point??null;
  const selected=selectedDriverOffer(sortedOffers,selectedId);
+ const selectedEarning=verifiedDriverEarning(selected?.driver_earning);
  const selectedMarker=markers.find(m=>m.order.id===selected?.id)??null;
  const pickupDirectionsHref=driverOfferPickupDirectionsHref(selectedMarker);
  const hasOffers=offers.length>0;
@@ -198,6 +199,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     referrerPolicy:'strict-origin-when-cross-origin',
    });
    tileLayer.on('tileerror',()=>setMapError('No se pudieron cargar algunas calles. Las ofertas siguen disponibles.'));
+   tileLayer.on('tileload',()=>setMapError(old=>old.startsWith('No se pudieron cargar algunas calles.')?'':old));
    tileLayer.addTo(map);
    L.control.attribution({position:'topright',prefix:false}).addTo(map);
    map.on('dragstart',()=>setFollow(false));
@@ -376,7 +378,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      <div className="dm-offer-primary"><div><span className="dm-label">RECOGER EN</span>
        <strong className="dm-store">{selectedMarker?.name||'Comercio #'+selected.restaurant_id}</strong></div>
        <div className="dm-earning-block"><span className="dm-label">GANANCIA</span>
-        <strong className="dm-earning">{selected.driver_earning!=null?pesos(selected.driver_earning):'Por confirmar'}</strong></div>
+        <strong className="dm-earning">{selectedEarning!==null?pesos(selectedEarning):'Por confirmar'}</strong></div>
      </div>
      <div className="dm-offer-meta">
       <span><Bike size={16}/>{selected.payment_method==='cash'?'Pago en efectivo':'Pago con tarjeta'}</span>
@@ -399,7 +401,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
     {eligible&&sortedOffers.length>1&&<div className="dm-offer-strip" aria-label="Cambiar de oferta">
      {sortedOffers.filter(o=>o.id!==selected?.id).slice(0,8).map(o=>
       <button type="button" key={o.id} onClick={()=>focusOffer(o)}
-       className="dm-mini-offer"><span>#{o.id}</span> <strong>{o.driver_earning!=null?pesos(o.driver_earning):'Ver pedido'}</strong><ArrowRight size={15}/></button>)}
+       className="dm-mini-offer"><span>#{o.id}</span> <strong>{verifiedDriverEarning(o.driver_earning)!==null?pesos(o.driver_earning):'Ver pedido'}</strong><ArrowRight size={15}/></button>)}
     </div>}
     {eligible&&!offline&&!readyOffers.length&&<div className="dm-none">
       <span className="dm-radar-icon"><Bike size={21}/></span>
