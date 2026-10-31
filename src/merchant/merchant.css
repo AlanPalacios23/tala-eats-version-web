@@ -397,3 +397,111 @@
 @media(prefers-reduced-motion:reduce){
  .merchant-order-action,.merchant-quick-button,.merchant-open-pill{transition:none!important}
 }
+
+
+/* RC160 — Tala Eats: movimientos y componentes de operación profesional.
+   Animación breve sólo en entrada/cambios, sin bucles decorativos ni scroll forzado. */
+@keyframes merchant-enter{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes merchant-stagger{from{opacity:0;transform:translate3d(0,7px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes merchant-bell{0%{transform:rotate(0deg)}25%{transform:rotate(-12deg)}50%{transform:rotate(10deg)}75%{transform:rotate(-4deg)}100%{transform:rotate(0deg)}}
+@keyframes merchant-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.merchant-page-heading,.merchant-queue-heading,.merchant-menu-info,.merchant-insights,.merchant-store-hero{animation:merchant-enter .26s cubic-bezier(.2,.8,.2,1) both}
+.merchant-order-card,.merchant-product{animation:merchant-stagger .24s ease-out both}
+.merchant-column-cards>.merchant-order-card:nth-child(2),.merchant-product-list>.merchant-product:nth-child(2),.merchant-order-grid>.merchant-order-card:nth-child(2){animation-delay:30ms}
+.merchant-column-cards>.merchant-order-card:nth-child(3),.merchant-product-list>.merchant-product:nth-child(3),.merchant-order-grid>.merchant-order-card:nth-child(3){animation-delay:55ms}
+.merchant-column-cards>.merchant-order-card:nth-child(n+4),.merchant-product-list>.merchant-product:nth-child(n+4),.merchant-order-grid>.merchant-order-card:nth-child(n+4){animation-delay:70ms}
+.merchant-nav button,.merchant-mobile-nav button{transition:background-color .16s,color .16s}
+.merchant-nav button.active{box-shadow:0 1px 2px #00000012}
+.merchant-nav button:active,.merchant-chips button:active,.merchant-main-button:active{transform:scale(.99)}
+.merchant-refresh:not(:disabled):active{transform:rotate(30deg)}
+.merchant-arrival{display:flex;align-items:center;gap:15px;position:relative;padding:17px 16px 17px 17px;margin:0 0 23px;background:#1e2429;border:1px solid #252b30;border-radius:15px;color:#fff;box-shadow:0 10px 25px #161b2618;animation:merchant-enter .25s ease-out both}
+.merchant-arrival-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex-shrink:0;color:#fff;background:#e66e2b}
+.merchant-arrival-icon svg{animation:merchant-bell .45s ease-out .18s 1}
+.merchant-arrival>div:nth-child(2){display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.merchant-arrival strong{font-size:14px;letter-spacing:-.02em;color:#fff}
+.merchant-arrival>div:nth-child(2) span{font-size:11px;color:#b5bec8}
+.merchant-arrival-open{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:0;background:#fff;color:#22282c;min-height:41px;padding:9px 13px;border-radius:10px;font-weight:800;font-size:11px;white-space:nowrap;flex-shrink:0}
+.merchant-arrival-open:hover{background:#fff3e9}
+.merchant-arrival-close{background:transparent;border:0;color:#a8b1bb;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;flex-shrink:0}
+.merchant-arrival-close:hover{background:#30383f;color:#fff}
+.merchant-menu-toolbar{margin-bottom:15px}
+.merchant-menu-toolbar h2{font-size:22px;margin:0 0 2px}
+.merchant-menu-toolbar p{font-size:12px;color:#8a959f;margin:0}
+.merchant-menu-filterbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}
+.merchant-menu-filters{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto;padding:3px 0 5px;scrollbar-width:none}
+.merchant-menu-filters::-webkit-scrollbar{display:none}
+.merchant-menu-filters button{font:800 11px 'DM Sans',system-ui,sans-serif;border:1px solid #e5e9ec;background:#fff;color:#666f7a;padding:11px 13px;border-radius:10px;white-space:nowrap;min-height:41px;flex-shrink:0;transition:background .16s,color .16s}
+.merchant-menu-filters button:hover{background:#f1f3f5}
+.merchant-menu-filters button.active{background:#1c2125;color:#fff;border-color:#1c2125}
+.merchant-menu-filters button.active:hover{background:#30363b}
+.merchant-category-select{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:750;color:#69737e;flex-shrink:0}
+.merchant-category-select select{background:#fff;border:1px solid #e1e6ea;border-radius:10px;color:#303942;height:42px;min-width:145px;max-width:210px;padding:0 12px;font-size:12px;font-weight:700}
+.merchant-category-select select:focus-visible{outline:3px solid #fdba83;outline-offset:2px}
+.merchant-clear-filters{margin-top:13px;min-height:42px;padding:9px 16px;border:1px solid #dce2e6;background:#f7f8f9;border-radius:10px;color:#343d45;font-weight:800;font-size:12px}
+.merchant-product-image{background:#f4f4f3;border-radius:13px}
+.merchant-product{border-radius:15px}
+.merchant-product:focus-within{box-shadow:0 0 0 2px #f5ddcb}
+.merchant-product-heading h3{letter-spacing:-.02em}
+.merchant-insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:-9px 0 26px}
+.merchant-insight-card{background:#fff;border:1px solid #e5e9ed;border-radius:17px;padding:26px;min-width:0}
+.merchant-insight-top{display:flex;justify-content:space-between;gap:17px;align-items:flex-start;margin-bottom:23px}
+.merchant-insight-top small{font-size:10px;font-weight:800;color:#e47832;letter-spacing:.12em}
+.merchant-insight-top h2{font-size:20px;margin:9px 0 0}
+.merchant-insight-number{font:850 32px Outfit,sans-serif;color:#22282e;letter-spacing:-.04em;white-space:nowrap}
+.merchant-progress-track{width:100%;height:9px;overflow:hidden;border-radius:12px;background:#edf0f2}
+.merchant-progress-track>div{height:100%;background:#f2752e;border-radius:12px;transition:width .35s ease}
+.merchant-insight-card p{font-size:12px;line-height:1.55;color:#87929d;margin:14px 0 0}
+.merchant-insight-button{display:inline-flex;gap:8px;align-items:center;justify-content:space-between;margin-top:20px;border:0;background:#1c2227;color:#fff;border-radius:10px;padding:11px 14px;font-size:12px;font-weight:800;min-height:43px}
+.merchant-insight-button:hover{background:#30383e}
+.merchant-store-hero{isolation:isolate;position:relative;overflow:hidden;min-height:237px;display:flex;align-items:end;justify-content:space-between;gap:20px;background:linear-gradient(115deg,#1b2227,#222e31 58%,#5a3a25);border-radius:20px;margin-bottom:20px;padding:31px;color:#fff}
+.merchant-store-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 83% 0%,#ff8e4552,transparent 45%);z-index:-1}
+.merchant-store-cover{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover}
+.merchant-store-hero-shade{position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#121b20ed,#141b20ba 60%,#11181c65)}
+.merchant-store-hero-content{min-width:0;max-width:70%}
+.merchant-store-hero-kicker{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:900;letter-spacing:.12em;color:#ffc499}
+.merchant-store-hero-content h2{font-size:clamp(27px,3vw,41px);color:#fff;line-height:1.1;margin:15px 0 9px;letter-spacing:-.05em}
+.merchant-store-hero-content>p{font-size:12px;line-height:1.5;color:#d2d7dc;margin:0 0 17px;overflow-wrap:anywhere}
+.merchant-store-state{display:inline-flex;align-items:center;gap:8px;border-radius:100px;background:#ffffff20;border:1px solid #ffffff2c;color:#e4e9ed;padding:8px 11px;font-size:11px;font-weight:750}
+.merchant-store-state>span{height:7px;width:7px;border-radius:50%;background:#b0b8bf}
+.merchant-store-state.open>span{background:#42d799;box-shadow:0 0 0 3px #42d7992f}
+.merchant-store-hero-action{display:inline-flex;align-items:center;gap:8px;justify-content:center;flex-shrink:0;background:#fff;color:#222b30;min-height:44px;border:0;border-radius:11px;padding:12px 14px;font-size:12px;font-weight:850}
+.merchant-store-hero-action:hover{background:#fff2e6}
+.merchant-setting-card{transition:box-shadow .17s}
+.merchant-setting-card:hover{box-shadow:0 7px 23px #252c340c}
+@media(max-width:1080px){
+ .merchant-menu-filterbar{align-items:stretch;flex-direction:column;gap:6px}
+ .merchant-category-select{justify-content:space-between}
+ .merchant-category-select select{max-width:100%;flex:1}
+ .merchant-store-hero-content{max-width:75%}
+}
+@media(max-width:760px){
+ .merchant-arrival{padding:13px;gap:10px;border-radius:13px;flex-wrap:wrap;margin-bottom:17px}
+ .merchant-arrival-icon{height:36px;width:36px;border-radius:10px}
+ .merchant-arrival strong{font-size:12px}
+ .merchant-arrival>div:nth-child(2) span{font-size:10px}
+ .merchant-arrival-open{margin-left:46px;flex:1}
+ .merchant-arrival-close{position:absolute;right:9px;top:9px}
+ .merchant-menu-filterbar{margin-bottom:15px}
+ .merchant-menu-filters{margin:0 -3px;padding:3px 3px 7px}
+ .merchant-menu-filters button{font-size:11px;min-height:43px}
+ .merchant-menu-toolbar{gap:13px}
+ .merchant-menu-toolbar p{font-size:11px}
+ .merchant-category-select{width:100%}
+ .merchant-category-select select{height:43px}
+ .merchant-insights{grid-template-columns:1fr;gap:11px;margin:0 0 22px}
+ .merchant-insight-card{padding:21px}
+ .merchant-insight-top{margin-bottom:16px}
+ .merchant-insight-number{font-size:29px}
+ .merchant-store-hero{padding:23px 20px;min-height:248px;flex-direction:column;align-items:flex-start;justify-content:flex-end;border-radius:16px}
+ .merchant-store-hero-content{max-width:100%;width:100%}
+ .merchant-store-hero-content h2{font-size:29px;margin:12px 0 7px}
+ .merchant-store-hero-content>p{font-size:11px;margin-bottom:13px}
+ .merchant-store-hero-action{min-height:42px;width:100%;margin-top:3px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merchant-page-heading,.merchant-queue-heading,.merchant-menu-info,.merchant-insights,.merchant-store-hero,.merchant-arrival,.merchant-order-card,.merchant-product,.merchant-arrival-icon svg{animation:none!important}
+ .merchant-progress-track>div,.merchant-menu-filters button,.merchant-nav button,.merchant-mobile-nav button{transition:none!important}
+}
+@media print{
+ .merchant-arrival,.merchant-store-hero,.merchant-insights{display:none!important}
+}
