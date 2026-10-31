@@ -127,19 +127,42 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
    return;
   }
   let watchId:number|null=null;
-  const stop=()=>{if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}};
+  let expiryTimer:number|null=null;
+  let activeEpoch=0;
+  const clearExpiry=()=>{
+   if(expiryTimer!==null){window.clearTimeout(expiryTimer);expiryTimer=null;}
+  };
+  const stop=()=>{
+   activeEpoch++;clearExpiry();
+   if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  };
   const start=()=>{
    stop();setPosition(null);
    if(document.visibilityState!=='visible')return;
+   const epoch=activeEpoch;
    watchId=navigator.geolocation.watchPosition(
     p=>{
+     if(epoch!==activeEpoch||document.visibilityState!=='visible')return;
      const {latitude:lat,longitude:lng,accuracy}=p.coords;
      if(!validLivePosition(lat,lng,accuracy,p.timestamp,Date.now())){
+      clearExpiry();
       setGpsError('Esperando una ubicación GPS precisa y reciente.');setPosition(null);return;
      }
+     // A watchPosition callback is not guaranteed every minute. Invalidate the
+     // blue marker when its actual timestamp expires, even with no new GPS event.
+     clearExpiry();
+     const ageMs=Math.max(0,Date.now()-p.timestamp);
+     expiryTimer=window.setTimeout(()=>{
+      if(epoch!==activeEpoch||document.visibilityState!=='visible')return;
+      setGpsError('El GPS se actualizó hace más de un minuto.');setPosition(null);
+     },Math.max(1,60000-ageMs));
      setGpsError('');setPosition({lat,lng});
     },
-    e=>{setGpsError(e.code===1?'Autoriza el GPS para mostrar tu ubicación.':'No pudimos obtener GPS reciente.');setPosition(null);},
+    e=>{
+     if(epoch!==activeEpoch)return;
+     clearExpiry();
+     setGpsError(e.code===1?'Autoriza el GPS para mostrar tu ubicación.':'No pudimos obtener GPS reciente.');setPosition(null);
+    },
     {enableHighAccuracy:true,maximumAge:0,timeout:20000},
    );
   };
