@@ -47,7 +47,16 @@ const failure=(reason:unknown)=>reason instanceof Error?reason.message:'La opera
  * or the browser GPS alone. PostgreSQL approval + Redis heartbeat drive the UI.
  * Inactive delivery/Stripe endpoints remain locked by RC9.5 server guards.
  */
+/** Account-scoped mount. A session switch must discard all previous
+ * courier-only memory: PINs, cash attestations, offers, GPS readiness, maps,
+ * alerts and ticket state. Child effects also abort stale async UI updates.
+ */
 export function DriverPwaWorkflow(){
+ const session=useSession();
+ return <DriverPwaWorkflowSession key={session.user?.id??'signed-out'}/>;
+}
+
+function DriverPwaWorkflowSession(){
  const session=useSession();
  const [tab,setTab]=useState<DriverTab>('inicio');
  const [mapOpen,setMapOpen]=useState(false);
@@ -622,7 +631,7 @@ export function DriverPwaWorkflow(){
          {avatarSaving?<RefreshCw size={16} className="spin" aria-hidden="true"/>:<Camera size={16} strokeWidth={2.3} aria-hidden="true"/>}
         </button>
        </div>
-       <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
+       <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Repartidor de Tala Eats</p>
         <span className={readiness?.admin_verified===true?"df-chip df-profile-verified":"df-chip df-profile-pending"}><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
         {avatarSaving&&<span className="df-avatar-saving" role="status">Guardando foto…</span>}
         {avatarError&&<span className="df-avatar-error" role="alert">{avatarError}</span>}
