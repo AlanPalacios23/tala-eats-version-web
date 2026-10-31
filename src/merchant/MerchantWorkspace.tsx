@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
   BarChart3, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3,
-  Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, ReceiptText, RefreshCw,
+  Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
   WifiOff, X
 } from 'lucide-react';
@@ -27,6 +27,16 @@ const NAV: {id: Section; label: string; icon: typeof ClipboardList}[] = [
   {id:'rendimiento',label:'Rendimiento',icon:BarChart3},
   {id:'negocio',label:'Mi negocio',icon:Settings2}
 ];
+export function elapsedOrderTime(date:string, now:number):string {
+  const created=new Date(date).getTime();
+  if(!Number.isFinite(created)||created>now+60_000)return 'Tiempo no disponible';
+  const mins=Math.max(0,Math.floor((now-created)/60000));
+  if(mins<1)return 'Hace menos de 1 min';
+  if(mins<60)return `Hace ${mins} min`;
+  const hours=Math.floor(mins/60);
+  if(hours<24)return `Hace ${hours} h ${mins%60} min`;
+  return `Hace ${Math.floor(hours/24)} d`;
+}
 const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'No pudimos consultar el servidor.';
 const orderTime = (date: string) => {
   const d = new Date(date);
@@ -44,24 +54,32 @@ function MenuRow({item,onSaved}:{item:MenuItem;onSaved:()=>Promise<void>}) {
   const [available,setAvailable]=useState(item.is_available);
   const [saving,setSaving]=useState(false);
   const [notice,setNotice]=useState('');
+  const rowWriteLock=useRef(false);
   useEffect(()=>{setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);},[item.id,item.price,item.stock,item.is_available]);
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
   const valid=Number.isFinite(Number(price))&&Number(price)>=0&&/^\d+(\.\d{1,2})?$/.test(price)&&Number.isSafeInteger(stock)&&stock>=0;
   const save=async()=>{
-    if(!dirty||!valid||saving)return;
-    setSaving(true);setNotice('');
+    if(!dirty||!valid||rowWriteLock.current)return;
+    rowWriteLock.current=true;setSaving(true);setNotice('');
     try {await api.ownerUpdateItem(item.id,{price,stock,is_available:available});await onSaved();setNotice('Cambios guardados');}
-    catch(e){setNotice(errorMessage(e));}finally{setSaving(false);}
+    catch(e){setNotice(errorMessage(e));}finally{setSaving(false);rowWriteLock.current=false;}
+  };
+  const quickAvailability=async()=>{
+    if(rowWriteLock.current)return;
+    if(dirty){setNotice('Guarda primero los cambios pendientes.');return;}
+    rowWriteLock.current=true;setSaving(true);setNotice('');
+    try{await api.ownerUpdateItem(item.id,{is_available:!item.is_available});await onSaved();setNotice(item.is_available?'Producto pausado':'Producto disponible');}
+    catch(e){setNotice(errorMessage(e));}finally{setSaving(false);rowWriteLock.current=false;}
   };
   const img=safeImage(item.image_url);
   return <article className="merchant-product">
     <div className="merchant-product-image">{img?<img src={img} loading="lazy" alt={item.name}/>:<Coffee size={25} aria-hidden="true"/>}</div>
     <div className="merchant-product-body">
-      <div className="merchant-product-heading"><div><small>{item.category||'General'}</small><h3>{item.name}</h3></div><label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/><span>{available?'Disponible':'Oculto'}</span></label></div>
+      <div className="merchant-product-heading"><div><small>{item.category||'General'}</small><h3>{item.name}</h3><span className={'merchant-stock-indicator '+(item.stock<=5?'low':'')}>{item.stock===0?'Sin existencias':item.stock<=5?'Pocas existencias':'En inventario'}</span></div><label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/><span>{available?'Disponible':'Oculto'}</span></label></div>
       <div className="merchant-product-controls">
         <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)} /></label>
         <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
-        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving} onClick={()=>void save()}>{saving?'Guardando…':'Guardar'}</button>
+        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
       </div>
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
@@ -91,27 +109,64 @@ export default function MerchantWorkspace(){
   const [newStock,setNewStock]=useState(20);
   const [newCategory,setNewCategory]=useState('General');
   const [newDescription,setNewDescription]=useState('');
+  const [lastSync,setLastSync]=useState<Date|null>(null);
+  const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
+  const [clock,setClock]=useState(()=>Date.now());
+  const readGeneration=useRef(0);
+  const readInFlight=useRef(false);
+  const mutationInFlight=useRef(false);
+  const detailRef=useRef<HTMLElement|null>(null);
   useEffect(()=>{
     if(selectedOrderId===null)return;
-    const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setSelectedOrderId(null);};
+    const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    const sheet=detailRef.current;
+    const originalOverflow=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    sheet?.querySelector<HTMLButtonElement>('button[aria-label="Cerrar detalles"]')?.focus();
+    const close=(e:KeyboardEvent)=>{
+      if(e.key==='Escape')setSelectedOrderId(null);
+      if(e.key!=='Tab'||!sheet)return;
+      const focusable=Array.from(sheet.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled)'));
+      if(!focusable.length)return;
+      const first=focusable[0],last=focusable[focusable.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    };
     window.addEventListener('keydown',close);
-    return()=>window.removeEventListener('keydown',close);
+    return()=>{window.removeEventListener('keydown',close);document.body.style.overflow=originalOverflow;previous?.focus();};
   },[selectedOrderId]);
+  useEffect(()=>{
+    const tick=window.setInterval(()=>setClock(Date.now()),30000);
+    const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false);
+    window.addEventListener('online',onOnline);window.addEventListener('offline',onOffline);
+    return()=>{window.clearInterval(tick);window.removeEventListener('online',onOnline);window.removeEventListener('offline',onOffline);};
+  },[]);
 
   const refresh=useCallback(async (quiet=false) => {
+    // Sinpeticiones duplicadas ni lecturas que compitan con escrituras.
+    if(quiet&&(readInFlight.current||mutationInFlight.current))return;
+    const generation=++readGeneration.current;
+    readInFlight.current=true;
     if(!quiet)setRefreshing(true);
-    const [r,o,a]=await Promise.allSettled([api.ownerRestaurant(),api.ownerOrders(),api.ownerAnalytics()]);
-    const nextErrors: {restaurant?:string;orders?:string;analytics?:string}={};
-    if(r.status==='fulfilled')setRestaurant(r.value);else nextErrors.restaurant=errorMessage(r.reason);
-    if(o.status==='fulfilled')setOrders(o.value);else nextErrors.orders=errorMessage(o.reason);
-    if(a.status==='fulfilled')setAnalytics(a.value);else nextErrors.analytics=errorMessage(a.reason);
-    setErrors(nextErrors);setLoading(false);setRefreshing(false);
+    try {
+      const [r,o,a]=await Promise.allSettled([api.ownerRestaurant(),api.ownerOrders(),api.ownerAnalytics()]);
+      if(generation!==readGeneration.current)return;
+      const nextErrors: {restaurant?:string;orders?:string;analytics?:string}={};
+      if(r.status==='fulfilled')setRestaurant(r.value);else nextErrors.restaurant=errorMessage(r.reason);
+      if(o.status==='fulfilled'){setOrders(o.value);setLastSync(new Date());}else nextErrors.orders=errorMessage(o.reason);
+      if(a.status==='fulfilled')setAnalytics(a.value);else nextErrors.analytics=errorMessage(a.reason);
+      setErrors(nextErrors);
+    }finally {
+      if(generation===readGeneration.current){readInFlight.current=false;setLoading(false);setRefreshing(false);}
+    }
   },[]);
-  useEffect(()=>{void refresh();},[refresh]);
+  useEffect(()=>{void refresh();return()=>{readGeneration.current++;readInFlight.current=false;};},[refresh]);
   useEffect(()=>{
-    // Consultas solamente: nunca hace cambios comerciales de manera automática.
-    const timer=window.setInterval(()=>{if(document.visibilityState==='visible'&&section==='pedidos')void refresh(true);},30000);
-    return()=>window.clearInterval(timer);
+    // Solo GET en primer plano, jamás escrituras automáticas.
+    const timer=window.setInterval(()=>{if(navigator.onLine&&document.visibilityState==='visible'&&section==='pedidos')void refresh(true);},30000);
+    const onVisible=()=>{if(document.visibilityState==='visible'&&navigator.onLine)void refresh(true);};
+    document.addEventListener('visibilitychange',onVisible);
+    return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
   },[refresh,section]);
 
   const newCount=orders.filter(o=>o.status==='received').length;
@@ -133,29 +188,32 @@ export default function MerchantWorkspace(){
   const products=useMemo(()=> (restaurant?.menu_items??[]).filter(p=>(p.name+' '+(p.category||'')).toLocaleLowerCase('es-MX').includes(menuSearch.trim().toLocaleLowerCase('es-MX'))),[restaurant,menuSearch]);
 
   const changeStatus=async(id:number,status:StatusAction)=>{
-    if(busyOrder!==null)return;
+    if(mutationInFlight.current)return;
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
     setBusyOrder(id);setNotice('');
-    try{await api.ownerUpdateStatus(id,status);await refresh(true);setNotice('Pedido #'+id+' actualizado correctamente.');}
+    try{await api.ownerUpdateStatus(id,status);await refresh(false);setNotice('Pedido #'+id+' actualizado correctamente.');}
     catch(e){setNotice('Pedido #'+id+': '+errorMessage(e));}
-    finally{setBusyOrder(null);}
+    finally{setBusyOrder(null);mutationInFlight.current=false;}
   };
   const toggleStore=async()=>{
-    if(!restaurant||savingStore)return;
+    if(!restaurant||mutationInFlight.current)return;
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
     setSavingStore(true);setNotice('');
-    try{await api.ownerUpdateRestaurant({is_open:!restaurant.is_open});await refresh(true);setNotice('Disponibilidad actualizada en el servidor.');}
+    try{await api.ownerUpdateRestaurant({is_open:!restaurant.is_open});await refresh(false);setNotice('Disponibilidad actualizada en el servidor.');}
     catch(e){setNotice(errorMessage(e));}
-    finally{setSavingStore(false);}
+    finally{setSavingStore(false);mutationInFlight.current=false;}
   };
   const addProduct=async(e:FormEvent)=>{
-    e.preventDefault();if(submitting)return;
+    e.preventDefault();if(mutationInFlight.current)return;
     const price=Number(newPrice);
     if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNotice('Revisa el nombre, precio y existencias.');return;}
+    mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;
     setSubmitting(true);setNotice('');
     try{
       await api.ownerAddItem({name:newName.trim(),price:newPrice,stock:newStock,description:newDescription.trim(),category:newCategory.trim()||'General',is_available:true});
       setNewName('');setNewPrice('');setNewStock(20);setNewCategory('General');setNewDescription('');setAddOpen(false);
-      await refresh(true);setNotice('Producto agregado correctamente.');
-    }catch(e){setNotice(errorMessage(e));}finally{setSubmitting(false);}
+      await refresh(false);setNotice('Producto agregado correctamente.');
+    }catch(e){setNotice(errorMessage(e));}finally{setSubmitting(false);mutationInFlight.current=false;}
   };
 
   // Un solo diseño de tarjeta para tablero, lista y móvil. Sin duplicar acciones.
