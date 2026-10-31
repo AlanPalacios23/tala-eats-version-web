@@ -13,6 +13,7 @@ import '../styles/driver-journey-rc147.css';
 import '../styles/driver-trip-rc148.css';
 import '../styles/driver-operations-rc151.css';
 import {DriverSupportForm} from './DriverSupportForm';
+import {safeDriverPerformanceSummary} from '../lib/driver-operations-core';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -250,10 +251,7 @@ export function DriverPwaWorkflow(){
  },[online,tab,active?.id]);
  const delivered=driverDeliveredOrders(mine);
  const weekdays=dashboard?.last_7_days??[];
- const validPerformanceDays=weekdays.filter(d=>Number.isSafeInteger(d.deliveries)&&d.deliveries>=0);
- const performanceDeliveries=validPerformanceDays.length===weekdays.length&&weekdays.length>0
-  ?validPerformanceDays.reduce((sum,d)=>sum+d.deliveries,0):null;
- const performanceDays=performanceDeliveries===null?null:validPerformanceDays.filter(d=>d.deliveries>0).length;
+ const performance=safeDriverPerformanceSummary(dashboard?.last_7_days);
  const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
  const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
  const cannotReceive=readiness?.admin_verified!==true||readiness?.presence_enabled!==true;
@@ -559,10 +557,10 @@ export function DriverPwaWorkflow(){
        </section>
       <section className="df-section"><h2>Actividad registrada</h2>
        <div className="df-performance-brief" aria-label="Actividad real de los últimos días">
-        <div><small>Entregas · período consultado</small><strong>{performanceDeliveries??'—'}</strong></div>
-        <div><small>Días con entregas</small><strong>{performanceDays??'—'}</strong></div>
+        <div><small>Entregas · período consultado</small><strong>{performance?.deliveries??'—'}</strong></div>
+        <div><small>Días con entregas</small><strong>{performance?.activeDays??'—'}</strong></div>
        </div>
-       <p className="df-performance-caption">Datos del resumen de los últimos siete días del servidor; no representan saldo disponible para retiro.</p>
+       <p className="df-performance-caption">Datos de {performance?.days??'—'} días devueltos por el servidor; no representan saldo disponible para retiro.</p>
       </section>
       <FinanceWeeklyPreview kind="driver"/>
       <DriverCashHandoff orders={delivered}/>
