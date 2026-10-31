@@ -66,8 +66,8 @@ describe('RC152 operational experience, never simulated finance or dispatch',()=
   expect(workflow).toContain("VITE_DRIVER_SUPPORT_ENABLED==='true'");
   expect(workflow).toContain('accountId={session.user?.id??null}');
   expect(workflow).toContain('key={session.user?.id??"unknown"} activeOrderId=');
-  expect(help).toContain('if(inFlight.current||busy||offline||!valid)return;');
-  expect(help).toContain('api.createSupportTicket(category,message,null)');
+  expect(help).toContain('if(inFlight.current||busy||!allowed||!valid)return;');
+  expect(help).toContain('api.createSupportTicket(category,description.trim(),linkedOrderId)');
   expect(help).toContain('<DriverSupportHistory key={ticketId??\'initial\'} accountId={accountId}/>');
   expect(history).toContain('item.user_id===accountId');
   expect(history).toContain('No se pudo verificar el historial de reportes.');

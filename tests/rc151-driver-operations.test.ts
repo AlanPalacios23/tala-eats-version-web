@@ -50,11 +50,11 @@ describe('RC151 · driver real operations and support boundaries',()=>{
   expect(main).toContain("const driverSupportEnabled=import.meta.env.VITE_DRIVER_SUPPORT_ENABLED==='true'");
   expect(main).toContain('driverSupportEnabled&&<button');
   expect(main).toContain("driverSupportEnabled?\n      <DriverSupportForm");
-  expect(support).toContain('api.createSupportTicket(category,message,null)');
+  expect(support).toContain('api.createSupportTicket(category,description.trim(),linkedOrderId)');
   expect(support).toContain('Number.isSafeInteger(result?.id)');
   expect(support).toContain('setTicketId(result.id)');
-  expect(support).toContain('if(inFlight.current||busy||offline||!valid)return;');
-  expect(support).toContain('no se vincula automáticamente'); // guard informative notice
+  expect(support).toContain('if(inFlight.current||busy||!allowed||!valid)return;');
+  expect(support).toContain('Se vinculará únicamente si el servidor confirma'); // guard informative notice
   expect(support).not.toContain('localStorage');
   expect(support).not.toContain('api.driverComplete(');
   expect(support).not.toContain('api.driverStatus(');
