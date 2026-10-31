@@ -32,6 +32,10 @@ describe('RC155: account-scoped Repartidores PWA state',()=>{
    "<FinanceWeeklyPreview key={session.user?.id??\"unknown\"}"
   ])expect(scope).toContain(code);
  });
+ it('does not hardcode Tala as the driver's geographic market for regional expansion',()=>{
+  expect(workflow).toContain('Repartidor de Tala Eats');
+  expect(workflow).not.toContain('<p>Tala, Jalisco</p>');
+ });
  it('unmount invalidates stale asynchronous user-specific polling and GPS UI responses',()=>{
   expect(workflow).toContain('const version=++refreshVersion.current');
   expect(workflow).toContain('if(!mounted.current||version!==refreshVersion.current)return');
