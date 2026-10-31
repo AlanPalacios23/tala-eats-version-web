@@ -546,3 +546,7 @@
 @media print{
  .merchant-skeleton,.merchant-kitchen-tracker{display:none!important}
 }
+
+/* La línea hacia la siguiente etapa no debe verse completada antes de llegar. */
+.merchant-kitchen-step.current:not(:last-child)::after{background:#e2e7e9}
+@media(max-width:420px){.merchant-arrival>div:nth-child(2){padding-right:20px}}
