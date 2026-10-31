@@ -366,7 +366,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
        onClick={()=>onAccept(selected)}><CheckCircle2 size={19}/> {busy?'Confirmando…':'Aceptar pedido'} <ArrowRight size={18}/></button>
       <button type="button" className="dm-dismiss" disabled={busy} onClick={()=>{
        setDismissed(old=>new Set([...old,selected.id]));setSelectedId(null);
-      }} aria-label={'Descartar oferta '+selected.id}><X size={18}/> Ocultar</button>
+      }} aria-label={'Ocultar oferta '+selected.id+' solo en esta vista'}><X size={18}/> Ocultar</button>
      </div>
      <p className="dm-privacy">Ocultar retira la oferta de tu vista, no la rechaza en el servidor.</p>
     </article>}
