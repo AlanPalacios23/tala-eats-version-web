@@ -226,7 +226,8 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
   for(const marker of markers){
    const chosen=marker.order.id===selected?.id;
    L.circleMarker([marker.point.lat,marker.point.lng],{
-    radius:chosen?15:12,weight:3,color:'#fff',fillColor:'#ff682e',fillOpacity:1
+    radius:chosen?15:12,weight:3,color:'#fff',fillColor:'#ff682e',fillOpacity:1,
+     className:chosen?'dm-map-marker-selected':'dm-map-marker'
    }).bindTooltip('Pedido #'+marker.order.id).on('click',()=>{
     openOffer(marker.order.id);
    }).addTo(group);
@@ -370,7 +371,7 @@ export function DriverLiveMap({offers,eligible,offline,busy,refreshing,offersErr
      </small>}
      </div>
     </details>}
-    {eligible&&selected&&<article className="dm-offer" aria-label={'Oferta '+selected.id}>
+    {eligible&&selected&&<article key={selected.id} className="dm-offer" aria-label={'Oferta '+selected.id}>
      <div className="dm-offer-row">
       <span className="dm-order">PEDIDO #{selected.id}</span>
       <span className="dm-pickup-chip"><MapPin size={13}/> Recogida</span>
