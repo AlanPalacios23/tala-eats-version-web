@@ -633,7 +633,7 @@ export function DriverPwaWorkflow(){
        <button onClick={()=>setSheet('documents')}><FileCheck2 size={21}/><span><strong>Documentos</strong><small>Consultar estado de verificación</small></span><ChevronRight size={19}/></button>
       </div></section>
       <DriverOperationsOverview readiness={readiness} offline={browserOffline} hasActive={!!active}
-       offersError={offersError} dashboardError={dashboardError}/>
+       offersError={offersError} dashboardError={dashboardError} dashboardAvailable={!!dashboard}/>
       <section className="df-section"><h2>Cuenta</h2><div className="df-surface df-settings">
        <button onClick={()=>setSheet('security')}><ShieldCheck size={21}/><span><strong>Seguridad</strong><small>Acceso y sesión</small></span><ChevronRight size={19}/></button>
        <button onClick={()=>setSheet('help')}><HelpCircle size={21}/><span><strong>Ayuda</strong><small>Problemas frecuentes en una entrega</small></span><ChevronRight size={19}/></button>
