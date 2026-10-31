@@ -574,7 +574,7 @@ export function DriverPwaWorkflow(){
        </div>
        <p className="df-performance-caption">Datos de {performance?.days??'—'} días devueltos por el servidor; no representan saldo disponible para retiro.</p>
       </section>
-      <FinanceWeeklyPreview kind="driver"/>
+      <FinanceWeeklyPreview kind="driver" actorId={session.user?.id}/>
       <DriverCashHandoff orders={delivered}/>
       <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Cuenta bancaria y retiros</strong></div>
        <p>Vincula tu banco de forma segura con Stripe. Tus ganancias registradas no son saldo retirable.</p>
