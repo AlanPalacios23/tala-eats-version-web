@@ -631,7 +631,7 @@ function DriverPwaWorkflowSession(){
          {avatarSaving?<RefreshCw size={16} className="spin" aria-hidden="true"/>:<Camera size={16} strokeWidth={2.3} aria-hidden="true"/>}
         </button>
        </div>
-       <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Tala, Jalisco</p>
+       <div className="df-profile-copy"><h2>{session.user?.name||'Repartidor'}</h2><p>Repartidor de Tala Eats</p>
         <span className={readiness?.admin_verified===true?"df-chip df-profile-verified":"df-chip df-profile-pending"}><ShieldCheck size={14}/>{readiness?.admin_verified===true?'Cuenta verificada':'Verificación pendiente'}</span>
         {avatarSaving&&<span className="df-avatar-saving" role="status">Guardando foto…</span>}
         {avatarError&&<span className="df-avatar-error" role="alert">{avatarError}</span>}
