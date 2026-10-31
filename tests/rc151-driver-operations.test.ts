@@ -53,7 +53,7 @@ describe('RC151 · driver real operations and support boundaries',()=>{
   expect(support).toContain('api.createSupportTicket(category,message,null)');
   expect(support).toContain('Number.isSafeInteger(result?.id)');
   expect(support).toContain('setTicketId(result.id)');
-  expect(support).toContain('if(busy||offline||!valid)return;');
+  expect(support).toContain('if(inFlight.current||busy||offline||!valid)return;');
   expect(support).toContain('no se vincula automáticamente'); // guard informative notice
   expect(support).not.toContain('localStorage');
   expect(support).not.toContain('api.driverComplete(');
