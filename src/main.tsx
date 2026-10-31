@@ -27,6 +27,9 @@ function PortalInstallIdentity() {
       href.includes('repartidor') ? 'Repartidores' :
       href.includes('clientes') ? 'Clientes' : 'Inicio';
    document.title = 'Tala Eats · ' + label;
+   // La PWA del restaurante usa barras del sistema claras, sin modificar los otros portales.
+   const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+   if (theme) theme.setAttribute('content', href.includes('restaurante') ? '#ffffff' : '#080808');
  }, [location.pathname]);
  return null;
 }
