@@ -11,18 +11,23 @@ export function DriverOfferAttention({offers,eligible,offline}:Props){
  const [enabled,setEnabled]=useState(false);
  const [latest,setLatest]=useState<number|null>(null);
  const seen=useRef<Set<number>|null>(null);
+ const wasEligible=useRef(false);
  const currentIds=offers.filter(o=>Number.isSafeInteger(o.id)&&o.id>0).map(o=>o.id);
  const idsKey=currentIds.join(',');
 
  useEffect(()=>{
   const ids=new Set(currentIds);
   const previous=seen.current;
+  const active=eligible&&!offline;
+  const continuous=wasEligible.current;
   seen.current=ids;
-  if(!eligible||offline){
+  wasEligible.current=active;
+  setLatest(old=>old!==null&&!ids.has(old)?null:old);
+  if(!active){
    setLatest(old=>old===null?old:null);
    return;
   }
-  if(!previous)return; // never alert for offers already present on first load
+  if(!continuous||!previous)return; // first eligible sync / reconnect is baseline
   if(!enabled)return;
   const fresh=currentIds.find(id=>!previous.has(id));
   if(fresh===undefined)return;
