@@ -22,6 +22,17 @@ const STATUS_LABEL: Record<string, string> = {
   picked_up: 'Recogido', on_the_way: 'En camino', delivered: 'Entregado',
   cancelled: 'Cancelado', awaiting_payment: 'Pago pendiente'
 };
+const KITCHEN_STEPS = [
+  {id:'received',label:'Recibido'},
+  {id:'confirmed',label:'Aceptado'},
+  {id:'preparing',label:'En preparación'},
+  {id:'ready',label:'Listo'}
+] as const;
+export function kitchenStepIndex(status:string):number {
+  const step=KITCHEN_STEPS.findIndex(item=>item.id===status);
+  if(step>=0)return step;
+  return ['assigned','picked_up','on_the_way','delivered'].includes(status)?3:-1;
+}
 const NAV: {id: Section; label: string; icon: typeof ClipboardList}[] = [
   {id:'pedidos',label:'Pedidos',icon:ClipboardList},
   {id:'menu',label:'Menú',icon:UtensilsCrossed},
@@ -285,7 +296,12 @@ export default function MerchantWorkspace(){
         </div>
       </header>
       <div className="merchant-content">
-        {loading?<div className="merchant-loading"><RefreshCw className="merchant-spin" size={22}/> Consultando tu negocio…</div>:<>
+        {loading?<div className="merchant-skeleton" role="status" aria-label="Cargando información del restaurante">
+          <div className="merchant-skeleton-header"><div className="merchant-skeleton-line big"/><div className="merchant-skeleton-line short"/></div>
+          <div className="merchant-skeleton-metrics">{[0,1,2,3].map(n=><div className="merchant-skeleton-panel" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line big"/></div>)}</div>
+          <div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-cards">{[0,1,2].map(n=><div className="merchant-skeleton-panel tall" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line short"/><div className="merchant-skeleton-line big"/></div>)}</div>
+          <span className="merchant-sr-only">Consultando tu negocio…</span>
+        </div>:<>
           {!online&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/> Sin conexión: los datos pueden estar desactualizados y no se permiten cambios hasta volver a conectar.</div>}
           {activeFreshOrders.length>0&&<div className="merchant-arrival" role="status" aria-live="polite">
             <div className="merchant-arrival-icon"><BellRing size={20}/></div>
@@ -372,6 +388,12 @@ export default function MerchantWorkspace(){
         <header className="merchant-detail-header"><div><small>DETALLE DEL PEDIDO</small><h2>Pedido #{selectedOrder.id}</h2></div><button type="button" autoFocus aria-label="Cerrar detalles" onClick={()=>setSelectedOrderId(null)}><X size={22}/></button></header>
         <div className="merchant-detail-scroll"><div className="merchant-detail-intro"><span className={'merchant-order-status state-'+selectedOrder.status}>{STATUS_LABEL[selectedOrder.status]||selectedOrder.status}</span><span>{orderTime(selectedOrder.created_at)} · {elapsedOrderTime(selectedOrder.created_at,clock)}</span></div>
           <div className="merchant-detail-info"><span><ShoppingBag size={17}/>{selectedOrder.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><span><ReceiptText size={17}/>{selectedOrder.payment_method==='cash'?'Efectivo':'Tarjeta'} · {selectedOrder.payment_status||'Sin datos del pago'}</span>{selectedOrder.address&&<span><MapPin size={17}/>{selectedOrder.address}</span>}</div>
+          {kitchenStepIndex(selectedOrder.status)>=0&&<div className="merchant-kitchen-tracker" aria-label="Estado de preparación del pedido">
+            {KITCHEN_STEPS.map((step,i)=><div key={step.id} className={'merchant-kitchen-step '+(i<=kitchenStepIndex(selectedOrder.status)?'done ':'')+(i===kitchenStepIndex(selectedOrder.status)?'current':'')}>
+              <span className="merchant-kitchen-step-dot">{i<kitchenStepIndex(selectedOrder.status)?<Check size={13}/>:i+1}</span>
+              <span>{step.label}</span>
+            </div>)}
+          </div>}
           <h3>Productos del pedido</h3><div className="merchant-detail-lines">{(selectedOrder.items??[]).map((item,i)=><div key={item.id??i}><span className="merchant-detail-item-qty">{item.quantity}×</span><strong>{item.name_snapshot}</strong><span>{pesos(Number(item.unit_price)*item.quantity)}</span></div>)}</div>
           <div className="merchant-detail-total"><span>Total del pedido</span><strong>{pesos(selectedOrder.total)}</strong></div>
           <p className="merchant-detail-hint" id="merchant-detail-help">La información se obtiene del servidor. Los tiempos de preparación y la asignación del repartidor dependen del backend.</p>
