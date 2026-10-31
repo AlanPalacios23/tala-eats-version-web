@@ -11,6 +11,8 @@ import '../styles/driver-avatar-rc144.css';
 import '../styles/driver-polish-rc146.css';
 import '../styles/driver-journey-rc147.css';
 import '../styles/driver-trip-rc148.css';
+import '../styles/driver-operations-rc151.css';
+import {DriverSupportForm} from './DriverSupportForm';
 import {FinanceWeeklyPreview} from './FinanceWeeklyPreview';
 import {DriverCashHandoff} from './CashHandoffV2';
 import {DriverPwaInstallButton} from './DriverPwaInstall';
@@ -246,6 +248,10 @@ export function DriverPwaWorkflow(){
  },[online,tab,active?.id]);
  const delivered=driverDeliveredOrders(mine);
  const weekdays=dashboard?.last_7_days??[];
+ const validPerformanceDays=weekdays.filter(d=>Number.isSafeInteger(d.deliveries)&&d.deliveries>=0);
+ const performanceDeliveries=validPerformanceDays.length===weekdays.length&&weekdays.length>0
+  ?validPerformanceDays.reduce((sum,d)=>sum+d.deliveries,0):null;
+ const performanceDays=performanceDeliveries===null?null:validPerformanceDays.filter(d=>d.deliveries>0).length;
  const selectedEarningDay=weekdays.find(d=>d.date===selectedDay)??weekdays[weekdays.length-1];
  const hasEarnings=dashboard?.today?.deliveries!==undefined&&dashboard.today.deliveries>0;
  const cannotReceive=readiness?.admin_verified!==true||readiness?.presence_enabled!==true;
@@ -285,7 +291,16 @@ export function DriverPwaWorkflow(){
   profileSheetClose.current?.focus();
   const onKey=(event:KeyboardEvent)=>{
    if(event.key==='Escape'&&!busy){event.preventDefault();setSheet(null);}
-   if(event.key==='Tab'){event.preventDefault();profileSheetClose.current?.focus();}
+   if(event.key==='Tab'){
+    const dialog=profileSheetClose.current?.closest('[role="dialog"]');
+    const elements=Array.from(dialog?.querySelectorAll<HTMLElement>(
+     'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]'
+    )??[]).filter(element=>element.getClientRects().length>0);
+    if(!elements.length)return;
+    const first=elements[0],last=elements[elements.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+   }
   };
   document.addEventListener('keydown',onKey);
   return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',onKey);previous?.focus();};
@@ -393,6 +408,8 @@ export function DriverPwaWorkflow(){
      </div>
     </div>}
     {offer&&<p className="df-offer-location"><MapPin size={15}/> {storeName} · Ubicación del cliente disponible al aceptar</p>}
+    {!offer&&deliveryInProgress(o)&&<button type="button" className="df-report-help"
+      onClick={()=>setSheet('help')}><HelpCircle size={16} aria-hidden="true"/> Reportar incidencia</button>}
     {!offer&&o.status==='delivered'&&<div className="df-job-complete"><CheckCircle2 size={17}/> Entrega completada y validada</div>}
     {offer?actions&&<button type="button" className="df-primary" disabled={operationsBlocked||!!active} onClick={()=>void guardedAction(()=>api.driverAccept(o.id),'Asignación confirmada por el servidor.')}>Aceptar entrega</button>:
      canProgress&&tab!=='inicio'&&<div className="df-job-actions">
@@ -538,6 +555,13 @@ export function DriverPwaWorkflow(){
         <div><small>Km hoy</small><strong>{metric(dashboard?.today?.distance_km,' km')}</strong></div>
        </div>:<div className="df-no-earnings"><ChartNoAxesCombined size={20}/><span>Aún no tienes ganancias hoy. Se sumarán aquí al completar tu primera entrega.</span></div>}
        </section>
+      <section className="df-section"><h2>Actividad registrada</h2>
+       <div className="df-performance-brief" aria-label="Actividad real de los últimos días">
+        <div><small>Entregas · período consultado</small><strong>{performanceDeliveries??'—'}</strong></div>
+        <div><small>Días con entregas</small><strong>{performanceDays??'—'}</strong></div>
+       </div>
+       <p className="df-performance-caption">Datos del resumen de los últimos siete días del servidor; no representan saldo disponible para retiro.</p>
+      </section>
       <FinanceWeeklyPreview kind="driver"/>
       <DriverCashHandoff orders={delivered}/>
       <div className="df-surface df-wallet"><div><Wallet size={23}/><strong>Cuenta bancaria y retiros</strong></div>
@@ -670,11 +694,7 @@ export function DriverPwaWorkflow(){
       <div className="df-detail-row"><span>Correo</span><strong>{session.user?.email||'No disponible'}</strong></div>
       <div className="df-alert df-alert-info"><ShieldCheck size={17}/> El 2FA y las sesiones se administran desde el servidor. Nunca compartas tus credenciales.</div>
      </>}
-     {sheet==='help'&&<><p>Problemas frecuentes en una entrega</p>
-      <div className="df-detail-row"><span>No puedo recoger</span><strong>Contacta al comercio</strong></div>
-      <div className="df-detail-row"><span>No puedo entregar</span><strong>Solicita ayuda</strong></div>
-      <div className="df-alert df-alert-info"><ShieldCheck size={17}/> No confirmes entregas ni cobros sin que el backend los autorice.</div>
-     </>}
+     {sheet==='help'&&<DriverSupportForm activeOrderId={active?.id??null} offline={browserOffline}/>} 
     </section></div>}
   </div>;
 }
