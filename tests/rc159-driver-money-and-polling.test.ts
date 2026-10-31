@@ -37,6 +37,11 @@ describe('RC159 courier correctness: money, network, and local calendar',()=>{
   expect(workflow).toContain('const pollingRefreshInFlight=useRef(false)');
   expect(workflow).toContain("if(document.visibilityState==='visible'&&!inFlight.current&&!pollingRefreshInFlight.current)");
   expect(workflow).toContain('pollingRefreshInFlight.current=true;');
+  expect(workflow).toContain('const offersRead=api.driverAvailable().then(offers=>{');
+  expect(workflow).toContain('const dashboardRead=api.driverDashboard().then(value=>{');
+  expect(workflow).toContain('await Promise.all([offersRead,dashboardRead]);');
+  expect(workflow).toContain('setProfile(p);setReadiness(proof);setMine(jobs);');
+  expect(workflow).toContain('setLoading(false);');
   expect(workflow).toContain('void refresh().finally(()=>{pollingRefreshInFlight.current=false;});');
   expect(workflow).toContain("if(busy||refreshing)return;");
   expect(workflow).toContain('try{await refresh();}finally{if(mounted.current)setRefreshing(false);}');
