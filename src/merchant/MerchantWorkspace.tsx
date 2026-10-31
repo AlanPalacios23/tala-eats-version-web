@@ -4,13 +4,14 @@ import {
   BarChart3, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
-  WifiOff, X
+  Wallet, WifiOff, X
 } from 'lucide-react';
 import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Order, Restaurant } from '../lib/types';
+import MerchantWallet from './MerchantWallet';
 import './merchant.css';
 
-type Section = 'pedidos' | 'menu' | 'rendimiento' | 'negocio';
+type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
 type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
@@ -37,6 +38,7 @@ const NAV: {id: Section; label: string; icon: typeof ClipboardList}[] = [
   {id:'pedidos',label:'Pedidos',icon:ClipboardList},
   {id:'menu',label:'Menú',icon:UtensilsCrossed},
   {id:'rendimiento',label:'Rendimiento',icon:BarChart3},
+  {id:'wallet',label:'Wallet',icon:Wallet},
   {id:'negocio',label:'Mi negocio',icon:Settings2}
 ];
 export function elapsedOrderTime(date:string, now:number):string {
@@ -362,8 +364,10 @@ export default function MerchantWorkspace(){
                 <button type="button" className="merchant-insight-button" onClick={()=>{setSection('menu');setMenuFilter('bajo');setMenuSearch('');setMenuCategory('')}}>Revisar existencias <ChevronRight size={17}/></button>
               </section>
             </div>
+            <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
             <div className="merchant-info-panel"><LayoutDashboard size={24}/><div><h3>Información conectada a tu comercio</h3><p>Estas cifras se actualizan desde la API de Tala Eats. Los reportes financieros detallados, pagos y liquidaciones requieren endpoints verificados adicionales; no se muestran saldos inventados.</p></div></div>
           </>}
+          {section==='wallet'&&<MerchantWallet restaurantId={restaurant?.id??null}/>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CONFIGURACIÓN</span><h1>Mi negocio</h1><p>Controla tu disponibilidad y consulta la información verificada del comercio.</p></div></div>
             <section className="merchant-store-hero">
