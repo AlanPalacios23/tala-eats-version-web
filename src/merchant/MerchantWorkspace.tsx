@@ -429,7 +429,7 @@ export default function MerchantWorkspace(){
       return;
     }
     if(!orderPaymentConfirmed(current)){
-      setNoticeError(true);setNotice('Es necesario confirmar el cobro con Stripe antes de cambiar el estado.');
+      setNoticeError(true);setNotice('El método de pago no está verificado. Para Stripe se requiere un cobro confirmado.');
       return;
     }
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
@@ -488,7 +488,7 @@ export default function MerchantWorkspace(){
       <div className="merchant-order-foot"><span><ReceiptText size={15}/>{merchantPaymentLabel(o.payment_method)} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
-        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={!ordersFresh?'Sincroniza pedidos antes de avanzar':awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
+        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={!ordersFresh?'Sincroniza pedidos antes de avanzar':awaitingStripePayment?'Es necesario validar el método de pago antes de avanzar':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?(o.payment_method==='stripe'?'Esperando cobro':'Pago no verificado'):label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
       </div>
     </article>;
   };
