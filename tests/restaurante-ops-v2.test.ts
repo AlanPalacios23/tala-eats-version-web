@@ -16,7 +16,7 @@ describe('Restaurantes RC159 · operación segura y experiencia nativa',()=>{
     expect(elapsedOrderTime('2026-11-01T00:00:00Z',now)).toBe('Tiempo no disponible');
   });
   it('no apila lecturas automáticas ni permite que resultados antiguos pisen escrituras',()=>{
-    expect(source).toContain('if(quiet&&(readInFlight.current||mutationInFlight.current))return;');
+    expect(source).toContain('if(quiet&&(readInFlight.current||mutationInFlight.current||menuMutationInFlight.current))return;');
     expect(source).toContain('generation!==readGeneration.current');
     expect(source).toContain('readGeneration.current++');
     expect(source).toContain("document.visibilityState==='visible'");
