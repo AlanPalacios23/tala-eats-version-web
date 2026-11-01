@@ -26,7 +26,10 @@ const ACTIVE = new Set(['received', 'confirmed', 'preparing', 'ready', 'assigned
 export function orderPaymentConfirmed(order:Pick<Order,'payment_method'|'payment_status'>):boolean {
   // El backend exige cobro confirmado antes de aceptar/preparar pedidos Stripe.
   // Las respuestas de red no tienen tipos garantizados en runtime: fallar cerrado.
-  return order.payment_method==='cash'||
+  // Efectivo a la entrega puede seguir pendiente, pero un cobro revertido,
+  // cancelado o fallido nunca debe habilitar acciones de cocina.
+  return (order.payment_method==='cash'&&
+    !['failed','refunded','cancelled','canceled'].includes(order.payment_status))||
     (order.payment_method==='stripe'&&order.payment_status==='paid');
 }
 export const merchantPaymentLabel=(method:string):string =>
@@ -105,6 +108,17 @@ export function isMerchantOrderList(value:unknown):value is Order[] {
 export function isOrderSnapshotFresh(lastSync:Date|null,now:number,online:boolean,hasError:boolean):boolean {
   return online&&!hasError&&!!lastSync&&Number.isFinite(lastSync.getTime())&&
     now>=lastSync.getTime()&&now-lastSync.getTime()<120_000;
+}
+// Determina el resultado después de un timeout o de una respuesta PATCH incompleta.
+// No repetir la mutación: consultar primero al servidor, que es la autoridad.
+export function reconcileMerchantStatus(
+  orders:Order[], id:number, previous:string, requested:StatusAction
+):'applied'|'unchanged'|'changed'|'missing' {
+  const actual=orders.find(order=>order.id===id);
+  if(!actual)return 'missing';
+  if(actual.status===requested)return 'applied';
+  if(actual.status===previous)return 'unchanged';
+  return 'changed';
 }
 export function exportOrderSummaryCsv(orders:Order[]):string {
   // Reporte acotado a la vista cargada; no exporta direcciones, PIN ni datos personales.
@@ -485,15 +499,40 @@ export default function MerchantWorkspace(){
       const updated=await api.ownerUpdateStatus(id,status);
       // El resultado de la mutación confirmada es la fuente de verdad si el GET posterior falla.
       if(updated?.id!==id||updated.status!==status){
-        setNoticeError(true);
-        setNotice('El servidor no confirmó el nuevo estado. Sincroniza antes de intentar otra vez.');
-        await refresh(false);
-        return;
+        throw new Error('El servidor no confirmó el nuevo estado. Sincroniza antes de intentar otra vez.');
       }
       setOrders(prev=>prev.map(order=>order.id===id?{...order,...updated}:order));
       await refresh(false);
       setNotice('Pedido #'+id+' actualizado correctamente.');
-    }catch(e){setNoticeError(true);setNotice('Pedido #'+id+': '+errorMessage(e));}
+    }catch(e){
+      // Una respuesta perdida NO significa que el PATCH no se aplicó.
+      // Antes de permitir reintentos, reconciliar mediante GET independiente.
+      try{
+        const checked=await api.ownerOrders();
+        if(!isMerchantOrderList(checked))throw new Error('Respuesta de pedidos inválida');
+        const outcome=reconcileMerchantStatus(checked,id,current.status,status);
+        if(outcome==='missing')throw new Error('Pedido no encontrado en la lista consultada');
+        const actual=checked.find(order=>order.id===id)!;
+        const verifiedAt=new Date();
+        setOrders(checked);setLastSync(verifiedAt);setClock(verifiedAt.getTime());
+        setErrors(prev=>({...prev,orders:undefined}));
+        if(outcome==='applied'){
+          setNotice('Pedido #'+id+' confirmado por el servidor después de recuperar la comunicación.');
+        }else if(outcome==='unchanged'){
+          setNoticeError(true);
+          setNotice('Pedido #'+id+' sigue sin cambiar en el servidor. Revisa la conexión antes de intentarlo de nuevo. '+errorMessage(e));
+        }else{
+          setNoticeError(true);
+          setNotice('Pedido #'+id+' cambió a '+(STATUS_LABEL[actual.status]||actual.status)+' en el servidor. Revisa su estado antes de actuar.');
+        }
+      }catch{
+        // No hay evidencia del resultado: detener acciones hasta un GET válido.
+        setLastSync(null);
+        setErrors(prev=>({...prev,orders:'No se pudo verificar el resultado de la última acción.'}));
+        setNoticeError(true);
+        setNotice('No se pudo confirmar qué ocurrió con el pedido #'+id+'. No repitas la acción todavía: sincroniza la cola para conocer su estado real.');
+      }
+    }
     finally{setBusyOrder(null);mutationInFlight.current=false;}
   };
   const toggleStore=async()=>{
