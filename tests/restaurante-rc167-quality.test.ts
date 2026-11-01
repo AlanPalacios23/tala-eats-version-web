@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
-import {isMerchantOrderList,isOrderSnapshotFresh,orderPaymentConfirmed,merchantPaymentLabel} from '../src/merchant/MerchantWorkspace';
+import {isMerchantOrderList,isOrderSnapshotFresh,orderPaymentConfirmed,merchantPaymentLabel,merchantPaymentStatusLabel} from '../src/merchant/MerchantWorkspace';
 import type {Order} from '../src/lib/types';
 
 const source=readFileSync(new URL('../src/merchant/MerchantWorkspace.tsx',import.meta.url),'utf8');
@@ -16,6 +16,14 @@ describe('RC167 · diseño consistente y seguridad operacional',()=>{
     expect(merchantPaymentLabel('cash')).toBe('Efectivo');
     expect(merchantPaymentLabel('stripe')).toBe('Tarjeta');
     expect(merchantPaymentLabel('other')).toBe('Pago por verificar');
+    expect(merchantPaymentStatusLabel('paid')).toBe('Pagado');
+    expect(merchantPaymentStatusLabel('pending')).toBe('Pendiente');
+    expect(merchantPaymentStatusLabel('failed')).toBe('Rechazado');
+    expect(merchantPaymentStatusLabel('refunded')).toBe('Reembolsado');
+    expect(merchantPaymentStatusLabel('unknown')).toBe('Sin confirmar');
+    expect(merchantPaymentStatusLabel(null)).toBe('Sin confirmar');
+    expect(source).toContain('merchantPaymentStatusLabel(o.payment_status)');
+    expect(source).toContain('merchantPaymentStatusLabel(selectedOrder.payment_status)');
     expect(source).toContain("o.payment_method==='stripe'?'Esperando cobro':'Pago no verificado'");
   });
   it('el reloj real bloquea mutaciones y exportación aunque el reloj visual no avance',()=>{
