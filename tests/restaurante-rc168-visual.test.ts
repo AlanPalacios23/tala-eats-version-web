@@ -11,6 +11,9 @@ describe('RC168 · visual premium y navegación móvil sin ruido',()=>{
     expect(items.map(m=>m[1])).toEqual(['pedidos','menu','rendimiento','wallet','negocio']);
     expect(css).toContain('grid-template-columns:repeat(5,minmax(0,1fr))!important');
     expect(css).toContain('@media (max-width:360px)');
+    expect(css).toContain('@media (min-width:981px) and (max-width:1280px)');
+    expect(css).toContain('@media (min-width:761px) and (max-width:980px)');
+    expect(css).toContain('.merchant-board-empty svg{display:none}');
     expect(css).toContain('min-width:0;width:100%;font-size:10px');
     expect(css).toContain('env(safe-area-inset-bottom,0px)');
     expect(source).toContain('aria-label="Navegación inferior del restaurante"');
