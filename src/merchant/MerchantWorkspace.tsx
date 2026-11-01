@@ -248,7 +248,13 @@ export default function MerchantWorkspace(){
   const changeStatus=async(id:number,status:StatusAction)=>{
     if(mutationInFlight.current||!navigator.onLine)return;
     const current=orders.find(order=>order.id===id);
-    if(!current||!orderPaymentConfirmed(current)){
+    if(!current){setNoticeError(true);setNotice('Este pedido ya no está disponible. Actualiza la lista.');return;}
+    const expected:Record<StatusAction,string>={confirmed:'received',preparing:'confirmed',ready:'preparing'};
+    if(current.status!==expected[status]){
+      setNoticeError(true);setNotice('El estado de este pedido cambió. Actualiza antes de continuar.');
+      return;
+    }
+    if(!orderPaymentConfirmed(current)){
       setNoticeError(true);setNotice('Es necesario confirmar el cobro con Stripe antes de cambiar el estado.');
       return;
     }
