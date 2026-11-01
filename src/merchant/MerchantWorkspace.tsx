@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import {useSearchParams} from 'react-router-dom';
 import {
   BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
@@ -9,9 +10,12 @@ import {
 import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
+import MerchantInstallCard from './MerchantInstallCard';
 import './merchant.css';
 
 type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
+export const isMerchantSection = (value:string|null):value is Section =>
+  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
 type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
@@ -174,7 +178,44 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
 }
 
 export default function MerchantWorkspace(){
-  const [section,setSection]=useState<Section>('pedidos');
+  // Las pestañas usan el historial nativo del navegador: Android Atrás,
+  // gesto Atrás de iOS y enlaces compartibles navegan a la sección correcta.
+  const [searchParams,setSearchParams]=useSearchParams();
+  const candidate=searchParams.get('tab');
+  const section:Section=isMerchantSection(candidate)?candidate:'pedidos';
+  const setSection=useCallback((target:Section)=>{
+    if(target===section)return;
+    setSearchParams(previous=>{
+      const next=new URLSearchParams(previous);
+      if(target==='pedidos')next.delete('tab');else next.set('tab',target);
+      return next;
+    },{preventScrollReset:true});
+  },[section,setSearchParams]);
+  const [keyboardVisible,setKeyboardVisible]=useState(false);
+  useEffect(()=>{
+    // visualViewport distingue el teclado virtual del cambio de orientación.
+    const viewport=window.visualViewport;
+    if(!viewport)return;
+    const update=()=>{
+      const focused=document.activeElement;
+      const editable=focused instanceof HTMLInputElement||
+        focused instanceof HTMLTextAreaElement||
+        focused instanceof HTMLSelectElement||
+        (focused instanceof HTMLElement&&focused.isContentEditable);
+      const covered=window.innerHeight-viewport.height-viewport.offsetTop;
+      setKeyboardVisible(Boolean(editable&&covered>140));
+    };
+    viewport.addEventListener('resize',update);
+    viewport.addEventListener('scroll',update);
+    document.addEventListener('focusin',update);
+    document.addEventListener('focusout',update);
+    return()=>{
+      viewport.removeEventListener('resize',update);
+      viewport.removeEventListener('scroll',update);
+      document.removeEventListener('focusin',update);
+      document.removeEventListener('focusout',update);
+    };
+  },[]);
   useEffect(()=>{window.scrollTo({top:0,behavior:'auto'});},[section]);
   const [filter,setFilter]=useState<OrderFilter>('activos');
   const [orderView,setOrderView]=useState<'board'|'list'>('board');
@@ -387,7 +428,7 @@ export default function MerchantWorkspace(){
     {id:'listos',title:'Listos',subtitle:'Esperando recogida o entrega',statuses:['ready','assigned','picked_up','on_the_way'],count:orders.filter(o=>['ready','assigned','picked_up','on_the_way'].includes(o.status)).length}
   ];
 
-  return <div className="merchant-shell">
+  return <div className={"merchant-shell"+(keyboardVisible?" merchant-keyboard-open":"")}>
     <aside className="merchant-sidebar" aria-label="Panel de navegación del restaurante">
       <div className="merchant-logo"><span className="merchant-logo-mark"><Store size={22}/></span><span>Tala <b>Eats</b><small>RESTAURANTES</small></span></div>
       <nav className="merchant-nav" aria-label="Secciones del restaurante">{NAV.map(n=><button type="button" key={n.id} className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={20} strokeWidth={2}/>{n.label}{n.id==='pedidos'&&newCount>0&&<span className="merchant-nav-count">{newCount}</span>}</button>)}</nav>
@@ -479,6 +520,7 @@ export default function MerchantWorkspace(){
               </div>
               <button type="button" className="merchant-store-hero-action" onClick={()=>setSection('menu')}>Gestionar productos <ChevronRight size={18}/></button>
             </section>
+            <MerchantInstallCard/>
             <div className="merchant-settings-grid"><section className="merchant-setting-card"><span className="merchant-setting-icon"><Store size={23}/></span><h2>{restaurant?.name||'Mi comercio'}</h2><p><MapPin size={16}/>{restaurant?.address||'Dirección sin publicar'}</p><div className="merchant-setting-row"><span>Verificación</span><strong>{restaurant?.verification_status||'Sin información'}</strong></div><div className="merchant-setting-row"><span>Pedidos para recoger</span><strong>{restaurant?.pickup_enabled?'Habilitados':'Deshabilitados'}</strong></div></section>
               <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||menuMutating||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
           </>}
