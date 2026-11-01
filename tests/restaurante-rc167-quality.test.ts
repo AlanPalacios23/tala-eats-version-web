@@ -35,7 +35,7 @@ describe('RC167 · diseño consistente y seguridad operacional',()=>{
     expect(source).toContain('isOrderSnapshotFresh(lastSync,Date.now(),navigator.onLine,Boolean(errors.orders))');
     expect(source).toContain('La cola de pedidos necesita sincronizarse antes de continuar.');
     expect(source).toContain('El servidor no confirmó el nuevo estado. Sincroniza antes de intentar otra vez.');
-    expect(source).toContain('updated?.id!==id||updated.status!==status');
+    expect(source).toContain('updated?.id!==id||!isMerchantStatusFulfilled(current,status,updated.status)');
   });
   it('mantiene las ediciones locales hasta guardar o deshacer, incluso al tocar otra pestaña',()=>{
     expect(source).toContain('const dirtyMenuRows=useRef(new Set<number>())');
