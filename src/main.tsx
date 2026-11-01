@@ -27,6 +27,15 @@ function PortalInstallIdentity() {
       href.includes('repartidor') ? 'Repartidores' :
       href.includes('clientes') ? 'Clientes' : 'Inicio';
    document.title = 'Tala Eats · ' + label;
+   // Icono/título y barra de sistema coherentes al entrar al portal Restaurante.
+   // Safari puede usar apple-mobile-web-app-title al añadirla a inicio.
+   const merchant=href.includes('restaurante');
+   const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+   if (theme) theme.setAttribute('content',merchant?'#ffffff':'#080808');
+   const appleTitle=document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+   if(appleTitle)appleTitle.setAttribute('content',merchant?'Tala Negocios':'Tala Eats');
+   const appleIcon=document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+   if(appleIcon)appleIcon.setAttribute('href',merchant?'/icons/restaurante-180.png':'/icons/icon-192.png');
  }, [location.pathname]);
  return null;
 }

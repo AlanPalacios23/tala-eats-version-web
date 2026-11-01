@@ -1,0 +1,35 @@
+.merchant-access-shell{
+ min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ padding:max(28px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(28px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+ background:#f8f9fa;color:#25303a;font-family:'DM Sans',system-ui,sans-serif;box-sizing:border-box;
+}
+.merchant-access-shell *{box-sizing:border-box}
+.merchant-access-brand{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:27px}
+.merchant-access-brand strong{font-size:23px;letter-spacing:-.065em}
+.merchant-access-brand strong span{color:#dd702f}
+.merchant-access-brand small{font-size:10px;font-weight:800;color:#87929b;letter-spacing:.1em;margin-left:6px}
+.merchant-access-mark{display:grid;place-items:center;width:41px;height:41px;border-radius:12px;background:#ec7935;color:white;margin-right:5px}
+.merchant-access-card{width:min(100%,440px);padding:36px;background:#fff;border:1px solid #e6eaee;border-radius:20px;box-shadow:0 14px 44px #24313d0a}
+.merchant-access-eyebrow{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;letter-spacing:.07em;color:#c26c37;margin-bottom:16px}
+.merchant-access-card h1{font-size:clamp(27px,5vw,33px);line-height:1.18;letter-spacing:-.055em;margin:0 0 9px;font-weight:800}
+.merchant-access-card>p{font-size:13px;line-height:1.6;color:#7a8792;margin:0 0 25px}
+.merchant-access-form{display:grid;gap:17px}
+.merchant-access-form label{display:grid;gap:7px;font-size:12px;font-weight:760;color:#43505c}
+.merchant-access-form label span{font-weight:500;color:#89939c}
+.merchant-access-form input{width:100%;height:49px;min-height:44px;border:1px solid #e1e6ea;background:#fff;border-radius:11px;padding:0 13px;font-size:16px;color:#2b3640;outline:none;transition:border-color .15s,box-shadow .15s}
+.merchant-access-form input:focus-visible{border-color:#e28b50;box-shadow:0 0 0 3px #e879301a}
+.merchant-access-form input:disabled{opacity:.6}
+.merchant-access-form input::placeholder{color:#aeb6bd}
+.merchant-access-submit{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:49px;padding:12px 15px;border:0;border-radius:11px;color:white;background:#df722f;font-size:14px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.merchant-access-submit:hover:not(:disabled){background:#c95f20}
+.merchant-access-submit:focus-visible{outline:3px solid #f2b486;outline-offset:3px}
+.merchant-access-submit:disabled{opacity:.55;cursor:wait}
+.merchant-access-error{display:flex;align-items:flex-start;gap:8px;margin:0;padding:11px 12px;border-radius:9px;background:#fff1ec;color:#9f4f30;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.merchant-access-error svg{flex-shrink:0}
+.merchant-access-security{display:flex;align-items:center;gap:8px;margin:20px 0 0!important;font-size:11px!important}
+.merchant-access-security svg{flex:0 0 auto}
+.merchant-access-footer{display:flex;align-items:center;gap:7px;margin-top:25px;color:#9aa4ad;font-size:11px}
+.merchant-access-loading{display:flex;align-items:center;justify-content:center;gap:10px;min-height:100dvh;color:#71808d;font:600 14px system-ui,sans-serif}
+.merchant-access-card .merchant-access-submit{margin-top:7px}
+@media(max-width:480px){.merchant-access-card{padding:27px 22px;border-radius:17px}.merchant-access-brand{margin-bottom:21px}.merchant-access-brand small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.merchant-access-form input{transition:none!important}}
