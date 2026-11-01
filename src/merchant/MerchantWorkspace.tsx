@@ -34,12 +34,12 @@ export function kitchenStepIndex(status:string):number {
   if(step>=0)return step;
   return ['assigned','picked_up','on_the_way','delivered'].includes(status)?3:-1;
 }
-const NAV: {id: Section; label: string; icon: typeof ClipboardList}[] = [
-  {id:'pedidos',label:'Pedidos',icon:ClipboardList},
-  {id:'menu',label:'Menú',icon:UtensilsCrossed},
-  {id:'rendimiento',label:'Rendimiento',icon:BarChart3},
-  {id:'wallet',label:'Wallet',icon:Wallet},
-  {id:'negocio',label:'Mi negocio',icon:Settings2}
+const NAV: {id: Section; label: string; mobileLabel: string; icon: typeof ClipboardList}[] = [
+  {id:'pedidos',label:'Pedidos',mobileLabel:'Pedidos',icon:ClipboardList},
+  {id:'menu',label:'Menú',mobileLabel:'Menú',icon:UtensilsCrossed},
+  {id:'rendimiento',label:'Rendimiento',mobileLabel:'Datos',icon:BarChart3},
+  {id:'wallet',label:'Wallet',mobileLabel:'Wallet',icon:Wallet},
+  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2}
 ];
 export function elapsedOrderTime(date:string, now:number):string {
   const created=new Date(date).getTime();
@@ -80,37 +80,42 @@ function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;
   const [stock,setStock]=useState(item.stock);
   const [available,setAvailable]=useState(item.is_available);
   const [saving,setSaving]=useState(false);
+  const [editing,setEditing]=useState(false);
   const [notice,setNotice]=useState('');
   const rowWriteLock=useRef(false);
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
   useEffect(()=>{
     // Los GET periódicos no borran los cambios de un producto que el usuario edita.
-    if(dirty||rowWriteLock.current)return;
+    if(editing||saving||rowWriteLock.current)return;
     setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);
-  },[item.id,item.price,item.stock,item.is_available,dirty]);
+  },[item.id,item.price,item.stock,item.is_available,editing,saving]);
   const valid=Number.isFinite(Number(price))&&Number(price)>=0&&/^\d+(\.\d{1,2})?$/.test(price)&&Number.isSafeInteger(stock)&&stock>=0;
   const save=async()=>{
     if(!dirty||!valid||rowWriteLock.current||!online)return;
     rowWriteLock.current=true;setSaving(true);setNotice('');
-    try {await api.ownerUpdateItem(item.id,{price,stock,is_available:available});await onSaved();setNotice('Cambios guardados');}
-    catch(e){setNotice(errorMessage(e));}finally{setSaving(false);rowWriteLock.current=false;}
+    try {
+      await api.ownerUpdateItem(item.id,{price,stock,is_available:available});
+      setEditing(false);
+      await onSaved();setNotice('Cambios guardados');
+    }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);}
   };
   const quickAvailability=async()=>{
     if(rowWriteLock.current||!online)return;
     if(dirty){setNotice('Guarda primero los cambios pendientes.');return;}
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try{await api.ownerUpdateItem(item.id,{is_available:!item.is_available});await onSaved();setNotice(item.is_available?'Producto pausado':'Producto disponible');}
-    catch(e){setNotice(errorMessage(e));}finally{setSaving(false);rowWriteLock.current=false;}
+    catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);}
   };
+  const undo=()=>{if(saving)return;setEditing(false);setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);setNotice('Cambios descartados');};
   const img=safeImage(item.image_url);
   return <article className="merchant-product">
     <div className="merchant-product-image">{img?<img src={img} loading="lazy" alt={item.name}/>:<Coffee size={25} aria-hidden="true"/>}</div>
     <div className="merchant-product-body">
-      <div className="merchant-product-heading"><div><small>{item.category||'General'}</small><h3>{item.name}</h3><span className={'merchant-stock-indicator '+(item.stock<=5?'low':'')}>{item.stock===0?'Sin existencias':item.stock<=5?'Pocas existencias':'En inventario'}</span></div><label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>setAvailable(e.target.checked)}/><span>{available?'Disponible':'Oculto'}</span></label></div>
+      <div className="merchant-product-heading"><div><small>{item.category||'General'}</small><h3>{item.name}</h3><span className={'merchant-stock-indicator '+(item.stock<=5?'low':'')}>{item.stock===0?'Sin existencias':item.stock<=5?'Pocas existencias':'En inventario'}</span></div><label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>{setEditing(true);setAvailable(e.target.checked)}}/><span>{available?'Disponible':'Oculto'}</span></label></div>
       <div className="merchant-product-controls">
-        <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)} /></label>
-        <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>setStock(Number(e.target.value))}/></label>
-        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
+        <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>{setEditing(true);setPrice(e.target.value)}} /></label>
+        <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>{setEditing(true);setStock(Number(e.target.value))}}/></label>
+        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>{dirty&&<button className="merchant-discard-button" type="button" disabled={saving} onClick={undo}>Deshacer</button>}
       </div>
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
@@ -119,6 +124,7 @@ function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;
 
 export default function MerchantWorkspace(){
   const [section,setSection]=useState<Section>('pedidos');
+  useEffect(()=>{window.scrollTo({top:0,behavior:'auto'});},[section]);
   const [filter,setFilter]=useState<OrderFilter>('activos');
   const [orderView,setOrderView]=useState<'board'|'list'>('board');
   const [selectedOrderId,setSelectedOrderId]=useState<number|null>(null);
@@ -416,9 +422,9 @@ export default function MerchantWorkspace(){
           <div className="merchant-detail-total"><span>Total del pedido</span><strong>{pesos(selectedOrder.total)}</strong></div>
           <p className="merchant-detail-hint" id="merchant-detail-help">La información se obtiene del servidor. Los tiempos de preparación y la asignación del repartidor dependen del backend.</p>
         </div>
-        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
+        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
       </section>
     </div>}
-    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.label}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
+    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
   </div>;
 }
