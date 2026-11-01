@@ -35,10 +35,24 @@ jobs:
           test -s dist/icons/restaurante-192.png
           test -s dist/icons/restaurante-512.png
           test -s dist/release.json
+          # Restaurante is served on a separate 18197 origin with its own HTML/SW.
+          test -s dist-restaurantes/restaurantes.html
+          test ! -e dist-restaurantes/index.html
+          test -s dist-restaurantes/sw-restaurante.js
+          test -s dist-restaurantes/manifest-restaurante.webmanifest
+          test -s dist-restaurantes/release.json
+          test -s dist-restaurantes/icons/restaurante-180.png
+          test -s dist-restaurantes/icons/restaurante-192.png
+          test -s dist-restaurantes/icons/restaurante-512.png
+          bash -n deploy/rc169-kali-restaurantes-static.sh
+          bash -n deploy/rc169-restaurantes-smoke.sh
           bash -n deploy/rc166-postdeploy-smoke.sh
+          node -e "const fs=require('fs');const sha=process.env.GITHUB_SHA;const html=fs.readFileSync('dist-restaurantes/restaurantes.html','utf8');const m=require('./dist-restaurantes/release.json');if(!html.includes('name=\"tala-release-sha\" content=\"'+sha+'\"')||m.source_sha!==sha)process.exit(1);console.log('RC169_MERCHANT_BUNDLE_SHA=PASS')"
           node -e "const p=require('./dist/release.json'); if(p.app!=='tala-eats-restaurantes-pwa'||p.source_sha!==process.env.GITHUB_SHA) process.exit(1); console.log('RC166_CI_RELEASE_SHA=PASS')"
       - uses: actions/upload-artifact@v4
         with:
           name: tala-eats-version-web-dist
-          path: dist/
+          path: |
+            dist/
+            dist-restaurantes/
           retention-days: 7
