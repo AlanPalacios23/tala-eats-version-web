@@ -97,7 +97,10 @@ function ScreenEmpty({icon, title, children}:{icon: ReactNode;title:string;child
 function Metric({label,value,note,icon}:{label:string;value:string|number;note:string;icon:ReactNode}) {
   return <div className="merchant-metric"><div className="merchant-metric-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{note}</small></div>;
 }
-function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;online:boolean}) {
+function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
+  item:MenuItem;onSaved:(updated:MenuItem)=>Promise<void>;online:boolean;
+  onWriteStart:()=>boolean;onWriteEnd:()=>void;locked:boolean
+}) {
   const [price,setPrice]=useState(String(item.price));
   const [stock,setStock]=useState(item.stock);
   const [available,setAvailable]=useState(item.is_available);
@@ -113,20 +116,22 @@ function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;
   },[item.id,item.price,item.stock,item.is_available,editing,saving]);
   const valid=Number.isFinite(Number(price))&&Number(price)>=0&&/^\d+(\.\d{1,2})?$/.test(price)&&Number.isSafeInteger(stock)&&stock>=0;
   const save=async()=>{
-    if(!dirty||!valid||rowWriteLock.current||!online)return;
+    if(!dirty||!valid||rowWriteLock.current||locked||!online||!onWriteStart())return;
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try {
-      await api.ownerUpdateItem(item.id,{price,stock,is_available:available});
-      setEditing(false);
-      await onSaved();setNotice('Cambios guardados');
-    }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);}
+      const updated=await api.ownerUpdateItem(item.id,{price,stock,is_available:available});
+      await onSaved(updated);setEditing(false);setNotice('Cambios guardados');
+    }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);onWriteEnd();}
   };
   const quickAvailability=async()=>{
-    if(rowWriteLock.current||!online)return;
+    if(rowWriteLock.current||locked||!online)return;
     if(dirty){setNotice('Guarda primero los cambios pendientes.');return;}
+    if(!onWriteStart())return;
     rowWriteLock.current=true;setSaving(true);setNotice('');
-    try{await api.ownerUpdateItem(item.id,{is_available:!item.is_available});await onSaved();setNotice(item.is_available?'Producto pausado':'Producto disponible');}
-    catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);}
+    try{
+      const updated=await api.ownerUpdateItem(item.id,{is_available:!item.is_available});
+      await onSaved(updated);setNotice(item.is_available?'Producto pausado':'Producto disponible');
+    }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);onWriteEnd();}
   };
   const undo=()=>{if(saving)return;setEditing(false);setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);setNotice('Cambios descartados');};
   const img=safeImage(item.image_url);
@@ -137,7 +142,7 @@ function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;
       <div className="merchant-product-controls">
         <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>{setEditing(true);setPrice(e.target.value)}} /></label>
         <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>{setEditing(true);setStock(Number(e.target.value))}}/></label>
-        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>{dirty&&<button className="merchant-discard-button" type="button" disabled={saving} onClick={undo}>Deshacer</button>}
+        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||locked||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||locked||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>{dirty&&<button className="merchant-discard-button" type="button" disabled={saving||locked} onClick={undo}>Deshacer</button>}
       </div>
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
@@ -423,7 +428,7 @@ export default function MerchantWorkspace(){
               <div className="merchant-menu-filters" aria-label="Estado de productos">{([['todos','Todos'],['disponibles','Disponibles'],['bajo','Stock bajo'],['agotados','Agotados'],['pausados','Pausados']] as const).map(([id,label])=><button type="button" key={id} className={menuFilter===id?'active':''} aria-pressed={menuFilter===id} onClick={()=>setMenuFilter(id)}>{label}</button>)}</div>
               <label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>
             </div>
-            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={()=>refresh(false)} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
+            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={(updated)=>{setRestaurant(prev=>prev?.menu_items?{...prev,menu_items:prev.menu_items.map(p=>p.id===updated.id?updated:p)}:prev);return refresh(false)}} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">DATOS DEL NEGOCIO</span><h1>Rendimiento</h1><p>Indicadores históricos del backend. No son ventas estimadas ni cifras del día.</p></div></div>
