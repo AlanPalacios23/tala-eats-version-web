@@ -232,7 +232,7 @@ export default function MerchantWorkspace(){
           receivedIds.forEach(id=>knownReceivedIds.current?.add(id));
           if(arriving.length)setFreshOrderIds(prev=>Array.from(new Set([...prev,...arriving])));
         }
-        setOrders(o.value);setLastSync(new Date());
+        const confirmedAt=new Date();setOrders(o.value);setLastSync(confirmedAt);setClock(confirmedAt.getTime());
       }else nextErrors.orders=errorMessage(o.reason);
       if(a.status==='fulfilled')setAnalytics(a.value);else nextErrors.analytics=errorMessage(a.reason);
       setErrors(nextErrors);
