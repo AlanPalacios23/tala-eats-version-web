@@ -31,6 +31,7 @@ export const verifiedCents=(value:unknown):number|null=>nonnegativeInt(value);
 export function parseRestaurantFinance(raw:unknown,restaurantId:number):RestaurantFinance|null{
   const r=record(raw);
   if(!r||r.restaurant_id!==restaurantId)return null;
+  if(r.payouts!==undefined&&!Array.isArray(r.payouts))return null;
   const source=Array.isArray(r.payouts)?r.payouts:[];
   const payouts:FinancialPayout[]=source.flatMap(item=>{
     const v=record(item);
@@ -39,6 +40,8 @@ export function parseRestaurantFinance(raw:unknown,restaurantId:number):Restaura
     if(id===null||amount===null||typeof v.status!=='string')return [];
     return [{id,amount,status:v.status,period_start:typeof v.period_start==='string'?v.period_start:undefined,period_end:typeof v.period_end==='string'?v.period_end:undefined}];
   });
+  // Un registro malformado invalida la colección; no se ocultan pagos anteriores.
+  if(source.length!==payouts.length)return null;
   return {
     restaurant_id:restaurantId,
     gross_food_sales:verifiedMxn(r.gross_food_sales),
@@ -62,6 +65,11 @@ export function parseWithdrawalBalance(raw:unknown):WithdrawalBalance|null{
   const min=limits?nonnegativeInt(limits.minimum_cents):null;
   const max=limits?nonnegativeInt(limits.per_request_cents):null;
   const daily=limits?nonnegativeInt(limits.daily_remaining_cents):null;
+  // Si el backend afirma permiso, la propia respuesta debe ser coherente.
+  if(r.server_allows_requests&&(
+    r.reconciling||bank.status!=='verified'||withdrawable<100||
+    min===null||max===null||daily===null||daily<min
+  ))return null;
   return {
     currency:'MXN',eligible_cents:eligible,already_requested_cents:reserved,
     provider_available_cents:provider,withdrawable_cents:withdrawable,hold_days:days,
@@ -77,12 +85,17 @@ export function parseWithdrawalBalance(raw:unknown):WithdrawalBalance|null{
 }
 export function parseWithdrawalHistory(raw:unknown):WithdrawalHistory[]|null{
   if(!Array.isArray(raw))return null;
-  return raw.slice(0,50).flatMap(item=>{
+  const rows:WithdrawalHistory[]=[];
+  const ids=new Set<number>();
+  for(const item of raw.slice(0,50)){
     const r=record(item);
-    if(!r||r.currency!=='MXN'||typeof r.status!=='string'||typeof r.created_at!=='string')return [];
-    const id=positiveInt(r.id),amount=nonnegativeInt(r.amount_cents);
-    return id===null||amount===null?[]:[{id,amount_cents:amount,currency:'MXN' as const,status:r.status,created_at:r.created_at}];
-  });
+    if(!r||r.currency!=='MXN'||typeof r.status!=='string'||typeof r.created_at!=='string')return null;
+    const id=positiveInt(r.id),amount=positiveInt(r.amount_cents);
+    if(id===null||amount===null||ids.has(id)||!Number.isFinite(new Date(r.created_at).getTime()))return null;
+    ids.add(id);
+    rows.push({id,amount_cents:amount,currency:'MXN',status:r.status,created_at:r.created_at});
+  }
+  return rows;
 }
 export function parseConnectSummary(raw:unknown):ConnectSummary|null{
   const r=record(raw);if(!r||typeof r.status!=='string')return null;
