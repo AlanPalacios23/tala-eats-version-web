@@ -69,7 +69,8 @@ describe('RC165 · Restaurante Android/iOS, sin alterar cobros ni rol',()=>{
     expect(install).toContain('Instalar aplicación');
     expect(install).toContain('await offer.prompt()');
     expect(install).toContain('candidate?');
-    expect(workspace).toContain('<MerchantInstallCard/>');
+    expect(workspace).toContain("<MerchantInstallCard visible={section==='negocio'}/>");
+    expect(css).toContain('.merchant-install-card[hidden]{display:none!important}');
     expect(css).toContain('.merchant-install-card');
   });
   it('almacena solo estáticos y no borra caches de otras PWA',()=>{
