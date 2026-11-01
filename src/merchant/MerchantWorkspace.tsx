@@ -106,9 +106,9 @@ function ScreenEmpty({icon, title, children}:{icon: ReactNode;title:string;child
 function Metric({label,value,note,icon}:{label:string;value:string|number;note:string;icon:ReactNode}) {
   return <div className="merchant-metric"><div className="merchant-metric-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{note}</small></div>;
 }
-function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
+function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,onDirtyChange,locked}:{
   item:MenuItem;onSaved:(updated:MenuItem)=>Promise<void>;online:boolean;
-  onWriteStart:()=>boolean;onWriteEnd:()=>void;locked:boolean
+  onWriteStart:()=>boolean;onWriteEnd:()=>void;onDirtyChange:(id:number,dirty:boolean)=>void;locked:boolean
 }) {
   const [price,setPrice]=useState(String(item.price));
   const [stock,setStock]=useState(item.stock);
@@ -119,6 +119,10 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
   const [notice,setNotice]=useState('');
   const rowWriteLock=useRef(false);
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
+  useEffect(()=>{
+    onDirtyChange(item.id,dirty);
+    return()=>onDirtyChange(item.id,false);
+  },[item.id,dirty,onDirtyChange]);
   useEffect(()=>{
     // Los GET periódicos no borran los cambios de un producto que el usuario edita.
     if(editing||saving||rowWriteLock.current)return;
@@ -188,13 +192,24 @@ export default function MerchantWorkspace(){
   // gesto Atrás de iOS y enlaces compartibles navegan a la sección correcta.
   const [searchParams,setSearchParams]=useSearchParams();
   const navigate=useNavigate();
+  const dirtyMenuRows=useRef(new Set<number>());
+  const addDraftPending=useRef(false);
+  const markMenuDirty=useCallback((id:number,dirty:boolean)=>{
+    if(dirty)dirtyMenuRows.current.add(id);else dirtyMenuRows.current.delete(id);
+  },[]);
   const candidate=searchParams.get('tab');
   const section:Section=isMerchantSection(candidate)?candidate:'pedidos';
   const setSection=useCallback((target:Section)=>{
     if(target===section)return;
+    if(section==='menu'&&(dirtyMenuRows.current.size>0||addDraftPending.current)){
+      setNoticeError(true);
+      setNotice('Guarda o deshaz los cambios del menú antes de cambiar de sección.');
+      return;
+    }
     setSearchParams(previous=>{
       const next=new URLSearchParams(previous);
       if(target==='pedidos')next.delete('tab');else next.set('tab',target);
+      next.delete('order');
       return next;
     },{preventScrollReset:true});
   },[section,setSearchParams]);
@@ -280,6 +295,10 @@ export default function MerchantWorkspace(){
   const [newStock,setNewStock]=useState(20);
   const [newCategory,setNewCategory]=useState('General');
   const [newDescription,setNewDescription]=useState('');
+  useEffect(()=>{
+    addDraftPending.current=addOpen&&(newName.trim()!==''||newPrice.trim()!==''||
+      newStock!==20||newCategory!=='General'||newDescription.trim()!=='');
+  },[addOpen,newName,newPrice,newStock,newCategory,newDescription]);
   const [lastSync,setLastSync]=useState<Date|null>(null);
   const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
   const [clock,setClock]=useState(()=>Date.now());
@@ -539,7 +558,7 @@ export default function MerchantWorkspace(){
               <div className="merchant-menu-filters" aria-label="Estado de productos">{([['todos','Todos'],['disponibles','Disponibles'],['bajo','Stock bajo'],['agotados','Agotados'],['pausados','Pausados']] as const).map(([id,label])=><button type="button" key={id} className={menuFilter===id?'active':''} aria-pressed={menuFilter===id} onClick={()=>setMenuFilter(id)}>{label}</button>)}</div>
               {categories.length>1&&<label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>}
             </div>
-            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={(updated)=>{setRestaurant(prev=>prev?.menu_items?{...prev,menu_items:prev.menu_items.map(p=>p.id===updated.id?updated:p)}:prev);return refresh(false)}} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
+            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={(updated)=>{setRestaurant(prev=>prev?.menu_items?{...prev,menu_items:prev.menu_items.map(p=>p.id===updated.id?updated:p)}:prev);return refresh(false)}} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} onDirtyChange={markMenuDirty} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
             <div className="merchant-page-heading"><div><h1>Rendimiento</h1><p>Indicadores históricos del comercio.</p></div></div>
