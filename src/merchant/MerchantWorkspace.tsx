@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
   BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
@@ -181,6 +181,7 @@ export default function MerchantWorkspace(){
   // Las pestañas usan el historial nativo del navegador: Android Atrás,
   // gesto Atrás de iOS y enlaces compartibles navegan a la sección correcta.
   const [searchParams,setSearchParams]=useSearchParams();
+  const navigate=useNavigate();
   const candidate=searchParams.get('tab');
   const section:Section=isMerchantSection(candidate)?candidate:'pedidos';
   const setSection=useCallback((target:Section)=>{
@@ -219,7 +220,26 @@ export default function MerchantWorkspace(){
   useEffect(()=>{window.scrollTo({top:0,behavior:'auto'});},[section]);
   const [filter,setFilter]=useState<OrderFilter>('activos');
   const [orderView,setOrderView]=useState<'board'|'list'>('board');
-  const [selectedOrderId,setSelectedOrderId]=useState<number|null>(null);
+  // El detalle es otra entrada del historial para que Atrás cierre la hoja,
+  // en lugar de abandonar la app con un pedido abierto.
+  const rawOrderId=searchParams.get('order');
+  const selectedOrderId=rawOrderId&&/^[1-9]\d{0,12}$/.test(rawOrderId)&&
+    Number.isSafeInteger(Number(rawOrderId))?Number(rawOrderId):null;
+  const openedSheetHere=useRef(false);
+  const setSelectedOrderId=useCallback((id:number|null)=>{
+    if(id===null&&selectedOrderId!==null&&openedSheetHere.current){
+      openedSheetHere.current=false;
+      navigate(-1);
+      return;
+    }
+    if(id!==null)openedSheetHere.current=true;
+    setSearchParams(previous=>{
+      const next=new URLSearchParams(previous);
+      if(id===null)next.delete('order');else next.set('order',String(id));
+      return next;
+    },{replace:id===null,preventScrollReset:true});
+  },[navigate,selectedOrderId,setSearchParams]);
+  useEffect(()=>{if(selectedOrderId===null)openedSheetHere.current=false;},[selectedOrderId]);
   const [search,setSearch]=useState('');
   const [menuSearch,setMenuSearch]=useState('');
   const [menuFilter,setMenuFilter]=useState<MenuFilter>('todos');
@@ -270,7 +290,7 @@ export default function MerchantWorkspace(){
     };
     window.addEventListener('keydown',close);
     return()=>{window.removeEventListener('keydown',close);document.body.style.overflow=originalOverflow;previous?.focus();};
-  },[selectedOrderId]);
+  },[selectedOrderId,setSelectedOrderId]);
   useEffect(()=>{
     const tick=window.setInterval(()=>setClock(Date.now()),30000);
     const onOnline=()=>setOnline(true),onOffline=()=>setOnline(false);
