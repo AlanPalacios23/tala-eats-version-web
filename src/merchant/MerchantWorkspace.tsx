@@ -36,7 +36,7 @@ export function merchantPaymentStatusLabel(status:string|null|undefined):string 
     refunded:'Reembolsado',partially_refunded:'Reembolso parcial',
     cancelled:'Cancelado',canceled:'Cancelado',awaiting_payment:'Pendiente'
   };
-  return status&&labels[status.toLowerCase()]||'Sin confirmar';
+  return typeof status==='string'?labels[status.toLowerCase()]||'Sin confirmar':'Sin confirmar';
 }
 const STATUS_LABEL: Record<string, string> = {
   received: 'Nuevo', confirmed: 'Aceptado', preparing: 'En preparación',
@@ -90,8 +90,10 @@ export function isMerchantOrderList(value:unknown):value is Order[] {
     const order=entry as Record<string,unknown>;
     if(!Number.isSafeInteger(order.id)||Number(order.id)<=0||
       typeof order.status!=='string'||typeof order.created_at!=='string'||
+      !['pickup','delivery'].includes(String(order.order_type))||
       typeof order.payment_method!=='string'||
-      (typeof order.total!=='string'&&typeof order.total!=='number'))return false;
+      (typeof order.total!=='string'&&typeof order.total!=='number')||
+      !Number.isFinite(Number(order.total)))return false;
     const items=order.items;
     return items==null||(Array.isArray(items)&&items.every(item=>
       item&&typeof item==='object'&&typeof item.name_snapshot==='string'&&
