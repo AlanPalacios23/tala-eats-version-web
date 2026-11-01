@@ -50,7 +50,7 @@ describe('RC163 · centro de operaciones seguro y reportes privados',()=>{
   it('coordina escrituras de catálogo antes de aceptar otra mutación',()=>{
     expect(source).toContain('menuMutationInFlight.current=true;setMenuMutating(true)');
     expect(source).toContain('menuMutationInFlight.current=false;setMenuMutating(false)');
-    expect(source).toContain('onWriteStart:()=>boolean;onWriteEnd:()=>void;locked:boolean');
+    expect(source).toContain('onWriteStart:()=>boolean;onWriteEnd:()=>void;onDirtyChange:(id:number,dirty:boolean)=>void;locked:boolean');
     expect(source).toContain('locked||!online||!onWriteStart()');
     expect(source).toContain('const updated=await api.ownerUpdateItem');
     expect(source).toContain('onSaved(updated)');
