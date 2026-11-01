@@ -40,7 +40,7 @@ describe('RC170 · módulo 1: pedidos y reconciliación segura',()=>{
     expect(source).toContain('const checked=await api.ownerOrders()');
     expect(source).toContain('const outcome=reconcileMerchantStatus(checked,id,current.status,status)');
     expect(source).toContain("if(outcome==='missing')throw");
-    expect(source).toContain("if(outcome==='applied')");
+    expect(source).toContain("if(outcome==='applied'||outcome==='advanced')");
     expect(source).toContain("else if(outcome==='unchanged')");
     expect(source).toContain('setLastSync(null)');
     expect(source).toContain('No repitas la acción todavía');
