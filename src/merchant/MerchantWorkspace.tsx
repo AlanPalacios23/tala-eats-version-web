@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
   BarChart3, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3,
-  BellRing, Coffee, Columns3, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
+  BellRing, Coffee, Columns3, FileDown, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
   Wallet, WifiOff, X
 } from 'lucide-react';
@@ -63,6 +63,24 @@ export function filterMerchantMenu(items: MenuItem[], query: string, status: Men
     const matchStatus=status==='todos'||(status==='disponibles'&&item.is_available&&stock>0)||(status==='bajo'&&stock<=5)||(status==='agotados'&&stock===0)||(status==='pausados'&&!item.is_available);
     return matchStatus&&(!category||(item.category||'General')===category)&&(!search||text.includes(search));
   });
+}
+export function isOrderSnapshotFresh(lastSync:Date|null,now:number,online:boolean,hasError:boolean):boolean {
+  return online&&!hasError&&!!lastSync&&Number.isFinite(lastSync.getTime())&&
+    now>=lastSync.getTime()&&now-lastSync.getTime()<120_000;
+}
+export function exportOrderSummaryCsv(orders:Order[]):string {
+  // Reporte acotado a la vista cargada; no exporta direcciones, PIN ni datos personales.
+  const escapeCell=(value:unknown):string=>{
+    const text=String(value??'');
+    // Mitigar inyección de fórmulas en hojas de cálculo, incluso con prefijos invisibles.
+    const safe=/^[\s\t\r\n]*[=+@-]/.test(text)?"'"+text:text;
+    return '"'+safe.replace(/"/g,'""')+'"';
+  };
+  const rows=[['Pedido','Fecha','Estado','Entrega','Pago','Estado pago','Artículos','Total MXN'],...orders.map(o=>[
+    o.id,o.created_at,o.status,o.order_type,o.payment_method,o.payment_status,
+    (o.items??[]).reduce((n,i)=>n+Math.max(0,Number(i.quantity)||0),0),o.total
+  ])];
+  return '\uFEFF'+rows.map(row=>row.map(escapeCell).join(',')).join('\r\n')+'\r\n';
 }
 export function historicalDeliveryRate(total: number, delivered: number): number | null {
   if(!Number.isFinite(total)||!Number.isFinite(delivered)||total<=0||delivered<0)return null;
@@ -157,10 +175,12 @@ export default function MerchantWorkspace(){
   const [lastSync,setLastSync]=useState<Date|null>(null);
   const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
   const [clock,setClock]=useState(()=>Date.now());
+  const [menuMutating,setMenuMutating]=useState(false);
   const readGeneration=useRef(0);
   const knownReceivedIds=useRef<Set<number>|null>(null);
   const readInFlight=useRef(false);
   const mutationInFlight=useRef(false);
+  const menuMutationInFlight=useRef(false);
   const detailRef=useRef<HTMLElement|null>(null);
   useEffect(()=>{
     if(selectedOrderId===null)return;
@@ -190,7 +210,7 @@ export default function MerchantWorkspace(){
 
   const refresh=useCallback(async (quiet=false) => {
     // Sin peticiones duplicadas ni lecturas que compitan con escrituras.
-    if(quiet&&(readInFlight.current||mutationInFlight.current))return;
+    if(quiet&&(readInFlight.current||mutationInFlight.current||menuMutationInFlight.current))return;
     const generation=++readGeneration.current;
     readInFlight.current=true;
     if(!quiet)setRefreshing(true);
@@ -220,9 +240,30 @@ export default function MerchantWorkspace(){
     // Solo GET en primer plano, jamás escrituras automáticas.
     const timer=window.setInterval(()=>{if(navigator.onLine&&document.visibilityState==='visible'&&section==='pedidos')void refresh(true);},30000);
     const onVisible=()=>{if(document.visibilityState==='visible'&&navigator.onLine)void refresh(true);};
+    const onReconnect=()=>{if(document.visibilityState==='visible')void refresh(true);};
     document.addEventListener('visibilitychange',onVisible);
-    return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);};
+    window.addEventListener('online',onReconnect);
+    return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',onVisible);window.removeEventListener('online',onReconnect);};
   },[refresh,section]);
+
+  const ordersFresh=isOrderSnapshotFresh(lastSync,clock,online,Boolean(errors.orders));
+  const beginMenuMutation=()=>{
+    if(menuMutationInFlight.current||mutationInFlight.current||!navigator.onLine)return false;
+    menuMutationInFlight.current=true;setMenuMutating(true);
+    readGeneration.current++;readInFlight.current=false;setRefreshing(false);
+    return true;
+  };
+  const endMenuMutation=()=>{menuMutationInFlight.current=false;setMenuMutating(false);};
+  const downloadOrders=()=>{
+    if(!ordersFresh||filteredOrders.length===0)return;
+    const csv=exportOrderSummaryCsv(filteredOrders);
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;link.download='tala-eats-pedidos-vista-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(link);link.click();link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const newCount=orders.filter(o=>o.status==='received').length;
   const activeCount=orders.filter(o=>ACTIVE.has(o.status)).length;
@@ -246,7 +287,7 @@ export default function MerchantWorkspace(){
   const products=useMemo(()=>filterMerchantMenu(restaurant?.menu_items??[],menuSearch,menuFilter,menuCategory),[restaurant,menuSearch,menuFilter,menuCategory]);
 
   const changeStatus=async(id:number,status:StatusAction)=>{
-    if(mutationInFlight.current||!navigator.onLine)return;
+    if(mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine||!ordersFresh)return;
     const current=orders.find(order=>order.id===id);
     if(!current){setNoticeError(true);setNotice('Este pedido ya no está disponible. Actualiza la lista.');return;}
     const expected:Record<StatusAction,string>={confirmed:'received',preparing:'confirmed',ready:'preparing'};
@@ -270,7 +311,7 @@ export default function MerchantWorkspace(){
     finally{setBusyOrder(null);mutationInFlight.current=false;}
   };
   const toggleStore=async()=>{
-    if(!restaurant||mutationInFlight.current||!navigator.onLine)return;
+    if(!restaurant||mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine)return;
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setSavingStore(true);setNotice('');setNoticeError(false);
     try{
@@ -281,7 +322,7 @@ export default function MerchantWorkspace(){
     finally{setSavingStore(false);mutationInFlight.current=false;}
   };
   const addProduct=async(e:FormEvent)=>{
-    e.preventDefault();if(mutationInFlight.current||!navigator.onLine)return;
+    e.preventDefault();if(mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine)return;
     const price=Number(newPrice);
     if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNotice('Revisa el nombre, precio y existencias.');return;}
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
@@ -305,7 +346,7 @@ export default function MerchantWorkspace(){
       <div className="merchant-order-foot"><span><ReceiptText size={15}/>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
-        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||Boolean(errors.orders)||!online||awaitingStripePayment} title={awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
+        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
       </div>
     </article>;
   };
@@ -376,13 +417,13 @@ export default function MerchantWorkspace(){
             {!online&&<div className="merchant-feedback error" role="status">Recupera la conexión antes de editar el menú.</div>}
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CATÁLOGO</span><h1>Menú y productos</h1><p>Actualiza precios, existencias y disponibilidad sin salir de esta pantalla.</p></div><button className="merchant-main-button" onClick={()=>setAddOpen(v=>!v)}><Plus size={19}/>{addOpen?'Cerrar formulario':'Agregar producto'}</button></div>
             <div className="merchant-menu-info"><span><UtensilsCrossed size={18}/>{restaurant?.menu_items?.length??0} productos</span><span><SlidersHorizontal size={18}/>{stockLow} con 5 unidades o menos</span></div>
-            {addOpen&&<form onSubmit={e=>void addProduct(e)} className="merchant-add-form"><h2>Nuevo producto</h2><div className="merchant-add-grid"><label>Nombre<input required maxLength={150} minLength={2} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nombre del producto"/></label><label>Categoría<input maxLength={80} value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="General"/></label><label>Precio (MXN)<input required value={newPrice} onChange={e=>setNewPrice(e.target.value)} inputMode="decimal" placeholder="89.00"/></label><label>Existencias<input required type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><label className="merchant-add-full">Descripción<input maxLength={500} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Opcional"/></label></div><div className="merchant-add-actions"><button className="merchant-small-button" disabled={submitting||!online}>{submitting?'Agregando…':'Guardar producto'}</button><button type="button" className="merchant-neutral-button" onClick={()=>setAddOpen(false)}>Cancelar</button></div></form>}
+            {addOpen&&<form onSubmit={e=>void addProduct(e)} className="merchant-add-form"><h2>Nuevo producto</h2><div className="merchant-add-grid"><label>Nombre<input required maxLength={150} minLength={2} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nombre del producto"/></label><label>Categoría<input maxLength={80} value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="General"/></label><label>Precio (MXN)<input required value={newPrice} onChange={e=>setNewPrice(e.target.value)} inputMode="decimal" placeholder="89.00"/></label><label>Existencias<input required type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><label className="merchant-add-full">Descripción<input maxLength={500} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Opcional"/></label></div><div className="merchant-add-actions"><button className="merchant-small-button" disabled={submitting||menuMutating||!online}>{submitting?'Agregando…':'Guardar producto'}</button><button type="button" className="merchant-neutral-button" onClick={()=>setAddOpen(false)}>Cancelar</button></div></form>}
             <div className="merchant-menu-toolbar"><div><h2>Productos publicados</h2><p>{products.length} de {restaurant?.menu_items?.length??0} productos</p></div><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
             <div className="merchant-menu-filterbar">
               <div className="merchant-menu-filters" aria-label="Estado de productos">{([['todos','Todos'],['disponibles','Disponibles'],['bajo','Stock bajo'],['agotados','Agotados'],['pausados','Pausados']] as const).map(([id,label])=><button type="button" key={id} className={menuFilter===id?'active':''} aria-pressed={menuFilter===id} onClick={()=>setMenuFilter(id)}>{label}</button>)}</div>
               <label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>
             </div>
-            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={()=>refresh(false)}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
+            {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={()=>refresh(false)} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">DATOS DEL NEGOCIO</span><h1>Rendimiento</h1><p>Indicadores históricos del backend. No son ventas estimadas ni cifras del día.</p></div></div>
@@ -417,7 +458,7 @@ export default function MerchantWorkspace(){
               <button type="button" className="merchant-store-hero-action" onClick={()=>setSection('menu')}>Gestionar productos <ChevronRight size={18}/></button>
             </section>
             <div className="merchant-settings-grid"><section className="merchant-setting-card"><span className="merchant-setting-icon"><Store size={23}/></span><h2>{restaurant?.name||'Mi comercio'}</h2><p><MapPin size={16}/>{restaurant?.address||'Dirección sin publicar'}</p><div className="merchant-setting-row"><span>Verificación</span><strong>{restaurant?.verification_status||'Sin información'}</strong></div><div className="merchant-setting-row"><span>Pedidos para recoger</span><strong>{restaurant?.pickup_enabled?'Habilitados':'Deshabilitados'}</strong></div></section>
-              <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
+              <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||menuMutating||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
           </>}
         </>}
       </div>
@@ -437,7 +478,7 @@ export default function MerchantWorkspace(){
           <div className="merchant-detail-total"><span>Total del pedido</span><strong>{pesos(selectedOrder.total)}</strong></div>
           <p className="merchant-detail-hint" id="merchant-detail-help">La información se obtiene del servidor. Los tiempos de preparación y la asignación del repartidor dependen del backend.</p>
         </div>
-        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
+        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
       </section>
     </div>}
     <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
