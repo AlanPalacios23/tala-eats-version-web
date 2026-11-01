@@ -1,11 +1,15 @@
 // RC165: static shell cache only. Never cache sessions, orders, wallets, auth or Stripe.
 const PREFIX='tala-eats-shell-';
-const CACHE=PREFIX+'v4';
+const CACHE=PREFIX+'v5';
 const SHELL=['/offline.html','/icons/icon-192.png','/icons/icon-512.png','/icons/restaurante-180.png','/icons/restaurante-192.png','/icons/restaurante-512.png'];
 
 self.addEventListener('install',event=>{
+  // Do not replace a running app during orders, kitchen edits or a wallet refresh.
+  // When a previous worker exists, this worker waits for explicit user approval.
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
-  self.skipWaiting();
+});
+self.addEventListener('message',event=>{
+  if(event.data?.type==='MERCHANT_APPROVE_UPDATE')self.skipWaiting();
 });
 self.addEventListener('activate',event=>{
   // Other PWA portals and unrelated caches on the origin must be preserved.
