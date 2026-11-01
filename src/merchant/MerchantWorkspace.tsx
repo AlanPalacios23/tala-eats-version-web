@@ -30,6 +30,14 @@ export function orderPaymentConfirmed(order:Pick<Order,'payment_method'|'payment
 }
 export const merchantPaymentLabel=(method:string):string =>
   method==='cash'?'Efectivo':method==='stripe'?'Tarjeta':'Pago por verificar';
+export function merchantPaymentStatusLabel(status:string|null|undefined):string {
+  const labels:Record<string,string>={
+    paid:'Pagado',pending:'Pendiente',failed:'Rechazado',
+    refunded:'Reembolsado',partially_refunded:'Reembolso parcial',
+    cancelled:'Cancelado',canceled:'Cancelado',awaiting_payment:'Pendiente'
+  };
+  return status&&labels[status.toLowerCase()]||'Sin confirmar';
+}
 const STATUS_LABEL: Record<string, string> = {
   received: 'Nuevo', confirmed: 'Aceptado', preparing: 'En preparación',
   ready: 'Listo para recoger', assigned: 'Repartidor asignado',
@@ -222,6 +230,8 @@ export default function MerchantWorkspace(){
     if(section==='menu'&&(dirtyMenuRows.current.size>0||addDraftPending.current)){
       setNoticeError(true);
       setNotice('Guarda o deshaz los cambios del menú antes de cambiar de sección.');
+      if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+      window.scrollTo({top:0,behavior:'auto'});
       return;
     }
     setSearchParams(previous=>{
@@ -504,7 +514,7 @@ export default function MerchantWorkspace(){
         {o.items.slice(0,2).map((i,index)=><div key={i.id??index}><span className="merchant-qty">{i.quantity}×</span><span>{i.name_snapshot}</span></div>)}
         {o.items.length>2&&<span className="merchant-order-more">+{o.items.length-2} productos más · Ver detalle</span>}
       </>:<span className="merchant-secondary">Sin detalle de productos disponible</span>}</div>
-      <div className="merchant-order-foot"><span><ReceiptText size={15}/>{merchantPaymentLabel(o.payment_method)} · {o.payment_status||'Estado de pago no disponible'}</span></div>
+      <div className="merchant-order-foot"><span><ReceiptText size={15}/>{merchantPaymentLabel(o.payment_method)} · {merchantPaymentStatusLabel(o.payment_status)}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
         {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={!ordersFresh?'Sincroniza pedidos antes de avanzar':awaitingStripePayment?'Es necesario validar el método de pago antes de avanzar':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?(o.payment_method==='stripe'?'Esperando cobro':'Pago no verificado'):label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
@@ -624,7 +634,7 @@ export default function MerchantWorkspace(){
       <section ref={detailRef} className="merchant-detail-sheet" role="dialog" aria-modal="true" aria-label={'Detalles del pedido #'+selectedOrder.id} aria-describedby="merchant-detail-help">
         <header className="merchant-detail-header"><div><small>DETALLE DEL PEDIDO</small><h2>Pedido #{selectedOrder.id}</h2></div><button type="button" autoFocus aria-label="Cerrar detalles" onClick={()=>setSelectedOrderId(null)}><X size={22}/></button></header>
         <div className="merchant-detail-scroll"><div className="merchant-detail-intro"><span className={'merchant-order-status state-'+selectedOrder.status}>{STATUS_LABEL[selectedOrder.status]||selectedOrder.status}</span><span>{orderTime(selectedOrder.created_at)} · {elapsedOrderTime(selectedOrder.created_at,clock)}</span></div>
-          <div className="merchant-detail-info"><span><ShoppingBag size={17}/>{selectedOrder.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><span><ReceiptText size={17}/>{merchantPaymentLabel(selectedOrder.payment_method)} · {selectedOrder.payment_status||'Sin datos del pago'}</span>{selectedOrder.address&&<span><MapPin size={17}/>{selectedOrder.address}</span>}</div>
+          <div className="merchant-detail-info"><span><ShoppingBag size={17}/>{selectedOrder.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><span><ReceiptText size={17}/>{merchantPaymentLabel(selectedOrder.payment_method)} · {merchantPaymentStatusLabel(selectedOrder.payment_status)}</span>{selectedOrder.address&&<span><MapPin size={17}/>{selectedOrder.address}</span>}</div>
           {kitchenStepIndex(selectedOrder.status)>=0&&<div className="merchant-kitchen-tracker" aria-label="Estado de preparación del pedido">
             {KITCHEN_STEPS.map((step,i)=><div key={step.id} className={'merchant-kitchen-step '+(i<=kitchenStepIndex(selectedOrder.status)?'done ':'')+(i===kitchenStepIndex(selectedOrder.status)?'current':'')}>
               <span className="merchant-kitchen-step-dot">{i<kitchenStepIndex(selectedOrder.status)?<Check size={13}/>:i+1}</span>
