@@ -56,6 +56,8 @@ describe('RC165 · Restaurante Android/iOS, sin alterar cobros ni rol',()=>{
     expect(css).toContain('env(safe-area-inset-top,0px)');
     expect(css).toContain('env(safe-area-inset-bottom,0px)');
     expect(css).toContain('min-height:44px');
+    expect(css).toContain('(orientation:landscape) and (max-height:600px)');
+    expect(css).toContain('.merchant-keyboard-open .merchant-mobile-nav{display:none!important}');
     expect(css).toContain('touch-action:manipulation');
     expect(css).toContain('prefers-reduced-motion:reduce');
   });
