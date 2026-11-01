@@ -329,7 +329,7 @@ export default function MerchantWorkspace(){
   const addProduct=async(e:FormEvent)=>{
     e.preventDefault();if(mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine)return;
     const price=Number(newPrice);
-    if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNotice('Revisa el nombre, precio y existencias.');return;}
+    if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNoticeError(true);setNotice('Revisa el nombre, precio y existencias.');return;}
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setSubmitting(true);setNotice('');setNoticeError(false);
     try{
@@ -351,7 +351,7 @@ export default function MerchantWorkspace(){
       <div className="merchant-order-foot"><span><ReceiptText size={15}/>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
-        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
+        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={!ordersFresh?'Sincroniza pedidos antes de avanzar':awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
       </div>
     </article>;
   };
@@ -375,7 +375,7 @@ export default function MerchantWorkspace(){
         <div className="merchant-breadcrumb">Panel de restaurante <ChevronRight size={14}/><strong>{NAV.find(n=>n.id===section)?.label}</strong></div>
         <div className="merchant-toolbar-actions"><span className={"merchant-connection "+(online?"connected":"offline")} title={online?"Conexión de red disponible":"Sin conexión"}><span/>{online?"Conectado":"Sin conexión"}</span>
           {restaurant&&<button type="button" onClick={()=>setSection('negocio')} className={'merchant-open-pill '+(restaurant.is_open?'is-open':'')} aria-label="Ver disponibilidad y ajustes del comercio"><span className="merchant-status-dot"/>{restaurant.is_open?'Abierto':'Cerrado'}</button>}
-          <button className="merchant-refresh" type="button" disabled={refreshing} onClick={()=>void refresh()} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18} className={refreshing?'merchant-spin':''}/></button>
+          <button className="merchant-refresh" type="button" disabled={refreshing||menuMutating} onClick={()=>void refresh()} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18} className={refreshing?'merchant-spin':''}/></button>
         </div>
       </header>
       <div className="merchant-content">
@@ -396,16 +396,18 @@ export default function MerchantWorkspace(){
           {notice&&<div className={'merchant-feedback '+(noticeError?'error':'')} role={noticeError?'alert':'status'}>{noticeError?<WifiOff size={18}/>:<CheckCircle2 size={18}/>}<span>{notice}</span><button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
           {section==='pedidos'&&<>
             <div className="merchant-page-heading merchant-orders-title">
-              <div><span className="merchant-kicker">ORDENES EN TIEMPO REAL</span><h1>Pedidos</h1><p>Controla la recepción, la cocina y las entregas desde un solo lugar.</p></div>
+              <div><span className="merchant-kicker">CENTRO DE OPERACIONES</span><h1>Pedidos</h1><p>Controla la recepción, la cocina y las entregas desde un solo lugar.</p></div>
               {newCount>0&&<button type="button" className="merchant-attention" onClick={()=>{setFilter('nuevos');setOrderView('list')}}><span className="merchant-attention-dot"/>{newCount} {newCount===1?'pedido nuevo':'pedidos nuevos'}<ChevronRight size={16}/></button>}
             </div>
+            {restaurant&&!restaurant.is_open&&<div className="merchant-closed-prompt" role="status"><span className="merchant-status-dot"/><div><strong>Tu comercio está cerrado</strong><p>Revisa tu disponibilidad antes de comenzar a recibir nuevos pedidos.</p></div><button type="button" onClick={()=>setSection('negocio')}>Mi negocio <ChevronRight size={15}/></button></div>}
             <div className="merchant-overview merchant-ops-overview">
               <Metric label="Por aceptar" value={newCount} note="Nuevos pedidos" icon={<Inbox size={20}/>}/>
               <Metric label="En operación" value={activeCount} note="Pedidos activos" icon={<Clock3 size={20}/>}/>
               <Metric label="Finalizados" value={analytics?.delivered??'—'} note="Histórico" icon={<PackageCheck size={20}/>}/>
               <Metric label="Ventas entregadas" value={analytics?pesos(analytics.gross_sales):'—'} note="Histórico" icon={<BarChart3 size={20}/>}/>
             </div>
-            <div className="merchant-queue-heading"><div><h2>Cola de pedidos</h2><p>{lastSync?'Actualizado '+new Intl.DateTimeFormat('es-MX',{hour:'2-digit',minute:'2-digit'}).format(lastSync):'Esperando sincronización'} · consultas cada 30 s con la pantalla visible.</p></div><div className="merchant-view-switch" aria-label="Presentación de pedidos"><button type="button" title="Tablero" aria-label="Ver tablero" aria-pressed={orderView==='board'} className={orderView==='board'?'active':''} onClick={()=>{setOrderView('board');setFilter('activos');setSearch('')}}><Columns3 size={18}/></button><button type="button" title="Lista" aria-label="Ver lista" aria-pressed={orderView==='list'} className={orderView==='list'?'active':''} onClick={()=>setOrderView('list')}><List size={18}/></button></div></div>
+            <div className="merchant-queue-heading"><div><h2>Cola de pedidos <span className={'merchant-sync-pill '+(ordersFresh?'fresh':'stale')} aria-label={ordersFresh?'Pedidos sincronizados':'Pedidos sin sincronización reciente'}><span/>{ordersFresh?'Actualizada':'Sin confirmar'}</span></h2><p>{lastSync?'Última lectura '+new Intl.DateTimeFormat('es-MX',{hour:'2-digit',minute:'2-digit'}).format(lastSync):'Esperando sincronización'} · actualización automática cada 30 s mientras trabajas aquí.</p></div><div className="merchant-queue-tools"><button type="button" className="merchant-csv-button" disabled={!ordersFresh||!filteredOrders.length} title="Descargar los pedidos visibles, máximo 100 cargados desde la API. Sin direcciones ni PIN." onClick={downloadOrders}><FileDown size={16}/> Exportar vista</button><div className="merchant-view-switch" aria-label="Presentación de pedidos"><button type="button" title="Tablero" aria-label="Ver tablero" aria-pressed={orderView==='board'} className={orderView==='board'?'active':''} onClick={()=>{setOrderView('board');setFilter('activos');setSearch('')}}><Columns3 size={18}/></button><button type="button" title="Lista" aria-label="Ver lista" aria-pressed={orderView==='list'} className={orderView==='list'?'active':''} onClick={()=>setOrderView('list')}><List size={18}/></button></div></div></div>
+            {online&&!errors.orders&&!ordersFresh&&<div className="merchant-sync-warning" role="status"><Clock3 size={17}/><span>La última lectura de pedidos ya no es reciente. Las acciones permanecen bloqueadas hasta confirmar información nueva.</span><button type="button" disabled={refreshing||menuMutating} onClick={()=>void refresh()}>Sincronizar</button></div>}
             {errors.orders&&<div className="merchant-feedback error" role="alert">No se pudo actualizar la cola de pedidos: {errors.orders}<button type="button" onClick={()=>void refresh()}>Reintentar</button></div>}
             <div className="merchant-filters">
               <div className="merchant-chips" aria-label="Filtrar pedidos">{([['activos','En curso'],['nuevos','Nuevos'],['preparando','En preparación'],['listos','Listos'],['historial','Historial'],['todos','Todos']] as const).map(([id,label])=><button key={id} type="button" className={filter===id?'selected':''} aria-pressed={filter===id} onClick={()=>setFilter(id)}>{label}{id==='nuevos'&&newCount>0&&<span>{newCount}</span>}</button>)}</div>
