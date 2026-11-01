@@ -76,7 +76,7 @@ describe('RC165 · Restaurante Android/iOS, sin alterar cobros ni rol',()=>{
     expect(sw).toContain("const PREFIX='tala-eats-shell-'");
     expect(sw).toContain('key.startsWith(PREFIX)');
     expect(sw).toContain('key!==CACHE');
-    expect(sw).toContain("if (req.method !== 'GET')".replace('if (req','if(req'));
+    expect(sw).toContain("if (req.method !== 'GET')");
     expect(sw).toContain("url.pathname.startsWith('/api/')");
     expect(sw).toContain("url.pathname.includes('/withdrawals/')");
     expect(sw).toContain("url.pathname.startsWith('/auth/')");
