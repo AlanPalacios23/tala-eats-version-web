@@ -1,7 +1,7 @@
 // RC165: static shell cache only. Never cache sessions, orders, wallets, auth or Stripe.
 const PREFIX='tala-eats-shell-';
-const CACHE=PREFIX+'v3';
-const SHELL=['/offline.html','/icons/icon-192.png','/icons/icon-512.png'];
+const CACHE=PREFIX+'v4';
+const SHELL=['/offline.html','/icons/icon-192.png','/icons/icon-512.png','/icons/restaurante-180.png','/icons/restaurante-192.png','/icons/restaurante-512.png'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
