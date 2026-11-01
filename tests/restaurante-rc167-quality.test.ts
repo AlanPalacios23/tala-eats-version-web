@@ -22,6 +22,7 @@ describe('RC167 · diseño consistente y seguridad operacional',()=>{
     expect(merchantPaymentStatusLabel('refunded')).toBe('Reembolsado');
     expect(merchantPaymentStatusLabel('unknown')).toBe('Sin confirmar');
     expect(merchantPaymentStatusLabel(null)).toBe('Sin confirmar');
+    expect(merchantPaymentStatusLabel({toLowerCase:null} as unknown as string)).toBe('Sin confirmar');
     expect(source).toContain('merchantPaymentStatusLabel(o.payment_status)');
     expect(source).toContain('merchantPaymentStatusLabel(selectedOrder.payment_status)');
     expect(source).toContain("o.payment_method==='stripe'?'Esperando cobro':'Pago no verificado'");
@@ -60,6 +61,8 @@ describe('RC167 · diseño consistente y seguridad operacional',()=>{
     expect(isMerchantOrderList([null])).toBe(false);
     expect(isMerchantOrderList([{...basic,id:'42'}])).toBe(false);
     expect(isMerchantOrderList([{...basic,items:{id:1}}])).toBe(false);
+    expect(isMerchantOrderList([{...basic,order_type:'unknown'}])).toBe(false);
+    expect(isMerchantOrderList([{...basic,total:'Infinity'}])).toBe(false);
     expect(isMerchantOrderList([{...basic,items:[{quantity:1}]}])).toBe(false);
     expect(isMerchantOrderList([{...basic,items:[{name_snapshot:'Tacos',quantity:'Infinity'}]}])).toBe(false);
     expect(source).toContain("if(o.status==='fulfilled'&&isMerchantOrderList(o.value))");
