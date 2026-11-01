@@ -652,3 +652,38 @@
 }
 @media(prefers-reduced-motion:reduce){.merchant-wallet{animation:none!important}}
 @media print{.merchant-wallet{display:none!important}}
+
+
+/* RC162 · Comportamiento visual nativo y seguro: errores, borradores y acciones críticas */
+.merchant-discard-button{min-height:38px;border-radius:10px;padding:8px 13px;color:#6d7883;border:1px solid #dce3e8;background:#fff;font-weight:800;font-size:11px;transition:background .16s,color .16s}
+.merchant-discard-button:hover:not(:disabled){background:#f0f2f4;color:#29323a}
+.merchant-discard-button:disabled{opacity:.5}
+.merchant-product:has(.merchant-discard-button){border-color:#eebc9b;box-shadow:0 0 0 1px #fff2e8 inset}
+.merchant-product:has(.merchant-discard-button) .merchant-small-button:disabled{background:#bbbfc5;border-color:#bbbfc5}
+.merchant-product :is(.merchant-small-button,.merchant-quick-button,.merchant-discard-button):focus-visible{outline:3px solid #f8af7a;outline-offset:2px}
+.merchant-order-action:disabled{cursor:not-allowed;transform:none!important;filter:grayscale(.55);background:#d8dfe2;border-color:#d8dfe2;color:#69757d;opacity:1}
+.merchant-order-action:disabled svg{opacity:.5}
+.merchant-order-card.is-new .merchant-order-action:disabled{background:#f6ebe5;border-color:#efd9cd;color:#a86c50;filter:none}
+.merchant-feedback.error{box-shadow:0 2px 10px #8f4a2610}
+.merchant-feedback.error button{color:#a54d30}
+.merchant-wallet-skeleton{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:15px;border:1px solid #e6ecef;background:#fff;border-radius:16px;margin-top:20px;min-height:250px;padding:30px;text-align:center}
+.merchant-wallet-skeleton svg{color:#e57231}
+.merchant-wallet-route{transition:background-color .16s}
+.merchant-mobile-nav button{min-width:0}
+.merchant-mobile-nav button span{overflow:hidden;text-overflow:ellipsis}
+.merchant-mobile-nav button:active{background:#fff4ed}
+@media(max-width:760px){
+  .merchant-discard-button{min-height:44px}
+  .merchant-product-controls>.merchant-discard-button{flex:1 1 100%}
+  .merchant-menu-toolbar h2{font-size:19px}
+  .merchant-mobile-nav{backdrop-filter:saturate(1.3) blur(16px);-webkit-backdrop-filter:saturate(1.3) blur(16px);background:#fffffff2}
+  .merchant-mobile-nav button{font-size:10px;gap:4px}
+  .merchant-mobile-nav button span{font-size:10px;line-height:1.3}
+  .merchant-content{scroll-margin-top:65px}
+}
+@media(max-width:350px){
+  .merchant-mobile-nav button span{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merchant-discard-button,.merchant-wallet-route{transition:none!important}
+}
