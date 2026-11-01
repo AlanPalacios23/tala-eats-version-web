@@ -56,10 +56,22 @@ describe('RC161 Restaurante · datos financieros auténticos y lectura segura',(
   });
   it('lee historial de retiros sin inventar importes o exponer detalles bancarios',()=>{
     expect(parseWithdrawalHistory([{id:1,amount_cents:9900,currency:'MXN',status:'submitted',created_at:'2026-10-31'}])?.[0].amount_cents).toBe(9900);
-    expect(parseWithdrawalHistory([{id:1,amount_cents:-1,currency:'MXN',status:'submitted',created_at:'2026-10-31'}])).toEqual([]);
-    expect(parseWithdrawalHistory([{id:1,amount_cents:99,currency:'USD',status:'paid',created_at:'2026-10-31'}])).toEqual([]);
+    expect(parseWithdrawalHistory([{id:1,amount_cents:-1,currency:'MXN',status:'submitted',created_at:'2026-10-31'}])).toBeNull();
+    expect(parseWithdrawalHistory([{id:1,amount_cents:99,currency:'USD',status:'paid',created_at:'2026-10-31'}])).toBeNull();
     expect(parseWithdrawalHistory({})).toBeNull();
     expect(parseConnectSummary({status:'verified',bank:{status:'verified'},can_withdraw:false})?.can_withdraw).toBe(false);
+  });
+
+  it('falla de forma cerrada si el historial es parcial, contradictorio o duplicado',()=>{
+    const good={id:22,amount_cents:2250,currency:'MXN',status:'submitted',created_at:'2026-10-31'};
+    expect(parseWithdrawalHistory([good,{...good,id:23,amount_cents:'200'}])).toBeNull();
+    expect(parseWithdrawalHistory([good,{...good,id:22}])).toBeNull();
+    expect(parseWithdrawalHistory([{...good,created_at:'invalid'}])).toBeNull();
+    expect(parseWithdrawalHistory([good])).toHaveLength(1);
+    expect(parseRestaurantFinance({restaurant_id:7,payouts:[{id:1,amount:'bad',status:'pending'}]},7)).toBeNull();
+    expect(parseRestaurantFinance({restaurant_id:7,payouts:{id:1}},7)).toBeNull();
+    expect(parseWithdrawalBalance({...balance,server_allows_requests:true,bank:{status:'unavailable'}})).toBeNull();
+    expect(parseWithdrawalBalance({...balance,server_allows_requests:true,reconciling:true})).toBeNull();
   });
   it('expone exclusivamente GET y mantiene bloqueada la solicitud de payout',()=>{
     for(const route of ['/owner/finance','/withdrawals/restaurant/']){
