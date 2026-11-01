@@ -985,3 +985,50 @@
 
 /* Keep the install listener mounted, without showing the card in other tabs. */
 .merchant-install-card[hidden]{display:none!important}
+
+
+/* Landscape phones: do not force the desktop sidebar onto a short touch screen. */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:600px) and (min-width:761px){
+ .merchant-shell{display:block;min-height:100dvh}
+ .merchant-sidebar{display:none}
+ .merchant-workspace{min-width:0}
+ .merchant-toolbar{
+   position:sticky;top:0;z-index:30;min-height:57px;height:57px;
+   padding:0 max(20px,env(safe-area-inset-right,0px)) 0 max(20px,env(safe-area-inset-left,0px));
+   background:#fff;
+ }
+ .merchant-breadcrumb{display:none}
+ .merchant-mobile-logo{display:block;font:800 19px Outfit,system-ui,sans-serif}
+ .merchant-mobile-logo span{font:750 10px 'DM Sans',system-ui,sans-serif;letter-spacing:0;color:#939da6;margin-left:5px}
+ .merchant-content{
+   max-width:100%;padding:17px max(19px,env(safe-area-inset-right,0px))
+   calc(78px + env(safe-area-inset-bottom,0px))
+   max(19px,env(safe-area-inset-left,0px));
+ }
+ .merchant-mobile-nav{
+   display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:60;
+   padding:4px max(19px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(19px,env(safe-area-inset-left,0px));
+   border-top:1px solid #edf0f2;background:#fff;box-shadow:0 -2px 8px #16212a10;
+ }
+ .merchant-mobile-nav button{
+   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;
+   min-width:0;min-height:42px;border:0;border-radius:8px;background:transparent;color:#7f8a94;
+   font-size:10px;font-weight:800;
+ }
+ .merchant-mobile-nav button.active{color:#e36d25}
+ .merchant-mobile-nav button.active::before{
+   content:'';position:absolute;top:-4px;left:calc(50% - 11px);width:22px;height:3px;
+   border-radius:0 0 4px 4px;background:#ec782e;
+ }
+ .merchant-mobile-nav i{position:absolute;top:0;left:calc(50% + 9px);background:#ed742c;color:#fff;
+   font:800 9px 'DM Sans',system-ui,sans-serif;padding:2px 4px;border-radius:6px}
+ .merchant-order-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .merchant-board{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .merchant-keyboard-open .merchant-mobile-nav{display:none!important}
+ .merchant-keyboard-open .merchant-content{padding-bottom:18px}
+ .merchant-detail-backdrop{align-items:flex-end}
+ .merchant-detail-sheet{width:100%;height:min(95dvh,650px);max-width:none;border-radius:16px 16px 0 0}
+ .merchant-detail-scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+ .merchant-detail-actions{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+ .merchant-shell input,.merchant-shell textarea,.merchant-shell select{font-size:16px!important}
+}
