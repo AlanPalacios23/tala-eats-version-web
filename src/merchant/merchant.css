@@ -740,3 +740,142 @@
 @media print{
  .merchant-queue-tools,.merchant-sync-warning,.merchant-closed-prompt{display:none!important}
 }
+
+
+/* RC164 · Calm workspace: information first, decorative layers last.
+   Keep the same orange brand, API state and accessible controls. */
+.merchant-shell{--m-bg:#f8f9fa;--m-border:#e9ecef;--m-ink:#20262b;--m-muted:#7e8992;background:var(--m-bg)}
+.merchant-sidebar{box-shadow:none}
+.merchant-logo{margin-bottom:3px;padding-bottom:30px}
+.merchant-nav{gap:4px}
+.merchant-nav button{min-height:47px;font-size:13px;padding:11px 14px;font-weight:700}
+.merchant-nav button.active{box-shadow:none}
+.merchant-sidebar-store{border-color:#ffffff24;background:#ffffff0a;box-shadow:none}
+.merchant-toolbar{height:72px;border-bottom-color:#eceff1}
+.merchant-breadcrumb{color:#a5acb2}
+.merchant-breadcrumb strong{color:#3e454b;font-weight:800}
+.merchant-toolbar-actions{gap:9px}
+.merchant-content{max-width:1320px;padding-top:31px;padding-bottom:100px}
+.merchant-page-heading{margin-bottom:22px}
+.merchant-page-heading h1{font-size:clamp(29px,3.4vw,37px);font-weight:800;letter-spacing:-.05em}
+.merchant-page-heading p{font-size:12px;color:#87919a}
+.merchant-queue-heading h2{font-size:20px;font-weight:800}
+.merchant-queue-heading p{font-size:11px;color:#919aa2;line-height:1.5}
+.merchant-queue-heading{margin-bottom:15px}
+.merchant-queue-tools{gap:8px}
+.merchant-sync-pill{font-size:9px;padding:6px 9px}
+.merchant-filters{margin-bottom:17px}
+.merchant-board-empty{background:transparent;border:1px dashed #e9edf0;color:#a0a9b1;min-height:115px}
+.merchant-board-empty svg{width:18px;height:18px;opacity:.6}
+.merchant-order-card{background:#fff;border:1px solid #e7ebee;border-radius:14px;box-shadow:none;padding:17px}
+.merchant-order-card:hover{box-shadow:0 4px 17px #111b2208;transform:none}
+.merchant-order-card:focus-within{box-shadow:0 0 0 2px #f8e1d1}
+.merchant-order-items{min-height:0;padding:12px 0;gap:7px;border-color:#f0f2f3}
+.merchant-order-items>div{font-size:12px}
+.merchant-order-more{font-size:10px;color:#88939c;padding-left:34px}
+.merchant-order-foot{margin:10px 0 13px}
+.merchant-order-foot svg{opacity:.65}
+.merchant-attention{box-shadow:none;font-size:11px;padding:10px 12px;border-radius:10px}
+.merchant-arrival{background:#fff;border:1px solid #e8ecee;border-left:3px solid #ed7d38;color:#283139;box-shadow:none;border-radius:11px;padding:11px 13px;margin-bottom:16px;gap:11px;animation:merchant-enter .16s ease-out both}
+.merchant-arrival-icon{width:35px;height:35px;border-radius:10px;color:#e9752e;background:#fff2e9;flex-shrink:0}
+.merchant-arrival strong{color:#283139;font-size:12px;font-weight:850}
+.merchant-arrival-open{background:#f5f6f7;color:#38424a;min-height:35px;padding:8px 11px;font-size:11px;border-radius:8px}
+.merchant-arrival-open:hover{background:#e9edf0}
+.merchant-arrival-close{color:#9ba4ab}
+.merchant-arrival-close:hover{color:#4a535b}
+.merchant-feedback{border-radius:11px;font-size:12px;box-shadow:none}
+.merchant-closed-prompt{box-shadow:none;border-radius:11px}
+.merchant-menu-toolbar{margin:13px 0 12px}
+.merchant-menu-toolbar h2{font-size:18px}
+.merchant-menu-toolbar p{font-size:11px}
+.merchant-menu-count{display:inline-flex;align-items:center;justify-content:center;border-radius:7px;background:#f0f2f4;color:#78838c;font:700 11px 'DM Sans',system-ui,sans-serif;padding:3px 7px;margin-left:7px;vertical-align:middle}
+.merchant-menu-filterbar{margin-bottom:17px;gap:12px}
+.merchant-menu-filters button{font-size:11px;font-weight:700}
+.merchant-product-list{gap:8px}
+.merchant-product{grid-template-columns:68px minmax(0,1fr);align-items:center;gap:14px;padding:12px 14px;border-radius:13px;box-shadow:none;animation:none}
+.merchant-product:hover{border-color:#d8dfe4}
+.merchant-product:focus-within{box-shadow:0 0 0 2px #f5e2d4}
+.merchant-product-image{width:68px;height:68px;border-radius:10px;background:#f5f5f4}
+.merchant-product-image svg{width:21px;height:21px;color:#b7a99b}
+.merchant-product-body{display:block}
+.merchant-product-topline{display:flex;align-items:center;gap:17px;min-width:0}
+.merchant-product-name{min-width:0;flex:1}
+.merchant-product-name h3{font-size:14px;font-weight:850;letter-spacing:-.02em;line-height:1.35;margin:0 0 5px;overflow-wrap:anywhere}
+.merchant-product-name p{display:flex;gap:6px;align-items:center;color:#919ca5;font-size:10px;line-height:1.4;margin:0;flex-wrap:wrap}
+.merchant-product-name p span{color:#cad0d6}
+.merchant-product-facts{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:88px;gap:5px;flex-shrink:0}
+.merchant-product-facts strong{font-size:15px;font-weight:900;letter-spacing:-.03em;color:#263039;white-space:nowrap}
+.merchant-product-facts .merchant-stock-indicator{font-size:10px;border:0;background:transparent;color:#8b969e;padding:0}
+.merchant-product-facts .merchant-stock-indicator.low{color:#ad6d3c;font-weight:750}
+.merchant-product-edit{border:1px solid #e5e9ed;min-width:88px;min-height:39px;border-radius:9px;background:#fff;color:#5b6670;padding:8px 10px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.merchant-product-edit:hover:not(:disabled){background:#f4f6f7;border-color:#d6dfe5}
+.merchant-product-edit:disabled{opacity:.42}
+.merchant-product-edit svg{transition:transform .16s ease}
+.merchant-product-edit[aria-expanded="true"] svg{transform:rotate(180deg)}
+.merchant-product.is-expanded{align-items:start;border-color:#dce2e6}
+.merchant-product.is-expanded .merchant-product-image{margin-top:1px}
+.merchant-product-edit-panel{margin-top:15px;border-top:1px solid #eff1f3;padding-top:16px}
+.merchant-product-controls{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.merchant-product-controls label{max-width:none;flex:1 1 110px;font-size:11px}
+.merchant-product-controls .merchant-toggle-label{flex:0 0 auto;max-width:none;min-height:43px;display:inline-flex;align-items:center;padding:0 10px;border:1px solid #e7ecef;border-radius:10px;font-size:11px;color:#495660}
+.merchant-product-edit-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:15px}
+.merchant-product-edit-actions button{min-height:41px;border-radius:9px;font-size:11px}
+.merchant-product-edit-actions .merchant-small-button{padding-left:17px;padding-right:17px}
+.merchant-product-edit-actions .merchant-discard-button{background:transparent}
+.merchant-product .merchant-inline-note{margin:10px 0 0;font-size:11px;color:#757f88}
+.merchant-product:has(.merchant-discard-button){border-color:#e6cbb9;box-shadow:none}
+.merchant-product:has(.merchant-discard-button) .merchant-small-button:disabled{background:#d4d9dc;border-color:#d4d9dc}
+.merchant-wallet-notice{background:transparent;border:0;border-bottom:1px solid #e8edef;border-radius:0;color:#75828c;padding:6px 1px 17px;margin-bottom:20px}
+.merchant-wallet-notice svg{color:#7a9a90}
+.merchant-wallet-notice strong{font-size:11px;color:#59666f}
+.merchant-wallet-notice span{font-size:11px}
+.merchant-wallet-hero{border-radius:15px;padding:26px;box-shadow:none}
+.merchant-wallet-hero::before{display:none}
+.merchant-wallet-stat,.merchant-wallet-panel,.merchant-wallet-history{box-shadow:none;border-radius:13px}
+.merchant-wallet-section-heading{margin-top:24px}
+.merchant-wallet-stat>strong{letter-spacing:-.035em}
+.merchant-menu-filters button:focus-visible,.merchant-product-edit:focus-visible{outline:3px solid #f5b98c;outline-offset:2px}
+@media(max-width:980px){
+ .merchant-product-topline{gap:12px}
+ .merchant-product-facts{min-width:72px}
+}
+@media(max-width:760px){
+ .merchant-content{padding:21px 15px calc(104px + env(safe-area-inset-bottom,0px))}
+ .merchant-page-heading{margin-bottom:18px}
+ .merchant-page-heading h1{font-size:30px}
+ .merchant-queue-heading{gap:10px}
+ .merchant-queue-heading p{font-size:10px}
+ .merchant-arrival{gap:8px;padding:10px;margin-bottom:13px}
+ .merchant-arrival-icon{width:32px;height:32px}
+ .merchant-arrival-open{margin-left:0;flex:0 0 auto;min-height:35px}
+ .merchant-arrival-close{right:4px;top:4px}
+ .merchant-product{grid-template-columns:55px minmax(0,1fr);gap:11px;padding:11px;align-items:center}
+ .merchant-product-image{width:55px;height:55px}
+ .merchant-product-topline{gap:9px;flex-wrap:wrap}
+ .merchant-product-name{flex:1 1 calc(100% - 88px);min-width:120px}
+ .merchant-product-name h3{font-size:13px}
+ .merchant-product-facts{flex:1 1 auto;order:2;min-width:0;align-items:flex-start;gap:2px}
+ .merchant-product-facts strong{font-size:13px}
+ .merchant-product-facts .merchant-stock-indicator{font-size:9px}
+ .merchant-product-edit{order:3;min-height:38px;min-width:76px;font-size:10px;margin-left:auto}
+ .merchant-product-edit-panel{padding-top:12px;margin-top:11px}
+ .merchant-product-controls{gap:9px;align-items:stretch}
+ .merchant-product-controls label{flex:1 1 112px}
+ .merchant-product-controls .merchant-toggle-label{flex:1 1 100%;justify-content:flex-start}
+ .merchant-product-edit-actions{gap:8px}
+ .merchant-product-edit-actions .merchant-small-button{flex:1 1 100%;min-height:44px}
+ .merchant-product-edit-actions .merchant-quick-button,.merchant-product-edit-actions .merchant-discard-button{flex:1 1 auto}
+ .merchant-wallet-hero{padding:20px}
+ .merchant-wallet-notice{margin-bottom:16px}
+}
+@media(max-width:370px){
+ .merchant-product-topline{gap:7px}
+ .merchant-product-name{min-width:0}
+ .merchant-product-facts{width:100%}
+ .merchant-product-edit{margin-left:0}
+ .merchant-arrival-open{margin-right:24px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merchant-product-edit svg,.merchant-order-card{transition:none!important}
+ .merchant-arrival{animation:none!important}
+}
