@@ -9,6 +9,10 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "lang": "es-MX",
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -21,6 +25,23 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pedidos",
+      "short_name": "Pedidos",
+      "url": "/restaurante"
+    },
+    {
+      "name": "Menú de productos",
+      "short_name": "Menú",
+      "url": "/restaurante?tab=menu"
+    },
+    {
+      "name": "Wallet y liquidaciones",
+      "short_name": "Wallet",
+      "url": "/restaurante?tab=wallet"
     }
   ]
 }
