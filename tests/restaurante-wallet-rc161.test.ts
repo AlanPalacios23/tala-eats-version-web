@@ -41,7 +41,7 @@ describe('RC161 Restaurante · datos financieros auténticos y lectura segura',(
     expect(data?.payouts[0].status).toBe('pending');
     expect(parseRestaurantFinance({restaurant_id:7,net_payable:'Infinity'},7)?.net_payable).toBeNull();
     expect(wallet).toContain('No equivale a saldo bancario');
-    expect(wallet).toContain('No se calcula con ventas');
+    expect(wallet).toContain('nunca se calculan a partir de ventas');
   });
   it('exige moneda MXN, origen verificado y coherencia monetaria entre cantidades',()=>{
     expect(parseWithdrawalBalance(balance)?.withdrawable_cents).toBe(10000);
