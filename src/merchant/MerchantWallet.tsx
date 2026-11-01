@@ -77,9 +77,9 @@ export default function MerchantWallet({restaurantId}:{restaurantId:number|null}
 
     {loading?<div className="merchant-wallet-skeleton" role="status"><RefreshCw className="merchant-spin" size={19}/> Verificando datos financieros del comercio…</div>:<>
       <section className="merchant-wallet-hero" aria-label="Disponibilidad de fondos">
-        <div className="merchant-wallet-hero-top"><span><Wallet size={20}/> Saldo bancario verificado</span><span className={'merchant-wallet-status '+(data.balance?'verified':'unavailable')}>{data.balance?<><CheckCircle2 size={14}/> Lectura verificada</>:<><AlertCircle size={14}/> Sin verificar</>}</span></div>
+        <div className="merchant-wallet-hero-top"><span><Wallet size={20}/> Fondos conciliados en Stripe</span><span className={'merchant-wallet-status '+(data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?'verified':'unavailable')}>{data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?<><CheckCircle2 size={14}/> Backend autoriza retiros</>:<><AlertCircle size={14}/> Retiros no autorizados</>}</span></div>
         <strong className="merchant-wallet-main-amount">{data.balance?formatVerifiedCents(data.balance.withdrawable_cents):'—'}</strong>
-        <p>{data.balance?'Máximo retirable según la API de conciliación Stripe Connect. No implica que se haya solicitado un retiro.':'No se puede confirmar el saldo disponible; no se calcula con ventas, pedidos ni comisiones.'}</p>
+        <p>{data.balance?'Máximo importe calculado por la API financiera de Stripe. No equivale a una transferencia autorizada ni a dinero ya depositado; consulta más abajo las restricciones.':'No se pueden confirmar fondos de Stripe; nunca se calculan a partir de ventas, pedidos o comisiones.'}</p>
         {data.balance&&<div className="merchant-wallet-balance-meta">
           <span>Elegible: <strong>{formatVerifiedCents(data.balance.eligible_cents)}</strong></span>
           <span>Reservado o solicitado: <strong>{formatVerifiedCents(data.balance.already_requested_cents)}</strong></span>
