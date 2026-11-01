@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
-import {orderPaymentConfirmed,reconcileMerchantStatus} from '../src/merchant/MerchantWorkspace';
+import {orderPaymentConfirmed,reconcileMerchantStatus,isMerchantStatusFulfilled} from '../src/merchant/MerchantWorkspace';
 import type {Order} from '../src/lib/types';
 
 const source=readFileSync(new URL('../src/merchant/MerchantWorkspace.tsx',import.meta.url),'utf8');
@@ -17,6 +17,12 @@ describe('RC170 · módulo 1: pedidos y reconciliación segura',()=>{
   });
   it('no atribuye al comercio el estado nuevo de otro operador y no inventa pedidos ausentes',()=>{
     expect(reconcileMerchantStatus([order('preparing')],71,'received','confirmed')).toBe('changed');
+    expect(reconcileMerchantStatus([order('assigned')],71,'preparing','ready')).toBe('advanced');
+    expect(reconcileMerchantStatus([order('picked_up')],71,'preparing','ready')).toBe('advanced');
+    expect(reconcileMerchantStatus([order('on_the_way')],71,'preparing','ready')).toBe('advanced');
+    expect(isMerchantStatusFulfilled(order('preparing'),'ready','assigned')).toBe(true);
+    expect(isMerchantStatusFulfilled({...order('preparing'),order_type:'pickup'},'ready','assigned')).toBe(false);
+    expect(isMerchantStatusFulfilled(order('received'),'confirmed','ready')).toBe(false);
     expect(reconcileMerchantStatus([order('delivered')],71,'received','confirmed')).toBe('changed');
     expect(reconcileMerchantStatus([],71,'received','confirmed')).toBe('missing');
     expect(reconcileMerchantStatus([order('confirmed')],72,'received','confirmed')).toBe('missing');
