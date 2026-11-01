@@ -17,6 +17,10 @@ type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
 type StatusAction = 'confirmed' | 'preparing' | 'ready';
 const ACTIVE = new Set(['received', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'on_the_way']);
+export function orderPaymentConfirmed(order:Pick<Order,'payment_method'|'payment_status'>):boolean {
+  // El backend exige cobro confirmado antes de aceptar/preparar pedidos Stripe.
+  return order.payment_method!=='stripe'||order.payment_status==='paid';
+}
 const STATUS_LABEL: Record<string, string> = {
   received: 'Nuevo', confirmed: 'Aceptado', preparing: 'En preparación',
   ready: 'Listo para recoger', assigned: 'Repartidor asignado',
@@ -243,6 +247,11 @@ export default function MerchantWorkspace(){
 
   const changeStatus=async(id:number,status:StatusAction)=>{
     if(mutationInFlight.current||!navigator.onLine)return;
+    const current=orders.find(order=>order.id===id);
+    if(!current||!orderPaymentConfirmed(current)){
+      setNoticeError(true);setNotice('Es necesario confirmar el cobro con Stripe antes de cambiar el estado.');
+      return;
+    }
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
     setBusyOrder(id);setNotice('');setNoticeError(false);
     try{
@@ -280,7 +289,7 @@ export default function MerchantWorkspace(){
 
   // Un solo diseño de tarjeta para tablero, lista y móvil. Sin duplicar acciones.
   const renderOrder=(o:Order)=>{
-    const awaitingStripePayment=o.payment_method==='stripe'&&o.payment_status!=='paid';
+    const awaitingStripePayment=!orderPaymentConfirmed(o);
     const next:StatusAction|null=o.status==='received'?'confirmed':o.status==='confirmed'?'preparing':o.status==='preparing'?'ready':null;
     const label=next==='confirmed'?'Aceptar pedido':next==='preparing'?'Iniciar preparación':next==='ready'?'Marcar como listo':'';
     return <article className={'merchant-order-card '+(o.status==='received'?'is-new':'')} key={o.id}>
@@ -422,7 +431,7 @@ export default function MerchantWorkspace(){
           <div className="merchant-detail-total"><span>Total del pedido</span><strong>{pesos(selectedOrder.total)}</strong></div>
           <p className="merchant-detail-hint" id="merchant-detail-help">La información se obtiene del servidor. Los tiempos de preparación y la asignación del repartidor dependen del backend.</p>
         </div>
-        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||(selectedOrder.payment_method==='stripe'&&selectedOrder.payment_status!=='paid')} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
+        <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||Boolean(errors.orders)||!online||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
       </section>
     </div>}
     <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
