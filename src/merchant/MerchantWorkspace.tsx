@@ -4,10 +4,11 @@ import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
   BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
-  Search, Settings2, ShoppingBag, Store, UtensilsCrossed,
+  Search, Settings2, ShoppingBag, Store, UtensilsCrossed, LogOut,
   Wallet, WifiOff, X
 } from 'lucide-react';
 import { api, pesos, safeImage } from '../lib/api';
+import {useSession} from '../lib/session';
 import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
@@ -216,6 +217,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,onDirtyChange,lock
 }
 
 export default function MerchantWorkspace(){
+  const {logout}=useSession();
   // Las pestañas usan el historial nativo del navegador: Android Atrás,
   // gesto Atrás de iOS y enlaces compartibles navegan a la sección correcta.
   const [searchParams,setSearchParams]=useSearchParams();
@@ -316,6 +318,7 @@ export default function MerchantWorkspace(){
   const [refreshing,setRefreshing]=useState(false);
   const [busyOrder,setBusyOrder]=useState<number|null>(null);
   const [savingStore,setSavingStore]=useState(false);
+  const [loggingOut,setLoggingOut]=useState(false);
   const [submitting,setSubmitting]=useState(false);
   const [notice,setNotice]=useState('');
   const [noticeError,setNoticeError]=useState(false);
@@ -422,6 +425,19 @@ export default function MerchantWorkspace(){
     document.body.appendChild(link);link.click();link.remove();
     // Safari/iOS puede cancelar descargas si se revoca inmediatamente.
     window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
+  };
+
+  const exitMerchant=async()=>{
+    if(loggingOut||mutationInFlight.current||menuMutationInFlight.current||
+      dirtyMenuRows.current.size>0||addDraftPending.current){
+      setNoticeError(true);
+      setNotice('Finaliza operaciones y guarda o deshaz tus cambios antes de cerrar sesión.');
+      return;
+    }
+    setLoggingOut(true);
+    try{await logout();}
+    catch(e){setNoticeError(true);setNotice(errorMessage(e));}
+    finally{setLoggingOut(false);}
   };
 
   const newCount=orders.filter(o=>o.status==='received').length;
@@ -543,6 +559,7 @@ export default function MerchantWorkspace(){
         <div className="merchant-toolbar-actions"><span className={"merchant-connection "+(online?"connected":"offline")} title={online?"Conexión de red disponible":"Sin conexión"}><span/>{online?"Conectado":"Sin conexión"}</span>
           {restaurant&&<button type="button" onClick={()=>setSection('negocio')} className={'merchant-open-pill '+(restaurant.is_open?'is-open':'')} aria-label="Ver disponibilidad y ajustes del comercio"><span className="merchant-status-dot"/>{restaurant.is_open?'Abierto':'Cerrado'}</button>}
           <button className="merchant-refresh" type="button" disabled={refreshing||menuMutating} onClick={()=>void refresh()} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18} className={refreshing?'merchant-spin':''} aria-hidden="true"/></button>
+          <button className="merchant-logout" type="button" disabled={loggingOut} onClick={()=>void exitMerchant()} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={18} aria-hidden="true"/></button>
         </div>
       </header>
       <div className="merchant-content">
