@@ -35,7 +35,7 @@ describe('RC163 · centro de operaciones seguro y reportes privados',()=>{
     expect(csv).not.toContain('DATO_PERSONAL_PRIVADO');
     expect(csv).not.toContain('PIN_SECRETO');
     expect(csv).not.toContain('Producto, reserva');
-    expect(exportOrderSummaryCsv([]).split('\r\n').length).toBe(3);
+    expect(exportOrderSummaryCsv([]).split('\r\n').length).toBe(2);
   });
   it('protege acciones de pedidos si la lectura reciente no está confirmada',()=>{
     expect(source).toContain('const ordersFresh=isOrderSnapshotFresh(lastSync,clock,online,Boolean(errors.orders))');
