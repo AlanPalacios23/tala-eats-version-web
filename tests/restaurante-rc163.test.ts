@@ -39,7 +39,8 @@ describe('RC163 · centro de operaciones seguro y reportes privados',()=>{
   });
   it('protege acciones de pedidos si la lectura reciente no está confirmada',()=>{
     expect(source).toContain('const ordersFresh=isOrderSnapshotFresh(lastSync,clock,online,Boolean(errors.orders))');
-    expect(source).toContain('if(mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine||!ordersFresh)return');
+    expect(source).toContain('if(mutationInFlight.current||menuMutationInFlight.current)return;');
+    expect(source).toContain('isOrderSnapshotFresh(lastSync,Date.now(),navigator.onLine,Boolean(errors.orders))');
     expect(source).toContain('!ordersFresh||menuMutating||awaitingStripePayment');
     expect(source).toContain('merchant-sync-warning');
     expect(source).toContain('Sincronizar');
