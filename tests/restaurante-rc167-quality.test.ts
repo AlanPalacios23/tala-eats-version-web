@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
-import {isOrderSnapshotFresh,orderPaymentConfirmed,merchantPaymentLabel} from '../src/merchant/MerchantWorkspace';
+import {isMerchantOrderList,isOrderSnapshotFresh,orderPaymentConfirmed,merchantPaymentLabel} from '../src/merchant/MerchantWorkspace';
 import type {Order} from '../src/lib/types';
 
 const source=readFileSync(new URL('../src/merchant/MerchantWorkspace.tsx',import.meta.url),'utf8');
@@ -38,6 +38,24 @@ describe('RC167 · diseño consistente y seguridad operacional',()=>{
     expect(source).toContain('onDirtyChange={markMenuDirty}');
     expect(source).toContain('if(expanded){setEditing(false);setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);}');
     expect(source).toContain("next.delete('order')");
+  });
+  it('valida el JSON de pedidos: nunca rompe la pantalla si el servidor entrega formato incompatible',()=>{
+    const basic={
+      id:42,restaurant_id:1,status:'received',created_at:'2026-10-31T17:00:00Z',
+      order_type:'pickup',payment_method:'cash',payment_status:'pending',
+      total:'200.00',items:[{name_snapshot:'Tacos',quantity:2,unit_price:'100.00'}]
+    };
+    expect(isMerchantOrderList([basic])).toBe(true);
+    expect(isMerchantOrderList([])).toBe(true);
+    expect(isMerchantOrderList(null)).toBe(false);
+    expect(isMerchantOrderList({data:[basic]})).toBe(false);
+    expect(isMerchantOrderList([null])).toBe(false);
+    expect(isMerchantOrderList([{...basic,id:'42'}])).toBe(false);
+    expect(isMerchantOrderList([{...basic,items:{id:1}}])).toBe(false);
+    expect(isMerchantOrderList([{...basic,items:[{quantity:1}]}])).toBe(false);
+    expect(isMerchantOrderList([{...basic,items:[{name_snapshot:'Tacos',quantity:'Infinity'}]}])).toBe(false);
+    expect(source).toContain("if(o.status==='fulfilled'&&isMerchantOrderList(o.value))");
+    expect(source).toContain('Respuesta de pedidos incompleta. No se permiten cambios');
   });
   it('espera a Safari antes de liberar el objeto de exportación CSV',()=>{
     expect(source).toContain("window.setTimeout(()=>URL.revokeObjectURL(url),30_000)");
