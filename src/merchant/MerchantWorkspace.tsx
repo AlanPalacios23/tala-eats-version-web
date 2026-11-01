@@ -82,8 +82,12 @@ function MenuRow({item,onSaved,online}:{item:MenuItem;onSaved:()=>Promise<void>;
   const [saving,setSaving]=useState(false);
   const [notice,setNotice]=useState('');
   const rowWriteLock=useRef(false);
-  useEffect(()=>{setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);},[item.id,item.price,item.stock,item.is_available]);
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
+  useEffect(()=>{
+    // Los GET periódicos no borran los cambios de un producto que el usuario edita.
+    if(dirty||rowWriteLock.current)return;
+    setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);
+  },[item.id,item.price,item.stock,item.is_available,dirty]);
   const valid=Number.isFinite(Number(price))&&Number(price)>=0&&/^\d+(\.\d{1,2})?$/.test(price)&&Number.isSafeInteger(stock)&&stock>=0;
   const save=async()=>{
     if(!dirty||!valid||rowWriteLock.current||!online)return;
@@ -133,6 +137,7 @@ export default function MerchantWorkspace(){
   const [savingStore,setSavingStore]=useState(false);
   const [submitting,setSubmitting]=useState(false);
   const [notice,setNotice]=useState('');
+  const [noticeError,setNoticeError]=useState(false);
   const [addOpen,setAddOpen]=useState(false);
   const [newName,setNewName]=useState('');
   const [newPrice,setNewPrice]=useState('');
@@ -233,17 +238,25 @@ export default function MerchantWorkspace(){
   const changeStatus=async(id:number,status:StatusAction)=>{
     if(mutationInFlight.current||!navigator.onLine)return;
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
-    setBusyOrder(id);setNotice('');
-    try{await api.ownerUpdateStatus(id,status);await refresh(false);setNotice('Pedido #'+id+' actualizado correctamente.');}
-    catch(e){setNotice('Pedido #'+id+': '+errorMessage(e));}
+    setBusyOrder(id);setNotice('');setNoticeError(false);
+    try{
+      const updated=await api.ownerUpdateStatus(id,status);
+      // El resultado de la mutación confirmada es la fuente de verdad si el GET posterior falla.
+      if(updated?.id===id&&updated.status===status)setOrders(prev=>prev.map(order=>order.id===id?{...order,...updated}:order));
+      await refresh(false);
+      setNotice('Pedido #'+id+' actualizado correctamente.');
+    }catch(e){setNoticeError(true);setNotice('Pedido #'+id+': '+errorMessage(e));}
     finally{setBusyOrder(null);mutationInFlight.current=false;}
   };
   const toggleStore=async()=>{
     if(!restaurant||mutationInFlight.current||!navigator.onLine)return;
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
-    setSavingStore(true);setNotice('');
-    try{await api.ownerUpdateRestaurant({is_open:!restaurant.is_open});await refresh(false);setNotice('Disponibilidad actualizada en el servidor.');}
-    catch(e){setNotice(errorMessage(e));}
+    setSavingStore(true);setNotice('');setNoticeError(false);
+    try{
+      const updated=await api.ownerUpdateRestaurant({is_open:!restaurant.is_open});
+      if(updated?.id===restaurant.id)setRestaurant(updated);
+      await refresh(false);setNotice('Disponibilidad actualizada en el servidor.');
+    }catch(e){setNoticeError(true);setNotice(errorMessage(e));}
     finally{setSavingStore(false);mutationInFlight.current=false;}
   };
   const addProduct=async(e:FormEvent)=>{
@@ -251,16 +264,17 @@ export default function MerchantWorkspace(){
     const price=Number(newPrice);
     if(!newName.trim()||!Number.isFinite(price)||price<0||!/^\d+(\.\d{1,2})?$/.test(newPrice)||!Number.isSafeInteger(newStock)||newStock<0){setNotice('Revisa el nombre, precio y existencias.');return;}
     mutationInFlight.current=true;readGeneration.current++;readInFlight.current=false;setRefreshing(false);
-    setSubmitting(true);setNotice('');
+    setSubmitting(true);setNotice('');setNoticeError(false);
     try{
       await api.ownerAddItem({name:newName.trim(),price:newPrice,stock:newStock,description:newDescription.trim(),category:newCategory.trim()||'General',is_available:true});
       setNewName('');setNewPrice('');setNewStock(20);setNewCategory('General');setNewDescription('');setAddOpen(false);
       await refresh(false);setNotice('Producto agregado correctamente.');
-    }catch(e){setNotice(errorMessage(e));}finally{setSubmitting(false);mutationInFlight.current=false;}
+    }catch(e){setNoticeError(true);setNotice(errorMessage(e));}finally{setSubmitting(false);mutationInFlight.current=false;}
   };
 
   // Un solo diseño de tarjeta para tablero, lista y móvil. Sin duplicar acciones.
   const renderOrder=(o:Order)=>{
+    const awaitingStripePayment=o.payment_method==='stripe'&&o.payment_status!=='paid';
     const next:StatusAction|null=o.status==='received'?'confirmed':o.status==='confirmed'?'preparing':o.status==='preparing'?'ready':null;
     const label=next==='confirmed'?'Aceptar pedido':next==='preparing'?'Iniciar preparación':next==='ready'?'Marcar como listo':'';
     return <article className={'merchant-order-card '+(o.status==='received'?'is-new':'')} key={o.id}>
@@ -270,7 +284,7 @@ export default function MerchantWorkspace(){
       <div className="merchant-order-foot"><span><ReceiptText size={15}/>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
-        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||Boolean(errors.orders)||!online} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
+        {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||Boolean(errors.orders)||!online||awaitingStripePayment} title={awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
       </div>
     </article>;
   };
@@ -312,7 +326,7 @@ export default function MerchantWorkspace(){
             <button type="button" className="merchant-arrival-close" aria-label="Descartar aviso de pedidos nuevos" onClick={()=>setFreshOrderIds([])}><X size={18}/></button>
           </div>}
           {errors.restaurant&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/><span>No fue posible cargar el comercio: {errors.restaurant}</span><button onClick={()=>void refresh()}>Reintentar</button></div>}
-          {notice&&<div className="merchant-feedback" role="status"><CheckCircle2 size={18}/>{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
+          {notice&&<div className={'merchant-feedback '+(noticeError?'error':'')} role={noticeError?'alert':'status'}>{noticeError?<WifiOff size={18}/>:<CheckCircle2 size={18}/>}<span>{notice}</span><button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
           {section==='pedidos'&&<>
             <div className="merchant-page-heading merchant-orders-title">
               <div><span className="merchant-kicker">ORDENES EN TIEMPO REAL</span><h1>Pedidos</h1><p>Controla la recepción, la cocina y las entregas desde un solo lugar.</p></div>
@@ -367,7 +381,7 @@ export default function MerchantWorkspace(){
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
             <div className="merchant-info-panel"><LayoutDashboard size={24}/><div><h3>Información conectada a tu comercio</h3><p>Estas cifras se actualizan desde la API de Tala Eats. Los reportes financieros detallados, pagos y liquidaciones requieren endpoints verificados adicionales; no se muestran saldos inventados.</p></div></div>
           </>}
-          {section==='wallet'&&<MerchantWallet restaurantId={restaurant?.id??null}/>}
+          {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><span className="merchant-kicker">CONFIGURACIÓN</span><h1>Mi negocio</h1><p>Controla tu disponibilidad y consulta la información verificada del comercio.</p></div></div>
             <section className="merchant-store-hero">
