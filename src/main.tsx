@@ -34,6 +34,8 @@ function PortalInstallIdentity() {
    if (theme) theme.setAttribute('content',merchant?'#ffffff':'#080808');
    const appleTitle=document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
    if(appleTitle)appleTitle.setAttribute('content',merchant?'Tala Negocios':'Tala Eats');
+   const appleIcon=document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+   if(appleIcon)appleIcon.setAttribute('href',merchant?'/icons/restaurante-180.png':'/icons/icon-192.png');
  }, [location.pathname]);
  return null;
 }
