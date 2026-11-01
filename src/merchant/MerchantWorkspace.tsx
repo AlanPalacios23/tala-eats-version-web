@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
-  BarChart3, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3,
-  BellRing, Coffee, Columns3, FileDown, Inbox, LayoutDashboard, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
+  BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
+  BellRing, Coffee, Columns3, FileDown, Inbox, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
   Wallet, WifiOff, X
 } from 'lucide-react';
@@ -106,6 +106,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
   const [available,setAvailable]=useState(item.is_available);
   const [saving,setSaving]=useState(false);
   const [editing,setEditing]=useState(false);
+  const [expanded,setExpanded]=useState(false);
   const [notice,setNotice]=useState('');
   const rowWriteLock=useRef(false);
   const dirty=price!==String(item.price)||stock!==item.stock||available!==item.is_available;
@@ -120,7 +121,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try {
       const updated=await api.ownerUpdateItem(item.id,{price,stock,is_available:available});
-      await onSaved(updated);setEditing(false);setNotice('Cambios guardados');
+      await onSaved(updated);setEditing(false);setExpanded(false);setNotice('Cambios guardados');
     }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);onWriteEnd();}
   };
   const quickAvailability=async()=>{
@@ -130,20 +131,43 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
     rowWriteLock.current=true;setSaving(true);setNotice('');
     try{
       const updated=await api.ownerUpdateItem(item.id,{is_available:!item.is_available});
-      await onSaved(updated);setNotice(item.is_available?'Producto pausado':'Producto disponible');
+      await onSaved(updated);setExpanded(false);setNotice(item.is_available?'Producto pausado':'Producto disponible');
     }catch(e){setNotice(errorMessage(e));}finally{rowWriteLock.current=false;setSaving(false);onWriteEnd();}
   };
   const undo=()=>{if(saving)return;setEditing(false);setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);setNotice('Cambios descartados');};
   const img=safeImage(item.image_url);
-  return <article className="merchant-product">
+  return <article className={'merchant-product '+(expanded?'is-expanded':'')}>
     <div className="merchant-product-image">{img?<img src={img} loading="lazy" alt={item.name}/>:<Coffee size={25} aria-hidden="true"/>}</div>
     <div className="merchant-product-body">
-      <div className="merchant-product-heading"><div><small>{item.category||'General'}</small><h3>{item.name}</h3><span className={'merchant-stock-indicator '+(item.stock<=5?'low':'')}>{item.stock===0?'Sin existencias':item.stock<=5?'Pocas existencias':'En inventario'}</span></div><label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>{setEditing(true);setAvailable(e.target.checked)}}/><span>{available?'Disponible':'Oculto'}</span></label></div>
-      <div className="merchant-product-controls">
-        <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>{setEditing(true);setPrice(e.target.value)}} /></label>
-        <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>{setEditing(true);setStock(Number(e.target.value))}}/></label>
-        <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||locked||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button><button type="button" className="merchant-quick-button" disabled={saving||locked||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>{dirty&&<button className="merchant-discard-button" type="button" disabled={saving||locked} onClick={undo}>Deshacer</button>}
+      <div className="merchant-product-topline">
+        <div className="merchant-product-name">
+          <h3>{item.name}</h3>
+          <p>{item.category||'General'} <span aria-hidden="true">·</span> {item.is_available?'Disponible':'Pausado'}</p>
+        </div>
+        <div className="merchant-product-facts">
+          <strong>{pesos(item.price)}</strong>
+          <span className={'merchant-stock-indicator '+(item.stock<=5?'low':'')}>{item.stock===0?'Agotado':item.stock<=5?`${item.stock} disponibles`:`${item.stock} en stock`}</span>
+        </div>
+        <button type="button" className="merchant-product-edit" aria-expanded={expanded} aria-controls={'merchant-product-edit-'+item.id}
+          disabled={saving||locked} onClick={()=>{
+            if(expanded&&dirty){setNotice('Guarda o deshaz los cambios antes de cerrar.');return;}
+            setExpanded(v=>!v);
+          }}>
+          {expanded?'Cerrar':'Editar'} <ChevronDown size={16} aria-hidden="true"/>
+        </button>
       </div>
+      {expanded&&<div className="merchant-product-edit-panel" id={'merchant-product-edit-'+item.id}>
+        <div className="merchant-product-controls">
+          <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>{setEditing(true);setPrice(e.target.value)}} /></label>
+          <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>{setEditing(true);setStock(Number(e.target.value))}}/></label>
+          <label className="merchant-toggle-label"><input type="checkbox" checked={available} onChange={e=>{setEditing(true);setAvailable(e.target.checked)}}/><span>{available?'Disponible':'Pausado'}</span></label>
+        </div>
+        <div className="merchant-product-edit-actions">
+          <button type="button" className="merchant-small-button" disabled={!dirty||!valid||saving||locked||!online} onClick={()=>void save()} >{saving?'Guardando…':'Guardar cambios'}</button>
+          <button type="button" className="merchant-quick-button" disabled={saving||locked||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
+          {dirty&&<button className="merchant-discard-button" type="button" disabled={saving||locked} onClick={undo}>Deshacer</button>}
+        </div>
+      </div>}
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
   </article>;
@@ -364,15 +388,14 @@ export default function MerchantWorkspace(){
   return <div className="merchant-shell">
     <aside className="merchant-sidebar" aria-label="Panel de navegación del restaurante">
       <div className="merchant-logo"><span className="merchant-logo-mark"><Store size={22}/></span><span>Tala <b>Eats</b><small>RESTAURANTES</small></span></div>
-      <div className="merchant-sidebar-label">ESPACIO DE TRABAJO</div>
       <nav className="merchant-nav" aria-label="Secciones del restaurante">{NAV.map(n=><button type="button" key={n.id} className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={20} strokeWidth={2}/>{n.label}{n.id==='pedidos'&&newCount>0&&<span className="merchant-nav-count">{newCount}</span>}</button>)}</nav>
       <div className="merchant-sidebar-spacer"/>
-      <div className="merchant-sidebar-store"><div className="merchant-sidebar-avatar"><Store size={20}/></div><div><strong>{restaurant?.name||'Mi comercio'}</strong><small>{restaurant?.is_open?'Abierto':'Cerrado'}</small></div></div>
+      <div className="merchant-sidebar-store"><div className="merchant-sidebar-avatar"><Store size={20}/></div><div><strong>{restaurant?.name||'Mi comercio'}</strong><small>Mi espacio</small></div></div>
     </aside>
     <div className="merchant-workspace">
       <header className="merchant-toolbar">
         <div className="merchant-mobile-logo"><span className="merchant-mobile-symbol"><Store size={19}/></span><span>Tala <b>Eats</b> <small>Restaurantes</small></span></div>
-        <div className="merchant-breadcrumb">Panel de restaurante <ChevronRight size={14}/><strong>{NAV.find(n=>n.id===section)?.label}</strong></div>
+        <div className="merchant-breadcrumb"><strong>{restaurant?.name||'Mi negocio'}</strong><span aria-hidden="true">/</span><span>{NAV.find(n=>n.id===section)?.label}</span></div>
         <div className="merchant-toolbar-actions"><span className={"merchant-connection "+(online?"connected":"offline")} title={online?"Conexión de red disponible":"Sin conexión"}><span/>{online?"Conectado":"Sin conexión"}</span>
           {restaurant&&<button type="button" onClick={()=>setSection('negocio')} className={'merchant-open-pill '+(restaurant.is_open?'is-open':'')} aria-label="Ver disponibilidad y ajustes del comercio"><span className="merchant-status-dot"/>{restaurant.is_open?'Abierto':'Cerrado'}</button>}
           <button className="merchant-refresh" type="button" disabled={refreshing||menuMutating} onClick={()=>void refresh()} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18} className={refreshing?'merchant-spin':''}/></button>
@@ -385,7 +408,7 @@ export default function MerchantWorkspace(){
           <div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-cards">{[0,1,2].map(n=><div className="merchant-skeleton-panel tall" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line short"/><div className="merchant-skeleton-line big"/></div>)}</div>
           <span className="merchant-sr-only">Consultando tu negocio…</span>
         </div>:<>
-          {!online&&<div className="merchant-feedback error" role="alert"><WifiOff size={18}/> Sin conexión: los datos pueden estar desactualizados y no se permiten cambios hasta volver a conectar.</div>}
+          {!online&&<div className="merchant-feedback error merchant-offline-alert" role="alert"><WifiOff size={17}/><span>Sin conexión. Los cambios están pausados hasta reconectar.</span></div>}
           {activeFreshOrders.length>0&&<div className="merchant-arrival" role="status" aria-live="polite">
             <div className="merchant-arrival-icon"><BellRing size={20}/></div>
             <div><strong>{activeFreshOrders.length===1?'Llegó un nuevo pedido':`Llegaron ${activeFreshOrders.length} pedidos nuevos`}</strong><span>Hay pedidos pendientes de aceptar.</span></div>
@@ -396,16 +419,10 @@ export default function MerchantWorkspace(){
           {notice&&<div className={'merchant-feedback '+(noticeError?'error':'')} role={noticeError?'alert':'status'}>{noticeError?<WifiOff size={18}/>:<CheckCircle2 size={18}/>}<span>{notice}</span><button type="button" onClick={()=>setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
           {section==='pedidos'&&<>
             <div className="merchant-page-heading merchant-orders-title">
-              <div><span className="merchant-kicker">CENTRO DE OPERACIONES</span><h1>Pedidos</h1><p>Controla la recepción, la cocina y las entregas desde un solo lugar.</p></div>
-              {newCount>0&&<button type="button" className="merchant-attention" onClick={()=>{setFilter('nuevos');setOrderView('list')}}><span className="merchant-attention-dot"/>{newCount} {newCount===1?'pedido nuevo':'pedidos nuevos'}<ChevronRight size={16}/></button>}
+              <div><h1>Pedidos</h1><p>Organiza pedidos nuevos, cocina y entregas.</p></div>
+              {newCount>0&&activeFreshOrders.length===0&&<button type="button" className="merchant-attention" onClick={()=>{setFilter('nuevos');setOrderView('list')}}><span className="merchant-attention-dot"/>{newCount} {newCount===1?'pedido nuevo':'pedidos nuevos'}<ChevronRight size={16}/></button>}
             </div>
             {restaurant&&!restaurant.is_open&&<div className="merchant-closed-prompt" role="status"><span className="merchant-status-dot"/><div><strong>Tu comercio está cerrado</strong><p>Revisa tu disponibilidad antes de comenzar a recibir nuevos pedidos.</p></div><button type="button" onClick={()=>setSection('negocio')}>Mi negocio <ChevronRight size={15}/></button></div>}
-            <div className="merchant-overview merchant-ops-overview">
-              <Metric label="Por aceptar" value={newCount} note="Nuevos pedidos" icon={<Inbox size={20}/>}/>
-              <Metric label="En operación" value={activeCount} note="Pedidos activos" icon={<Clock3 size={20}/>}/>
-              <Metric label="Finalizados" value={analytics?.delivered??'—'} note="Histórico" icon={<PackageCheck size={20}/>}/>
-              <Metric label="Ventas entregadas" value={analytics?pesos(analytics.gross_sales):'—'} note="Histórico" icon={<BarChart3 size={20}/>}/>
-            </div>
             <div className="merchant-queue-heading"><div><h2>Cola de pedidos <span className={'merchant-sync-pill '+(ordersFresh?'fresh':'stale')} aria-label={ordersFresh?'Pedidos sincronizados':'Pedidos sin sincronización reciente'}><span/>{ordersFresh?'Actualizada':'Sin confirmar'}</span></h2><p>{lastSync?'Última lectura '+new Intl.DateTimeFormat('es-MX',{hour:'2-digit',minute:'2-digit'}).format(lastSync):'Esperando sincronización'} · actualización automática cada 30 s mientras trabajas aquí.</p></div><div className="merchant-queue-tools"><button type="button" className="merchant-csv-button" disabled={!ordersFresh||!filteredOrders.length} title="Descargar los pedidos visibles, máximo 100 cargados desde la API. Sin direcciones ni PIN." onClick={downloadOrders}><FileDown size={16}/> Exportar vista</button><div className="merchant-view-switch" aria-label="Presentación de pedidos"><button type="button" title="Tablero" aria-label="Ver tablero" aria-pressed={orderView==='board'} className={orderView==='board'?'active':''} onClick={()=>{setOrderView('board');setFilter('activos');setSearch('')}}><Columns3 size={18}/></button><button type="button" title="Lista" aria-label="Ver lista" aria-pressed={orderView==='list'} className={orderView==='list'?'active':''} onClick={()=>setOrderView('list')}><List size={18}/></button></div></div></div>
             {online&&!errors.orders&&!ordersFresh&&<div className="merchant-sync-warning" role="status"><Clock3 size={17}/><span>La última lectura de pedidos ya no es reciente. Las acciones permanecen bloqueadas hasta confirmar información nueva.</span><button type="button" disabled={refreshing||menuMutating} onClick={()=>void refresh()}>Sincronizar</button></div>}
             {errors.orders&&<div className="merchant-feedback error" role="alert">No se pudo actualizar la cola de pedidos: {errors.orders}<button type="button" onClick={()=>void refresh()}>Reintentar</button></div>}
@@ -421,19 +438,17 @@ export default function MerchantWorkspace(){
               (filteredOrders.length===0?<ScreenEmpty icon={<ClipboardList size={30}/>} title="No hay pedidos en esta vista">{search?'Prueba con otra búsqueda.':'Los pedidos que coincidan con el filtro aparecerán aquí.'}</ScreenEmpty>:<div className="merchant-order-grid">{filteredOrders.map(renderOrder)}</div>))}
           </>}
           {section==='menu'&&<>
-            {!online&&<div className="merchant-feedback error" role="status">Recupera la conexión antes de editar el menú.</div>}
-            <div className="merchant-page-heading"><div><span className="merchant-kicker">CATÁLOGO</span><h1>Menú y productos</h1><p>Actualiza precios, existencias y disponibilidad sin salir de esta pantalla.</p></div><button className="merchant-main-button" onClick={()=>setAddOpen(v=>!v)}><Plus size={19}/>{addOpen?'Cerrar formulario':'Agregar producto'}</button></div>
-            <div className="merchant-menu-info"><span><UtensilsCrossed size={18}/>{restaurant?.menu_items?.length??0} productos</span><span><SlidersHorizontal size={18}/>{stockLow} con 5 unidades o menos</span></div>
+            <div className="merchant-page-heading"><div><h1>Menú</h1><p>Productos, precios y disponibilidad.</p></div><button className="merchant-main-button" onClick={()=>setAddOpen(v=>!v)}><Plus size={19}/>{addOpen?'Cerrar formulario':'Agregar producto'}</button></div>
             {addOpen&&<form onSubmit={e=>void addProduct(e)} className="merchant-add-form"><h2>Nuevo producto</h2><div className="merchant-add-grid"><label>Nombre<input required maxLength={150} minLength={2} value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nombre del producto"/></label><label>Categoría<input maxLength={80} value={newCategory} onChange={e=>setNewCategory(e.target.value)} placeholder="General"/></label><label>Precio (MXN)<input required value={newPrice} onChange={e=>setNewPrice(e.target.value)} inputMode="decimal" placeholder="89.00"/></label><label>Existencias<input required type="number" min="0" step="1" value={newStock} onChange={e=>setNewStock(Number(e.target.value))}/></label><label className="merchant-add-full">Descripción<input maxLength={500} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Opcional"/></label></div><div className="merchant-add-actions"><button className="merchant-small-button" disabled={submitting||menuMutating||!online}>{submitting?'Agregando…':'Guardar producto'}</button><button type="button" className="merchant-neutral-button" onClick={()=>setAddOpen(false)}>Cancelar</button></div></form>}
-            <div className="merchant-menu-toolbar"><div><h2>Productos publicados</h2><p>{products.length} de {restaurant?.menu_items?.length??0} productos</p></div><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
+            <div className="merchant-menu-toolbar"><div><h2>Productos <span className="merchant-menu-count">{products.length}</span></h2>{stockLow>0&&<p>{stockLow} requieren revisar existencias</p>}</div><label className="merchant-search"><Search size={18}/><input placeholder="Buscar en el menú" aria-label="Buscar productos" value={menuSearch} onChange={e=>setMenuSearch(e.target.value)}/></label></div>
             <div className="merchant-menu-filterbar">
               <div className="merchant-menu-filters" aria-label="Estado de productos">{([['todos','Todos'],['disponibles','Disponibles'],['bajo','Stock bajo'],['agotados','Agotados'],['pausados','Pausados']] as const).map(([id,label])=><button type="button" key={id} className={menuFilter===id?'active':''} aria-pressed={menuFilter===id} onClick={()=>setMenuFilter(id)}>{label}</button>)}</div>
-              <label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>
+              {categories.length>1&&<label className="merchant-category-select"><span>Categoría</span><select aria-label="Filtrar categoría" value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}><option value="">Todas</option>{categories.map(category=><option key={category} value={category}>{category}</option>)}</select></label>}
             </div>
             {products.length?<div className="merchant-product-list">{products.map(item=><MenuRow key={item.id} item={item} online={online} onSaved={(updated)=>{setRestaurant(prev=>prev?.menu_items?{...prev,menu_items:prev.menu_items.map(p=>p.id===updated.id?updated:p)}:prev);return refresh(false)}} onWriteStart={beginMenuMutation} onWriteEnd={endMenuMutation} locked={menuMutating}/>)}</div>:<ScreenEmpty icon={<UtensilsCrossed size={30}/>} title="No se encontraron productos"><button type="button" className="merchant-clear-filters" onClick={()=>{setMenuSearch('');setMenuFilter('todos');setMenuCategory('')}}>Restablecer filtros</button></ScreenEmpty>}
           </>}
           {section==='rendimiento'&&<>
-            <div className="merchant-page-heading"><div><span className="merchant-kicker">DATOS DEL NEGOCIO</span><h1>Rendimiento</h1><p>Indicadores históricos del backend. No son ventas estimadas ni cifras del día.</p></div></div>
+            <div className="merchant-page-heading"><div><h1>Rendimiento</h1><p>Indicadores históricos del comercio.</p></div></div>
             {errors.analytics&&<div className="merchant-feedback error" role="alert">Métricas no disponibles: {errors.analytics}</div>}
             <div className="merchant-overview"><Metric label="Total de pedidos" value={analytics?.orders??'—'} note="Histórico" icon={<ClipboardList size={20}/>}/><Metric label="Entregados" value={analytics?.delivered??'—'} note="Histórico" icon={<Check size={20}/>}/><Metric label="Ventas entregadas" value={analytics?pesos(analytics.gross_sales):'—'} note="Cifra del backend" icon={<BarChart3 size={20}/>}/><Metric label="Inventario bajo" value={analytics?.inventory_low??'—'} note="Cifra del backend" icon={<ShoppingBag size={20}/>}/></div>
             <div className="merchant-insights">
@@ -448,11 +463,10 @@ export default function MerchantWorkspace(){
               </section>
             </div>
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
-            <div className="merchant-info-panel"><LayoutDashboard size={24}/><div><h3>Información conectada a tu comercio</h3><p>Estas cifras se actualizan desde la API de Tala Eats. Los reportes financieros detallados, pagos y liquidaciones requieren endpoints verificados adicionales; no se muestran saldos inventados.</p></div></div>
           </>}
           {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
           {section==='negocio'&&<>
-            <div className="merchant-page-heading"><div><span className="merchant-kicker">CONFIGURACIÓN</span><h1>Mi negocio</h1><p>Controla tu disponibilidad y consulta la información verificada del comercio.</p></div></div>
+            <div className="merchant-page-heading"><div><h1>Mi negocio</h1><p>Disponibilidad e información del comercio.</p></div></div>
             <section className="merchant-store-hero">
               {restaurant?.cover_image_url&&safeImage(restaurant.cover_image_url)&&<img className="merchant-store-cover" src={safeImage(restaurant.cover_image_url)||undefined} alt="" loading="lazy"/>}
               <div className="merchant-store-hero-shade"/>
