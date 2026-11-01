@@ -24,8 +24,12 @@ type StatusAction = 'confirmed' | 'preparing' | 'ready';
 const ACTIVE = new Set(['received', 'confirmed', 'preparing', 'ready', 'assigned', 'picked_up', 'on_the_way']);
 export function orderPaymentConfirmed(order:Pick<Order,'payment_method'|'payment_status'>):boolean {
   // El backend exige cobro confirmado antes de aceptar/preparar pedidos Stripe.
-  return order.payment_method!=='stripe'||order.payment_status==='paid';
+  // Las respuestas de red no tienen tipos garantizados en runtime: fallar cerrado.
+  return order.payment_method==='cash'||
+    (order.payment_method==='stripe'&&order.payment_status==='paid');
 }
+export const merchantPaymentLabel=(method:string):string =>
+  method==='cash'?'Efectivo':method==='stripe'?'Tarjeta':'Pago por verificar';
 const STATUS_LABEL: Record<string, string> = {
   received: 'Nuevo', confirmed: 'Aceptado', preparing: 'En preparación',
   ready: 'Listo para recoger', assigned: 'Repartidor asignado',
@@ -156,6 +160,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
         <button type="button" className="merchant-product-edit" aria-expanded={expanded} aria-controls={'merchant-product-edit-'+item.id}
           disabled={saving||locked} onClick={()=>{
             if(expanded&&dirty){setNotice('Guarda o deshaz los cambios antes de cerrar.');return;}
+            if(expanded){setEditing(false);setPrice(String(item.price));setStock(item.stock);setAvailable(item.is_available);}
             setExpanded(v=>!v);
           }}>
           {expanded?'Cerrar':'Editar'} <ChevronDown size={16} aria-hidden="true"/>
@@ -358,14 +363,15 @@ export default function MerchantWorkspace(){
   };
   const endMenuMutation=()=>{menuMutationInFlight.current=false;setMenuMutating(false);};
   const downloadOrders=()=>{
-    if(!ordersFresh||filteredOrders.length===0)return;
+    if(!isOrderSnapshotFresh(lastSync,Date.now(),navigator.onLine,Boolean(errors.orders))||filteredOrders.length===0)return;
     const csv=exportOrderSummaryCsv(filteredOrders);
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob);
     const link=document.createElement('a');
     link.href=url;link.download='tala-eats-pedidos-vista-'+new Date().toISOString().slice(0,10)+'.csv';
     document.body.appendChild(link);link.click();link.remove();
-    URL.revokeObjectURL(url);
+    // Safari/iOS puede cancelar descargas si se revoca inmediatamente.
+    window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
   };
 
   const newCount=orders.filter(o=>o.status==='received').length;
@@ -389,7 +395,13 @@ export default function MerchantWorkspace(){
   const products=useMemo(()=>filterMerchantMenu(restaurant?.menu_items??[],menuSearch,menuFilter,menuCategory),[restaurant,menuSearch,menuFilter,menuCategory]);
 
   const changeStatus=async(id:number,status:StatusAction)=>{
-    if(mutationInFlight.current||menuMutationInFlight.current||!navigator.onLine||!ordersFresh)return;
+    if(mutationInFlight.current||menuMutationInFlight.current)return;
+    // Consultar el reloj REAL justo al pulsar: el reloj de UI puede tener
+    // hasta 30 segundos de retraso cuando el teléfono vuelve del background.
+    if(!isOrderSnapshotFresh(lastSync,Date.now(),navigator.onLine,Boolean(errors.orders))){
+      setNoticeError(true);setNotice('La cola de pedidos necesita sincronizarse antes de continuar.');
+      return;
+    }
     const current=orders.find(order=>order.id===id);
     if(!current){setNoticeError(true);setNotice('Este pedido ya no está disponible. Actualiza la lista.');return;}
     const expected:Record<StatusAction,string>={confirmed:'received',preparing:'confirmed',ready:'preparing'};
@@ -406,7 +418,13 @@ export default function MerchantWorkspace(){
     try{
       const updated=await api.ownerUpdateStatus(id,status);
       // El resultado de la mutación confirmada es la fuente de verdad si el GET posterior falla.
-      if(updated?.id===id&&updated.status===status)setOrders(prev=>prev.map(order=>order.id===id?{...order,...updated}:order));
+      if(updated?.id!==id||updated.status!==status){
+        setNoticeError(true);
+        setNotice('El servidor no confirmó el nuevo estado. Sincroniza antes de intentar otra vez.');
+        await refresh(false);
+        return;
+      }
+      setOrders(prev=>prev.map(order=>order.id===id?{...order,...updated}:order));
       await refresh(false);
       setNotice('Pedido #'+id+' actualizado correctamente.');
     }catch(e){setNoticeError(true);setNotice('Pedido #'+id+': '+errorMessage(e));}
@@ -448,7 +466,7 @@ export default function MerchantWorkspace(){
         {o.items.slice(0,2).map((i,index)=><div key={i.id??index}><span className="merchant-qty">{i.quantity}×</span><span>{i.name_snapshot}</span></div>)}
         {o.items.length>2&&<span className="merchant-order-more">+{o.items.length-2} productos más · Ver detalle</span>}
       </>:<span className="merchant-secondary">Sin detalle de productos disponible</span>}</div>
-      <div className="merchant-order-foot"><span><ReceiptText size={15}/>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status||'Estado de pago no disponible'}</span></div>
+      <div className="merchant-order-foot"><span><ReceiptText size={15}/>{merchantPaymentLabel(o.payment_method)} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
         {next?<button type="button" className="merchant-order-action" disabled={busyOrder!==null||!ordersFresh||menuMutating||awaitingStripePayment} title={!ordersFresh?'Sincroniza pedidos antes de avanzar':awaitingStripePayment?'El cobro con Stripe aún no está confirmado':undefined} onClick={()=>void changeStatus(o.id,next)}>{busyOrder===o.id?'Actualizando…':awaitingStripePayment?'Esperando cobro':label}<ChevronRight size={17}/></button>:<div className="merchant-order-wait"><CheckCircle2 size={16}/>{o.status==='ready'?'Esperando recogida':o.status==='delivered'?'Finalizado':o.status==='cancelled'?'Cancelado':'En seguimiento'}</div>}
@@ -568,7 +586,7 @@ export default function MerchantWorkspace(){
       <section ref={detailRef} className="merchant-detail-sheet" role="dialog" aria-modal="true" aria-label={'Detalles del pedido #'+selectedOrder.id} aria-describedby="merchant-detail-help">
         <header className="merchant-detail-header"><div><small>DETALLE DEL PEDIDO</small><h2>Pedido #{selectedOrder.id}</h2></div><button type="button" autoFocus aria-label="Cerrar detalles" onClick={()=>setSelectedOrderId(null)}><X size={22}/></button></header>
         <div className="merchant-detail-scroll"><div className="merchant-detail-intro"><span className={'merchant-order-status state-'+selectedOrder.status}>{STATUS_LABEL[selectedOrder.status]||selectedOrder.status}</span><span>{orderTime(selectedOrder.created_at)} · {elapsedOrderTime(selectedOrder.created_at,clock)}</span></div>
-          <div className="merchant-detail-info"><span><ShoppingBag size={17}/>{selectedOrder.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><span><ReceiptText size={17}/>{selectedOrder.payment_method==='cash'?'Efectivo':'Tarjeta'} · {selectedOrder.payment_status||'Sin datos del pago'}</span>{selectedOrder.address&&<span><MapPin size={17}/>{selectedOrder.address}</span>}</div>
+          <div className="merchant-detail-info"><span><ShoppingBag size={17}/>{selectedOrder.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><span><ReceiptText size={17}/>{merchantPaymentLabel(selectedOrder.payment_method)} · {selectedOrder.payment_status||'Sin datos del pago'}</span>{selectedOrder.address&&<span><MapPin size={17}/>{selectedOrder.address}</span>}</div>
           {kitchenStepIndex(selectedOrder.status)>=0&&<div className="merchant-kitchen-tracker" aria-label="Estado de preparación del pedido">
             {KITCHEN_STEPS.map((step,i)=><div key={step.id} className={'merchant-kitchen-step '+(i<=kitchenStepIndex(selectedOrder.status)?'done ':'')+(i===kitchenStepIndex(selectedOrder.status)?'current':'')}>
               <span className="merchant-kitchen-step-dot">{i<kitchenStepIndex(selectedOrder.status)?<Check size={13}/>:i+1}</span>
