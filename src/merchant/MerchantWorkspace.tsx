@@ -73,6 +73,24 @@ export function filterMerchantMenu(items: MenuItem[], query: string, status: Men
     return matchStatus&&(!category||(item.category||'General')===category)&&(!search||text.includes(search));
   });
 }
+// Los tipos TypeScript no validan JSON de producción. La API puede responder
+// 200 con datos parciales; nunca permitir que un payload defectuoso rompa la cola.
+export function isMerchantOrderList(value:unknown):value is Order[] {
+  if(!Array.isArray(value))return false;
+  return value.every(entry=>{
+    if(!entry||typeof entry!=='object')return false;
+    const order=entry as Record<string,unknown>;
+    if(!Number.isSafeInteger(order.id)||Number(order.id)<=0||
+      typeof order.status!=='string'||typeof order.created_at!=='string'||
+      typeof order.payment_method!=='string'||
+      (typeof order.total!=='string'&&typeof order.total!=='number'))return false;
+    const items=order.items;
+    return items==null||(Array.isArray(items)&&items.every(item=>
+      item&&typeof item==='object'&&typeof item.name_snapshot==='string'&&
+      Number.isFinite(Number(item.quantity))&&Number(item.quantity)>=0
+    ));
+  });
+}
 export function isOrderSnapshotFresh(lastSync:Date|null,now:number,online:boolean,hasError:boolean):boolean {
   return online&&!hasError&&!!lastSync&&Number.isFinite(lastSync.getTime())&&
     now>=lastSync.getTime()&&now-lastSync.getTime()<120_000;
@@ -346,7 +364,7 @@ export default function MerchantWorkspace(){
       if(generation!==readGeneration.current)return;
       const nextErrors: {restaurant?:string;orders?:string;analytics?:string}={};
       if(r.status==='fulfilled')setRestaurant(r.value);else nextErrors.restaurant=errorMessage(r.reason);
-      if(o.status==='fulfilled'){
+      if(o.status==='fulfilled'&&isMerchantOrderList(o.value)){
         const receivedIds=o.value.filter(order=>order.status==='received').map(order=>order.id);
         if(knownReceivedIds.current===null)knownReceivedIds.current=new Set(receivedIds);
         else {
@@ -355,7 +373,8 @@ export default function MerchantWorkspace(){
           if(arriving.length)setFreshOrderIds(prev=>Array.from(new Set([...prev,...arriving])));
         }
         const confirmedAt=new Date();setOrders(o.value);setLastSync(confirmedAt);setClock(confirmedAt.getTime());
-      }else nextErrors.orders=errorMessage(o.reason);
+      }else nextErrors.orders=o.status==='rejected'?errorMessage(o.reason):
+        'Respuesta de pedidos incompleta. No se permiten cambios hasta sincronizar datos válidos.';
       if(a.status==='fulfilled')setAnalytics(a.value);else nextErrors.analytics=errorMessage(a.reason);
       setErrors(nextErrors);
     }finally {
