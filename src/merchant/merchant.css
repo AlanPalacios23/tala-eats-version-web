@@ -1273,3 +1273,10 @@
  .merchant-board-empty svg{display:none}
  .merchant-board-empty span{font-size:11px;color:#95a0a8}
 }
+
+/* RC169: accessible exit control in dedicated merchant portal. */
+.merchant-logout{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;min-height:43px;border:1px solid #e9ecef;border-radius:11px;color:#737e89;background:#fff;cursor:pointer}
+.merchant-logout:hover:not(:disabled){background:#f2f4f5;color:#27323b}
+.merchant-logout:focus-visible{outline:2px solid #dd7c41;outline-offset:3px}
+.merchant-logout:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:760px){.merchant-logout{width:40px;height:40px;min-height:40px;flex-basis:40px}.merchant-toolbar-actions{gap:6px}}
