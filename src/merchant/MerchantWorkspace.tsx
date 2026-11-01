@@ -111,12 +111,20 @@ export function isOrderSnapshotFresh(lastSync:Date|null,now:number,online:boolea
 }
 // Determina el resultado después de un timeout o de una respuesta PATCH incompleta.
 // No repetir la mutación: consultar primero al servidor, que es la autoridad.
+const DELIVERY_AFTER_READY = new Set(['assigned','picked_up','on_the_way','delivered']);
+export function isMerchantStatusFulfilled(
+  order:Pick<Order,'order_type'>,requested:StatusAction,actual:string
+):boolean {
+  return actual===requested||
+    (requested==='ready'&&order.order_type==='delivery'&&DELIVERY_AFTER_READY.has(actual));
+}
 export function reconcileMerchantStatus(
   orders:Order[], id:number, previous:string, requested:StatusAction
-):'applied'|'unchanged'|'changed'|'missing' {
+):'applied'|'advanced'|'unchanged'|'changed'|'missing' {
   const actual=orders.find(order=>order.id===id);
   if(!actual)return 'missing';
   if(actual.status===requested)return 'applied';
+  if(isMerchantStatusFulfilled(actual,requested,actual.status))return 'advanced';
   if(actual.status===previous)return 'unchanged';
   return 'changed';
 }
@@ -498,12 +506,13 @@ export default function MerchantWorkspace(){
     try{
       const updated=await api.ownerUpdateStatus(id,status);
       // El resultado de la mutación confirmada es la fuente de verdad si el GET posterior falla.
-      if(updated?.id!==id||updated.status!==status){
+      if(updated?.id!==id||!isMerchantStatusFulfilled(current,status,updated.status)){
         throw new Error('El servidor no confirmó el nuevo estado. Sincroniza antes de intentar otra vez.');
       }
       setOrders(prev=>prev.map(order=>order.id===id?{...order,...updated}:order));
       await refresh(false);
-      setNotice('Pedido #'+id+' actualizado correctamente.');
+      setNotice(updated.status===status?'Pedido #'+id+' actualizado correctamente.':
+        'Pedido #'+id+' listo; el servidor ya lo avanzó a '+(STATUS_LABEL[updated.status]||updated.status)+'.');
     }catch(e){
       // Una respuesta perdida NO significa que el PATCH no se aplicó.
       // Antes de permitir reintentos, reconciliar mediante GET independiente.
@@ -516,8 +525,10 @@ export default function MerchantWorkspace(){
         const verifiedAt=new Date();
         setOrders(checked);setLastSync(verifiedAt);setClock(verifiedAt.getTime());
         setErrors(prev=>({...prev,orders:undefined}));
-        if(outcome==='applied'){
-          setNotice('Pedido #'+id+' confirmado por el servidor después de recuperar la comunicación.');
+        if(outcome==='applied'||outcome==='advanced'){
+          setNotice(outcome==='advanced'?
+            'Pedido #'+id+' confirmado en estado '+(STATUS_LABEL[actual.status]||actual.status)+' después de la reconexión.':
+            'Pedido #'+id+' confirmado por el servidor después de recuperar la comunicación.');
         }else if(outcome==='unchanged'){
           setNoticeError(true);
           setNotice('Pedido #'+id+' sigue sin cambiar en el servidor. Revisa la conexión antes de intentarlo de nuevo. '+errorMessage(e));
