@@ -197,13 +197,25 @@ export default function MerchantWorkspace(){
     // visualViewport distingue el teclado virtual del cambio de orientación.
     const viewport=window.visualViewport;
     if(!viewport)return;
+    let baseHeight=Math.max(window.innerHeight,viewport.height);
+    let width=viewport.width;
     const update=()=>{
       const focused=document.activeElement;
       const editable=focused instanceof HTMLInputElement||
         focused instanceof HTMLTextAreaElement||
         focused instanceof HTMLSelectElement||
         (focused instanceof HTMLElement&&focused.isContentEditable);
-      const covered=window.innerHeight-viewport.height-viewport.offsetTop;
+      // Chrome Android puede reducir también innerHeight. Recordar el alto previo
+      // al teclado en lugar de depender solo de la diferencia de viewports.
+      if(Math.abs(viewport.width-width)>40){
+        width=viewport.width;
+        baseHeight=Math.max(window.innerHeight,viewport.height);
+      }
+      if(!editable)baseHeight=Math.max(window.innerHeight,viewport.height);
+      const covered=Math.max(
+        window.innerHeight-viewport.height-viewport.offsetTop,
+        baseHeight-viewport.height-viewport.offsetTop
+      );
       setKeyboardVisible(Boolean(editable&&covered>140));
     };
     viewport.addEventListener('resize',update);
