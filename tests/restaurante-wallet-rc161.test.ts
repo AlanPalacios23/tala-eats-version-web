@@ -85,7 +85,7 @@ describe('RC161 Restaurante · datos financieros auténticos y lectura segura',(
     expect(api).not.toContain('merchantRequestWithdrawal:');
     expect(api).not.toContain('ownerWalletAdjust:');
     expect(workspace).toContain("id:'wallet',label:'Wallet'");
-    expect(workspace).toContain('<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>');
+    expect(workspace).toContain("<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>");
     expect(css).toContain('grid-template-columns:repeat(5,minmax(0,1fr))');
   });
 });
