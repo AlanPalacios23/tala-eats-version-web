@@ -52,7 +52,7 @@ export default function MerchantStandalone(){
     <section className="merchant-access-card"><div className="merchant-access-eyebrow"><ShieldCheck size={15}/> ACCESO PROTEGIDO</div>
       <h1>Esta cuenta no es de restaurante</h1>
       <p>Necesitas un perfil de comercio autorizado para administrar pedidos. No se mostrarán datos del restaurante.</p>
-      <button type="button" className="merchant-access-submit" disabled={leaving} onClick={()=>{setLeaving(true);void logout().finally(()=>setLeaving(false));}}><LogOut size={19}/> Cambiar de cuenta</button>
+      <button type="button" className="merchant-access-submit" disabled={leaving} onClick={()=>{setLeaving(true);void logout().catch(()=>{}).finally(()=>setLeaving(false));}}><LogOut size={19}/> Cambiar de cuenta</button>
     </section>
   </main>;
   return <MerchantWorkspace/>;
