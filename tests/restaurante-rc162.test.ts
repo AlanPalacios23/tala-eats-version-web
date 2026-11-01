@@ -17,7 +17,7 @@ describe('RC162 · operaciones con datos verdaderos, sin sobrescribir borradores
   });
   it('valida tanto la tarjeta como la hoja de pedido antes de activar mutaciones',()=>{
     expect(workspace).toContain("const awaitingStripePayment=!orderPaymentConfirmed(o)");
-    expect(workspace).toContain('awaitingStripePayment?\'Esperando cobro\':label');
+    expect(workspace).toContain("o.payment_method==='stripe'?'Esperando cobro':'Pago no verificado'");
     expect(workspace).toContain("if(!orderPaymentConfirmed(current))");
     expect(workspace).toContain("if(current.status!==expected[status])");
     expect(workspace).toContain("!orderPaymentConfirmed(selectedOrder)");
