@@ -31,6 +31,21 @@ describe('RC165 · Restaurante Android/iOS, sin alterar cobros ni rol',()=>{
     expect(main).toContain("merchant?'Tala Negocios':'Tala Eats'");
     expect(main).toContain("merchant?'#ffffff':'#080808'");
   });
+  it('incluye iconos propios y válidos para Android (maskable) e iPhone',()=>{
+    expect(manifest.icons.map((icon:{src:string})=>icon.src)).toEqual([
+      '/icons/restaurante-192.png','/icons/restaurante-512.png'
+    ]);
+    for(const size of [180,192,512]){
+      const png=readFileSync(new URL('../public/icons/restaurante-'+size+'.png',import.meta.url));
+      expect(png.subarray(0,8).toString('hex')).toBe('89504e470d0a1a0a');
+      expect(png.readUInt32BE(16)).toBe(size);
+      expect(png.readUInt32BE(20)).toBe(size);
+    }
+    expect(main).toContain("merchant?'/icons/restaurante-180.png':'/icons/icon-192.png'");
+    expect(sw).toContain("'/icons/restaurante-180.png'");
+    expect(sw).toContain("'/icons/restaurante-192.png'");
+    expect(sw).toContain("'/icons/restaurante-512.png'");
+  });
   it('hace que el botón Atrás recorra pestañas y cierre el detalle antes de abandonar',()=>{
     for(const tab of ['pedidos','menu','rendimiento','wallet','negocio'])expect(isMerchantSection(tab)).toBe(true);
     expect(isMerchantSection(null)).toBe(false);
