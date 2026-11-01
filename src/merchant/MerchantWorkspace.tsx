@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
   BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
-  BellRing, Coffee, Columns3, FileDown, Inbox, List, MapPin, PackageCheck, Plus, Printer, ReceiptText, RefreshCw,
-  Search, Settings2, ShoppingBag, SlidersHorizontal, Store, UtensilsCrossed,
+  BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
+  Search, Settings2, ShoppingBag, Store, UtensilsCrossed,
   Wallet, WifiOff, X
 } from 'lucide-react';
 import { api, pesos, safeImage } from '../lib/api';
@@ -295,7 +295,6 @@ export default function MerchantWorkspace(){
   };
 
   const newCount=orders.filter(o=>o.status==='received').length;
-  const activeCount=orders.filter(o=>ACTIVE.has(o.status)).length;
   const stockLow=restaurant?.menu_items?.filter(p=>p.stock<=5).length??0;
   const activeFreshOrders=freshOrderIds.filter(id=>orders.some(o=>o.id===id&&o.status==='received'));
   const categories=useMemo(()=>Array.from(new Set((restaurant?.menu_items??[]).map(p=>p.category||'General'))).sort((a,b)=>a.localeCompare(b,'es-MX')),[restaurant]);
@@ -371,7 +370,10 @@ export default function MerchantWorkspace(){
     return <article className={'merchant-order-card '+(o.status==='received'?'is-new':'')} key={o.id}>
       <div className="merchant-order-header"><div><span className="merchant-order-id">#{o.id}</span><small>{orderTime(o.created_at)}</small><span className="merchant-age" title="Tiempo desde la creación del pedido"><Clock3 size={13}/>{elapsedOrderTime(o.created_at,clock)}</span></div><span className={'merchant-order-status state-'+o.status}>{STATUS_LABEL[o.status]||o.status}</span></div>
       <div className="merchant-order-type"><span className="merchant-order-type-icon">{o.order_type==='pickup'?<ShoppingBag size={17}/>:<MapPin size={17}/>}</span><span>{o.order_type==='pickup'?'Recoger en tienda':'Entrega a domicilio'}</span><strong>{pesos(o.total)}</strong></div>
-      <div className="merchant-order-items">{o.items?.length?o.items.map((i,index)=><div key={i.id??index}><span className="merchant-qty">{i.quantity}×</span><span>{i.name_snapshot}</span></div>):<span className="merchant-secondary">Sin detalle de productos disponible</span>}</div>
+      <div className="merchant-order-items">{o.items?.length?<>
+        {o.items.slice(0,2).map((i,index)=><div key={i.id??index}><span className="merchant-qty">{i.quantity}×</span><span>{i.name_snapshot}</span></div>)}
+        {o.items.length>2&&<span className="merchant-order-more">+{o.items.length-2} productos más · Ver detalle</span>}
+      </>:<span className="merchant-secondary">Sin detalle de productos disponible</span>}</div>
       <div className="merchant-order-foot"><span><ReceiptText size={15}/>{o.payment_method==='cash'?'Efectivo':'Tarjeta'} · {o.payment_status||'Estado de pago no disponible'}</span></div>
       <div className="merchant-card-actions">
         <button type="button" className="merchant-detail-button" onClick={()=>setSelectedOrderId(o.id)}>Ver detalles <ChevronRight size={16}/></button>
@@ -404,14 +406,13 @@ export default function MerchantWorkspace(){
       <div className="merchant-content">
         {loading?<div className="merchant-skeleton" role="status" aria-label="Cargando información del restaurante">
           <div className="merchant-skeleton-header"><div className="merchant-skeleton-line big"/><div className="merchant-skeleton-line short"/></div>
-          <div className="merchant-skeleton-metrics">{[0,1,2,3].map(n=><div className="merchant-skeleton-panel" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line big"/></div>)}</div>
           <div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-cards">{[0,1,2].map(n=><div className="merchant-skeleton-panel tall" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line short"/><div className="merchant-skeleton-line big"/></div>)}</div>
           <span className="merchant-sr-only">Consultando tu negocio…</span>
         </div>:<>
           {!online&&<div className="merchant-feedback error merchant-offline-alert" role="alert"><WifiOff size={17}/><span>Sin conexión. Los cambios están pausados hasta reconectar.</span></div>}
           {activeFreshOrders.length>0&&<div className="merchant-arrival" role="status" aria-live="polite">
-            <div className="merchant-arrival-icon"><BellRing size={20}/></div>
-            <div><strong>{activeFreshOrders.length===1?'Llegó un nuevo pedido':`Llegaron ${activeFreshOrders.length} pedidos nuevos`}</strong><span>Hay pedidos pendientes de aceptar.</span></div>
+            <div className="merchant-arrival-icon"><BellRing size={18}/></div>
+            <div><strong>{activeFreshOrders.length===1?'Nuevo pedido recibido':`${activeFreshOrders.length} pedidos nuevos`}</strong></div>
             <button type="button" className="merchant-arrival-open" onClick={()=>{setSection('pedidos');setFilter('nuevos');setOrderView('list');setFreshOrderIds([])}}>Ver pedidos <ChevronRight size={17}/></button>
             <button type="button" className="merchant-arrival-close" aria-label="Descartar aviso de pedidos nuevos" onClick={()=>setFreshOrderIds([])}><X size={18}/></button>
           </div>}
