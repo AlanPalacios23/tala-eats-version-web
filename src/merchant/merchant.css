@@ -982,3 +982,6 @@
 @media(prefers-reduced-motion:reduce){
   .merchant-mobile-nav,.merchant-detail-sheet,.merchant-install-button{transition:none!important;animation:none!important}
 }
+
+/* Keep the install listener mounted, without showing the card in other tabs. */
+.merchant-install-card[hidden]{display:none!important}
