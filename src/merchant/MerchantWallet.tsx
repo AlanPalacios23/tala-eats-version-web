@@ -40,9 +40,18 @@ export default function MerchantWallet({restaurantId}:{restaurantId:number|null}
   const [updatedAt,setUpdatedAt]=useState<Date|null>(null);
   const generation=useRef(0);
   const refresh=useCallback(async(silent=false)=>{
-    if(restaurantId===null){setData(EMPTY);setErrors({finance:'Primero debes tener un restaurante asociado.'});setLoading(false);return;}
     const version=++generation.current;
+    // Se invalidan TODAS las lecturas anteriores antes de consultar otra vez.
+    // Nunca presentar datos financieros antiguos como confirmados durante un refresh.
+    setData(EMPTY);
+    setErrors({});
+    setUpdatedAt(null);
+    setLoading(true);
     if(!silent)setUpdating(true);
+    if(restaurantId===null){
+      setErrors({finance:'Primero debes tener un restaurante asociado.'});
+      setLoading(false);setUpdating(false);return;
+    }
     const [finance,balance,history,connect]=await Promise.allSettled([
       api.ownerFinance(),
       api.merchantWithdrawalBalance(restaurantId),
@@ -63,7 +72,7 @@ export default function MerchantWallet({restaurantId}:{restaurantId:number|null}
     }
     setErrors(reasons);setData(next);setUpdatedAt(new Date());setLoading(false);setUpdating(false);
   },[restaurantId]);
-  useEffect(()=>{void refresh(true);return()=>{generation.current++};},[refresh]);
+  useEffect(()=>{void refresh(true);return()=>{generation.current++;};},[refresh]);
 
   return <div className="merchant-wallet" aria-label="Wallet de restaurante">
     <div className="merchant-page-heading merchant-wallet-heading"><div>
@@ -75,11 +84,11 @@ export default function MerchantWallet({restaurantId}:{restaurantId:number|null}
     <div className="merchant-wallet-notice"><ShieldCheck size={20}/><div><strong>Protección financiera activa</strong>
       <span>Este panel es de consulta. No solicita retiros ni mueve dinero automáticamente. Las ventas no representan fondos bancarios retirables.</span></div></div>
 
-    {loading?<div className="merchant-wallet-skeleton" role="status"><RefreshCw className="merchant-spin" size={19}/> Verificando datos financieros del comercio…</div>:<>
+    {loading?<div className="merchant-wallet-skeleton" role="status" aria-live="polite"><RefreshCw className="merchant-spin" size={19}/> Verificando datos financieros del comercio…</div>:<>
       <section className="merchant-wallet-hero" aria-label="Disponibilidad de fondos">
-        <div className="merchant-wallet-hero-top"><span><Wallet size={20}/> Fondos conciliados en Stripe</span><span className={'merchant-wallet-status '+(data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?'verified':'unavailable')}>{data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?<><CheckCircle2 size={14}/> Backend autoriza retiros</>:<><AlertCircle size={14}/> Retiros no autorizados</>}</span></div>
-        <strong className="merchant-wallet-main-amount">{data.balance?formatVerifiedCents(data.balance.withdrawable_cents):'—'}</strong>
-        <p>{data.balance?'Máximo importe calculado por la API financiera de Stripe. No equivale a una transferencia autorizada ni a dinero ya depositado; consulta más abajo las restricciones.':'No se pueden confirmar fondos de Stripe; nunca se calculan a partir de ventas, pedidos o comisiones.'}</p>
+        <div className="merchant-wallet-hero-top"><span><Wallet size={20}/> Fondos conciliados en Stripe</span><span className={'merchant-wallet-status '+(data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?'verified':'unavailable')}>{data.balance?.server_allows_requests&&!data.balance.reconciling&&data.balance.bank.status==='verified'?<><CheckCircle2 size={14}/> Requisitos confirmados por servidor</>:<><AlertCircle size={14}/> Retiros no autorizados</>}</span></div>
+        <strong className="merchant-wallet-main-amount" aria-label="Fondos conciliados disponibles según la API">{data.balance?formatVerifiedCents(data.balance.withdrawable_cents):'—'}</strong>
+        <p>{data.balance?'Fondos conciliados que la API identifica como potencialmente retirables. No implican autorización para transferir ni dinero depositado. Las solicitudes permanecen bloqueadas aquí.':'No se pueden confirmar fondos de Stripe; nunca se calculan a partir de ventas, pedidos o comisiones.'}</p>
         {data.balance&&<div className="merchant-wallet-balance-meta">
           <span>Elegible: <strong>{formatVerifiedCents(data.balance.eligible_cents)}</strong></span>
           <span>Reservado o solicitado: <strong>{formatVerifiedCents(data.balance.already_requested_cents)}</strong></span>
@@ -107,7 +116,7 @@ export default function MerchantWallet({restaurantId}:{restaurantId:number|null}
           <p className="merchant-wallet-panel-foot">La vinculación bancaria se gestiona mediante Stripe Connect. Nunca ingreses tu CLABE ni tus códigos de seguridad en esta pantalla.</p>
         </section>
         <section className="merchant-wallet-panel"><div className="merchant-wallet-panel-heading"><span className="merchant-wallet-panel-icon"><LockKeyhole size={19}/></span><div><h2>Retiros</h2><p>Protección por conciliación y autorización</p></div></div>
-          <div className="merchant-wallet-detail-row"><span>Permiso del backend</span><strong>{data.balance?.server_allows_requests?'Confirmado por servidor':data.balance?'No autorizado':'No verificado'}</strong></div>
+          <div className="merchant-wallet-detail-row"><span>Permiso del backend</span><strong>{data.balance?.server_allows_requests?'Solo a nivel backend':data.balance?'No autorizado':'No verificado'}</strong></div>
           <div className="merchant-wallet-detail-row"><span>Mínimo por solicitud</span><strong>{data.balance?.limits?formatVerifiedCents(data.balance.limits.minimum_cents):'No disponible'}</strong></div>
           <div className="merchant-wallet-detail-row"><span>Restante diario</span><strong>{data.balance?.limits?formatVerifiedCents(data.balance.limits.daily_remaining_cents):'No disponible'}</strong></div>
           <div className="merchant-wallet-withdraw-disabled"><LockKeyhole size={16}/> Solicitudes de retiro desactivadas en esta PWA hasta verificar backend Node, Stripe TEST y conciliación.</div>
