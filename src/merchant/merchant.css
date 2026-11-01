@@ -687,3 +687,56 @@
 @media(prefers-reduced-motion:reduce){
  .merchant-discard-button,.merchant-wallet-route{transition:none!important}
 }
+
+
+/* RC163 — información de pedidos verificable y acciones claras, sin ruido visual */
+.merchant-queue-heading h2{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.merchant-sync-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #ecdfd5;background:#fff8f2;color:#936b4f;border-radius:100px;padding:7px 10px;font-size:10px;font-weight:850;letter-spacing:0;white-space:nowrap}
+.merchant-sync-pill>span{width:7px;height:7px;border-radius:50%;background:#c59d78}
+.merchant-sync-pill.fresh{border-color:#d6e9de;color:#327b58;background:#eff8f2}
+.merchant-sync-pill.fresh>span{background:#30a76a}
+.merchant-queue-tools{display:flex;align-items:center;gap:10px;min-width:0}
+.merchant-csv-button{border:1px solid #dee4e8;background:#fff;border-radius:10px;padding:10px 13px;display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;white-space:nowrap;font-size:11px;font-weight:800;color:#454f59;transition:background .16s,border-color .16s}
+.merchant-csv-button:hover:not(:disabled){background:#f6f7f8;border-color:#c5d0d8}
+.merchant-csv-button:disabled{opacity:.42;cursor:not-allowed}
+.merchant-csv-button:focus-visible{outline:3px solid #f7b17e;outline-offset:2px}
+.merchant-sync-warning{display:flex;align-items:center;gap:11px;border:1px solid #f1dfc8;background:#fffaf4;color:#785d46;border-radius:13px;padding:14px 15px;font-size:11px;line-height:1.5;margin:0 0 19px}
+.merchant-sync-warning>svg{flex-shrink:0;color:#cc8b4b}
+.merchant-sync-warning span{flex:1}
+.merchant-sync-warning button{border:0;background:#e87a2e;color:#fff;border-radius:9px;padding:10px 13px;min-height:39px;font-size:11px;font-weight:800;white-space:nowrap}
+.merchant-sync-warning button:disabled{opacity:.45;cursor:not-allowed}
+.merchant-closed-prompt{display:flex;gap:13px;align-items:center;padding:16px 17px;border:1px solid #e4e7e9;border-radius:14px;background:#fff;margin:0 0 20px}
+.merchant-closed-prompt>.merchant-status-dot{width:10px;height:10px;flex-shrink:0;background:#9da7b0}
+.merchant-closed-prompt>div{flex:1;min-width:0}
+.merchant-closed-prompt strong{font-size:12px;font-weight:850;color:#37424c}
+.merchant-closed-prompt p{margin:3px 0 0;color:#87919b;font-size:11px;line-height:1.4}
+.merchant-closed-prompt button{border:0;min-height:40px;border-radius:10px;color:#4b5964;background:#f2f4f6;padding:9px 12px;display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:850;white-space:nowrap}
+.merchant-closed-prompt button:hover{background:#e9edf0}
+.merchant-order-card{transition:border-color .16s,box-shadow .18s,transform .18s}
+.merchant-order-card:hover{box-shadow:0 10px 27px #1f262b0d;transform:translateY(-1px)}
+.merchant-order-card:focus-within{border-color:#efbb93;box-shadow:0 0 0 2px #ffeadc}
+.merchant-order-id{font-variant-numeric:tabular-nums}
+.merchant-csv-button:active,.merchant-closed-prompt button:active{transform:scale(.985)}
+@media(max-width:970px){
+ .merchant-queue-heading{align-items:stretch}
+ .merchant-queue-tools{flex-wrap:wrap;justify-content:space-between}
+}
+@media(max-width:760px){
+ .merchant-queue-heading h2{gap:8px}
+ .merchant-sync-pill{padding:6px 9px;font-size:9px}
+ .merchant-queue-tools{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
+ .merchant-csv-button{min-height:43px;padding:10px 11px}
+ .merchant-sync-warning{align-items:flex-start;flex-wrap:wrap;padding:13px}
+ .merchant-sync-warning>span{min-width:calc(100% - 30px)}
+ .merchant-sync-warning button{width:100%;margin-top:4px}
+ .merchant-closed-prompt{align-items:flex-start;flex-wrap:wrap;padding:14px}
+ .merchant-closed-prompt button{margin-left:19px;flex:1;justify-content:center}
+ .merchant-order-card:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .merchant-order-card,.merchant-csv-button{transition:none!important}
+ .merchant-order-card:hover{transform:none!important}
+}
+@media print{
+ .merchant-queue-tools,.merchant-sync-warning,.merchant-closed-prompt{display:none!important}
+}
