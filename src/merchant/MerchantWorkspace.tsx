@@ -11,6 +11,7 @@ import { api, pesos, safeImage } from '../lib/api';
 import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
+import MerchantUpdateBanner from './MerchantUpdateBanner';
 import './merchant.css';
 
 type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
@@ -482,6 +483,7 @@ export default function MerchantWorkspace(){
           <div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-cards">{[0,1,2].map(n=><div className="merchant-skeleton-panel tall" key={n}><div className="merchant-skeleton-line medium"/><div className="merchant-skeleton-line short"/><div className="merchant-skeleton-line big"/></div>)}</div>
           <span className="merchant-sr-only">Consultando tu negocio…</span>
         </div>:<>
+          <MerchantUpdateBanner locked={busyOrder!==null||menuMutating||savingStore||submitting||refreshing}/>
           {!online&&<div className="merchant-feedback error merchant-offline-alert" role="alert"><WifiOff size={17}/><span>Sin conexión. Los cambios están pausados hasta reconectar.</span></div>}
           {activeFreshOrders.length>0&&<div className="merchant-arrival" role="status" aria-live="polite">
             <div className="merchant-arrival-icon"><BellRing size={18}/></div>
