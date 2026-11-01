@@ -31,6 +31,12 @@ jobs:
           bash -n deploy/kali-install-pwa-isolated.sh
           test -s dist/icons/icon-192.png
           test -s dist/icons/icon-512.png
+          test -s dist/icons/restaurante-180.png
+          test -s dist/icons/restaurante-192.png
+          test -s dist/icons/restaurante-512.png
+          test -s dist/release.json
+          bash -n deploy/rc166-postdeploy-smoke.sh
+          node -e "const p=require('./dist/release.json'); if(p.app!=='tala-eats-restaurantes-pwa'||p.source_sha!==process.env.GITHUB_SHA) process.exit(1); console.log('RC166_CI_RELEASE_SHA=PASS')"
       - uses: actions/upload-artifact@v4
         with:
           name: tala-eats-version-web-dist
