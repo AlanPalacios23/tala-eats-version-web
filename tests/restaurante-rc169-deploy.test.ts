@@ -1,0 +1,78 @@
+import {describe,it,expect} from 'vitest';
+import {readFileSync} from 'node:fs';
+const read=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
+const html=read('../restaurantes.html');
+const main=read('../src/main-restaurantes.tsx');
+const standalone=read('../src/merchant/MerchantStandalone.tsx');
+const workspace=read('../src/merchant/MerchantWorkspace.tsx');
+const vite=read('../vite.restaurante.config.ts');
+const sw=read('../public/sw-restaurante.js');
+const deploy=read('../deploy/rc169-kali-restaurantes-static.sh');
+const smoke=read('../deploy/rc169-restaurantes-smoke.sh');
+const workflow=read('../.github/workflows/ci.yml');
+const pkg=JSON.parse(read('../package.json'));
+describe('RC169 · paquete Restaurante exclusivo 18197 listo para plan/apply',()=>{
+ it('publica la entrada que el nginx merchant ya tiene configurada, no index.html',()=>{
+   expect(html).toContain('src="/src/main-restaurantes.tsx"');
+   expect(html).toContain('href="/manifest-restaurante.webmanifest"');
+   expect(html).toContain('href="/icons/restaurante-180.png"');
+   expect(html).toContain('viewport-fit=cover');
+   expect(vite).toContain("outDir:'dist-restaurantes'");
+   expect(vite).toContain("input:resolve(process.cwd(),'restaurantes.html')");
+   expect(vite).toContain('tala-release-sha');
+   expect(pkg.scripts.build).toContain('vite build --config vite.restaurante.config.ts');
+   expect(workflow).toContain('test -s dist-restaurantes/restaurantes.html');
+   expect(workflow).toContain('test ! -e dist-restaurantes/index.html');
+ });
+ it('solo importa el portal restaurante y protege roles reales con login/OTP',()=>{
+   expect(main).toContain("import MerchantStandalone from './merchant/MerchantStandalone'");
+   expect(main).not.toContain("import App from './App'");
+   expect(main).toContain('<SessionProvider><MerchantStandalone/></SessionProvider>');
+   expect(standalone).toContain('isMerchantRole(user.role)');
+   expect(standalone).toContain('<MerchantWorkspace/>');
+   expect(standalone).toContain('await login(email.trim(),password,otp.trim()||undefined)');
+   expect(standalone).toContain('autoComplete="one-time-code"');
+   expect(workspace).toContain('const {logout}=useSession()');
+   expect(workspace).toContain('dirtyMenuRows.current.size>0||addDraftPending.current');
+ });
+ it('registra el worker permitido en 18197, no el bloqueado /sw.js',()=>{
+   expect(main).toContain("navigator.serviceWorker.register('/sw-restaurante.js',{scope:'/'})");
+   expect(main).not.toContain("register('/sw.js'");
+   expect(sw).toContain("const PREFIX='tala-eats-merchant-shell-'");
+   expect(sw).toContain("if(event.data?.type==='MERCHANT_APPROVE_UPDATE')self.skipWaiting()");
+   expect(sw).toContain("url.pathname.startsWith('/api/')");
+   expect(sw).toContain("url.pathname.includes('/withdrawals/')");
+   expect(sw).toContain("req.mode==='navigate'");
+   expect(sw).not.toContain('cache.put(req, res.clone())');
+ });
+ it('el deploy comprueba el sitio actual y solo cambia su propio symlink',()=>{
+   expect(deploy).toContain("ROOT='/srv/talaeats-restaurantes-pwa'");
+   expect(deploy).toContain("ORIGIN='http://127.0.0.1:18197'");
+   expect(deploy).toContain("SERVICE='talaeats-restaurantes-pwa.service'");
+   expect(deploy).toContain("I_APPROVE_RC169_RESTAURANTES_STATIC_18197_ONLY");
+   expect(deploy).toContain('RC169_RESTAURANTES_PLAN=PASS_READ_ONLY');
+   expect(deploy).toContain('RC169_RESTAURANTES_DEPLOY=PASS');
+   expect(deploy).toContain('RC169_RESTAURANTES_ROLLBACK=PASS');
+   expect(deploy).toContain('cmp -s - "$OLD/restaurantes.html"');
+   expect(deploy).toContain('cp -a "$OLD" "$BACKUP"');
+   expect(deploy).toContain('mv -Tf "$TEMP" "$CURRENT"');
+   expect(deploy).toContain("RC169_CUSTOMERS_DRIVERS_PM2_STRIPE_DB_CLOUDFLARED=UNMODIFIED");
+   expect(deploy).not.toContain('systemctl restart');
+   expect(deploy).not.toContain('systemctl reload');
+   expect(deploy).not.toContain('pm2 restart');
+   expect(deploy).not.toContain('prisma migrate');
+   expect(deploy).not.toContain('stripe trigger');
+ });
+ it('el smoke público verifica SHA exacto y que no expone otras PWA',()=>{
+   expect(smoke).toContain('https://restaurantes-talaeats.alan-palacios-dev.com');
+   expect(smoke).toContain("get app /restaurante");
+   expect(smoke).toContain("get wallet '/restaurante?tab=wallet'");
+   expect(smoke).toContain("get worker /sw-restaurante.js");
+   expect(smoke).toContain('get clients /clientes 404');
+   expect(smoke).toContain('get driver /repartidor 404');
+   expect(smoke).toContain('get generic_worker /sw.js 404');
+   expect(smoke).toContain('RC169_PUBLIC=PASS_READ_ONLY');
+   expect(workflow).toContain('bash -n deploy/rc169-restaurantes-smoke.sh');
+   expect(workflow).toContain('bash -n deploy/rc169-kali-restaurantes-static.sh');
+ });
+});
