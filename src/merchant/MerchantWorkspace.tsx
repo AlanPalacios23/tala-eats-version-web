@@ -156,7 +156,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
           {expanded?'Cerrar':'Editar'} <ChevronDown size={16} aria-hidden="true"/>
         </button>
       </div>
-      {expanded&&<div className="merchant-product-edit-panel" id={'merchant-product-edit-'+item.id}>
+      <div className="merchant-product-edit-panel" id={'merchant-product-edit-'+item.id} hidden={!expanded}>
         <div className="merchant-product-controls">
           <label>Precio (MXN)<input aria-label={'Precio de '+item.name} inputMode="decimal" value={price} onChange={e=>{setEditing(true);setPrice(e.target.value)}} /></label>
           <label>Existencias<input aria-label={'Stock de '+item.name} type="number" min="0" step="1" value={stock} onChange={e=>{setEditing(true);setStock(Number(e.target.value))}}/></label>
@@ -167,7 +167,7 @@ function MenuRow({item,onSaved,online,onWriteStart,onWriteEnd,locked}:{
           <button type="button" className="merchant-quick-button" disabled={saving||locked||dirty||!online} onClick={()=>void quickAvailability()}>{item.is_available?'Pausar producto':'Reactivar producto'}</button>
           {dirty&&<button className="merchant-discard-button" type="button" disabled={saving||locked} onClick={undo}>Deshacer</button>}
         </div>
-      </div>}
+      </div>
       {notice&&<p className="merchant-inline-note" role="status">{notice}</p>}
     </div>
   </article>;
