@@ -11,7 +11,7 @@ export function isStandaloneDisplay():boolean {
   return window.matchMedia('(display-mode: standalone)').matches||
     Boolean((navigator as Navigator&{standalone?:boolean}).standalone);
 }
-export default function MerchantInstallCard(){
+export default function MerchantInstallCard({visible}:{visible:boolean}){
   const [installed,setInstalled]=useState(false);
   const [candidate,setCandidate]=useState<InstallEvent|null>(null);
   const [ios,setIos]=useState(false);
@@ -45,7 +45,7 @@ export default function MerchantInstallCard(){
       await offer.userChoice.catch(()=>null);
     }finally{setOpening(false);}
   };
-  return <section className="merchant-install-card" aria-label="Instalar Tala Eats Restaurante">
+  return <section className="merchant-install-card" hidden={!visible} aria-label="Instalar Tala Eats Restaurante">
     <span className="merchant-install-icon"><Smartphone size={20}/></span>
     <div className="merchant-install-copy"><h2>En tu pantalla de inicio</h2>
       <p>{installed?'Tala Eats Restaurante se está usando como aplicación instalada.':
