@@ -11,11 +11,10 @@ import './merchant-access.css';
 function MerchantAccess(){
   const {login}=useSession();
   const [params,setParams]=useSearchParams();
-  const showCrece=params.get('vista')==='crece';
-  const switchCrece=(enabled:boolean)=>{
+  const openCrece=()=>{
     const next=new URLSearchParams(params);
-    if(enabled)next.set('vista','crece');else next.delete('vista');
-    setParams(next,{replace:!enabled});
+    next.set('vista','crece');
+    setParams(next);
   };
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
@@ -30,7 +29,6 @@ function MerchantAccess(){
     catch(e){setError(e instanceof Error?e.message:'No fue posible ingresar. Vuelve a intentarlo.');}
     finally{setBusy(false);}
   };
-  if(showCrece)return <CrecePublic onBack={()=>switchCrece(false)}/>;
   return <main className="merchant-access-shell">
     <div className="merchant-access-brand"><span className="merchant-access-mark"><Store size={23}/></span>
       <strong>Tala <span>Eats</span></strong><small>RESTAURANTES</small>
@@ -47,7 +45,7 @@ function MerchantAccess(){
         <button type="submit" disabled={busy} className="merchant-access-submit">{busy?<RefreshCw size={19} className="merchant-spin"/>:<LogIn size={19}/>} {busy?'Verificando acceso…':'Entrar a mi negocio'}</button>
       </form>
       <p className="merchant-access-security"><LockKeyhole size={15}/> Solo cuentas autorizadas de restaurante y administración.</p>
-      <button type="button" className="merchant-crece-discover" onClick={()=>switchCrece(true)}>Conoce Tala Eats Crece y los beneficios para tu negocio</button>
+      <button type="button" className="merchant-crece-discover" onClick={openCrece}>Conoce Tala Eats Crece y los beneficios para tu negocio</button>
     </section>
     <footer className="merchant-access-footer"><ChefHat size={16}/> Tala Eats · Administración de comercios</footer>
   </main>;
@@ -55,7 +53,14 @@ function MerchantAccess(){
 
 export default function MerchantStandalone(){
   const {user,loading,logout}=useSession();
+  const [params,setParams]=useSearchParams();
   const [leaving,setLeaving]=useState(false);
+  // The marketing program is public, including for existing customer
+  // sessions. Only the actual merchant workspace requires merchant role.
+  if(params.get('vista')==='crece')return <CrecePublic onBack={()=>{
+    const next=new URLSearchParams(params);next.delete('vista');
+    setParams(next,{replace:true});
+  }}/>;
   if(loading)return <main className="merchant-access-loading" role="status"><RefreshCw className="merchant-spin" size={20}/> Verificando tu sesión…</main>;
   if(!user)return <MerchantAccess/>;
   if(!isMerchantRole(user.role))return <main className="merchant-access-shell">
