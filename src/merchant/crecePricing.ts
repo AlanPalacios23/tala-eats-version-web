@@ -32,7 +32,7 @@ export function crecePricePreview(raw:unknown):CrecePricePreview|null{
  });
 }
 export function creceMoney(minor:bigint):string{
- if(minor<0n||minor>100_000_000n)throw Error('CRECE_MONEY_RANGE_INVALID');
+ if(minor<0n||minor>200_000_000n)throw Error('CRECE_MONEY_RANGE_INVALID');
  return new Intl.NumberFormat('es-MX',{
   style:'currency',currency:'MXN',minimumFractionDigits:2,
   maximumFractionDigits:2
