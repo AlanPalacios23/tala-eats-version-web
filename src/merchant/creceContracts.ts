@@ -81,3 +81,62 @@ export function storefrontLink(id:unknown,customerBase:unknown):string|null{
   return new URL('/comercio/'+id,url.origin).toString();
  }catch{return null;}
 }
+
+/** The configured hostname by itself does NOT prove that a merchant
+ * actually appears in the customer catalog. These must be TWO independent
+ * public API reads from the existing backend, never self-reported fields.
+ */
+export function verifiedPublicStorefront(
+ owner:{id:number}|null,list:unknown,detail:unknown
+):boolean{
+ if(!owner||!Number.isSafeInteger(owner.id)||owner.id<=0||
+  !Array.isArray(list)||!detail||typeof detail!=='object'||
+  Array.isArray(detail))return false;
+ const matchesId=(value:unknown):boolean=>(
+  Boolean(value)&&typeof value==='object'&&!Array.isArray(value)&&
+  (value as {id?:unknown}).id===owner.id
+ );
+ const actual=detail as {id?:unknown;name?:unknown};
+ return list.some(matchesId)&&matchesId(actual)&&
+  typeof actual.name==='string'&&actual.name.trim().length>=2;
+}
+
+export type CreceReadinessStep=Readonly<{
+ id:string;title:string;description:string;done:boolean;
+ target:'menu'|'negocio'|'crece';
+}>;
+/** Profile completeness is informational, NOT an operational GO or
+ * verified payment / published restaurant approval.
+ */
+export function merchantProfileChecklist(owner:{
+ id:number;name:string;address?:string;
+ verification_status?:string;cover_image_url?:string|null;
+ menu_items?:ReadonlyArray<{
+  is_available:boolean;stock:number
+ }>
+}|null,publicVerified:boolean):readonly CreceReadinessStep[]{
+ if(!owner||!Number.isSafeInteger(owner.id)||owner.id<=0)return [];
+ return [
+  {id:'profile',title:'Identidad del comercio',
+   description:'Nombre y ficha del comercio disponibles desde el servidor.',
+   done:typeof owner.name==='string'&&owner.name.trim().length>=2,
+   target:'negocio'},
+  {id:'address',title:'Dirección de referencia',
+   description:'Revisa que la dirección mostrada sea correcta y actualizada.',
+   done:typeof owner.address==='string'&&owner.address.trim().length>=5,
+   target:'negocio'},
+  {id:'menu',title:'Productos listos para mostrar',
+   description:'Al menos un artículo disponible con existencias confirmadas.',
+   done:Array.isArray(owner.menu_items)&&owner.menu_items.some(p=>
+    p.is_available===true&&Number.isSafeInteger(p.stock)&&p.stock>0),
+   target:'menu'},
+  {id:'image',title:'Imagen de portada',
+   description:'Agrega una imagen propia o autorizada de tu establecimiento.',
+   done:typeof owner.cover_image_url==='string'&&
+    /^https:\/\//.test(owner.cover_image_url),
+   target:'negocio'},
+  {id:'publication',title:'Publicación comprobada',
+   description:'Tu tienda debe aparecer en el catálogo y abrir desde su detalle público.',
+   done:publicVerified,target:'crece'}
+ ];
+}
