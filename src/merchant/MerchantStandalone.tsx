@@ -4,10 +4,12 @@ import {ChefHat,LockKeyhole,LogIn,LogOut,RefreshCw,ShieldCheck,Store,WifiOff} fr
 import {isMerchantRole} from '../lib/api';
 import {useSession} from '../lib/session';
 import MerchantWorkspace from './MerchantWorkspace';
+import CrecePublic from './CrecePublic';
 import './merchant-access.css';
 
 function MerchantAccess(){
   const {login}=useSession();
+  const [showCrece,setShowCrece]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('vista')==='crece');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [otp,setOtp]=useState('');
@@ -21,6 +23,7 @@ function MerchantAccess(){
     catch(e){setError(e instanceof Error?e.message:'No fue posible ingresar. Vuelve a intentarlo.');}
     finally{setBusy(false);}
   };
+  if(showCrece)return <CrecePublic onBack={()=>setShowCrece(false)}/>;
   return <main className="merchant-access-shell">
     <div className="merchant-access-brand"><span className="merchant-access-mark"><Store size={23}/></span>
       <strong>Tala <span>Eats</span></strong><small>RESTAURANTES</small>
@@ -37,6 +40,7 @@ function MerchantAccess(){
         <button type="submit" disabled={busy} className="merchant-access-submit">{busy?<RefreshCw size={19} className="merchant-spin"/>:<LogIn size={19}/>} {busy?'Verificando acceso…':'Entrar a mi negocio'}</button>
       </form>
       <p className="merchant-access-security"><LockKeyhole size={15}/> Solo cuentas autorizadas de restaurante y administración.</p>
+      <button type="button" className="merchant-crece-discover" onClick={()=>setShowCrece(true)}>Conoce Tala Eats Crece y los beneficios para tu negocio</button>
     </section>
     <footer className="merchant-access-footer"><ChefHat size={16}/> Tala Eats · Administración de comercios</footer>
   </main>;
