@@ -145,3 +145,30 @@
 .crece-readiness-item button:focus-visible,.crece-retry:focus-visible{outline:3px solid #e99669;outline-offset:2px;border-radius:4px}
 @media(max-width:850px){.crece-readiness-layout{grid-template-columns:1fr}.crece-readiness-score{padding:19px}}
 @media(max-width:520px){.crece-readiness-item{grid-template-columns:26px minmax(0,1fr);padding:15px;gap:10px}.crece-readiness-item button{grid-column:2;justify-self:start}.crece-readiness-score>strong{font-size:35px}}
+
+
+/* RC171 financial transparency: purely local half-up centavo calculator. */
+.crece-calculator{display:grid;gap:23px;background:#fff;border:1px solid #e7eaed;border-radius:22px;padding:clamp(21px,3vw,35px);min-width:0}
+.crece-calculator-heading{display:flex;align-items:start;gap:15px}
+.crece-calculator-icon{display:grid;place-items:center;flex-shrink:0;width:47px;height:47px;border-radius:14px;background:#fff0e5;color:#dc6e2b}
+.crece-calculator-heading h2{font-size:clamp(20px,3vw,28px);margin:0 0 8px;letter-spacing:-.04em}
+.crece-calculator-heading p{font-size:12px;color:#7b8690;line-height:1.6;margin:0}
+.crece-calculator-content{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:25px;align-items:start}
+.crece-calculator-input label{display:block;font-size:12px;font-weight:800;margin:0 0 8px;color:#4b5760}
+.crece-calculator-input-field{display:flex;align-items:center;border:1px solid #dfe3e7;border-radius:13px;gap:8px;padding:0 15px;background:#f9fafb;transition:border-color .2s,box-shadow .2s}
+.crece-calculator-input-field:focus-within{border-color:#e68b52;box-shadow:0 0 0 3px #e9915222}
+.crece-calculator-input-field>span{color:#a2aab0;font-size:23px;font-weight:800}
+.crece-calculator-input-field input{width:100%;min-width:0;padding:16px 2px;border:0;outline:0;background:transparent;font-size:23px;font-weight:800;letter-spacing:-.03em;color:#2b3339}
+.crece-calculator-input-field small{font-size:11px;color:#89949e;font-weight:800}
+.crece-calculator-input>p{font-size:11px;line-height:1.5;color:#85919b;margin:10px 0 16px}
+.crece-calculator-policy{display:flex;gap:9px;border-radius:11px;background:#f6f8f9;padding:14px;font-size:11px;line-height:1.6;color:#606d76}
+.crece-calculator-policy svg{flex-shrink:0;color:#42815d}
+.crece-calculator-results{background:#f8f9fa;border:1px solid #edf0f1;border-radius:16px;padding:18px;display:grid;gap:13px}
+.crece-calculator-results>div{display:flex;justify-content:space-between;align-items:start;gap:15px;font-size:12px;color:#75818a}
+.crece-calculator-results>div strong{color:#2c333a;white-space:nowrap;font-variant-numeric:tabular-nums}
+.crece-calculator-results .crece-calculator-total{padding:16px 0;border-block:1px solid #e5e9eb;align-items:center;color:#323e46;font-weight:800}
+.crece-calculator-total strong{color:#d7652b!important;font-size:clamp(19px,3vw,26px);letter-spacing:-.04em}
+.crece-calculator-error{color:#a43f38;line-height:1.6;font-size:12px;margin:0}
+.crece-calculator-legal{display:flex;gap:9px;align-items:start;color:#8b969f;font-size:11px;line-height:1.7;margin:0}
+.crece-calculator-legal svg{flex-shrink:0;color:#df7735;margin-top:1px}
+@media(max-width:680px){.crece-calculator-content{grid-template-columns:1fr}.crece-calculator-heading{gap:10px}.crece-calculator-icon{width:40px;height:40px}.crece-calculator{padding:20px}.crece-calculator-results{padding:15px}.crece-calculator-input-field input{font-size:21px}}
