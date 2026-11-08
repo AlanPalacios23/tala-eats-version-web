@@ -4,6 +4,7 @@ import {
   QrCode,ShieldCheck,Sparkles,Store,TrendingUp
 } from 'lucide-react';
 import {api} from '../lib/api';
+import CreceCalculator from './CreceCalculator';
 import type {Restaurant} from '../lib/types';
 import {
   CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
@@ -153,6 +154,8 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
    </div><div className="crece-qr-panel">{qr&&shareableLink?<img src={qr} alt={'Código QR del enlace público de '+(restaurant?.name||'tu negocio')} width={220} height={220}/>:<div className="crece-qr-empty"><QrCode size={65}/><small>QR no disponible hasta configurar el enlace público</small></div>}
    <span>{restaurant?.name||'Tu negocio'}</span><small>{shareableLink?'Publicación comprobada con el servidor':'No compartir sin publicación confirmada'}</small></div>
   </section>
+
+  <CreceCalculator/>
 
   <section className="crece-recommend" aria-label="Consejos para mejorar tu comercio">
    <div className="crece-section-heading"><div><span className="crece-kicker">EL PASO QUE SIGUE</span>
