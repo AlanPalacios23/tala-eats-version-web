@@ -23,7 +23,7 @@ type Publication='idle'|'checking'|'confirmed'|'not-public'|'error';
 export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  restaurant:Restaurant|null;
  metrics:CreceMetrics|null;
- onNavigate:(section:'pedidos'|'menu'|'rendimiento')=>void;
+ onNavigate:(section:'pedidos'|'menu'|'rendimiento'|'negocio'|'crece')=>void;
 }){
  const [filter,setFilter]=useState<Filter>('principal');
  const [expanded,setExpanded]=useState(false);
