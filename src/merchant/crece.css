@@ -118,3 +118,30 @@
 .crece-public-bottom button{flex-shrink:0}
 @media(max-width:980px){.crece-public-pillars{grid-template-columns:repeat(3,minmax(0,1fr))}.crece-public-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.crece-public-inner{padding:10px 14px 60px;gap:40px}.crece-public-top{padding:19px 14px}.crece-public-brand{font-size:17px}.crece-public-brand small{font-size:9px}.crece-public-top button{font-size:10px;padding:10px}.crece-public-terms{gap:7px}.crece-public-terms>div{padding:12px}.crece-public-terms strong{font-size:21px}.crece-public-terms span{font-size:10px}.crece-public-pillars{grid-template-columns:repeat(2,minmax(0,1fr))}.crece-public-founder{grid-template-columns:1fr}.crece-public-benefits{grid-template-columns:1fr}.crece-public-bottom{flex-direction:column;align-items:start;padding:27px}.crece-public-hero{padding:29px 23px}.crece-public-hero h1{font-size:36px}}
+
+
+/* RC171: no QR or share action before public listing + detail have passed. */
+.crece-readiness{display:grid;gap:19px}
+.crece-readiness-layout{display:grid;grid-template-columns:minmax(210px,300px) minmax(0,1fr);gap:12px}
+.crece-readiness-score,.crece-readiness-list{background:#fff;border:1px solid #e7eaed;border-radius:18px}
+.crece-readiness-score{padding:26px;display:flex;flex-direction:column;gap:13px}
+.crece-readiness-score>span{font-size:11px;color:#79848d;font-weight:800}
+.crece-readiness-score>strong{font-size:44px;letter-spacing:-.08em}
+.crece-readiness-score>strong small{font-size:18px;color:#929ba3;letter-spacing:0}
+.crece-readiness-score progress{width:100%;height:8px;appearance:none;border:0;border-radius:100px;overflow:hidden;background:#f1f2f4}
+.crece-readiness-score progress::-webkit-progress-bar{background:#f1f2f4}
+.crece-readiness-score progress::-webkit-progress-value{background:#e77b37;border-radius:100px}
+.crece-readiness-score progress::-moz-progress-bar{background:#e77b37}
+.crece-readiness-score p{font-size:11px;line-height:1.65;color:#818c95;margin:0}
+.crece-readiness-list{overflow:hidden}
+.crece-readiness-item{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid #eff1f3}
+.crece-readiness-item:last-child{border:0}
+.crece-readiness-item>span{display:grid;place-items:center;width:25px;height:25px;border-radius:100px;border:1px solid #e1e4e7;color:#9ba5ae}
+.crece-readiness-item>span.done{border-color:#def2e5;background:#eaf7ef;color:#2a935b}
+.crece-readiness-item>div strong{font-size:12px;color:#34414b}
+.crece-readiness-item>div p{font-size:11px;color:#87919b;line-height:1.55;margin:5px 0 0}
+.crece-readiness-item button,.crece-retry{display:inline-flex;align-items:center;gap:6px;background:none;color:#cc6a32;border:0;font-size:11px;font-weight:800;padding:8px 0}
+.crece-retry{margin-top:9px;text-align:left}
+.crece-readiness-item button:focus-visible,.crece-retry:focus-visible{outline:3px solid #e99669;outline-offset:2px;border-radius:4px}
+@media(max-width:850px){.crece-readiness-layout{grid-template-columns:1fr}.crece-readiness-score{padding:19px}}
+@media(max-width:520px){.crece-readiness-item{grid-template-columns:26px minmax(0,1fr);padding:15px;gap:10px}.crece-readiness-item button{grid-column:2;justify-self:start}.crece-readiness-score>strong{font-size:35px}}
