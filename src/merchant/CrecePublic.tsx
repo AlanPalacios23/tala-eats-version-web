@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {ArrowLeft,ArrowRight,BadgeCheck,Camera,ChartNoAxesCombined,Gift,ShieldCheck,Sparkles,Store,TrendingUp} from 'lucide-react';
-import {CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER} from './creceContracts';
+import {CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,CRECE_FAQ} from './creceContracts';
 import CreceCalculator from './CreceCalculator';
 import './crece.css';
 
@@ -39,6 +39,14 @@ export default function CrecePublic({onBack}:{onBack:()=>void}){
    <section className="crece-public-section"><span className="crece-kicker">BENEFICIOS</span><h2>Lo que puedes aprovechar</h2>
     <div className="crece-public-benefits">{benefits.map(b=><article key={b.id}><span className={'crece-benefit-status '+b.state}>{b.state==='disponible'?'Disponible en la app':b.state==='asistido'?'Con apoyo del equipo':'En preparación'}</span><h3>{b.title}</h3><p>{b.description}</p></article>)}</div>
     <button className="crece-public-more" type="button" onClick={()=>setShowAll(x=>!x)}>{showAll?'Mostrar solo ventajas del lanzamiento':`Ver los ${CRECE_BENEFITS.length} beneficios y próximas funciones`} <ArrowRight size={16}/></button>
+   </section>
+   <section className="crece-public-faq" aria-label="Preguntas frecuentes sobre la afiliación">
+    <div className="crece-section-heading"><div><span className="crece-kicker">PREGUNTAS FRECUENTES</span>
+     <h2>Todo claro, desde el primer día</h2>
+     <p>Antes de afiliar tu negocio, conoce las condiciones propuestas y lo que todavía estamos preparando.</p>
+    </div></div>
+    <div className="crece-public-faq-list">{CRECE_FAQ.map(item=>
+     <details key={item.id}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div>
    </section>
    <footer className="crece-public-bottom"><div><h2>Tú te encargas de tu negocio. Tala Eats te ayuda a crecer.</h2><p>La afiliación se confirma exclusivamente mediante el proceso oficial de Tala Eats. Para solicitarla, ponte en contacto con nuestro equipo comercial por los canales oficiales. Esta página no almacena solicitudes ni datos personales.</p></div><button type="button" onClick={onBack}>Entrar al portal <ArrowRight size={17}/></button></footer>
   </div>
