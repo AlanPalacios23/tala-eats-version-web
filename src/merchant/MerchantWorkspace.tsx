@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
-  BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
+  BarChart3, Check, CheckCircle2, Sprout, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, Store, UtensilsCrossed, LogOut,
   Wallet, WifiOff, X
@@ -13,11 +13,12 @@ import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
 import MerchantUpdateBanner from './MerchantUpdateBanner';
+import MerchantCrece from './MerchantCrece';
 import './merchant.css';
 
-type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
+type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio' | 'crece';
 export const isMerchantSection = (value:string|null):value is Section =>
-  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio';
+  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio'||value==='crece';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
 type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
@@ -61,7 +62,8 @@ const NAV: {id: Section; label: string; mobileLabel: string; icon: typeof Clipbo
   {id:'menu',label:'Menú',mobileLabel:'Menú',icon:UtensilsCrossed},
   {id:'rendimiento',label:'Rendimiento',mobileLabel:'Datos',icon:BarChart3},
   {id:'wallet',label:'Wallet',mobileLabel:'Wallet',icon:Wallet},
-  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2}
+  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2},
+  {id:'crece',label:'Tala Eats Crece',mobileLabel:'Crece',icon:Sprout}
 ];
 export function elapsedOrderTime(date:string, now:number):string {
   const created=new Date(date).getTime();
@@ -626,6 +628,7 @@ export default function MerchantWorkspace(){
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
           </>}
           {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
+          {section==='crece'&&<MerchantCrece restaurant={restaurant} metrics={!errors.analytics&&analytics?{orders:analytics.orders,delivered:analytics.delivered,inventory_low:analytics.inventory_low}:null} onNavigate={setSection}/>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><h1>Mi negocio</h1><p>Disponibilidad e información del comercio.</p></div></div>
             <section className="merchant-store-hero">
