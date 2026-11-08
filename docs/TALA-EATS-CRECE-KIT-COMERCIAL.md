@@ -34,7 +34,7 @@ No ofrecer «ventas seguras», «retiros inmediatos» o «publicidad gratis ilim
 | Soporte de arranque | Capacitación y seguimiento, según agenda |
 | Cupo | Plazas confirmadas exclusivamente por ADMIN con convenio y validación |
 
-No ofrecer «comisión 0%» ni 30 días de promociones activadas antes de aprobar presupuesto y reglas. El mecanismo de cobro real sigue sujeto a validación end-to-end con el backend.
+No ofrecer «comisión 0%» ni 30 días de promociones activadas antes de aprobar presupuesto y reglas. El **simulador informativo de comisiones** muestra 17% al comercio y 7% adicional al cliente, con redondeo en centavos y sin afirmar saldos definitivos, liquidez, retiro o impuestos. El mecanismo de cobro real sigue sujeto a validación end-to-end con el backend.
 
 ## 4. Primer contacto (WhatsApp o DM)
 
@@ -122,7 +122,7 @@ Preguntar a cada comerciante qué fue útil, comparar registros de pedidos realm
 
 ## 10. Activación técnica de QR
 
-La URL pública se genera desde el ID de tienda que el backend entrega al comerciante. Para activarla se exige `VITE_TALA_CUSTOMERS_BASE_URL` con origen HTTPS de la PWA de clientes. Comprobar en la PWA real que `/comercio/:id` resuelve una tienda autorizada; si no, el QR no se muestra y **no se comparte un enlace roto**. El código QR se genera en el propio dispositivo, no se envía a un servicio externo.
+La URL pública se genera desde el ID de tienda que el backend entrega al comerciante. Para activarla se exige `VITE_TALA_CUSTOMERS_BASE_URL` con origen HTTPS de la PWA de clientes. Comprobar en la PWA real que `/comercio/:id` resuelve una tienda autorizada; si no, el QR no se muestra y **no se comparte un enlace roto**. El código QR se genera en el propio dispositivo, no se envía a un servicio externo. Se habilita únicamente cuando el catálogo público de clientes **lista el negocio y su ficha devuelve el mismo identificador**; un dominio configurado por sí solo no autoriza el QR.
 
 ## 11. Seguridad y operación
 
