@@ -1,0 +1,133 @@
+import {useEffect,useMemo,useState} from 'react';
+import {
+  ArrowRight,BarChart3,Camera,Check,ChevronDown,Copy,Gift,
+  QrCode,ShieldCheck,Sparkles,Store,TrendingUp
+} from 'lucide-react';
+import QRCode from 'qrcode';
+import type {Restaurant} from '../lib/types';
+import {
+  CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
+  type BenefitState,type CreceMetrics,type CrecePillar
+} from './creceContracts';
+import './crece.css';
+
+const STATUS:Record<BenefitState,string>={
+ disponible:'Disponible en la app',
+ asistido:'Con apoyo del equipo',
+ planeado:'En preparación'
+};
+type Filter='principal'|'disponible'|'asistido'|'planeado';
+
+export default function MerchantCrece({restaurant,metrics,onNavigate}:{
+ restaurant:Restaurant|null;
+ metrics:CreceMetrics|null;
+ onNavigate:(section:'pedidos'|'menu'|'rendimiento')=>void;
+}){
+ const [filter,setFilter]=useState<Filter>('principal');
+ const [expanded,setExpanded]=useState(false);
+ const [qr,setQr]=useState<string|null>(null);
+ const [feedback,setFeedback]=useState('');
+ const link=useMemo(()=>storefrontLink(
+  restaurant?.id,import.meta.env.VITE_TALA_CUSTOMERS_BASE_URL
+ ),[restaurant?.id]);
+ useEffect(()=>{
+  let active=true;
+  setQr(null);
+  if(link)void QRCode.toDataURL(link,{width:260,margin:1,errorCorrectionLevel:'M'})
+   .then(data=>{if(active)setQr(data);})
+   .catch(()=>{if(active)setQr(null);});
+  return()=>{active=false;};
+ },[link]);
+ const suggestions=creceAdvice(metrics);
+ const shown=CRECE_BENEFITS.filter(b=>{
+  if(filter==='principal')return b.phase===1;
+  return b.state===filter;
+ });
+ const copy=async(value:string,label:string)=>{
+  try{await navigator.clipboard.writeText(value);setFeedback(label);}
+  catch{setFeedback('No se pudo copiar automáticamente. Selecciona y copia el enlace del campo.');}
+ };
+ const shareText=link&&restaurant?.name?
+  `Conoce ${restaurant.name} en Tala Eats: ${link}`:null;
+ return <section className="crece-shell" aria-label="Programa Tala Eats Crece">
+  <header className="crece-hero">
+   <span className="crece-overline"><Sparkles size={15}/> TALA EATS CRECE</span>
+   <div className="crece-hero-grid"><div>
+    <h1>Tu negocio merece crecer.</h1>
+    <p>Tu espacio para mejorar la presencia digital, organizar el día a día y aprovechar las herramientas disponibles en Tala Eats.</p>
+    <div className="crece-hero-points"><span><Check size={15}/> Sin mensualidad fija en el plan de entrada</span><span><ShieldCheck size={15}/> Sin exclusividad obligatoria</span></div>
+   </div><div className="crece-hero-emblem" aria-hidden="true"><TrendingUp size={78}/><span>CRECE</span></div></div>
+  </header>
+
+  <div className="crece-briefs" aria-label="Condiciones propuestas del programa Fundadores">
+   <div><strong>10</strong><span>Plazas máximas previstas para Fundadores</span></div>
+   <div><strong>$0</strong><span>Cuota propuesta de alta y mensualidad</span></div>
+   <div><strong>17%</strong><span>Comisión estándar sobre productos</span></div>
+  </div>
+
+  <div className="crece-section-heading"><div><span className="crece-kicker">HERRAMIENTAS PARA TI</span>
+   <h2>Todo lo que Tala Eats puede aportar</h2>
+   <p>Las funciones de la app se distinguen de los servicios asistidos y las ideas futuras. Ningún beneficio pendiente se considera activado.</p>
+  </div></div>
+  <div className="crece-pillar-grid">
+   {CRECE_PILLARS.map(p=><div className="crece-pillar" key={p.id}>
+    <span>{p.id==='identidad'?<Camera/>:p.id==='visibilidad'?<Gift/>:p.id==='operacion'?<Store/>:p.id==='finanzas'?<BarChart3/>:<TrendingUp/>}</span>
+    <strong>{p.label}</strong><small>{p.caption}</small>
+   </div>)}
+  </div>
+
+  <div className="crece-section-heading"><div><span className="crece-kicker">PROGRAMA FUNDADORES</span>
+   <h2>Ventajas desde el lanzamiento</h2><p>Fotografías, asesoría y espacios destacados están sujetos a revisión, agenda y aceptación formal del comercio.</p>
+  </div></div>
+  <div className="crece-founder-grid">
+   <div className="crece-founder-card"><Camera size={22}/><strong>Hasta 10 fotografías</strong><span>Sesión coordinada por el equipo durante el piloto</span></div>
+   <div className="crece-founder-card"><Gift size={22}/><strong>Hasta 30 días destacados</strong><span>Según disponibilidad y reglas transparentes de visibilidad</span></div>
+   <div className="crece-founder-card"><Store size={22}/><strong>Configuración asistida</strong><span>Menú, horarios, materiales y capacitación inicial</span></div>
+  </div>
+  <p className="crece-disclaimer">Estas ventajas son una propuesta piloto, no una inscripción automática. No se asigna una de las {FOUNDERS_OFFER.capacity} plazas sin aprobación administrativa. No se garantizan ventas ni resultados.</p>
+
+  <section className="crece-share" aria-label="Herramientas para compartir tu tienda">
+   <div><span className="crece-kicker">TU TIENDA, EN TODAS PARTES</span>
+    <h2>Comparte tu menú con un QR</h2>
+    <p>Utiliza tu enlace público para tarjetas, mostrador, WhatsApp y redes sociales. Solo funciona cuando está configurada la URL oficial del portal de clientes.</p>
+    {link?<><label className="crece-link-label" htmlFor="crece-store-link">Tu enlace público</label>
+      <div className="crece-link-field"><input id="crece-store-link" readOnly value={link} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy(link,'Enlace copiado.')}><Copy size={16}/> Copiar</button></div>
+      {shareText&&<button className="crece-share-message" type="button" onClick={()=>void copy(shareText,'Mensaje listo para compartir.')}><Copy size={16}/> Copiar mensaje para tus clientes</button>}
+    </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles: debe configurarse <code>VITE_TALA_CUSTOMERS_BASE_URL</code> con el dominio oficial del portal de clientes, y tu comercio debe tener un identificador válido.</div>}
+    {feedback&&<p className="crece-feedback" role="status">{feedback}</p>}
+   </div><div className="crece-qr-panel">{qr?<img src={qr} alt={'Código QR del enlace público de '+(restaurant?.name||'tu negocio')} width={220} height={220}/>:<div className="crece-qr-empty"><QrCode size={65}/><small>QR no disponible hasta configurar el enlace público</small></div>}
+   <span>{restaurant?.name||'Tu negocio'}</span><small>Comparte solo si el comercio está publicado</small></div>
+  </section>
+
+  <section className="crece-recommend" aria-label="Consejos para mejorar tu comercio">
+   <div className="crece-section-heading"><div><span className="crece-kicker">EL PASO QUE SIGUE</span>
+     <h2>Ideas basadas en tu operación</h2>
+     <p>No mostramos estimaciones de ventas ni datos de clientes inventados.</p>
+    </div></div>
+   {!metrics?<div className="crece-data-empty" role="status">Los indicadores no están confirmados por la API. Las recomendaciones personalizadas estarán disponibles cuando el servidor proporcione datos válidos.</div>:
+    suggestions.length? <div className="crece-recommend-grid">{suggestions.map(s=><div className="crece-recommend-card" key={s.id}><span><TrendingUp size={20}/></span><div><h3>{s.title}</h3><p>{s.detail}</p><button type="button" onClick={()=>onNavigate(s.target)}>Ir a {s.target==='menu'?'mi menú':s.target==='pedidos'?'pedidos':'rendimiento'} <ArrowRight size={15}/></button></div></div>)}</div>:
+    <div className="crece-data-empty" role="status">Los indicadores recibidos no permiten generar una recomendación verificable.</div>}
+  </section>
+
+  <section className="crece-directory" id="crece-beneficios">
+   <div className="crece-section-heading"><div><span className="crece-kicker">CATÁLOGO DE BENEFICIOS</span>
+    <h2>Conoce las {CRECE_BENEFITS.length} oportunidades</h2><p>Filtra por disponibilidad. Los proyectos futuros no son funcionalidades activas ni servicios contratados.</p>
+   </div></div>
+   <div className="crece-filters" role="group" aria-label="Filtrar beneficios">
+    {([['principal','Para comenzar'],['disponible','En la app'],['asistido','Con apoyo'],['planeado','Próximamente']] as const).map(([id,label])=>
+      <button key={id} type="button" aria-pressed={filter===id} className={filter===id?'selected':''} onClick={()=>{setFilter(id);setExpanded(false)}}>{label}</button>)}
+   </div>
+   <div className="crece-directory-grid">
+    {(expanded?shown:shown.slice(0,9)).map(item=><article className="crece-benefit" key={item.id}>
+     <span className={'crece-benefit-status '+item.state}>{STATUS[item.state]}</span>
+     <h3>{item.title}</h3><p>{item.description}</p>
+     <small>{CRECE_PILLARS.find(p=>p.id===(item.pillar as CrecePillar))?.label} · Etapa {item.phase}</small>
+    </article>)}
+   </div>
+   {shown.length>9&&<button className="crece-more" type="button" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>
+    {expanded?'Ver menos':`Ver ${shown.length-9} beneficios más`} <ChevronDown className={expanded?'crece-flip':''} size={16}/>
+   </button>}
+  </section>
+  <footer className="crece-footer-note"><ShieldCheck size={19}/><p>Los cobros, comisiones, descuentos, retiros y estados de pago son responsabilidad del backend. Este programa no modifica precios, wallets, permisos, facturas ni condiciones de pedidos anteriores. La tarifa de servicio al cliente estándar es 7 %, informada en checkout.</p></footer>
+ </section>;
+}
