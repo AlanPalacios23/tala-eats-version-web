@@ -46,3 +46,16 @@ La aplicación instalada actual sigue operando hasta aprobar una promoción sepa
 - [Kit comercial de Fundadores](TALA-EATS-CRECE-KIT-COMERCIAL.md)
 - [Backend Core v2 — contrato](https://github.com/AlanPalacios23/Tala-Eats-NewBackend/blob/feat/core-v2-crece-fundadores-lab-20261108/docs/TALA-EATS-CRECE-FUNDADORES-PROGRAMA.md)
 - [Core v2: gates para salida comercial](https://github.com/AlanPalacios23/Tala-Eats-NewBackend/issues/20)
+
+## RC171 — mejoras de calidad añadidas en la misma rama, sin otro backend
+
+- **Verificación de publicación:** el QR no se habilita hasta recibir coincidencia exacta entre la tienda autenticada, el listado público y su detalle público del backend. Si los endpoints fallan, la acción queda deshabilitada, con opción de reintento. La lectura de lista se limita a los primeros 100 comercios de la API actual; si la tienda no está incluida, el sistema falla cerrado y requiere mejorar el endpoint de verificación, nunca publicar el enlace por suposición.
+- **Preparación del perfil:** checklist informativo de 5 pasos (identidad, dirección, artículo disponible/stock, imagen y publicación comprobada). Estos pasos **no** afirman que la plataforma esté lista para cobros.
+- **Simulador monetario exacto:** entrada validada en MXN de hasta seis dígitos enteros y dos decimales; cálculo de 17% comercio / 7% servicio en **centavos enteros**, misma convención de redondeo half-up que M1; no emite Stripe PaymentIntent, factura ni saldo. Comprobar 250.00 → 42.50 de comisión, 207.50 antes de ajustes para el comercio, 17.50 de servicio cliente. Para 500.00, servicio 35.00 **sin tope de 25**.
+- **Navegación móvil sin ruido:** mantiene las 5 pestañas inferiores originales; Crece queda en la barra lateral de escritorio y dentro de **Mi negocio** en móvil. Navegación `?vista=crece` sincronizada con React Router, con botón volver y gesto Atrás.
+- **FAQ pública:** ocho preguntas mediante elementos `details/summary`, con respuestas prudentes sobre afiliación, exclusividad, ventas, pagos, dispositivos, fotos, entregas y cupos.
+- **Nuevos tests:** verificación del QR con doble lectura, checklist que no inventa stock, importes/redondeo exactos, SSR de la sección pública y calculadora, beneficios y permisos internos.
+
+**Antes de publicar realmente:** además de `npm test && npm run build`, verificar de forma manual que la página pública existe en el dominio correcto de Restaurantes (consulta `?vista=crece`) y que Clientes responde para el ID correcto, tanto con tienda abierta como cerrada. La coincidencia del listado y ficha prueba que el backend la expone, **no que los derechos de las fotos estén autorizados**. Confirmar permisos y consentimiento.
+
+**No desplegado en Kali**: estos cambios todavía están propuestos en PR de PWA. La integración Core v2 sigue bajo gates G1–G9 y no admite operaciones comerciales.
