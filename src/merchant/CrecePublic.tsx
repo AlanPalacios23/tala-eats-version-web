@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {ArrowLeft,ArrowRight,BadgeCheck,Camera,ChartNoAxesCombined,Gift,ShieldCheck,Sparkles,Store,TrendingUp} from 'lucide-react';
 import {CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER} from './creceContracts';
+import CreceCalculator from './CreceCalculator';
 import './crece.css';
 
 export default function CrecePublic({onBack}:{onBack:()=>void}){
@@ -34,6 +35,7 @@ export default function CrecePublic({onBack}:{onBack:()=>void}){
     </div>
     <p className="crece-public-note">Este paquete aún requiere aprobación y condiciones por escrito. No representa una plaza asignada, ventas garantizadas ni activación inmediata.</p>
    </section>
+   <CreceCalculator/>
    <section className="crece-public-section"><span className="crece-kicker">BENEFICIOS</span><h2>Lo que puedes aprovechar</h2>
     <div className="crece-public-benefits">{benefits.map(b=><article key={b.id}><span className={'crece-benefit-status '+b.state}>{b.state==='disponible'?'Disponible en la app':b.state==='asistido'?'Con apoyo del equipo':'En preparación'}</span><h3>{b.title}</h3><p>{b.description}</p></article>)}</div>
     <button className="crece-public-more" type="button" onClick={()=>setShowAll(x=>!x)}>{showAll?'Mostrar solo ventajas del lanzamiento':`Ver los ${CRECE_BENEFITS.length} beneficios y próximas funciones`} <ArrowRight size={16}/></button>
