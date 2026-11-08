@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {
- CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink
+ CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
+ verifiedPublicStorefront,merchantProfileChecklist
 } from '../src/merchant/creceContracts';
 
 describe('Tala Eats Crece — contract',()=>{
@@ -32,6 +33,35 @@ describe('Tala Eats Crece — contract',()=>{
   expect(creceAdvice({orders:0,delivered:0,inventory_low:0}).map(x=>x.id)).toEqual(['primeros']);
   expect(creceAdvice({orders:20,delivered:10,inventory_low:3}).map(x=>x.id)).toEqual(['stock','pedidos']);
   expect(creceAdvice({orders:10,delivered:10,inventory_low:0}).map(x=>x.id)).toEqual(['consistencia']);
+ });
+ it('never trusts a private merchant ID or domain without BOTH public API confirmations',()=>{
+  const owner={id:42};
+  const list=[{id:42,name:'Comercio autorizado'}];
+  const detail={id:42,name:'Comercio autorizado'};
+  expect(verifiedPublicStorefront(owner,list,detail)).toBe(true);
+  expect(verifiedPublicStorefront(owner,list,{id:43,name:'Otro'})).toBe(false);
+  expect(verifiedPublicStorefront(owner,[{id:43}],detail)).toBe(false);
+  expect(verifiedPublicStorefront(owner,[],detail)).toBe(false);
+  expect(verifiedPublicStorefront(owner,list,{id:42,name:''})).toBe(false);
+  expect(verifiedPublicStorefront(null,list,detail)).toBe(false);
+  expect(verifiedPublicStorefront(owner,{data:list},detail)).toBe(false);
+  expect(verifiedPublicStorefront(owner,list,'42')).toBe(false);
+ });
+ it('profile checklist only uses actual merchant catalog fields and verified publication',()=>{
+  expect(merchantProfileChecklist(null,false)).toEqual([]);
+  const owner={
+    id:42,name:'Mi restaurante',address:'Tala, Jalisco',
+    cover_image_url:'https://cdn.example.mx/foto.jpg',
+    menu_items:[{is_available:true,stock:15}]
+  };
+  const first=merchantProfileChecklist(owner,false);
+  expect(first).toHaveLength(5);
+  expect(first.map(x=>x.done)).toEqual([true,true,true,true,false]);
+  expect(merchantProfileChecklist(owner,true).every(x=>x.done)).toBe(true);
+  expect(merchantProfileChecklist({
+    ...owner,menu_items:[{is_available:true,stock:0}],
+    cover_image_url:null,address:''
+  },false).filter(x=>x.done).map(x=>x.id)).toEqual(['profile']);
  });
  it('only builds a store QR destination from verified HTTPS origin and integer ID',()=>{
   expect(storefrontLink(12,'https://clientes.example.mx/')).toBe('https://clientes.example.mx/comercio/12');
