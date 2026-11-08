@@ -1,0 +1,80 @@
+/* Tala Eats Crece — scoped responsive section; no changes to ordering or wallet UI. */
+.crece-shell{display:grid;gap:34px;min-width:0;color:#202a31}
+.crece-hero{background:radial-gradient(ellipse at 88% 20%,#fba86f30,transparent 47%),linear-gradient(118deg,#191c20,#2b2c30 80%);border-radius:24px;padding:clamp(24px,4vw,42px);color:#fff;overflow:hidden;position:relative}
+.crece-overline,.crece-kicker{display:inline-flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.13em;font-size:10px;font-weight:850}
+.crece-overline{color:#ffbb90}.crece-kicker{color:#dd7033;margin-bottom:10px}
+.crece-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 160px;align-items:center;gap:22px}
+.crece-hero h1{font-size:clamp(30px,4vw,52px);color:#fff;line-height:1.08;margin:18px 0 16px;max-width:690px}
+.crece-hero p{font-size:14px;line-height:1.7;color:#d4d5d8;max-width:610px;margin:0 0 20px}
+.crece-hero-points{display:flex;gap:11px;flex-wrap:wrap}
+.crece-hero-points span{display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid #ffffff26;background:#ffffff11;border-radius:10px;color:#eceded;font-size:11px;font-weight:700}
+.crece-hero-points svg{color:#faa878}
+.crece-hero-emblem{min-height:175px;border:1px solid #ffffff20;border-radius:30px;background:linear-gradient(155deg,#ffffff19,#ffffff06);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#ffad73;transform:rotate(5deg)}
+.crece-hero-emblem span{font-size:12px;letter-spacing:.3em;font-weight:900}
+.crece-briefs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crece-briefs>div{padding:22px;border:1px solid #e9ebed;background:white;border-radius:18px;display:grid;gap:5px}
+.crece-briefs strong{font-size:30px;color:#1f252b;letter-spacing:-.07em}
+.crece-briefs span{font-size:11px;line-height:1.55;color:#78838d;max-width:190px}
+.crece-section-heading{display:flex;align-items:end;justify-content:space-between;gap:20px}
+.crece-section-heading h2,.crece-share h2{margin:0 0 8px;font-size:clamp(22px,3vw,29px);letter-spacing:-.04em}
+.crece-section-heading p,.crece-share p{font-size:13px;color:#7a8591;line-height:1.65;max-width:760px;margin:0}
+.crece-pillar-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.crece-pillar{background:white;border:1px solid #e6e9ed;border-radius:16px;padding:20px 14px;display:flex;flex-direction:column;gap:8px;min-height:145px}
+.crece-pillar>span{display:grid;place-items:center;width:38px;height:38px;background:#fff2e8;color:#d96824;border-radius:12px}
+.crece-pillar svg{width:20px;height:20px}.crece-pillar strong{font-size:13px;line-height:1.25}.crece-pillar small{font-size:11px;color:#838d96;line-height:1.5}
+.crece-founder-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.crece-founder-card{background:#fff;border:1px solid #e7eaed;padding:23px;border-radius:17px;display:grid;gap:12px;align-content:start}
+.crece-founder-card svg{color:#e87634}.crece-founder-card strong{font-size:15px}.crece-founder-card span{font-size:12px;color:#7d8792;line-height:1.6}
+.crece-disclaimer,.crece-footer-note{font-size:11px;line-height:1.7;color:#7a8691;margin:-22px 0 0}
+.crece-share{background:#fff;border:1px solid #e7e9ed;border-radius:21px;padding:clamp(22px,4vw,34px);display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,260px);gap:30px;align-items:center}
+.crece-share h2{margin-bottom:10px}.crece-share p{margin-bottom:20px}
+.crece-link-label{font-weight:800;display:block;color:#505d65;font-size:11px;margin:0 0 8px}
+.crece-link-field{display:flex;gap:7px;max-width:600px}
+.crece-link-field input{flex:1;min-width:0;border:1px solid #dfe4e7;border-radius:10px;padding:12px 13px;color:#4c5b65;background:#f8f9fa;font-size:13px}
+.crece-link-field button,.crece-share-message,.crece-recommend-card button,.crece-more{border:0;background:#ef772f;color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 13px;border-radius:10px;font-size:12px;font-weight:800}
+.crece-share-message{margin-top:9px;background:#272d32}
+.crece-qr-panel{background:#f9fafb;border:1px solid #edf0f1;border-radius:18px;padding:18px;display:grid;justify-items:center;gap:9px;text-align:center}
+.crece-qr-panel img{max-width:100%;height:auto;border-radius:8px}.crece-qr-panel>span{font-size:12px;font-weight:800}.crece-qr-panel>small{font-size:10px;color:#8b949b}
+.crece-qr-empty{min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#b6bfc8}
+.crece-qr-empty small{max-width:175px;font-size:11px;line-height:1.5;color:#858e97}
+.crece-no-link,.crece-data-empty{font-size:12px;background:#f8f9fa;border:1px solid #e8ebee;border-radius:12px;padding:17px;color:#65727d;line-height:1.65}
+.crece-no-link code{font-size:11px;overflow-wrap:anywhere}.crece-feedback{font-size:11px;color:#27764b;font-weight:700;margin:8px 0}
+.crece-recommend{display:grid;gap:18px}
+.crece-recommend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.crece-recommend-card{display:flex;gap:17px;border:1px solid #e7e9ec;border-radius:16px;background:#fff;padding:22px;align-items:start}
+.crece-recommend-card>span{background:#fff0e6;border-radius:12px;padding:11px;color:#de7234}
+.crece-recommend-card h3{font-size:15px;margin:0 0 7px}
+.crece-recommend-card p{font-size:12px;line-height:1.6;color:#78838c;margin:0 0 13px}
+.crece-recommend-card button{background:transparent;padding:0;color:#d86a2b}
+.crece-directory{display:grid;gap:17px}
+.crece-filters{display:flex;flex-wrap:wrap;gap:8px}
+.crece-filters button{border:1px solid #e1e5e9;border-radius:10px;background:#fff;font-size:12px;color:#6a737d;padding:10px 13px;font-weight:750}
+.crece-filters button.selected{background:#24272c;border-color:#24272c;color:white}
+.crece-directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crece-benefit{padding:21px;border:1px solid #e7ebed;background:#fff;border-radius:16px;display:grid;align-content:start;gap:10px}
+.crece-benefit-status{justify-self:start;font-weight:800;font-size:10px;border-radius:7px;padding:6px 8px;background:#eef8f1;color:#22784d}
+.crece-benefit-status.asistido{background:#fff3e6;color:#a75b22}.crece-benefit-status.planeado{background:#f1f3f5;color:#757d86}
+.crece-benefit h3{font-size:14px;margin:3px 0 0}.crece-benefit p{font-size:12px;color:#72808a;line-height:1.58;margin:0}
+.crece-benefit small{font-size:10px;color:#98a0a7;margin-top:5px}
+.crece-more{justify-self:center;background:#fff;color:#d36d32;border:1px solid #e7e9ed}
+.crece-flip{transform:rotate(180deg)}
+.crece-footer-note{margin:0;display:flex;gap:12px;align-items:start;background:#f8f9fa;padding:17px;border-radius:13px}
+.crece-footer-note p{margin:0}.crece-footer-note svg{flex:0 0 auto;color:#e47434}
+@media(max-width:1100px){.crece-pillar-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.crece-directory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ .crece-shell{gap:26px}
+ .crece-hero-grid{grid-template-columns:1fr}.crece-hero-emblem{display:none}
+ .crece-briefs{gap:7px}.crece-briefs>div{padding:14px}.crece-briefs strong{font-size:23px}.crece-briefs span{font-size:10px}
+ .crece-pillar-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .crece-pillar{min-height:132px}
+ .crece-founder-grid{grid-template-columns:1fr}.crece-founder-card{padding:18px}
+ .crece-share{grid-template-columns:1fr}.crece-qr-panel{width:min(100%,300px);justify-self:center}
+ .crece-recommend-grid{grid-template-columns:1fr}.crece-directory-grid{grid-template-columns:1fr}
+ .crece-link-field{flex-direction:column}.crece-link-field button{min-height:44px}
+ .crece-share-message{min-height:44px}.crece-disclaimer{margin:-13px 0 0}
+ .merchant-mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;padding-left:3px!important;padding-right:3px!important}
+ .merchant-mobile-nav button{font-size:9px!important;min-width:0;gap:4px!important;padding:4px 0!important}
+ .merchant-mobile-nav svg{width:19px;height:19px}
+}
+@media(max-width:370px){.crece-pillar-grid{grid-template-columns:1fr}.crece-hero{padding:23px}.crece-hero h1{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.crece-shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
