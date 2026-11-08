@@ -140,3 +140,25 @@ export function merchantProfileChecklist(owner:{
    done:publicVerified,target:'crece'}
  ];
 }
+
+/** Public FAQ is deliberately contractual/proposal language, not promises
+ * of financial activation or guaranteed business outcomes.
+ */
+export const CRECE_FAQ:ReadonlyArray<Readonly<{id:string;question:string;answer:string}>>=[
+ {id:'precio',question:'¿Cuánto cuesta afiliar mi negocio?',
+  answer:'La propuesta inicial contempla alta y mensualidad fija de $0 MXN. La comisión estándar propuesta es 17 % sobre los productos vendidos. El cliente paga por separado una tarifa de servicio del 7 %, además del envío que corresponda. Las condiciones finales se explican y aceptan por escrito.'},
+ {id:'exclusividad',question:'¿Debo vender exclusivamente por Tala Eats?',
+  answer:'No planteamos exclusividad obligatoria en el programa inicial. Puedes seguir usando otros canales; las condiciones definitivas se establecen en el convenio.'},
+ {id:'ventas',question:'¿Tala Eats garantiza que recibiré pedidos?',
+  answer:'No. El objetivo es mejorar tu presencia digital y facilitar la operación, sin prometer ventas ni posiciones garantizadas.'},
+ {id:'equipos',question:'¿Necesito comprar una tableta o equipo especial?',
+  answer:'La aplicación de restaurantes funciona como PWA para navegadores y dispositivos compatibles. Antes de la afiliación validaremos que tu dispositivo permita atender pedidos correctamente.'},
+ {id:'entregas',question:'¿Cuándo comienzan las entregas comerciales?',
+  answer:'Cuando pagos, repartidores, conciliación y seguridad pasen sus pruebas de producción. No anunciamos una fecha ni aceptamos operaciones no certificadas.'},
+ {id:'liquidaciones',question:'¿Cuándo recibo el dinero de mis ventas?',
+  answer:'Los plazos y métodos de liquidación se comunicarán tras verificar los flujos de Stripe y finanzas y firmar el acuerdo. El wallet informativo no equivale a dinero ya depositado o retirable.'},
+ {id:'fundadores',question:'¿Cómo entro al programa Fundadores?',
+  answer:'Contacta al equipo Tala Eats por sus canales oficiales. El programa propone hasta 10 plazas, sujetas a revisión de identidad, convenio, disponibilidad y aprobación administrativa. Mostrar interés no reserva una plaza.'},
+ {id:'fotografias',question:'¿Pueden publicar fotos de mi negocio sin mi permiso?',
+  answer:'No. Las fotografías deben contar con autorización para su uso comercial. La sesión de hasta 10 fotos para Fundadores depende de agenda y aprobación de la participación.'}
+];
