@@ -3,10 +3,11 @@ import {
   ArrowRight,BarChart3,Camera,Check,ChevronDown,Copy,Gift,
   QrCode,ShieldCheck,Sparkles,Store,TrendingUp
 } from 'lucide-react';
-import QRCode from 'qrcode';
+import {api} from '../lib/api';
 import type {Restaurant} from '../lib/types';
 import {
   CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
+  verifiedPublicStorefront,merchantProfileChecklist,
   type BenefitState,type CreceMetrics,type CrecePillar
 } from './creceContracts';
 import './crece.css';
@@ -17,6 +18,7 @@ const STATUS:Record<BenefitState,string>={
  planeado:'En preparación'
 };
 type Filter='principal'|'disponible'|'asistido'|'planeado';
+type Publication='idle'|'checking'|'confirmed'|'not-public'|'error';
 
 export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  restaurant:Restaurant|null;
@@ -27,18 +29,47 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  const [expanded,setExpanded]=useState(false);
  const [qr,setQr]=useState<string|null>(null);
  const [feedback,setFeedback]=useState('');
+ const [publication,setPublication]=useState<{id:number|null;status:Publication}>({
+  id:null,status:'idle'
+ });
+ const [recheck,setRecheck]=useState(0);
  const link=useMemo(()=>storefrontLink(
   restaurant?.id,import.meta.env.VITE_TALA_CUSTOMERS_BASE_URL
  ),[restaurant?.id]);
+ // Backend public catalog AND detail must independently acknowledge this
+ // exact store. A configured domain or private merchant identity is not
+ // sufficient to issue a public marketing QR.
+ useEffect(()=>{
+  let active=true;
+  const id=restaurant?.id;
+  if(!link||typeof id!=='number'||!Number.isSafeInteger(id)||id<=0){
+   setPublication({id:null,status:'idle'});
+   return()=>{active=false;};
+  }
+  setPublication({id,status:'checking'});
+  void Promise.all([api.restaurants(),api.restaurant(id)]).then(([list,detail])=>{
+   if(active)setPublication({
+    id,status:verifiedPublicStorefront({id},list,detail)?'confirmed':'not-public'
+   });
+  }).catch(()=>{if(active)setPublication({id,status:'error'});});
+  return()=>{active=false;};
+ },[link,restaurant?.id,recheck]);
+ const publicationState=publication.id===restaurant?.id?publication.status:'checking';
+ const shareableLink=publicationState==='confirmed'?link:null;
  useEffect(()=>{
   let active=true;
   setQr(null);
-  if(link)void QRCode.toDataURL(link,{width:260,margin:1,errorCorrectionLevel:'M'})
+  if(shareableLink)void import('qrcode')
+   .then(module=>module.default.toDataURL(shareableLink,{
+    width:260,margin:1,errorCorrectionLevel:'M'
+   }))
    .then(data=>{if(active)setQr(data);})
    .catch(()=>{if(active)setQr(null);});
   return()=>{active=false;};
- },[link]);
+ },[shareableLink]);
  const suggestions=creceAdvice(metrics);
+ const checklist=merchantProfileChecklist(restaurant,Boolean(shareableLink));
+ const completed=checklist.filter(s=>s.done).length;
  const shown=CRECE_BENEFITS.filter(b=>{
   if(filter==='principal')return b.phase===1;
   return b.state===filter;
@@ -47,15 +78,15 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
   try{await navigator.clipboard.writeText(value);setFeedback(label);}
   catch{setFeedback('No se pudo copiar automáticamente. Selecciona y copia el enlace del campo.');}
  };
- const shareText=link&&restaurant?.name?
-  `Conoce ${restaurant.name} en Tala Eats: ${link}`:null;
+ const shareText=shareableLink&&restaurant?.name?
+  `Conoce ${restaurant.name} en Tala Eats: ${shareableLink}`:null;
  return <section className="crece-shell" aria-label="Programa Tala Eats Crece">
   <header className="crece-hero">
    <span className="crece-overline"><Sparkles size={15}/> TALA EATS CRECE</span>
    <div className="crece-hero-grid"><div>
     <h1>Tu negocio merece crecer.</h1>
     <p>Tu espacio para mejorar la presencia digital, organizar el día a día y aprovechar las herramientas disponibles en Tala Eats.</p>
-    <div className="crece-hero-points"><span><Check size={15}/> Sin mensualidad fija en el plan de entrada</span><span><ShieldCheck size={15}/> Sin exclusividad obligatoria</span></div>
+    <div className="crece-hero-points"><span><Check size={15}/> Propuesta: sin mensualidad fija</span><span><ShieldCheck size={15}/> Sin exclusividad obligatoria en la propuesta</span></div>
    </div><div className="crece-hero-emblem" aria-hidden="true"><TrendingUp size={78}/><span>CRECE</span></div></div>
   </header>
 
@@ -86,17 +117,41 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
   </div>
   <p className="crece-disclaimer">Estas ventajas son una propuesta piloto, no una inscripción automática. No se asigna una de las {FOUNDERS_OFFER.capacity} plazas sin aprobación administrativa. No se garantizan ventas ni resultados.</p>
 
+  <section className="crece-readiness" aria-label="Preparación del perfil comercial">
+   <div className="crece-section-heading"><div>
+    <span className="crece-kicker">TU PERFIL DIGITAL</span>
+    <h2>Prepara tu tienda para que la descubran</h2>
+    <p>Checklist basado en datos del servidor; no certifica pagos, logística, afiliación ni autorización de venta.</p>
+   </div></div>
+   {checklist.length?<div className="crece-readiness-layout">
+    <div className="crece-readiness-score"><span>Información preparada</span>
+     <strong>{completed}<small> / {checklist.length}</small></strong>
+     <progress max={checklist.length} value={completed} aria-label="Elementos del perfil preparados"/>
+     <p>Revisa cada punto antes de compartir tu catálogo. Los campos completos no garantizan la publicación comercial.</p>
+    </div>
+    <div className="crece-readiness-list">{checklist.map(step=>
+     <div className="crece-readiness-item" key={step.id}>
+      <span className={step.done?'done':'pending'} aria-hidden="true">{step.done?<Check size={16}/>:<span/>}</span>
+      <div><strong>{step.title}</strong><p>{step.description}</p></div>
+      {!step.done&&step.target!=='crece'&&<button type="button" onClick={()=>onNavigate(step.target)}>
+       Revisar <ArrowRight size={15}/></button>}
+     </div>)}</div>
+   </div>:<div className="crece-data-empty">El perfil de comercio aún no está disponible desde el servidor.</div>}
+  </section>
+
   <section className="crece-share" aria-label="Herramientas para compartir tu tienda">
    <div><span className="crece-kicker">TU TIENDA, EN TODAS PARTES</span>
     <h2>Comparte tu menú con un QR</h2>
-    <p>Utiliza tu enlace público para tarjetas, mostrador, WhatsApp y redes sociales. Solo funciona cuando está configurada la URL oficial del portal de clientes.</p>
-    {link?<><label className="crece-link-label" htmlFor="crece-store-link">Tu enlace público</label>
-      <div className="crece-link-field"><input id="crece-store-link" readOnly value={link} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy(link,'Enlace copiado.')}><Copy size={16}/> Copiar</button></div>
+    <p>Para evitar enlaces rotos, verificamos que tu tienda aparezca en el listado público y abra su detalle desde el backend de clientes.</p>
+    {shareableLink?<><label className="crece-link-label" htmlFor="crece-store-link">Enlace público verificado</label>
+      <div className="crece-link-field"><input id="crece-store-link" readOnly value={shareableLink} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy(shareableLink,'Enlace copiado.')}><Copy size={16}/> Copiar</button></div>
       {shareText&&<button className="crece-share-message" type="button" onClick={()=>void copy(shareText,'Mensaje listo para compartir.')}><Copy size={16}/> Copiar mensaje para tus clientes</button>}
-    </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles: debe configurarse <code>VITE_TALA_CUSTOMERS_BASE_URL</code> con el dominio oficial del portal de clientes, y tu comercio debe tener un identificador válido.</div>}
+    </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles. {!link?'Configura el dominio HTTPS oficial de clientes y comprueba el identificador de la tienda.':publicationState==='checking'?'Verificando publicación en el catálogo de clientes…':publicationState==='not-public'?'El negocio no aparece confirmado en el listado y detalle públicos. Revisa su publicación antes de compartirlo.':'No se pudo comprobar el catálogo público del servidor.'}
+     {link&&publicationState!=='checking'&&<button className="crece-retry" type="button" onClick={()=>setRecheck(v=>v+1)}>Comprobar de nuevo <ArrowRight size={15}/></button>}
+    </div>}
     {feedback&&<p className="crece-feedback" role="status">{feedback}</p>}
-   </div><div className="crece-qr-panel">{qr?<img src={qr} alt={'Código QR del enlace público de '+(restaurant?.name||'tu negocio')} width={220} height={220}/>:<div className="crece-qr-empty"><QrCode size={65}/><small>QR no disponible hasta configurar el enlace público</small></div>}
-   <span>{restaurant?.name||'Tu negocio'}</span><small>Comparte solo si el comercio está publicado</small></div>
+   </div><div className="crece-qr-panel">{qr&&shareableLink?<img src={qr} alt={'Código QR del enlace público de '+(restaurant?.name||'tu negocio')} width={220} height={220}/>:<div className="crece-qr-empty"><QrCode size={65}/><small>QR no disponible hasta configurar el enlace público</small></div>}
+   <span>{restaurant?.name||'Tu negocio'}</span><small>{shareableLink?'Publicación comprobada con el servidor':'No compartir sin publicación confirmada'}</small></div>
   </section>
 
   <section className="crece-recommend" aria-label="Consejos para mejorar tu comercio">
