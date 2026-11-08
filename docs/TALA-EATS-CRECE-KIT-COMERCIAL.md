@@ -134,3 +134,11 @@ El catálogo, la vista pública y los consejos basados en la API pueden probarse
 - [Catálogo y términos versionables](../src/merchant/creceContracts.ts)
 - [Presentación pública](../src/merchant/CrecePublic.tsx)
 - [Contrato Core v2](https://github.com/AlanPalacios23/Tala-Eats-NewBackend/blob/feat/core-v2-crece-fundadores-lab-20261108/docs/TALA-EATS-CRECE-FUNDADORES-PROGRAMA.md)
+
+## 13. Demostración comercial del simulador de comisiones
+
+Abre el portal informativo Tala Eats Crece desde la pantalla de acceso a Restaurantes. Con la calculadora de ejemplo muestra al propietario qué significan 17% sobre productos y 7% de servicio al cliente. Por ejemplo, **$250.00 en productos** son **$42.50** de comisión y **$207.50** para el restaurante antes de los ajustes pertinentes; el servicio al cliente suma **$17.50**, sin incluir el envío.
+
+Aclara siempre que estas cifras son **ilustrativas**, no el saldo de Stripe ni el precio contractual definitivo: puede haber impuestos, descuentos, reembolsos, envío y reglas específicas de liquidación. El backend es quien debe emitir la cotización final versionada del pedido.
+
+El programa incluye ocho preguntas frecuentes que cubren los temores comerciales habituales. La ruta compartible es una consulta `?vista=crece` sobre la URL del **portal dedicado de Restaurantes**. No compartir un enlace hasta haber probado el dominio y la página pública en el navegador real.
