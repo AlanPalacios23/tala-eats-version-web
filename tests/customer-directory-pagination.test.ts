@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {joinRestaurantPages,filterRestaurantDirectory,nextDirectoryOffset,
- PUBLIC_DIRECTORY_PAGE_SIZE} from '../src/lib/catalogPagination';
+ PUBLIC_DIRECTORY_PAGE_SIZE,hasNewDirectoryEntries} from '../src/lib/catalogPagination';
 import type {Restaurant} from '../src/lib/types';
 
 const shop=(id:number,name='Comercio '+id):Restaurant=>({
@@ -24,6 +24,12 @@ describe('Customer catalog pagination and marketplace-scale discovery',()=>{
   expect(filterRestaurantDirectory(all,'  Birria ').map(x=>x.id)).toEqual([2]);
   expect(filterRestaurantDirectory(all,'birote').map(x=>x.id)).toEqual([1]);
   expect(filterRestaurantDirectory(all,'').length).toBe(2);
+ });
+ it('does not request the same first page indefinitely when OFFSET is ignored',()=>{
+  const current=[shop(1),shop(2)];
+  expect(hasNewDirectoryEntries(current,[shop(2),shop(1)])).toBe(false);
+  expect(hasNewDirectoryEntries(current,[shop(2),shop(3)])).toBe(true);
+  expect(hasNewDirectoryEntries(current,[shop(0),shop(NaN)])).toBe(false);
  });
  it('discovery page size matches QR publication checks',()=>{
   expect(PUBLIC_DIRECTORY_PAGE_SIZE).toBe(100);
