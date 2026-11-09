@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import {api} from '../lib/api';
 import CreceCalculator from './CreceCalculator';
-import {checkPublicStorefront,CRECE_QR_PNG} from './crecePublication';
+import {checkPublicStorefront,CRECE_QR_PNG,CRECE_PUBLIC_REVALIDATE_MS,
+ mayShareStorefront,type StorePublication} from './crecePublication';
 import type {Restaurant} from '../lib/types';
 import {
   CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
@@ -20,7 +21,6 @@ const STATUS:Record<BenefitState,string>={
  planeado:'En preparación'
 };
 type Filter='principal'|'disponible'|'asistido'|'planeado';
-type Publication='idle'|'checking'|'confirmed'|'not-public'|'limit'|'error';
 
 export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  restaurant:Restaurant|null;
@@ -31,10 +31,33 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  const [expanded,setExpanded]=useState(false);
  const [qr,setQr]=useState<string|null>(null);
  const [feedback,setFeedback]=useState('');
- const [publication,setPublication]=useState<{id:number|null;status:Publication}>({
-  id:null,status:'idle'
+ const [publication,setPublication]=useState<StorePublication>({
+  id:null,status:'idle',revision:0
  });
  const [recheck,setRecheck]=useState(0);
+ const [online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine);
+ // A QR is evidence of a public catalog check at one moment, not a permanent
+ // guarantee. Hide it immediately on offline/refresh and revalidate on return.
+ useEffect(()=>{
+  const refresh=()=>setRecheck(previous=>previous+1);
+  const onOffline=()=>{setOnline(false);refresh();};
+  const onOnline=()=>{setOnline(true);refresh();};
+  const onVisible=()=>{
+   if(document.visibilityState==='visible')refresh();
+  };
+  const interval=window.setInterval(()=>{
+   if(document.visibilityState==='visible'&&navigator.onLine)refresh();
+  },CRECE_PUBLIC_REVALIDATE_MS);
+  window.addEventListener('offline',onOffline);
+  window.addEventListener('online',onOnline);
+  document.addEventListener('visibilitychange',onVisible);
+  return()=>{
+   window.clearInterval(interval);
+   window.removeEventListener('offline',onOffline);
+   window.removeEventListener('online',onOnline);
+   document.removeEventListener('visibilitychange',onVisible);
+  };
+ },[]);
  const link=useMemo(()=>storefrontLink(
   restaurant?.id,import.meta.env.VITE_TALA_CUSTOMERS_BASE_URL
  ),[restaurant?.id]);
@@ -46,23 +69,31 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
   const controller=new AbortController();
   const id=restaurant?.id;
   if(!link||typeof id!=='number'||!Number.isSafeInteger(id)||id<=0){
-   setPublication({id:null,status:'idle'});
+   setPublication({id:null,status:'idle',revision:recheck});
    return()=>{active=false;controller.abort();};
   }
-  setPublication({id,status:'checking'});
+  if(!online){
+   setPublication({id,status:'offline',revision:recheck});
+   return()=>{active=false;controller.abort();};
+  }
+  setPublication({id,status:'checking',revision:recheck});
   void checkPublicStorefront({
    storeId:id,signal:controller.signal,
    fetchPage:(offset,limit,signal)=>api.restaurantsPage(offset,limit,signal),
    fetchDetail:(store,signal)=>api.restaurant(store,signal)
   }).then(status=>{
-   if(active)setPublication({id,status});
+   if(active)setPublication({id,status,revision:recheck});
   }).catch(()=>{
-   if(active)setPublication({id,status:'error'});
+   if(active)setPublication({id,status:'error',revision:recheck});
   });
   return()=>{active=false;controller.abort();};
- },[link,restaurant?.id,recheck]);
- const publicationState=publication.id===restaurant?.id?publication.status:'checking';
- const shareableLink=publicationState==='confirmed'?link:null;
+ },[link,restaurant?.id,recheck,online]);
+ const publicationState=!online?'offline':
+  publication.id===restaurant?.id&&publication.revision===recheck?
+   publication.status:'checking';
+ const shareableLink=link&&mayShareStorefront({
+  publication,storeId:restaurant?.id,revision:recheck,online
+ })?link:null;
  useEffect(()=>{
   let active=true;
   setQr(null);
@@ -151,8 +182,8 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
     {shareableLink?<><label className="crece-link-label" htmlFor="crece-store-link">Enlace público verificado</label>
       <div className="crece-link-field"><input id="crece-store-link" readOnly value={shareableLink} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy(shareableLink,'Enlace copiado.')}><Copy size={16}/> Copiar</button></div>
       {shareText&&<button className="crece-share-message" type="button" onClick={()=>void copy(shareText,'Mensaje listo para compartir.')}><Copy size={16}/> Copiar mensaje para tus clientes</button>}
-    </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles. {!link?'Configura el dominio HTTPS oficial de clientes y comprueba el identificador de la tienda.':publicationState==='checking'?'Verificando publicación en el catálogo de clientes…':publicationState==='not-public'?'El negocio no aparece confirmado en el listado y detalle públicos. Revisa su publicación antes de compartirlo.':publicationState==='limit'?'La lista pública superó el límite de verificación. Solicita una comprobación individual al equipo antes de compartir el QR.':'No se pudo comprobar el catálogo público del servidor.'}
-     {link&&publicationState!=='checking'&&<button className="crece-retry" type="button" onClick={()=>setRecheck(v=>v+1)}>Comprobar de nuevo <ArrowRight size={15}/></button>}
+    </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles. {!link?'Configura el dominio HTTPS oficial de clientes y comprueba el identificador de la tienda.':publicationState==='offline'?'Sin conexión: el QR se desactiva hasta comprobar de nuevo el catálogo.':publicationState==='checking'?'Verificando publicación en el catálogo de clientes…':publicationState==='not-public'?'El negocio no aparece confirmado en el listado y detalle públicos. Revisa su publicación antes de compartirlo.':publicationState==='limit'?'La lista pública superó el límite de verificación. Solicita una comprobación individual al equipo antes de compartir el QR.':'No se pudo comprobar el catálogo público del servidor.'}
+     {online&&link&&publicationState!=='checking'&&<button className="crece-retry" type="button" onClick={()=>setRecheck(v=>v+1)}>Comprobar de nuevo <ArrowRight size={15}/></button>}
     </div>}
     {feedback&&<p className="crece-feedback" role="status">{feedback}</p>}
    </div><div className="crece-qr-panel">{qr&&shareableLink?<img src={qr} alt={'Código QR del enlace público de '+(restaurant?.name||'tu negocio')} width={220} height={220}/>:<div className="crece-qr-empty"><QrCode size={65}/><small>QR no disponible hasta configurar el enlace público</small></div>}
