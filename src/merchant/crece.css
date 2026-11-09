@@ -207,3 +207,10 @@
 .crece-contact-link:focus-visible{outline:3px solid #f8b589;outline-offset:3px}
 .crece-public-bottom .crece-contact-link{flex-shrink:0}
 @media(max-width:480px){.crece-public-hero-actions{flex-direction:column;align-items:stretch}.crece-public-hero-actions .crece-contact-link{width:100%}}
+
+
+/* Merchant QR action is a local PNG generated on-device, never sent to an external API. */
+.crece-qr-download{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;padding:11px 13px;min-height:44px;max-width:100%;border-radius:10px;background:#242b31;color:#fff;text-decoration:none;font-weight:800;font-size:12px;transition:background .15s}
+.crece-qr-download:hover{background:#df7433;color:white}
+.crece-qr-download:focus-visible{outline:3px solid #e89a62;outline-offset:3px}
+@media(max-width:440px){.crece-qr-download{width:100%;font-size:11px}}
