@@ -181,6 +181,10 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
     <p>Para evitar enlaces rotos, verificamos que tu tienda aparezca en el listado público y abra su detalle desde el backend de clientes.</p>
     {shareableLink?<><label className="crece-link-label" htmlFor="crece-store-link">Enlace público verificado</label>
       <div className="crece-link-field"><input id="crece-store-link" readOnly value={shareableLink} onFocus={e=>e.currentTarget.select()}/><button type="button" onClick={()=>void copy(shareableLink,'Enlace copiado.')}><Copy size={16}/> Copiar</button></div>
+      <a className="crece-public-test-link" href={shareableLink}
+       target="_blank" rel="noopener noreferrer">
+       Abrir mi tienda en Clientes para comprobar el enlace <ArrowRight size={15}/>
+      </a>
       {shareText&&<button className="crece-share-message" type="button" onClick={()=>void copy(shareText,'Mensaje listo para compartir.')}><Copy size={16}/> Copiar mensaje para tus clientes</button>}
     </>:<div className="crece-no-link" role="status">El enlace y QR todavía no están disponibles. {!link?'Configura el dominio HTTPS oficial de clientes y comprueba el identificador de la tienda.':publicationState==='offline'?'Sin conexión: el QR se desactiva hasta comprobar de nuevo el catálogo.':publicationState==='checking'?'Verificando publicación en el catálogo de clientes…':publicationState==='not-public'?'El negocio no aparece confirmado en el listado y detalle públicos. Revisa su publicación antes de compartirlo.':publicationState==='limit'?'La lista pública superó el límite de verificación. Solicita una comprobación individual al equipo antes de compartir el QR.':'No se pudo comprobar el catálogo público del servidor.'}
      {online&&link&&publicationState!=='checking'&&<button className="crece-retry" type="button" onClick={()=>setRecheck(v=>v+1)}>Comprobar de nuevo <ArrowRight size={15}/></button>}
