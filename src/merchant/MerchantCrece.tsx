@@ -68,7 +68,7 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
   setQr(null);
   if(shareableLink)void import('qrcode')
    .then(module=>module.default.toDataURL(shareableLink,{
-    width:260,margin:1,errorCorrectionLevel:'M'
+    width:1024,margin:4,errorCorrectionLevel:'Q'
    }))
    .then(data=>{if(active)setQr(data);})
    .catch(()=>{if(active)setQr(null);});
