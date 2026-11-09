@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {
  CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
- verifiedPublicStorefront,merchantProfileChecklist
+ verifiedPublicStorefront,merchantProfileChecklist,founderWhatsAppLink
 } from '../src/merchant/creceContracts';
 
 describe('Tala Eats Crece — contract',()=>{
@@ -62,6 +62,16 @@ describe('Tala Eats Crece — contract',()=>{
     ...owner,menu_items:[{is_available:true,stock:0}],
     cover_image_url:null,address:''
   },false).filter(x=>x.done).map(x=>x.id)).toEqual(['profile']);
+ });
+ it('only offers sales contact to an explicitly configured international phone number',()=>{
+  const url=founderWhatsAppLink('5213312345678');
+  expect(url?.startsWith('https://wa.me/5213312345678?text=')).toBe(true);
+  expect(url).toContain('Fundadores');
+  for(const unsafe of [null,undefined,'','123','+5213312345678',
+    'https://wa.me/5213312345678','5213312345678?foo=bad','521 3312345678',
+    '0000000000','5213312345678#frag','<script>']){
+   expect(founderWhatsAppLink(unsafe)).toBeNull();
+  }
  });
  it('only builds a store QR destination from verified HTTPS origin and integer ID',()=>{
   expect(storefrontLink(12,'https://clientes.example.mx/')).toBe('https://clientes.example.mx/comercio/12');
