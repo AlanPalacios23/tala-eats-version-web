@@ -1,11 +1,16 @@
 import {describe,expect,it} from 'vitest';
 import {checkPublicStorefront,PUBLIC_STORE_PAGE_SIZE,
- PUBLIC_STORE_MAX_PAGES} from '../src/merchant/crecePublication';
+ PUBLIC_STORE_MAX_PAGES,CRECE_QR_PNG} from '../src/merchant/crecePublication';
 
 const row=(id:number)=>({id,name:'Comercio '+id});
 const batch=(offset:number,size=PUBLIC_STORE_PAGE_SIZE)=>
  Array.from({length:size},(_,index)=>row(offset+index+1));
 describe('Crece: public verification at marketplace scale',()=>{
+ it('uses printable QR format and four-module quiet zone for reliable scanning',()=>{
+  expect(CRECE_QR_PNG).toEqual({
+   width:1024,margin:4,errorCorrectionLevel:'Q'
+  });
+ });
  it('finds a merchant beyond the first 100 without issuing unsafe QR early',async()=>{
   const offsets:number[]=[];
   const result=await checkPublicStorefront({
