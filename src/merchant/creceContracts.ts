@@ -162,3 +162,12 @@ export const CRECE_FAQ:ReadonlyArray<Readonly<{id:string;question:string;answer:
  {id:'fotografias',question:'¿Pueden publicar fotos de mi negocio sin mi permiso?',
   answer:'No. Las fotografías deben contar con autorización para su uso comercial. La sesión de hasta 10 fotos para Fundadores depende de agenda y aprobación de la participación.'}
 ];
+
+/** Opt-in *manual* sales contact. Never accepts arbitrary links or URLs,
+ * and does not transmit personal data until the visitor taps the link.
+ */
+export function founderWhatsAppLink(phone:unknown):string|null{
+ if(typeof phone!=='string'||!/^[1-9]\d{9,14}$/.test(phone))return null;
+ const message='Hola, me interesa conocer Fundadores Tala Eats y Tala Eats Crece. ¿Podrían compartir las condiciones para afiliar mi negocio en Tala?';
+ return 'https://wa.me/'+phone+'?text='+encodeURIComponent(message);
+}
