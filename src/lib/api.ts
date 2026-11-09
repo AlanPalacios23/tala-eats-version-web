@@ -36,7 +36,11 @@ export const api = {
   me: () => request<User>('/auth/me'),
   logout: () => request<void>('/auth/logout',json('POST')),
   restaurants: () => request<Restaurant[]>('/restaurants?limit=100&offset=0'),
-  restaurant: (id: number) => request<Restaurant>(`/restaurants/${id}`),
+  /** Customer-visible listing pagination used by Crece, read-only. */
+  restaurantsPage: (offset:number,limit=100,signal?:AbortSignal) =>
+    request<Restaurant[]>(`/restaurants?limit=${limit}&offset=${offset}`,{signal}),
+  restaurant: (id:number,signal?:AbortSignal) =>
+    request<Restaurant>(`/restaurants/${id}`,{signal}),
   paymentOptions: () => request<PaymentOptions>('/orders/payment-methods'),
   quote: (restaurantId:number, items:{menu_item_id:number;quantity:number;options:''}[]) => request<Quote>('/orders/quote',json('POST', {
     restaurant_id:restaurantId,order_type:'pickup',payment_method:'cash',items,tip:'0',coupon_code:'',delivery_lat:null,delivery_lng:null
