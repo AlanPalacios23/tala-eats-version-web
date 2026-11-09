@@ -75,3 +75,14 @@ La aplicación instalada actual sigue operando hasta aprobar una promoción sepa
 **Limitaciones deliberadas:** las páginas del backend actual emplean `offset`, no un cursor consistente; si los negocios se agregan o eliminan mientras el usuario recorre el catálogo, puede variar el orden. Una solución de búsqueda/paginación con cursor, clasificación geográfica y filtro en servidor debe llegar con la estabilización de Core v2. No llamar a la PWA actual «búsqueda global» ni «listado total» antes de disponer de ese servicio.
 
 **Regla de producción:** esto no habilita inscripción comercial, pagos, repartidores o wallets. La PWA sigue en borrador, sin publicación en Kali. El backend actual continúa con PM2, y el nuevo Core v2 se prueba de forma aislada en GitHub.
+
+## RC173 — verificación vigente del QR (9/nov/2026)
+
+- Una comprobación de publicación tiene vida limitada: la PWA realiza una **revalidación cada 90 segundos** mientras la sección Crece está abierta y visible, y al volver a primer plano o recuperar la conexión.
+- Durante una nueva comprobación, cuando el dispositivo pierde internet, cambia el ID de comercio, alcanza el límite de páginas o el backend falla, **el enlace, el botón de copiar y el PNG anterior quedan inhabilitados inmediatamente**. La respuesta de una petición cancelada o anterior no puede reactivar el QR por accidente.
+- El comerciante dispone de **«Abrir mi tienda en Clientes»** una vez que su ficha supera la doble verificación del backend. Esta acción abre la URL pública exacta en una pestaña nueva con `noopener noreferrer`; no confirma que el dominio de clientes esté operativo, por lo que el equipo debe probarlo antes de distribuir material impreso.
+- Las opciones del QR continúan siendo **PNG 1024 px, margen de cuatro módulos y corrección Q**. No se sube la imagen QR a servicios externos.
+- Nuevos tests verifican bloqueo por conexión, revisión anterior, cambio de tienda y estados de error. La sesión de dueño y el catálogo público se consultan para mostrar el enlace; **no se introduce ninguna mutación, orden, gasto o pago**.
+- Prueba manual pendiente en Android Chrome/iOS Safari: volver a primer plano, desconectar/reconectar red, cerrar tienda en otra sesión, descargar el PNG e intentar acceder al dominio de clientes real. No anunciar la actualización como publicada hasta completar ese QA.
+
+Esta mejora sigue en el mismo PR #48 y la PWA de Restaurantes preexistente, sin una pantalla adicional y sin afectar la aplicación de Repartidores.
