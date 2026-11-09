@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {api} from '../lib/api';
 import CreceCalculator from './CreceCalculator';
-import {checkPublicStorefront} from './crecePublication';
+import {checkPublicStorefront,CRECE_QR_PNG} from './crecePublication';
 import type {Restaurant} from '../lib/types';
 import {
   CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,creceAdvice,storefrontLink,
@@ -67,9 +67,7 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
   let active=true;
   setQr(null);
   if(shareableLink)void import('qrcode')
-   .then(module=>module.default.toDataURL(shareableLink,{
-    width:1024,margin:4,errorCorrectionLevel:'Q'
-   }))
+   .then(module=>module.default.toDataURL(shareableLink,CRECE_QR_PNG))
    .then(data=>{if(active)setQr(data);})
    .catch(()=>{if(active)setQr(null);});
   return()=>{active=false;};
