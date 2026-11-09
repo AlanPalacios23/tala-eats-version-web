@@ -14,6 +14,12 @@ import {verifiedPublicStorefront} from './creceContracts';
 export type PublicationResult='confirmed'|'not-public'|'limit';
 export const PUBLIC_STORE_PAGE_SIZE=100;
 export const PUBLIC_STORE_MAX_PAGES=12;
+/** Scannable print material: >=4-module quiet zone and high-resolution PNG.
+ * Preview can still be shown at 220 CSS pixels without losing export detail.
+ */
+export const CRECE_QR_PNG=Object.freeze({
+ width:1024,margin:4,errorCorrectionLevel:'Q' as const
+});
 
 export async function checkPublicStorefront(input:{
  storeId:number;
