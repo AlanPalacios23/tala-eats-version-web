@@ -214,3 +214,9 @@
 .crece-qr-download:hover{background:#df7433;color:white}
 .crece-qr-download:focus-visible{outline:3px solid #e89a62;outline-offset:3px}
 @media(max-width:440px){.crece-qr-download{width:100%;font-size:11px}}
+
+
+/* Cross-site reality check: owner can open the actual Clientes URL, not only the API. */
+.crece-public-test-link{display:inline-flex;align-items:center;gap:7px;max-width:100%;margin:12px 0;text-decoration:underline;text-underline-offset:3px;color:#b65f2d;font-size:12px;font-weight:800}
+.crece-public-test-link:hover{color:#8f4218}
+.crece-public-test-link:focus-visible{outline:3px solid #e59a66;outline-offset:3px;border-radius:4px}
