@@ -1,11 +1,12 @@
 import {useState} from 'react';
 import {ArrowLeft,ArrowRight,BadgeCheck,Camera,ChartNoAxesCombined,Gift,ShieldCheck,Sparkles,Store,TrendingUp} from 'lucide-react';
-import {CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,CRECE_FAQ} from './creceContracts';
+import {CRECE_BENEFITS,CRECE_PILLARS,FOUNDERS_OFFER,CRECE_FAQ,founderWhatsAppLink} from './creceContracts';
 import CreceCalculator from './CreceCalculator';
 import './crece.css';
 
 export default function CrecePublic({onBack}:{onBack:()=>void}){
  const [showAll,setShowAll]=useState(false);
+ const contact=founderWhatsAppLink(import.meta.env.VITE_TALA_CRECE_WHATSAPP);
  const initial=CRECE_BENEFITS.filter(b=>b.phase===1);
  const benefits=showAll?CRECE_BENEFITS:initial;
  return <main className="crece-public">
@@ -15,7 +16,10 @@ export default function CrecePublic({onBack}:{onBack:()=>void}){
     <span className="crece-overline"><Sparkles size={16}/> TALA EATS CRECE · TALA, JALISCO</span>
     <h1>Tu negocio tiene mucho por crecer. Nosotros te ayudamos.</h1>
     <p>Menú digital, herramientas para recibir pedidos, apoyo para dar a conocer tus productos y asesoría local. Una propuesta creada para los negocios de nuestra ciudad.</p>
-    <button type="button" onClick={onBack}>Ya tengo cuenta · Entrar <ArrowRight size={17}/></button>
+    <div className="crece-public-hero-actions">
+      {contact&&<a href={contact} target="_blank" rel="noopener noreferrer" className="crece-contact-link">Pedir información por WhatsApp <ArrowRight size={17}/></a>}
+      <button type="button" onClick={onBack}>Ya tengo cuenta · Entrar <ArrowRight size={17}/></button>
+    </div>
    </section>
    <section className="crece-public-terms" aria-label="Condiciones generales del programa">
     <div><strong>$0</strong><span>Alta y mensualidad fija propuestas</span></div>
@@ -48,7 +52,7 @@ export default function CrecePublic({onBack}:{onBack:()=>void}){
     <div className="crece-public-faq-list">{CRECE_FAQ.map(item=>
      <details key={item.id}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div>
    </section>
-   <footer className="crece-public-bottom"><div><h2>Tú te encargas de tu negocio. Tala Eats te ayuda a crecer.</h2><p>La afiliación se confirma exclusivamente mediante el proceso oficial de Tala Eats. Para solicitarla, ponte en contacto con nuestro equipo comercial por los canales oficiales. Esta página no almacena solicitudes ni datos personales.</p></div><button type="button" onClick={onBack}>Entrar al portal <ArrowRight size={17}/></button></footer>
+   <footer className="crece-public-bottom"><div><h2>Tú te encargas de tu negocio. Tala Eats te ayuda a crecer.</h2><p>La afiliación se confirma exclusivamente mediante el proceso oficial de Tala Eats. El contacto por WhatsApp solo se abre al elegirlo; esta página no almacena solicitudes ni datos personales.</p></div>{contact?<a className="crece-contact-link" href={contact} target="_blank" rel="noopener noreferrer">Consultar afiliación <ArrowRight size={17}/></a>:<button type="button" onClick={onBack}>Entrar al portal <ArrowRight size={17}/></button>}</footer>
   </div>
  </main>;
 }
