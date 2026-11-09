@@ -51,3 +51,22 @@ export async function checkPublicStorefront(input:{
  }
  return 'limit';
 }
+
+/** A checked QR is a short-lived claim about live public availability.
+ * A session that goes offline, changes merchant, or starts a refresh may
+ * NEVER continue offering a previously-verified QR to share.
+ */
+export const CRECE_PUBLIC_REVALIDATE_MS=90_000;
+export type StorePublication=Readonly<{
+ id:number|null;status:'idle'|'checking'|'confirmed'|'not-public'|'limit'|'error'|'offline';
+ revision:number;
+}>;
+export function mayShareStorefront(input:{
+ publication:StorePublication;storeId:unknown;
+ revision:number;online:boolean
+}):boolean{
+ const {publication,storeId,revision,online}=input;
+ return online&&Number.isSafeInteger(storeId)&&Number(storeId)>0&&
+  publication.id===storeId&&publication.revision===revision&&
+  publication.status==='confirmed';
+}
