@@ -8,7 +8,8 @@ import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
 import type { MenuItem, Order, Restaurant } from './lib/types';
 import {PUBLIC_DIRECTORY_PAGE_SIZE,joinRestaurantPages,
- filterRestaurantDirectory,nextDirectoryOffset} from './lib/catalogPagination';
+ filterRestaurantDirectory,nextDirectoryOffset,
+ hasNewDirectoryEntries} from './lib/catalogPagination';
 import MerchantWorkspace from './merchant/MerchantWorkspace';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -127,6 +128,13 @@ function Home(){
    if(!Array.isArray(rows)||rows.length>PUBLIC_DIRECTORY_PAGE_SIZE||
      rows.some(row=>!row||!Number.isSafeInteger(row.id)||row.id<=0))
     throw Error('El catálogo devolvió una página inválida.');
+   // A gateway that ignores OFFSET will repeat the first 100 records.
+   // Never keep offering a button that fetches that identical page forever.
+   if(rows.length>0&&!hasNewDirectoryEntries(loaded,rows)){
+    setHasMore(false);
+    setMoreError('El servidor repitió la página anterior. No cargaremos duplicados.');
+    return;
+   }
    // Preserve raw page size for offsets; display is deduplicated by store ID.
    setExtra(previous=>[...previous,...rows]);
    setHasMore(rows.length===PUBLIC_DIRECTORY_PAGE_SIZE);
