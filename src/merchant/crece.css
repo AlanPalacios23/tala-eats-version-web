@@ -198,3 +198,12 @@
 .crece-public-faq-list details p{font-size:12px;line-height:1.7;color:#71808a;padding:0 21px 21px;margin:0}
 .crece-public-faq-list summary:focus-visible{outline:3px solid #e89863;outline-offset:-4px;border-radius:12px}
 @media(max-width:750px){.crece-public-faq-list{grid-template-columns:1fr}.crece-public-faq-list summary{padding:18px 45px 18px 18px}}
+
+
+/* User-initiated contact only; nothing is sent on page load. */
+.crece-public-hero-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.crece-public-hero-actions .crece-contact-link,.crece-public-bottom .crece-contact-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:13px 17px;background:#ed7731;color:white;text-decoration:none;font-weight:800;font-size:12px;min-height:44px}
+.crece-public-hero-actions .crece-contact-link:hover,.crece-public-bottom .crece-contact-link:hover{background:#d35e1b;color:white}
+.crece-contact-link:focus-visible{outline:3px solid #f8b589;outline-offset:3px}
+.crece-public-bottom .crece-contact-link{flex-shrink:0}
+@media(max-width:480px){.crece-public-hero-actions{flex-direction:column;align-items:stretch}.crece-public-hero-actions .crece-contact-link{width:100%}}
