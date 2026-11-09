@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {checkPublicStorefront,PUBLIC_STORE_PAGE_SIZE,
- PUBLIC_STORE_MAX_PAGES,CRECE_QR_PNG} from '../src/merchant/crecePublication';
+ PUBLIC_STORE_MAX_PAGES,CRECE_QR_PNG,CRECE_PUBLIC_REVALIDATE_MS,
+ mayShareStorefront,type StorePublication} from '../src/merchant/crecePublication';
 
 const row=(id:number)=>({id,name:'Comercio '+id});
 const batch=(offset:number,size=PUBLIC_STORE_PAGE_SIZE)=>
@@ -10,6 +11,20 @@ describe('Crece: public verification at marketplace scale',()=>{
   expect(CRECE_QR_PNG).toEqual({
    width:1024,margin:4,errorCorrectionLevel:'Q'
   });
+ });
+ it('revokes QR immediately on offline, merchant switch or next refresh revision',()=>{
+  const checked:StorePublication={id:205,status:'confirmed',revision:9};
+  const base={publication:checked,storeId:205,revision:9,online:true};
+  expect(mayShareStorefront(base)).toBe(true);
+  expect(mayShareStorefront({...base,online:false})).toBe(false);
+  expect(mayShareStorefront({...base,storeId:206})).toBe(false);
+  expect(mayShareStorefront({...base,revision:10})).toBe(false);
+  expect(mayShareStorefront({...base,publication:{...checked,status:'checking'}})).toBe(false);
+  expect(mayShareStorefront({...base,publication:{...checked,status:'not-public'}})).toBe(false);
+  expect(mayShareStorefront({...base,publication:{...checked,status:'limit'}})).toBe(false);
+  expect(mayShareStorefront({...base,publication:{...checked,status:'offline'}})).toBe(false);
+  expect(CRECE_PUBLIC_REVALIDATE_MS).toBeGreaterThanOrEqual(60_000);
+  expect(CRECE_PUBLIC_REVALIDATE_MS).toBeLessThanOrEqual(120_000);
  });
  it('finds a merchant beyond the first 100 without issuing unsafe QR early',async()=>{
   const offsets:number[]=[];
