@@ -49,7 +49,7 @@ La aplicación instalada actual sigue operando hasta aprobar una promoción sepa
 
 ## RC171 — mejoras de calidad añadidas en la misma rama, sin otro backend
 
-- **Verificación de publicación:** el QR no se habilita hasta recibir coincidencia exacta entre la tienda autenticada, el listado público y su detalle público del backend. Si los endpoints fallan, la acción queda deshabilitada, con opción de reintento. La lectura de lista se limita a los primeros 100 comercios de la API actual; si la tienda no está incluida, el sistema falla cerrado y requiere mejorar el endpoint de verificación, nunca publicar el enlace por suposición.
+- **Verificación de publicación:** el QR no se habilita hasta recibir coincidencia exacta entre la tienda autenticada, el listado público y su detalle público del backend. Si los endpoints fallan, la acción queda deshabilitada, con opción de reintento. La comprobación revisa páginas sucesivas de 100 registros (hasta 12 páginas = 1,200 comercios consultados) y detiene solicitudes si el componente se desmonta. Si se alcanza el límite sin encontrar la tienda, el QR permanece bloqueado y se requiere una verificación individual, nunca publicar el enlace por suposición.
 - **Preparación del perfil:** checklist informativo de 5 pasos (identidad, dirección, artículo disponible/stock, imagen y publicación comprobada). Estos pasos **no** afirman que la plataforma esté lista para cobros.
 - **Simulador monetario exacto:** entrada validada en MXN de hasta seis dígitos enteros y dos decimales; cálculo de 17% comercio / 7% servicio en **centavos enteros**, misma convención de redondeo half-up que M1; no emite Stripe PaymentIntent, factura ni saldo. Comprobar 250.00 → 42.50 de comisión, 207.50 antes de ajustes para el comercio, 17.50 de servicio cliente. Para 500.00, servicio 35.00 **sin tope de 25**.
 - **Navegación móvil sin ruido:** mantiene las 5 pestañas inferiores originales; Crece queda en la barra lateral de escritorio y dentro de **Mi negocio** en móvil. Navegación `?vista=crece` sincronizada con React Router, con botón volver y gesto Atrás.
@@ -59,3 +59,19 @@ La aplicación instalada actual sigue operando hasta aprobar una promoción sepa
 **Antes de publicar realmente:** además de `npm test && npm run build`, verificar de forma manual que la página pública existe en el dominio correcto de Restaurantes (consulta `?vista=crece`) y que Clientes responde para el ID correcto, tanto con tienda abierta como cerrada. La coincidencia del listado y ficha prueba que el backend la expone, **no que los derechos de las fotos estén autorizados**. Confirmar permisos y consentimiento.
 
 **No desplegado en Kali**: estos cambios todavía están propuestos en PR de PWA. La integración Core v2 sigue bajo gates G1–G9 y no admite operaciones comerciales.
+
+## RC172 — calidad, escalabilidad y continuidad (9/nov/2026)
+
+**PWA de clientes sin nueva pantalla:** el catálogo ahora incluye botón `Cargar más comercios` y consulta `/restaurants?limit=100&offset=N`. Se preservan los parámetros y permisos existentes. La búsqueda usa exclusivamente negocios ya cargados y lo explica sin presentar resultados parciales como una búsqueda global. La lista deduplica comercios si hay superposición entre páginas y detecta cuando el backend ignora `offset` para **detener paginación infinita**. Una respuesta malformada no añade tarjetas ni inventa tiendas; muestra un reintento seguro.
+
+**PWA restaurantes / Crece:** la publicación de QR verifica el detalle público y busca el ID a través de páginas sucesivas, hasta **1,200** comercios consultados. Más allá del límite, o ante un error de API, **falla cerrado** y solicita revisión; un catálogo pequeño sin coincidencia se marca como no publicado. Las peticiones de verificación se cancelan al salir de Crece. Tras verificar publicación, el negocio puede guardar el QR en PNG directamente en el dispositivo. En iOS el navegador podría abrir la imagen en vez de descargarla: comprobar Safari real antes de prometer impresión con un toque.
+
+**Pruebas añadidas:**
+- Comercios en páginas posteriores a los primeros 100, identificación exacta, sin QR por detalles incompatibles o catálogo malformado
+- Petición cancelada durante la búsqueda, límite de exploración y reintentos
+- Búsqueda y deduplicación del catálogo de clientes, offsets y respuesta a servidores que repiten páginas
+- Validación CI de clientes y restaurantes (unitarios, TypeScript y compilación PWA) en GitHub
+
+**Limitaciones deliberadas:** las páginas del backend actual emplean `offset`, no un cursor consistente; si los negocios se agregan o eliminan mientras el usuario recorre el catálogo, puede variar el orden. Una solución de búsqueda/paginación con cursor, clasificación geográfica y filtro en servidor debe llegar con la estabilización de Core v2. No llamar a la PWA actual «búsqueda global» ni «listado total» antes de disponer de ese servicio.
+
+**Regla de producción:** esto no habilita inscripción comercial, pagos, repartidores o wallets. La PWA sigue en borrador, sin publicación en Kali. El backend actual continúa con PM2, y el nuevo Core v2 se prueba de forma aislada en GitHub.
