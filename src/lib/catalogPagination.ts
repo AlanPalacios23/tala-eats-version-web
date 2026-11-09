@@ -33,3 +33,13 @@ export function nextDirectoryOffset(
  // The backend's OFFSET tracks rows returned, not deduplicated IDs.
  return initial.length+additional.length;
 }
+
+/** Some gateways ignore OFFSET and repeatedly return the same first page.
+ * Stop instead of showing an infinite "load more" action or duplicated cards.
+ */
+export function hasNewDirectoryEntries(
+ loaded:readonly Restaurant[],incoming:readonly Restaurant[]
+):boolean{
+ const present=new Set(loaded.map(x=>x.id));
+ return incoming.some(x=>Number.isSafeInteger(x?.id)&&x.id>0&&!present.has(x.id));
+}
