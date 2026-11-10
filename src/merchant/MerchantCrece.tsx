@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import {api} from '../lib/api';
 import CreceCalculator from './CreceCalculator';
+import {CRECE_ACTIONS,creceDraftText,officialAssistanceLink} from './creceTools';
 import {checkPublicStorefront,CRECE_QR_PNG,CRECE_PUBLIC_REVALIDATE_MS,
  mayShareStorefront,type StorePublication} from './crecePublication';
 import type {Restaurant} from '../lib/types';
@@ -116,6 +117,56 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  };
  const shareText=shareableLink&&restaurant?.name?
   `Conoce ${restaurant.name} en Tala Eats: ${shareableLink}`:null;
+ const actionFor=(benefitId:string)=>{
+  const action=CRECE_ACTIONS[benefitId];
+  if(!action){setFeedback('Este beneficio todavía no tiene una acción segura.');return;}
+  if(action.kind==='navigate'){onNavigate(action.destination);return;}
+  if(action.kind==='section'){
+   document.getElementById(action.destination)?.scrollIntoView({
+    behavior:'smooth',block:'start'
+   });
+   return;
+  }
+  if(action.kind==='share'){
+   if(!shareableLink){
+    setFeedback('Confirma la publicación de tu tienda antes de compartir.');
+    return;
+   }
+   void copy(action.label.includes('WhatsApp')&&shareText?
+    shareText:shareableLink,'Enlace verificado, listo para compartir.');
+   return;
+  }
+  if(action.kind==='assisted'){
+   const url=officialAssistanceLink(
+    import.meta.env.VITE_TALA_CRECE_WHATSAPP,benefitId,restaurant?.name
+   );
+   if(!url){
+    setFeedback('El contacto comercial oficial todavía no está configurado. Este servicio requiere aprobación del equipo.');
+    return;
+   }
+   window.open(url,'_blank','noopener,noreferrer');
+   setFeedback('Consulta abierta. El servicio se confirma solo tras la respuesta y aprobación del equipo.');
+   return;
+  }
+  if(action.kind==='draft'){
+   const content=creceDraftText({
+    benefitId,storeName:restaurant?.name||'',
+    storeId:restaurant?.id??0,menu:restaurant?.menu_items,
+    storefrontUrl:shareableLink
+   });
+   if(!content){
+    setFeedback('No se pudo generar el borrador. Verifica los datos del comercio.');
+    return;
+   }
+   const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+   const url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;
+   a.download='tala-eats-crece-'+benefitId+'-'+restaurant?.id+'.txt';
+   document.body.appendChild(a);a.click();a.remove();
+   window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+   setFeedback('Borrador guardado. No activa campañas, pedidos ni cobros.');
+  }
+ };
  return <section className="crece-shell" aria-label="Programa Tala Eats Crece">
   <header className="crece-hero">
    <span className="crece-overline"><Sparkles size={15}/> TALA EATS CRECE</span>
@@ -175,7 +226,7 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
    </div>:<div className="crece-data-empty">El perfil de comercio aún no está disponible desde el servidor.</div>}
   </section>
 
-  <section className="crece-share" aria-label="Herramientas para compartir tu tienda">
+  <section className="crece-share" id="crece-share" aria-label="Herramientas para compartir tu tienda">
    <div><span className="crece-kicker">TU TIENDA, EN TODAS PARTES</span>
     <h2>Comparte tu menú con un QR</h2>
     <p>Para evitar enlaces rotos, verificamos que tu tienda aparezca en el listado público y abra su detalle desde el backend de clientes.</p>
@@ -198,9 +249,9 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
     Guardar QR en PNG <ArrowRight size={15}/></a>}</div>
   </section>
 
-  <CreceCalculator/>
+  <div id="crece-calculator"><CreceCalculator/></div>
 
-  <section className="crece-recommend" aria-label="Consejos para mejorar tu comercio">
+  <section className="crece-recommend" id="crece-recommend" aria-label="Consejos para mejorar tu comercio">
    <div className="crece-section-heading"><div><span className="crece-kicker">EL PASO QUE SIGUE</span>
      <h2>Ideas basadas en tu operación</h2>
      <p>No mostramos estimaciones de ventas ni datos de clientes inventados.</p>
@@ -212,7 +263,7 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
 
   <section className="crece-directory" id="crece-beneficios">
    <div className="crece-section-heading"><div><span className="crece-kicker">CATÁLOGO DE BENEFICIOS</span>
-    <h2>Conoce las {CRECE_BENEFITS.length} oportunidades</h2><p>Filtra por disponibilidad. Los proyectos futuros no son funcionalidades activas ni servicios contratados.</p>
+    <h2>Conoce las {CRECE_BENEFITS.length} oportunidades</h2><p>Cada beneficio tiene una acción útil, sin presentar borradores como operaciones comerciales habilitadas.</p>
    </div></div>
    <div className="crece-filters" role="group" aria-label="Filtrar beneficios">
     {([['principal','Para comenzar'],['disponible','En la app'],['asistido','Con apoyo'],['planeado','Próximamente']] as const).map(([id,label])=>
@@ -223,6 +274,9 @@ export default function MerchantCrece({restaurant,metrics,onNavigate}:{
      <span className={'crece-benefit-status '+item.state}>{STATUS[item.state]}</span>
      <h3>{item.title}</h3><p>{item.description}</p>
      <small>{CRECE_PILLARS.find(p=>p.id===(item.pillar as CrecePillar))?.label} · Etapa {item.phase}</small>
+     <button className="crece-benefit-action" type="button" onClick={()=>actionFor(item.id)}>
+       {CRECE_ACTIONS[item.id]?.label||'No disponible'} <ArrowRight size={15}/>
+     </button>
     </article>)}
    </div>
    {shown.length>9&&<button className="crece-more" type="button" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>
