@@ -26,7 +26,7 @@ type Filter='principal'|'disponible'|'asistido'|'planeado';
 export default function MerchantCrece({restaurant,metrics,onNavigate}:{
  restaurant:Restaurant|null;
  metrics:CreceMetrics|null;
- onNavigate:(section:'pedidos'|'menu'|'rendimiento'|'negocio'|'crece')=>void;
+ onNavigate:(section:'pedidos'|'menu'|'rendimiento'|'negocio'|'wallet'|'crece')=>void;
 }){
  const [filter,setFilter]=useState<Filter>('principal');
  const [expanded,setExpanded]=useState(false);
