@@ -220,3 +220,13 @@
 .crece-public-test-link{display:inline-flex;align-items:center;gap:7px;max-width:100%;margin:12px 0;text-decoration:underline;text-underline-offset:3px;color:#b65f2d;font-size:12px;font-weight:800}
 .crece-public-test-link:hover{color:#8f4218}
 .crece-public-test-link:focus-visible{outline:3px solid #e59a66;outline-offset:3px;border-radius:4px}
+
+
+/* RC174 benefit actions: all 27 cards lead to a real safe next step. */
+.crece-benefit-action{margin-top:6px;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;padding:10px 12px;border:1px solid #e7b691;border-radius:10px;background:#fff9f3;color:#a95823;font-weight:800;font-size:11px;cursor:pointer;text-align:center}
+.crece-benefit-action:hover{background:#fff0e2;border-color:#e38c48}
+.crece-benefit-action:focus-visible{outline:3px solid #efa96f;outline-offset:3px}
+.crece-benefit-action svg{flex:0 0 auto}
+.crece-benefit:has(.crece-benefit-action){display:flex;flex-direction:column}
+.crece-benefit .crece-benefit-action{margin-top:auto}
+#crece-calculator,#crece-recommend,#crece-share{scroll-margin-top:20px}
