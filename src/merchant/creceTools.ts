@@ -44,7 +44,7 @@ export const CRECE_ACTIONS:Readonly<Record<CreceBenefit['id'],CreceAction>>=Obje
  calidad:{kind:'draft',label:'Revisar requisitos de calidad'}
 });
 export const ASSISTED_BENEFITS=Object.freeze([
- 'alta','fotos','destacado','redes','comisiones','soporte'
+ 'alta','fotos','kit','destacado','redes','comisiones','soporte'
 ]); // Also: kit is generated locally AND can be requested as human support.
 export function unassignedCreceActions(){
  return CRECE_BENEFITS.filter(b=>!Object.hasOwn(CRECE_ACTIONS,b.id));
@@ -54,7 +54,7 @@ export function officialAssistanceLink(
 ):string|null{
  if(typeof rawPhone!=='string'||!/^[1-9]\d{9,14}$/.test(rawPhone))return null;
  const benefit=CRECE_BENEFITS.find(x=>x.id===benefitId);
- if(!benefit)return null;
+ if(!benefit||!ASSISTED_BENEFITS.includes(benefitId))return null;
  const name=typeof storeName==='string'?
   storeName.replace(/[\r\n\t]/g,' ').trim().slice(0,90):'';
  const message='Hola, soy responsable de '+(name||'un negocio')+
