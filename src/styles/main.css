@@ -21,3 +21,15 @@
 @media(max-width:600px){.gateway-header{padding:20px 22px}.gateway-brand{font-size:27px}.gateway-header-actions{gap:6px}.gateway-header-actions a,.gateway-menu-toggle{min-height:39px;padding:9px 13px;font-size:12px}.gateway-menu-toggle{width:40px}.gateway-menu{top:74px;right:18px}.gateway-main{padding:0 22px 36px}.gateway-heading{padding:clamp(88px,15vh,175px) 0 clamp(85px,13vh,140px)}.gateway-heading h1{font-size:clamp(75px,19vw,123px);margin-bottom:26px}.gateway-kicker{font-size:9px;margin-bottom:31px}.gateway-tagline{font-size:13px}.gateway-portals{padding:0}.gateway-portal{min-height:115px;padding:24px 0}.gateway-portal strong{font-size:clamp(29px,8vw,42px)}.gateway-portal small{font-size:11px;max-width:250px}.gateway-portal-arrow svg{width:29px;height:29px}.gateway-footer{grid-template-columns:1fr;gap:28px;padding:70px 22px 30px}.gateway-footer>div:nth-child(2){gap:18px 26px}.gateway-copyright{font-size:10px}}
 @media(max-width:370px){.gateway-header{padding:16px}.gateway-login{display:none!important}.gateway-main{padding-left:18px;padding-right:18px}.gateway-heading h1{font-size:19vw}.gateway-footer{padding-left:18px;padding-right:18px}}
 @media(prefers-reduced-motion:reduce){.gateway-portal,.gateway-portal-arrow,.gateway-header-actions a{transition:none}}
+
+
+/* Incremental catalog: large merchant lists remain reachable without a
+ * new screen. Text never claims unloaded stores have been searched. */
+.directory-load-more{display:flex;flex-direction:column;align-items:center;gap:10px;margin:24px auto 4px;max-width:480px;text-align:center}
+.directory-load-more small{font-size:12px;line-height:1.6;color:var(--muted,#78838c)}
+.directory-more-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 21px;min-height:48px;border:1px solid #d9e0e5;border-radius:13px;background:#fff;color:#343c43;font-weight:800;cursor:pointer;font-size:13px;transition:background .15s,border-color .15s}
+.directory-more-button:hover:not(:disabled){background:#fff5ef;border-color:#e78c54}
+.directory-more-button:disabled{opacity:.65;cursor:wait}
+.directory-more-button:focus-visible,.directory-load-error button:focus-visible{outline:3px solid #e99160;outline-offset:3px}
+.directory-load-error{font-size:12px;line-height:1.6;color:#ad4339;border:1px solid #f0c7c1;background:#fff7f5;padding:12px 14px;border-radius:10px}
+.directory-load-error button{border:0;background:transparent;text-decoration:underline;color:#ad4339;font-weight:800;cursor:pointer;margin-left:8px}

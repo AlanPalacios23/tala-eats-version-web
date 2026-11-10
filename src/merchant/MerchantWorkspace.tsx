@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
-  BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
+  BarChart3, Check, CheckCircle2, Sprout, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, Store, UtensilsCrossed, LogOut,
   Wallet, WifiOff, X
@@ -13,11 +13,12 @@ import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
 import MerchantUpdateBanner from './MerchantUpdateBanner';
+import MerchantCrece from './MerchantCrece';
 import './merchant.css';
 
-type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
+type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio' | 'crece';
 export const isMerchantSection = (value:string|null):value is Section =>
-  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio';
+  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio'||value==='crece';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
 type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
@@ -61,7 +62,8 @@ const NAV: {id: Section; label: string; mobileLabel: string; icon: typeof Clipbo
   {id:'menu',label:'Menú',mobileLabel:'Menú',icon:UtensilsCrossed},
   {id:'rendimiento',label:'Rendimiento',mobileLabel:'Datos',icon:BarChart3},
   {id:'wallet',label:'Wallet',mobileLabel:'Wallet',icon:Wallet},
-  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2}
+  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2},
+  {id:'crece',label:'Tala Eats Crece',mobileLabel:'Crece',icon:Sprout}
 ];
 export function elapsedOrderTime(date:string, now:number):string {
   const created=new Date(date).getTime();
@@ -626,6 +628,7 @@ export default function MerchantWorkspace(){
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
           </>}
           {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
+          {section==='crece'&&<MerchantCrece restaurant={restaurant} metrics={!errors.analytics&&analytics?{orders:analytics.orders,delivered:analytics.delivered,inventory_low:analytics.inventory_low}:null} onNavigate={setSection}/>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><h1>Mi negocio</h1><p>Disponibilidad e información del comercio.</p></div></div>
             <section className="merchant-store-hero">
@@ -645,6 +648,12 @@ export default function MerchantWorkspace(){
           {section==='negocio'&&<>
             <div className="merchant-settings-grid"><section className="merchant-setting-card"><span className="merchant-setting-icon"><Store size={23}/></span><h2>{restaurant?.name||'Mi comercio'}</h2><p><MapPin size={16}/>{restaurant?.address||'Dirección sin publicar'}</p><div className="merchant-setting-row"><span>Verificación</span><strong>{restaurant?.verification_status||'Sin información'}</strong></div><div className="merchant-setting-row"><span>Pedidos para recoger</span><strong>{restaurant?.pickup_enabled?'Habilitados':'Deshabilitados'}</strong></div></section>
               <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||menuMutating||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
+            <section className="merchant-crece-entry" aria-label="Accede a Tala Eats Crece">
+              <div className="merchant-crece-entry-mark"><Sprout size={24}/></div>
+              <div><span className="merchant-kicker">TALA EATS CRECE</span><h2>Herramientas y acompañamiento para tu negocio</h2>
+              <p>Conoce tus beneficios, prepara tu perfil, comparte tu tienda y revisa un ejemplo transparente de comisiones.</p></div>
+              <button type="button" onClick={()=>setSection('crece')}>Explorar Crece <ChevronRight size={17}/></button>
+            </section>
           </>}
         </>}
       </div>
@@ -667,6 +676,6 @@ export default function MerchantWorkspace(){
         <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
       </section>
     </div>}
-    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
+    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.filter(n=>n.id!=='crece').map(n=><button key={n.id} type="button" className={section===n.id||(section==='crece'&&n.id==='negocio')?'active':''} aria-current={section===n.id||(section==='crece'&&n.id==='negocio')?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
   </div>;
 }

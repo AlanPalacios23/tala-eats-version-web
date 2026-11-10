@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Bike, CheckCircle2, ChefHat, Clock3, Coffee, Compass, LogIn, LogOut, MapPin, Menu, Minus, Package, Plus, RefreshCw, Search, ShieldCheck, ShoppingBag, ShoppingCart, Store, UserRound, WifiOff, X } from 'lucide-react';
@@ -6,7 +6,10 @@ import { api, ApiError, isDriverRole, isMerchantRole, pesos, safeImage } from '.
 import { EMPTY_CART, addItem, basketTotal, lineItems, updateQuantity } from './lib/cart';
 import type { Cart } from './lib/cart';
 import { useSession } from './lib/session';
-import type { MenuItem, Order } from './lib/types';
+import type { MenuItem, Order, Restaurant } from './lib/types';
+import {PUBLIC_DIRECTORY_PAGE_SIZE,joinRestaurantPages,
+ filterRestaurantDirectory,nextDirectoryOffset,
+ hasNewDirectoryEntries} from './lib/catalogPagination';
 import MerchantWorkspace from './merchant/MerchantWorkspace';
 
 type AsyncState<T>={value:T|null;loading:boolean;error:string};
@@ -96,16 +99,70 @@ function PortalLanding(){
 function Home(){
  const {value:restaurants,loading,error,refresh}=useLoad(()=>api.restaurants(),[]);
  const [search,setSearch]=useState('');
- const filtered=useMemo(()=>restaurants?.filter(r=>(r.name+' '+(r.cuisine??'')+' '+(r.description??'')).toLowerCase().includes(search.trim().toLowerCase()))??[],[restaurants,search]);
+ const [extra,setExtra]=useState<Restaurant[]>([]);
+ const [hasMore,setHasMore]=useState(false);
+ const [busyMore,setBusyMore]=useState(false);
+ const [moreError,setMoreError]=useState('');
+ const loadingController=useRef<AbortController|null>(null);
+ useEffect(()=>{
+  loadingController.current?.abort();
+  loadingController.current=null;
+  setExtra([]);
+  setBusyMore(false);
+  setMoreError('');
+  setHasMore(Array.isArray(restaurants)&&restaurants.length===PUBLIC_DIRECTORY_PAGE_SIZE);
+ },[restaurants]);
+ useEffect(()=>()=>loadingController.current?.abort(),[]);
+ const loaded=useMemo(()=>joinRestaurantPages(restaurants??[],extra),[restaurants,extra]);
+ const filtered=useMemo(()=>filterRestaurantDirectory(loaded,search),[loaded,search]);
+ const loadMore=async()=>{
+  if(busyMore||!restaurants||!hasMore)return;
+  const ctrl=new AbortController();
+  loadingController.current=ctrl;
+  setBusyMore(true);
+  setMoreError('');
+  try{
+   const rows=await api.restaurantsPage(
+    nextDirectoryOffset(restaurants,extra),PUBLIC_DIRECTORY_PAGE_SIZE,ctrl.signal);
+   if(ctrl.signal.aborted)return;
+   if(!Array.isArray(rows)||rows.length>PUBLIC_DIRECTORY_PAGE_SIZE||
+     rows.some(row=>!row||!Number.isSafeInteger(row.id)||row.id<=0))
+    throw Error('El catálogo devolvió una página inválida.');
+   // A gateway that ignores OFFSET will repeat the first 100 records.
+   // Never keep offering a button that fetches that identical page forever.
+   if(rows.length>0&&!hasNewDirectoryEntries(loaded,rows)){
+    setHasMore(false);
+    setMoreError('El servidor repitió la página anterior. No cargaremos duplicados.');
+    return;
+   }
+   // Preserve raw page size for offsets; display is deduplicated by store ID.
+   setExtra(previous=>[...previous,...rows]);
+   setHasMore(rows.length===PUBLIC_DIRECTORY_PAGE_SIZE);
+  }catch(e){
+   if(!ctrl.signal.aborted)
+    setMoreError(e instanceof Error?e.message:'No se pudieron cargar más comercios.');
+  }finally{
+   if(!ctrl.signal.aborted)setBusyMore(false);
+   if(loadingController.current===ctrl)loadingController.current=null;
+  }
+ };
  return <><section className="hero"><div className="container hero-grid"><div className="hero-copy">
   <div className="hero-kicker"><MapPin size={15}/> Hecho en Tala, Jalisco</div><h1>Lo rico de <em>tu ciudad</em>, a un clic.</h1>
   <p>Descubre restaurantes y comercios locales. Elige lo que se te antoja y recógelo cuando esté listo.</p>
   <a href="#comercios" className="btn primary">Explorar comercios <ArrowRight size={18}/></a>
   <div className="hero-mini"><span><CheckCircle2 size={17}/> Negocios locales</span><span><ShieldCheck size={17}/> Pedido protegido</span></div>
  </div><div className="hero-art" aria-hidden="true"><div className="art-circle art-circle-one"/><div className="art-circle art-circle-two"/><div className="art-card center-card"><span className="art-emoji">🌮</span><strong>Antojos cerca de ti</strong><small>Sabores que nos unen</small></div><div className="art-float float-left">🍔 <span>Recién hecho</span></div><div className="art-float float-right">🥑 <span>Fresco y local</span></div></div></div></section>
- <section id="comercios" className="container section"><div className="section-title-row"><SectionTitle eyebrow="DESCUBRE" title="¿Qué se te antoja hoy?" description="Encuentra comercios verificados y revisa su menú."/><span className="muted">{filtered.length} comercios</span></div>
- <label className="search-wrap"><Search size={21}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca comida, tiendas o tu restaurante favorito" aria-label="Buscar comercios"/></label>
- {loading?<Spinner/>:error?<Alert><span>{error}</span> <button onClick={refresh}>Reintentar</button></Alert>:filtered.length===0?<EmptyState icon={<Store size={32}/>} title="Todavía no hay resultados" description={search?'Prueba con otra búsqueda.':'Aún no hay comercios verificados publicados. Vuelve pronto.'}/>:<div className="merchant-grid">{filtered.map(r=><Link to={'/comercio/'+r.id} className="merchant-card" key={r.id}><div className="merchant-cover"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍲'} alt={r.name}/><span className={'open-label '+(r.is_open?'open':'closed')}>{r.is_open?'Abierto':'Cerrado'}</span></div><div className="merchant-body"><h3>{r.name}</h3><p>{r.cuisine||r.description||'Un sabor local'}</p><div className="merchant-meta"><span><Clock3 size={15}/>{r.eta_min??'—'} min</span><span><MapPin size={15}/> Tala y región</span></div></div></Link>)}</div>}
+ <section id="comercios" className="container section"><div className="section-title-row"><SectionTitle eyebrow="DESCUBRE" title="¿Qué se te antoja hoy?" description="Encuentra comercios verificados y revisa su menú."/><span className="muted">{filtered.length} de {loaded.length} comercios cargados</span></div>
+  <label className="search-wrap"><Search size={21}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Busca comida, tiendas o tu restaurante favorito" aria-label="Buscar comercios"/></label>
+  {loading?<Spinner/>:error?<Alert><span>{error}</span> <button onClick={refresh}>Reintentar</button></Alert>:filtered.length===0?<EmptyState icon={<Store size={32}/>} title="No hay coincidencias entre los comercios cargados" description={search?'Prueba con otra búsqueda o carga más comercios para ampliar la búsqueda.':'Aún no hay comercios verificados publicados en los resultados cargados.'}/>:<div className="merchant-grid">{filtered.map(r=><Link to={'/comercio/'+r.id} className="merchant-card" key={r.id}><div className="merchant-cover"><FoodPicture src={r.cover_image_url} emoji={r.emoji||'🍲'} alt={r.name}/><span className={'open-label '+(r.is_open?'open':'closed')}>{r.is_open?'Abierto':'Cerrado'}</span></div><div className="merchant-body"><h3>{r.name}</h3><p>{r.cuisine||r.description||'Un sabor local'}</p><div className="merchant-meta"><span><Clock3 size={15}/>{r.eta_min??'—'} min</span><span><MapPin size={15}/> Tala y región</span></div></div></Link>)}</div>}
+  {!loading&&!error&&<div className="directory-load-more" role="status" aria-live="polite">
+   {moreError&&<div className="directory-load-error">{moreError} <button type="button" onClick={()=>void loadMore()}>Reintentar</button></div>}
+   {hasMore&&<button type="button" className="directory-more-button" disabled={busyMore} onClick={()=>void loadMore()}>
+    {busyMore?<><RefreshCw size={17} className="spin"/> Consultando comercios…</>:<>Cargar más comercios <ArrowRight size={17}/></>}
+   </button>}
+   {!hasMore&&loaded.length>0&&<small>Has llegado al final de los comercios publicados en esta lista.</small>}
+   {hasMore&&Boolean(search.trim())&&<small>La búsqueda se realiza entre los comercios cargados. Puedes consultar más resultados con el botón.</small>}
+  </div>}
  </section><section className="container section"><div className="benefit-grid"><div><span>🏡</span><strong>Apoya a los negocios de aquí</strong><p>Cada pedido impulsa a nuestra comunidad.</p></div><div><span>🛍️</span><strong>Compra sin complicaciones</strong><p>Consulta tu pedido y pasa a recogerlo.</p></div><div><span>🤝</span><strong>Hecho para todos</strong><p>Clientes, restaurantes y repartidores en un mismo lugar.</p></div></div></section></>;
 }
 function Commerce({add}:{add:(item:MenuItem)=>void}){
