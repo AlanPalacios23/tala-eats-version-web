@@ -52,6 +52,8 @@ export const api = {
   myOrders: () => request<Order[]>('/orders/mine?limit=100&offset=0'),
   ownerRestaurant: () => request<Restaurant>('/owner/restaurant'),
   ownerOrders: () => request<Order[]>('/owner/orders?limit=100&offset=0'),
+  ownerOrdersPage: (offset:number,limit=100,signal?:AbortSignal) =>
+    request<Order[]>(`/owner/orders?limit=${limit}&offset=${offset}`,{signal}),
   ownerAnalytics: () => request<{orders:number;delivered:number;gross_sales:number;inventory_low:number}>('/owner/analytics'),
   // Finanzas: solo GET de lectura; no se crea ni solicita ningún payout desde esta PWA.
   ownerFinance: () => request<unknown>('/owner/finance'),
