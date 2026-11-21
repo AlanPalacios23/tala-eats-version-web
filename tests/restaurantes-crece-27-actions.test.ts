@@ -15,6 +15,11 @@ describe('Tala Eats Crece RC174: 27 benefit actions',()=>{
    if(item.state==='planeado')expect(action.kind).toBe('draft');
   }
  });
+ it('merchant export benefit opens enhanced report in Rendimiento, not the first 100 queue',()=>{
+  expect(CRECE_ACTIONS.exportar).toEqual({
+   kind:'navigate',destination:'rendimiento',label:'Exportar historial CSV'
+  });
+ });
  it('official assistance is optional and never invented without configured phone',()=>{
   expect(officialAssistanceLink(undefined,'fotos','Comedor Tala')).toBeNull();
   expect(officialAssistanceLink('5213312345678','inventario','Comedor Tala')).toBeNull();
