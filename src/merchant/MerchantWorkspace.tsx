@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {useNavigate,useSearchParams} from 'react-router-dom';
 import {
-  BarChart3, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Clock3,
+  BarChart3, Check, CheckCircle2, Sprout, ChevronDown, ChevronRight, ClipboardList, Clock3,
   BellRing, Coffee, Columns3, FileDown, List, MapPin, Plus, Printer, ReceiptText, RefreshCw,
   Search, Settings2, ShoppingBag, Store, UtensilsCrossed, LogOut,
   Wallet, WifiOff, X
@@ -13,11 +13,13 @@ import type { MenuItem, Order, Restaurant } from '../lib/types';
 import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
 import MerchantUpdateBanner from './MerchantUpdateBanner';
+import MerchantCrece from './MerchantCrece';
+import {fetchCreceOrderReport,CRECE_REPORT_PAGE_SIZE,CRECE_REPORT_PAGE_LIMIT} from './creceOrderReport';
 import './merchant.css';
 
-type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio';
+type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio' | 'crece';
 export const isMerchantSection = (value:string|null):value is Section =>
-  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio';
+  value==='pedidos'||value==='menu'||value==='rendimiento'||value==='wallet'||value==='negocio'||value==='crece';
 type OrderFilter = 'activos' | 'nuevos' | 'preparando' | 'listos' | 'historial' | 'todos';
 type MenuFilter = 'todos' | 'disponibles' | 'bajo' | 'agotados' | 'pausados';
 type OwnerAnalytics = {orders: number; delivered: number; gross_sales: number; inventory_low: number};
@@ -61,7 +63,8 @@ const NAV: {id: Section; label: string; mobileLabel: string; icon: typeof Clipbo
   {id:'menu',label:'Menú',mobileLabel:'Menú',icon:UtensilsCrossed},
   {id:'rendimiento',label:'Rendimiento',mobileLabel:'Datos',icon:BarChart3},
   {id:'wallet',label:'Wallet',mobileLabel:'Wallet',icon:Wallet},
-  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2}
+  {id:'negocio',label:'Mi negocio',mobileLabel:'Negocio',icon:Settings2},
+  {id:'crece',label:'Tala Eats Crece',mobileLabel:'Crece',icon:Sprout}
 ];
 export function elapsedOrderTime(date:string, now:number):string {
   const created=new Date(date).getTime();
@@ -313,6 +316,10 @@ export default function MerchantWorkspace(){
   const [restaurant,setRestaurant]=useState<Restaurant|null>(null);
   const [orders,setOrders]=useState<Order[]>([]);
   const [analytics,setAnalytics]=useState<OwnerAnalytics|null>(null);
+  const reportAbort=useRef<AbortController|null>(null);
+  const [exportingHistory,setExportingHistory]=useState(false);
+  const [historyProgress,setHistoryProgress]=useState(0);
+  useEffect(()=>()=>{reportAbort.current?.abort();},[restaurant?.id]);
   const [errors,setErrors]=useState<{restaurant?:string;orders?:string;analytics?:string}>({});
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
@@ -427,6 +434,57 @@ export default function MerchantWorkspace(){
     window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
   };
 
+  /** Operational report, not accounting reconciliation. Reads existing
+   * authenticated owner endpoint and never modifies the live kitchen queue.
+   */
+  const exportCreceHistory=async()=>{
+    if(reportAbort.current||!online||!restaurant||
+       errors.orders||loading)return;
+    const storeId=restaurant.id;
+    const controller=new AbortController();
+    reportAbort.current=controller;
+    setExportingHistory(true);setHistoryProgress(0);
+    setNotice('');setNoticeError(false);
+    try{
+      const result=await fetchCreceOrderReport({
+        storeId,signal:controller.signal,
+        fetchPage:(offset,limit,signal)=>api.ownerOrdersPage(offset,limit,signal),
+        onProgress:(_,count)=>setHistoryProgress(count)
+      });
+      if(controller.signal.aborted)return;
+      if(result.orders.length===0){
+        setNotice('No hay pedidos disponibles para exportar en la API del restaurante.');
+        return;
+      }
+      const csv=exportOrderSummaryCsv([...result.orders]);
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+      link.href=url;
+      link.download='tala-eats-historial-operativo-'+storeId+'-'+
+        new Date().toISOString().slice(0,10)+'.csv';
+      document.body.appendChild(link);link.click();link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
+      setNotice('Se descargó una vista operativa de '+result.orders.length+
+        ' pedidos en '+result.pagesRead+' páginas.'+
+        (result.truncated?' Se alcanzó el límite de '+
+         (CRECE_REPORT_PAGE_SIZE*CRECE_REPORT_PAGE_LIMIT)+
+         ' registros; puede haber más pedidos.':'')+
+        ' No sustituye una conciliación contable y puede cambiar si entran pedidos.');
+    }catch(error){
+      if(controller.signal.aborted)return;
+      const code=error instanceof Error?error.message:'';
+      const reason=code==='CRECE_REPORT_PAGES_OVERLAP'?
+        'El catálogo cambió durante la consulta o repitió registros. No se generó un reporte incompleto.':
+        code==='CRECE_REPORT_RESPONSE_INVALID'?
+        'La API devolvió un registro inválido o de otro comercio. No se descargó el archivo.':
+        'No se pudo completar la consulta del historial. No se descargó el archivo.';
+      setNoticeError(true);setNotice(reason);
+    }finally{
+      if(reportAbort.current===controller)reportAbort.current=null;
+      setExportingHistory(false);
+    }
+  };
   const exitMerchant=async()=>{
     if(loggingOut||mutationInFlight.current||menuMutationInFlight.current||
       dirtyMenuRows.current.size>0||addDraftPending.current){
@@ -434,6 +492,7 @@ export default function MerchantWorkspace(){
       setNotice('Finaliza operaciones y guarda o deshaz tus cambios antes de cerrar sesión.');
       return;
     }
+    reportAbort.current?.abort();
     setLoggingOut(true);
     try{await logout();}
     catch(e){setNoticeError(true);setNotice(errorMessage(e));}
@@ -623,9 +682,24 @@ export default function MerchantWorkspace(){
                 <button type="button" className="merchant-insight-button" onClick={()=>{setSection('menu');setMenuFilter('bajo');setMenuSearch('');setMenuCategory('')}}>Revisar existencias <ChevronRight size={17}/></button>
               </section>
             </div>
+            <section className="merchant-report-export" aria-label="Exportación ampliada de pedidos">
+              <div><h2>Historial operativo ampliado</h2>
+                <p>Consulta hasta {CRECE_REPORT_PAGE_SIZE*CRECE_REPORT_PAGE_LIMIT} pedidos del comercio desde la API, sin direcciones, teléfonos ni PIN. La lectura es paginada y no equivale a un estado de cuenta o factura.</p>
+                {exportingHistory&&<small role="status">Consultando historial: {historyProgress} pedidos recibidos…</small>}
+              </div>
+              <div className="merchant-report-actions">
+                <button type="button" disabled={!online||!restaurant||Boolean(errors.orders)||exportingHistory}
+                  className="merchant-main-button" onClick={()=>void exportCreceHistory()}>
+                  <FileDown size={17}/>{exportingHistory?'Preparando historial…':'Exportar historial CSV'}
+                </button>
+                {exportingHistory&&<button type="button" className="merchant-neutral-button"
+                  onClick={()=>reportAbort.current?.abort()}>Cancelar consulta</button>}
+              </div>
+            </section>
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
           </>}
           {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
+          {section==='crece'&&<MerchantCrece restaurant={restaurant} metrics={!errors.analytics&&analytics?{orders:analytics.orders,delivered:analytics.delivered,inventory_low:analytics.inventory_low}:null} onNavigate={setSection}/>}
           {section==='negocio'&&<>
             <div className="merchant-page-heading"><div><h1>Mi negocio</h1><p>Disponibilidad e información del comercio.</p></div></div>
             <section className="merchant-store-hero">
@@ -645,6 +719,12 @@ export default function MerchantWorkspace(){
           {section==='negocio'&&<>
             <div className="merchant-settings-grid"><section className="merchant-setting-card"><span className="merchant-setting-icon"><Store size={23}/></span><h2>{restaurant?.name||'Mi comercio'}</h2><p><MapPin size={16}/>{restaurant?.address||'Dirección sin publicar'}</p><div className="merchant-setting-row"><span>Verificación</span><strong>{restaurant?.verification_status||'Sin información'}</strong></div><div className="merchant-setting-row"><span>Pedidos para recoger</span><strong>{restaurant?.pickup_enabled?'Habilitados':'Deshabilitados'}</strong></div></section>
               <section className="merchant-setting-card"><span className="merchant-setting-icon"><Clock3 size={23}/></span><h2>Disponibilidad</h2><p>El estado se confirma con el backend al guardar.</p><div className={'merchant-availability '+(restaurant?.is_open?'is-open':'')}><span className="merchant-status-dot"/><strong>{restaurant?.is_open?'Tu negocio está abierto':'Tu negocio está cerrado'}</strong></div><button className="merchant-main-button" disabled={savingStore||menuMutating||!restaurant||!online} onClick={()=>void toggleStore()}>{savingStore?'Guardando…':restaurant?.is_open?'Cerrar temporalmente':'Abrir comercio'}<ChevronRight size={17}/></button><small>Para abrir, el servidor puede exigir verificación del comercio. Esta acción no modifica métodos de pago ni permisos financieros.</small></section></div>
+            <section className="merchant-crece-entry" aria-label="Accede a Tala Eats Crece">
+              <div className="merchant-crece-entry-mark"><Sprout size={24}/></div>
+              <div><span className="merchant-kicker">TALA EATS CRECE</span><h2>Herramientas y acompañamiento para tu negocio</h2>
+              <p>Conoce tus beneficios, prepara tu perfil, comparte tu tienda y revisa un ejemplo transparente de comisiones.</p></div>
+              <button type="button" onClick={()=>setSection('crece')}>Explorar Crece <ChevronRight size={17}/></button>
+            </section>
           </>}
         </>}
       </div>
@@ -667,6 +747,6 @@ export default function MerchantWorkspace(){
         <div className="merchant-detail-actions"><button type="button" className="merchant-print-button" onClick={()=>window.print()} aria-label="Imprimir comanda del pedido"><Printer size={17}/> Imprimir comanda</button>{selectedOrder.status==='received'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'confirmed')}>Aceptar pedido <ChevronRight size={17}/></button>}{selectedOrder.status==='confirmed'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'preparing')}>Iniciar preparación <ChevronRight size={17}/></button>}{selectedOrder.status==='preparing'&&<button type="button" disabled={busyOrder!==null||!ordersFresh||menuMutating||!orderPaymentConfirmed(selectedOrder)} className="merchant-order-action" onClick={()=>void changeStatus(selectedOrder.id,'ready')}>Marcar como listo <ChevronRight size={17}/></button>}</div>
       </section>
     </div>}
-    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.map(n=><button key={n.id} type="button" className={section===n.id?'active':''} aria-current={section===n.id?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
+    <nav className="merchant-mobile-nav" aria-label="Navegación inferior del restaurante">{NAV.filter(n=>n.id!=='crece').map(n=><button key={n.id} type="button" className={section===n.id||(section==='crece'&&n.id==='negocio')?'active':''} aria-current={section===n.id||(section==='crece'&&n.id==='negocio')?'page':undefined} onClick={()=>setSection(n.id)}><n.icon size={21}/><span>{n.mobileLabel}</span>{n.id==='pedidos'&&newCount>0&&<i>{newCount}</i>}</button>)}</nav>
   </div>;
 }

@@ -1,0 +1,232 @@
+/* Tala Eats Crece — scoped responsive section; no changes to ordering or wallet UI. */
+.crece-shell{display:grid;gap:34px;min-width:0;color:#202a31}
+.crece-hero{background:radial-gradient(ellipse at 88% 20%,#fba86f30,transparent 47%),linear-gradient(118deg,#191c20,#2b2c30 80%);border-radius:24px;padding:clamp(24px,4vw,42px);color:#fff;overflow:hidden;position:relative}
+.crece-overline,.crece-kicker{display:inline-flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.13em;font-size:10px;font-weight:850}
+.crece-overline{color:#ffbb90}.crece-kicker{color:#dd7033;margin-bottom:10px}
+.crece-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 160px;align-items:center;gap:22px}
+.crece-hero h1{font-size:clamp(30px,4vw,52px);color:#fff;line-height:1.08;margin:18px 0 16px;max-width:690px}
+.crece-hero p{font-size:14px;line-height:1.7;color:#d4d5d8;max-width:610px;margin:0 0 20px}
+.crece-hero-points{display:flex;gap:11px;flex-wrap:wrap}
+.crece-hero-points span{display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid #ffffff26;background:#ffffff11;border-radius:10px;color:#eceded;font-size:11px;font-weight:700}
+.crece-hero-points svg{color:#faa878}
+.crece-hero-emblem{min-height:175px;border:1px solid #ffffff20;border-radius:30px;background:linear-gradient(155deg,#ffffff19,#ffffff06);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#ffad73;transform:rotate(5deg)}
+.crece-hero-emblem span{font-size:12px;letter-spacing:.3em;font-weight:900}
+.crece-briefs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crece-briefs>div{padding:22px;border:1px solid #e9ebed;background:white;border-radius:18px;display:grid;gap:5px}
+.crece-briefs strong{font-size:30px;color:#1f252b;letter-spacing:-.07em}
+.crece-briefs span{font-size:11px;line-height:1.55;color:#78838d;max-width:190px}
+.crece-section-heading{display:flex;align-items:end;justify-content:space-between;gap:20px}
+.crece-section-heading h2,.crece-share h2{margin:0 0 8px;font-size:clamp(22px,3vw,29px);letter-spacing:-.04em}
+.crece-section-heading p,.crece-share p{font-size:13px;color:#7a8591;line-height:1.65;max-width:760px;margin:0}
+.crece-pillar-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.crece-pillar{background:white;border:1px solid #e6e9ed;border-radius:16px;padding:20px 14px;display:flex;flex-direction:column;gap:8px;min-height:145px}
+.crece-pillar>span{display:grid;place-items:center;width:38px;height:38px;background:#fff2e8;color:#d96824;border-radius:12px}
+.crece-pillar svg{width:20px;height:20px}.crece-pillar strong{font-size:13px;line-height:1.25}.crece-pillar small{font-size:11px;color:#838d96;line-height:1.5}
+.crece-founder-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.crece-founder-card{background:#fff;border:1px solid #e7eaed;padding:23px;border-radius:17px;display:grid;gap:12px;align-content:start}
+.crece-founder-card svg{color:#e87634}.crece-founder-card strong{font-size:15px}.crece-founder-card span{font-size:12px;color:#7d8792;line-height:1.6}
+.crece-disclaimer,.crece-footer-note{font-size:11px;line-height:1.7;color:#7a8691;margin:-22px 0 0}
+.crece-share{background:#fff;border:1px solid #e7e9ed;border-radius:21px;padding:clamp(22px,4vw,34px);display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,260px);gap:30px;align-items:center}
+.crece-share h2{margin-bottom:10px}.crece-share p{margin-bottom:20px}
+.crece-link-label{font-weight:800;display:block;color:#505d65;font-size:11px;margin:0 0 8px}
+.crece-link-field{display:flex;gap:7px;max-width:600px}
+.crece-link-field input{flex:1;min-width:0;border:1px solid #dfe4e7;border-radius:10px;padding:12px 13px;color:#4c5b65;background:#f8f9fa;font-size:13px}
+.crece-link-field button,.crece-share-message,.crece-recommend-card button,.crece-more{border:0;background:#ef772f;color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 13px;border-radius:10px;font-size:12px;font-weight:800}
+.crece-share-message{margin-top:9px;background:#272d32}
+.crece-qr-panel{background:#f9fafb;border:1px solid #edf0f1;border-radius:18px;padding:18px;display:grid;justify-items:center;gap:9px;text-align:center}
+.crece-qr-panel img{max-width:100%;height:auto;border-radius:8px}.crece-qr-panel>span{font-size:12px;font-weight:800}.crece-qr-panel>small{font-size:10px;color:#8b949b}
+.crece-qr-empty{min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#b6bfc8}
+.crece-qr-empty small{max-width:175px;font-size:11px;line-height:1.5;color:#858e97}
+.crece-no-link,.crece-data-empty{font-size:12px;background:#f8f9fa;border:1px solid #e8ebee;border-radius:12px;padding:17px;color:#65727d;line-height:1.65}
+.crece-no-link code{font-size:11px;overflow-wrap:anywhere}.crece-feedback{font-size:11px;color:#27764b;font-weight:700;margin:8px 0}
+.crece-recommend{display:grid;gap:18px}
+.crece-recommend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.crece-recommend-card{display:flex;gap:17px;border:1px solid #e7e9ec;border-radius:16px;background:#fff;padding:22px;align-items:start}
+.crece-recommend-card>span{background:#fff0e6;border-radius:12px;padding:11px;color:#de7234}
+.crece-recommend-card h3{font-size:15px;margin:0 0 7px}
+.crece-recommend-card p{font-size:12px;line-height:1.6;color:#78838c;margin:0 0 13px}
+.crece-recommend-card button{background:transparent;padding:0;color:#d86a2b}
+.crece-directory{display:grid;gap:17px}
+.crece-filters{display:flex;flex-wrap:wrap;gap:8px}
+.crece-filters button{border:1px solid #e1e5e9;border-radius:10px;background:#fff;font-size:12px;color:#6a737d;padding:10px 13px;font-weight:750}
+.crece-filters button.selected{background:#24272c;border-color:#24272c;color:white}
+.crece-directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crece-benefit{padding:21px;border:1px solid #e7ebed;background:#fff;border-radius:16px;display:grid;align-content:start;gap:10px}
+.crece-benefit-status{justify-self:start;font-weight:800;font-size:10px;border-radius:7px;padding:6px 8px;background:#eef8f1;color:#22784d}
+.crece-benefit-status.asistido{background:#fff3e6;color:#a75b22}.crece-benefit-status.planeado{background:#f1f3f5;color:#757d86}
+.crece-benefit h3{font-size:14px;margin:3px 0 0}.crece-benefit p{font-size:12px;color:#72808a;line-height:1.58;margin:0}
+.crece-benefit small{font-size:10px;color:#98a0a7;margin-top:5px}
+.crece-more{justify-self:center;background:#fff;color:#d36d32;border:1px solid #e7e9ed}
+.crece-flip{transform:rotate(180deg)}
+.crece-footer-note{margin:0;display:flex;gap:12px;align-items:start;background:#f8f9fa;padding:17px;border-radius:13px}
+.crece-footer-note p{margin:0}.crece-footer-note svg{flex:0 0 auto;color:#e47434}
+@media(max-width:1100px){.crece-pillar-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.crece-directory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ .crece-shell{gap:26px}
+ .crece-hero-grid{grid-template-columns:1fr}.crece-hero-emblem{display:none}
+ .crece-briefs{gap:7px}.crece-briefs>div{padding:14px}.crece-briefs strong{font-size:23px}.crece-briefs span{font-size:10px}
+ .crece-pillar-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .crece-pillar{min-height:132px}
+ .crece-founder-grid{grid-template-columns:1fr}.crece-founder-card{padding:18px}
+ .crece-share{grid-template-columns:1fr}.crece-qr-panel{width:min(100%,300px);justify-self:center}
+ .crece-recommend-grid{grid-template-columns:1fr}.crece-directory-grid{grid-template-columns:1fr}
+ .crece-link-field{flex-direction:column}.crece-link-field button{min-height:44px}
+ .crece-share-message{min-height:44px}.crece-disclaimer{margin:-13px 0 0}
+ .merchant-mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;padding-left:3px!important;padding-right:3px!important}
+ .merchant-mobile-nav button{font-size:9px!important;min-width:0;gap:4px!important;padding:4px 0!important}
+ .merchant-mobile-nav svg{width:19px;height:19px}
+}
+@media(max-width:370px){.crece-pillar-grid{grid-template-columns:1fr}.crece-hero{padding:23px}.crece-hero h1{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.crece-shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Public-facing Crece view is educational; it neither submits a lead nor impersonates support. */
+.merchant-crece-discover{width:100%;margin-top:15px;padding:13px;border:1px solid #efbe9e;background:#fff8f2;border-radius:10px;color:#c46a32;font-weight:800;font-size:12px}
+.crece-public{min-height:100dvh;background:#f6f7f8;color:#26303a;font:inherit}
+.crece-public-top{max-width:1220px;margin:0 auto;padding:25px 24px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.crece-public-brand{display:flex;gap:9px;align-items:center;font-weight:850;font-size:21px}
+.crece-public-brand svg,.crece-public-brand b{color:#e47738}
+.crece-public-brand small{font-size:10px;letter-spacing:.12em;margin-left:8px;color:#c16f37}
+.crece-public-top button,.crece-public-hero button,.crece-public-bottom button{border:1px solid #dfe2e4;background:white;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 17px;font-weight:800;font-size:12px;color:#2c3238}
+.crece-public-inner{max-width:1220px;margin:auto;padding:10px 24px 90px;display:grid;gap:56px}
+.crece-public-hero{background:radial-gradient(ellipse at 88% 20%,#ed7c3150,transparent 40%),linear-gradient(120deg,#15191c,#2d3032);padding:clamp(28px,6vw,70px);border-radius:26px;color:white}
+.crece-public-hero h1{color:white;font-size:clamp(34px,5vw,61px);max-width:850px;line-height:1.05;margin:20px 0}
+.crece-public-hero p{max-width:680px;color:#d0d2d5;font-size:15px;line-height:1.7;margin-bottom:25px}
+.crece-public-hero button,.crece-public-bottom button{background:#ed7731;color:white;border-color:#ed7731}
+.crece-public-terms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.crece-public-terms>div{display:grid;gap:7px;background:white;border:1px solid #e7eaed;border-radius:17px;padding:22px}
+.crece-public-terms strong{font-size:31px;letter-spacing:-.04em}
+.crece-public-terms span{color:#7b858e;font-size:12px;line-height:1.5}
+.crece-public-section h2{font-size:clamp(25px,4vw,37px);margin:0 0 21px}
+.crece-public-pillars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.crece-public-pillars article{background:white;border:1px solid #e9ecee;border-radius:15px;padding:20px 16px;min-height:151px}
+.crece-public-pillars article>span{color:#e87533}.crece-public-pillars svg{width:23px;height:23px}
+.crece-public-pillars strong{display:block;font-size:13px;margin:14px 0 5px}
+.crece-public-pillars p{color:#8a929b;font-size:11px;line-height:1.5}
+.crece-public-founder{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.crece-public-founder>div{background:#fff;border:1px solid #e9ecee;border-radius:16px;padding:23px;display:grid;gap:12px}
+.crece-public-founder svg{color:#e87533}.crece-public-founder strong{font-size:14px}
+.crece-public-founder span{font-size:12px;color:#7e8991;line-height:1.6}
+.crece-public-note{font-size:12px;color:#89939b;margin:14px 0 0;line-height:1.6}
+.crece-public-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crece-public-benefits article{border:1px solid #e9ecee;background:#fff;border-radius:14px;padding:21px}
+.crece-public-benefits h3{font-size:14px;margin:13px 0 7px}
+.crece-public-benefits p{font-size:12px;line-height:1.6;color:#7e8a93;margin:0}
+.crece-public-more{margin-top:14px;background:white;border:1px solid #e1e6e9;border-radius:11px;color:#cc6f34;padding:13px 17px;font-weight:800;font-size:12px;display:flex;align-items:center;gap:9px}
+.crece-public-bottom{display:flex;justify-content:space-between;gap:30px;align-items:center;border-radius:21px;background:#252b30;color:white;padding:40px}
+.crece-public-bottom h2{color:white;font-size:27px;max-width:600px;margin:0 0 12px}
+.crece-public-bottom p{color:#c0c6c9;max-width:680px;line-height:1.6;font-size:12px;margin:0}
+.crece-public-bottom button{flex-shrink:0}
+@media(max-width:980px){.crece-public-pillars{grid-template-columns:repeat(3,minmax(0,1fr))}.crece-public-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.crece-public-inner{padding:10px 14px 60px;gap:40px}.crece-public-top{padding:19px 14px}.crece-public-brand{font-size:17px}.crece-public-brand small{font-size:9px}.crece-public-top button{font-size:10px;padding:10px}.crece-public-terms{gap:7px}.crece-public-terms>div{padding:12px}.crece-public-terms strong{font-size:21px}.crece-public-terms span{font-size:10px}.crece-public-pillars{grid-template-columns:repeat(2,minmax(0,1fr))}.crece-public-founder{grid-template-columns:1fr}.crece-public-benefits{grid-template-columns:1fr}.crece-public-bottom{flex-direction:column;align-items:start;padding:27px}.crece-public-hero{padding:29px 23px}.crece-public-hero h1{font-size:36px}}
+
+
+/* RC171: no QR or share action before public listing + detail have passed. */
+.crece-readiness{display:grid;gap:19px}
+.crece-readiness-layout{display:grid;grid-template-columns:minmax(210px,300px) minmax(0,1fr);gap:12px}
+.crece-readiness-score,.crece-readiness-list{background:#fff;border:1px solid #e7eaed;border-radius:18px}
+.crece-readiness-score{padding:26px;display:flex;flex-direction:column;gap:13px}
+.crece-readiness-score>span{font-size:11px;color:#79848d;font-weight:800}
+.crece-readiness-score>strong{font-size:44px;letter-spacing:-.08em}
+.crece-readiness-score>strong small{font-size:18px;color:#929ba3;letter-spacing:0}
+.crece-readiness-score progress{width:100%;height:8px;appearance:none;border:0;border-radius:100px;overflow:hidden;background:#f1f2f4}
+.crece-readiness-score progress::-webkit-progress-bar{background:#f1f2f4}
+.crece-readiness-score progress::-webkit-progress-value{background:#e77b37;border-radius:100px}
+.crece-readiness-score progress::-moz-progress-bar{background:#e77b37}
+.crece-readiness-score p{font-size:11px;line-height:1.65;color:#818c95;margin:0}
+.crece-readiness-list{overflow:hidden}
+.crece-readiness-item{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid #eff1f3}
+.crece-readiness-item:last-child{border:0}
+.crece-readiness-item>span{display:grid;place-items:center;width:25px;height:25px;border-radius:100px;border:1px solid #e1e4e7;color:#9ba5ae}
+.crece-readiness-item>span.done{border-color:#def2e5;background:#eaf7ef;color:#2a935b}
+.crece-readiness-item>div strong{font-size:12px;color:#34414b}
+.crece-readiness-item>div p{font-size:11px;color:#87919b;line-height:1.55;margin:5px 0 0}
+.crece-readiness-item button,.crece-retry{display:inline-flex;align-items:center;gap:6px;background:none;color:#cc6a32;border:0;font-size:11px;font-weight:800;padding:8px 0}
+.crece-retry{margin-top:9px;text-align:left}
+.crece-readiness-item button:focus-visible,.crece-retry:focus-visible{outline:3px solid #e99669;outline-offset:2px;border-radius:4px}
+@media(max-width:850px){.crece-readiness-layout{grid-template-columns:1fr}.crece-readiness-score{padding:19px}}
+@media(max-width:520px){.crece-readiness-item{grid-template-columns:26px minmax(0,1fr);padding:15px;gap:10px}.crece-readiness-item button{grid-column:2;justify-self:start}.crece-readiness-score>strong{font-size:35px}}
+
+
+/* RC171 financial transparency: purely local half-up centavo calculator. */
+.crece-calculator{display:grid;gap:23px;background:#fff;border:1px solid #e7eaed;border-radius:22px;padding:clamp(21px,3vw,35px);min-width:0}
+.crece-calculator-heading{display:flex;align-items:start;gap:15px}
+.crece-calculator-icon{display:grid;place-items:center;flex-shrink:0;width:47px;height:47px;border-radius:14px;background:#fff0e5;color:#dc6e2b}
+.crece-calculator-heading h2{font-size:clamp(20px,3vw,28px);margin:0 0 8px;letter-spacing:-.04em}
+.crece-calculator-heading p{font-size:12px;color:#7b8690;line-height:1.6;margin:0}
+.crece-calculator-content{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:25px;align-items:start}
+.crece-calculator-input label{display:block;font-size:12px;font-weight:800;margin:0 0 8px;color:#4b5760}
+.crece-calculator-input-field{display:flex;align-items:center;border:1px solid #dfe3e7;border-radius:13px;gap:8px;padding:0 15px;background:#f9fafb;transition:border-color .2s,box-shadow .2s}
+.crece-calculator-input-field:focus-within{border-color:#e68b52;box-shadow:0 0 0 3px #e9915222}
+.crece-calculator-input-field>span{color:#a2aab0;font-size:23px;font-weight:800}
+.crece-calculator-input-field input{width:100%;min-width:0;padding:16px 2px;border:0;outline:0;background:transparent;font-size:23px;font-weight:800;letter-spacing:-.03em;color:#2b3339}
+.crece-calculator-input-field small{font-size:11px;color:#89949e;font-weight:800}
+.crece-calculator-input>p{font-size:11px;line-height:1.5;color:#85919b;margin:10px 0 16px}
+.crece-calculator-policy{display:flex;gap:9px;border-radius:11px;background:#f6f8f9;padding:14px;font-size:11px;line-height:1.6;color:#606d76}
+.crece-calculator-policy svg{flex-shrink:0;color:#42815d}
+.crece-calculator-results{background:#f8f9fa;border:1px solid #edf0f1;border-radius:16px;padding:18px;display:grid;gap:13px}
+.crece-calculator-results>div{display:flex;justify-content:space-between;align-items:start;gap:15px;font-size:12px;color:#75818a}
+.crece-calculator-results>div strong{color:#2c333a;white-space:nowrap;font-variant-numeric:tabular-nums}
+.crece-calculator-results .crece-calculator-total{padding:16px 0;border-block:1px solid #e5e9eb;align-items:center;color:#323e46;font-weight:800}
+.crece-calculator-total strong{color:#d7652b!important;font-size:clamp(19px,3vw,26px);letter-spacing:-.04em}
+.crece-calculator-error{color:#a43f38;line-height:1.6;font-size:12px;margin:0}
+.crece-calculator-legal{display:flex;gap:9px;align-items:start;color:#8b969f;font-size:11px;line-height:1.7;margin:0}
+.crece-calculator-legal svg{flex-shrink:0;color:#df7735;margin-top:1px}
+@media(max-width:680px){.crece-calculator-content{grid-template-columns:1fr}.crece-calculator-heading{gap:10px}.crece-calculator-icon{width:40px;height:40px}.crece-calculator{padding:20px}.crece-calculator-results{padding:15px}.crece-calculator-input-field input{font-size:21px}}
+
+/* Crece is one sub-area of My Business: do not add a sixth tiny bottom tab. */
+.merchant-crece-entry{display:flex;align-items:center;gap:16px;border:1px solid #e5e9ed;background:linear-gradient(115deg,#fffaf6,#fff);border-radius:18px;padding:23px;min-width:0}
+.merchant-crece-entry-mark{flex:0 0 auto;display:grid;place-items:center;background:#fff0e5;color:#dc6e2a;width:50px;height:50px;border-radius:15px}
+.merchant-crece-entry>div:nth-child(2){flex:1;min-width:0}
+.merchant-crece-entry h2{font-size:16px;margin:4px 0 6px}
+.merchant-crece-entry p{font-size:12px;line-height:1.6;color:#7b858e;margin:0}
+.merchant-crece-entry button{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:0;background:#222830;color:#fff;font-size:12px;font-weight:800;border-radius:10px;min-height:44px;padding:12px 16px}
+.merchant-crece-entry button:focus-visible{outline:3px solid #ef9e6a;outline-offset:3px}
+@media(max-width:650px){.merchant-crece-entry{flex-wrap:wrap;padding:20px}.merchant-crece-entry button{width:100%;justify-content:center}.merchant-crece-entry-mark{width:42px;height:42px}}
+
+
+/* Public Crece FAQ uses native details/summary for keyboard/assistive support. */
+.crece-public-faq{display:grid;gap:23px;min-width:0}
+.crece-public-faq .crece-section-heading h2{font-size:clamp(25px,3vw,35px);margin:0 0 7px}
+.crece-public-faq .crece-section-heading p{font-size:12px;color:#7e8992;line-height:1.6;margin:0}
+.crece-public-faq-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;align-items:start}
+.crece-public-faq-list details{background:#fff;border:1px solid #e7eaed;border-radius:14px;min-width:0;overflow:hidden}
+.crece-public-faq-list summary{position:relative;cursor:pointer;font-size:13px;line-height:1.45;color:#2c373f;font-weight:800;padding:20px 45px 20px 21px;list-style:none}
+.crece-public-faq-list summary::-webkit-details-marker{display:none}
+.crece-public-faq-list summary::after{content:'+';position:absolute;right:20px;top:17px;color:#dd793c;font-size:20px}
+.crece-public-faq-list details[open] summary::after{content:'−'}
+.crece-public-faq-list details[open]{border-color:#efc9b5}
+.crece-public-faq-list details p{font-size:12px;line-height:1.7;color:#71808a;padding:0 21px 21px;margin:0}
+.crece-public-faq-list summary:focus-visible{outline:3px solid #e89863;outline-offset:-4px;border-radius:12px}
+@media(max-width:750px){.crece-public-faq-list{grid-template-columns:1fr}.crece-public-faq-list summary{padding:18px 45px 18px 18px}}
+
+
+/* User-initiated contact only; nothing is sent on page load. */
+.crece-public-hero-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.crece-public-hero-actions .crece-contact-link,.crece-public-bottom .crece-contact-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:13px 17px;background:#ed7731;color:white;text-decoration:none;font-weight:800;font-size:12px;min-height:44px}
+.crece-public-hero-actions .crece-contact-link:hover,.crece-public-bottom .crece-contact-link:hover{background:#d35e1b;color:white}
+.crece-contact-link:focus-visible{outline:3px solid #f8b589;outline-offset:3px}
+.crece-public-bottom .crece-contact-link{flex-shrink:0}
+@media(max-width:480px){.crece-public-hero-actions{flex-direction:column;align-items:stretch}.crece-public-hero-actions .crece-contact-link{width:100%}}
+
+
+/* Merchant QR action is a local PNG generated on-device, never sent to an external API. */
+.crece-qr-download{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;padding:11px 13px;min-height:44px;max-width:100%;border-radius:10px;background:#242b31;color:#fff;text-decoration:none;font-weight:800;font-size:12px;transition:background .15s}
+.crece-qr-download:hover{background:#df7433;color:white}
+.crece-qr-download:focus-visible{outline:3px solid #e89a62;outline-offset:3px}
+@media(max-width:440px){.crece-qr-download{width:100%;font-size:11px}}
+
+
+/* Cross-site reality check: owner can open the actual Clientes URL, not only the API. */
+.crece-public-test-link{display:inline-flex;align-items:center;gap:7px;max-width:100%;margin:12px 0;text-decoration:underline;text-underline-offset:3px;color:#b65f2d;font-size:12px;font-weight:800}
+.crece-public-test-link:hover{color:#8f4218}
+.crece-public-test-link:focus-visible{outline:3px solid #e59a66;outline-offset:3px;border-radius:4px}
+
+
+/* RC174 benefit actions: all 27 cards lead to a real safe next step. */
+.crece-benefit-action{margin-top:6px;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;padding:10px 12px;border:1px solid #e7b691;border-radius:10px;background:#fff9f3;color:#a95823;font-weight:800;font-size:11px;cursor:pointer;text-align:center}
+.crece-benefit-action:hover{background:#fff0e2;border-color:#e38c48}
+.crece-benefit-action:focus-visible{outline:3px solid #efa96f;outline-offset:3px}
+.crece-benefit-action svg{flex:0 0 auto}
+.crece-benefit:has(.crece-benefit-action){display:flex;flex-direction:column}
+.crece-benefit .crece-benefit-action{margin-top:auto}
+#crece-calculator,#crece-recommend,#crece-share{scroll-margin-top:20px}

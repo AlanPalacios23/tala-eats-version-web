@@ -1280,3 +1280,15 @@
 .merchant-logout:focus-visible{outline:2px solid #dd7c41;outline-offset:3px}
 .merchant-logout:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:760px){.merchant-logout{width:40px;height:40px;min-height:40px;flex-basis:40px}.merchant-toolbar-actions{gap:6px}}
+
+
+/* Crece operational archive: quiet, accessible, touch-friendly and isolated
+ * from kitchen/order mutation controls. */
+.merchant-report-export{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:20px 22px;margin:22px 0;border:1px solid #e5e9ed;border-radius:16px;background:var(--surface,#fff)}
+.merchant-report-export h2{font-size:16px;line-height:1.35;margin:0 0 6px;color:inherit}
+.merchant-report-export p{max-width:620px;font-size:12px;line-height:1.65;margin:0;color:var(--muted,#707780)}
+.merchant-report-export small{display:block;color:#a95420;font-size:12px;font-weight:700;margin-top:8px}
+.merchant-report-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.merchant-report-actions button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.merchant-report-actions button:focus-visible{outline:3px solid #e9a56c;outline-offset:3px}
+@media(max-width:600px){.merchant-report-export{padding:16px;align-items:stretch}.merchant-report-actions{width:100%}.merchant-report-actions button{width:100%}}
