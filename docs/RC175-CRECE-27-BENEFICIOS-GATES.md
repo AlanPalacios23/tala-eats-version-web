@@ -68,3 +68,21 @@ La PWA incorpora 27 acciones seguras y distinguibles: navegar a una funcionalida
 7. Firma comercial y aprobación final antes de publicar beneficios para usuarios reales.
 
 **Prohibiciones:** no llamar LIVE a un borrador, no atribuir ventas garantizadas, no prometer retiros automáticos sin conciliación, no crear una segunda pila de backend, no usar Docker en Kali y no migrar SQL LAB contra PostgreSQL LIVE.
+
+## RC176 — historial operativo ampliado de Restaurantes (21/nov/2026)
+
+**Beneficios mejorados: #19 rendimiento histórico y #20 exportar pedidos.** La PWA incorpora en `Rendimiento` un botón `Exportar historial CSV` distinto del exportador rápido de la cola de cocina. La consulta usa **exclusivamente el endpoint autenticado ya existente** `/api/v1/owner/orders?limit=100&offset=N`, con hasta 20 páginas (2,000 pedidos) y posibilidad de cancelar. No crea endpoints, operaciones financieras ni backend adicional.
+
+Protecciones:
+- Valida ID de comercio en **cada** pedido devuelto por el servidor. Una mezcla de negocios impide generar cualquier archivo.
+- Detecta páginas duplicadas (cambios concurrentes/servidor que ignora `offset`) y **aborta sin descargar un CSV potencialmente incompleto**.
+- Rechaza totales imposibles, JSON defectuoso y respuestas de tamaño superior al límite.
+- Solo exporta las columnas operativas existentes: pedido, fecha, estado, modalidad, método y estado de pago, número de artículos y total reportado por la API. **No incluye nombres de clientes, teléfonos, direcciones de entrega ni PIN**.
+- Cancela la lectura si el usuario cambia de negocio, cierra sesión o pulsa cancelar. Un fallo a mitad del proceso no genera una exportación engañosa.
+- Si alcanza 2,000 registros, la PWA advierte que puede haber más. Incluso si termina, los resultados de paginación por `OFFSET` no equivalen a un snapshot transaccional ni a una conciliación fiscal de M8.
+
+**Pruebas automatizadas:** 250 pedidos de 3 páginas, 2,000 máximos, páginas exactamente llenas, abortos, filas ajenas, cambios entre páginas y entradas malformadas. Es una mejora directa de **dos** beneficios operativos; no cambia los otros 25 ni promete que Core v2 LIVE esté listo.
+
+**Por validar antes del despliegue:** payload real de `/owner/orders`, volumen/latencia de Kali, sesión actual, Excel/Numbers iOS, conexión móvil intermitente y límites de memoria del teléfono. Guardar datos operativos en el dispositivo requiere protección por parte del propietario; los CSV no son documentos fiscales.
+
+[Core v2 PR #24](https://github.com/AlanPalacios23/Tala-Eats-NewBackend/pull/24) también refuerza la atención humana en LAB: la bandeja ADMIN de 7 beneficios asistidos ahora usa paginación por cursor y filtros de estado, y el propietario puede consultar una cronología de su solicitud sin acceder a información de otros negocios. **Sin interfaz HTTP LIVE todavía.**
