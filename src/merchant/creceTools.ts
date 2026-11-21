@@ -34,7 +34,7 @@ export const CRECE_ACTIONS:Readonly<Record<CreceBenefit['id'],CreceAction>>=Obje
  combos:{kind:'draft',label:'Diseñar combo de productos'},
  sucursales:{kind:'draft',label:'Planificar nueva sucursal'},
  reporte:navigate('rendimiento'),
- exportar:navigate('pedidos'),
+ exportar:{kind:'navigate',destination:'rendimiento',label:'Exportar historial CSV'},
  wallet:navigate('wallet'),
  comisiones:{kind:'section',destination:'crece-calculator',label:'Ver simulador de comisión'},
  soporte:{kind:'assisted',label:'Solicitar orientación local'},
