@@ -14,6 +14,7 @@ import MerchantWallet from './MerchantWallet';
 import MerchantInstallCard from './MerchantInstallCard';
 import MerchantUpdateBanner from './MerchantUpdateBanner';
 import MerchantCrece from './MerchantCrece';
+import {fetchCreceOrderReport,CRECE_REPORT_PAGE_SIZE,CRECE_REPORT_PAGE_LIMIT} from './creceOrderReport';
 import './merchant.css';
 
 type Section = 'pedidos' | 'menu' | 'rendimiento' | 'wallet' | 'negocio' | 'crece';
@@ -315,6 +316,10 @@ export default function MerchantWorkspace(){
   const [restaurant,setRestaurant]=useState<Restaurant|null>(null);
   const [orders,setOrders]=useState<Order[]>([]);
   const [analytics,setAnalytics]=useState<OwnerAnalytics|null>(null);
+  const reportAbort=useRef<AbortController|null>(null);
+  const [exportingHistory,setExportingHistory]=useState(false);
+  const [historyProgress,setHistoryProgress]=useState(0);
+  useEffect(()=>()=>{reportAbort.current?.abort();},[restaurant?.id]);
   const [errors,setErrors]=useState<{restaurant?:string;orders?:string;analytics?:string}>({});
   const [loading,setLoading]=useState(true);
   const [refreshing,setRefreshing]=useState(false);
@@ -429,6 +434,57 @@ export default function MerchantWorkspace(){
     window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
   };
 
+  /** Operational report, not accounting reconciliation. Reads existing
+   * authenticated owner endpoint and never modifies the live kitchen queue.
+   */
+  const exportCreceHistory=async()=>{
+    if(reportAbort.current||!online||!restaurant||
+       errors.orders||loading)return;
+    const storeId=restaurant.id;
+    const controller=new AbortController();
+    reportAbort.current=controller;
+    setExportingHistory(true);setHistoryProgress(0);
+    setNotice('');setNoticeError(false);
+    try{
+      const result=await fetchCreceOrderReport({
+        storeId,signal:controller.signal,
+        fetchPage:(offset,limit,signal)=>api.ownerOrdersPage(offset,limit,signal),
+        onProgress:(_,count)=>setHistoryProgress(count)
+      });
+      if(controller.signal.aborted)return;
+      if(result.orders.length===0){
+        setNotice('No hay pedidos disponibles para exportar en la API del restaurante.');
+        return;
+      }
+      const csv=exportOrderSummaryCsv([...result.orders]);
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+      link.href=url;
+      link.download='tala-eats-historial-operativo-'+storeId+'-'+
+        new Date().toISOString().slice(0,10)+'.csv';
+      document.body.appendChild(link);link.click();link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url),30_000);
+      setNotice('Se descargó una vista operativa de '+result.orders.length+
+        ' pedidos en '+result.pagesRead+' páginas.'+
+        (result.truncated?' Se alcanzó el límite de '+
+         (CRECE_REPORT_PAGE_SIZE*CRECE_REPORT_PAGE_LIMIT)+
+         ' registros; puede haber más pedidos.':'')+
+        ' No sustituye una conciliación contable y puede cambiar si entran pedidos.');
+    }catch(error){
+      if(controller.signal.aborted)return;
+      const code=error instanceof Error?error.message:'';
+      const reason=code==='CRECE_REPORT_PAGES_OVERLAP'?
+        'El catálogo cambió durante la consulta o repitió registros. No se generó un reporte incompleto.':
+        code==='CRECE_REPORT_RESPONSE_INVALID'?
+        'La API devolvió un registro inválido o de otro comercio. No se descargó el archivo.':
+        'No se pudo completar la consulta del historial. No se descargó el archivo.';
+      setNoticeError(true);setNotice(reason);
+    }finally{
+      if(reportAbort.current===controller)reportAbort.current=null;
+      setExportingHistory(false);
+    }
+  };
   const exitMerchant=async()=>{
     if(loggingOut||mutationInFlight.current||menuMutationInFlight.current||
       dirtyMenuRows.current.size>0||addDraftPending.current){
@@ -436,6 +492,7 @@ export default function MerchantWorkspace(){
       setNotice('Finaliza operaciones y guarda o deshaz tus cambios antes de cerrar sesión.');
       return;
     }
+    reportAbort.current?.abort();
     setLoggingOut(true);
     try{await logout();}
     catch(e){setNoticeError(true);setNotice(errorMessage(e));}
@@ -625,6 +682,20 @@ export default function MerchantWorkspace(){
                 <button type="button" className="merchant-insight-button" onClick={()=>{setSection('menu');setMenuFilter('bajo');setMenuSearch('');setMenuCategory('')}}>Revisar existencias <ChevronRight size={17}/></button>
               </section>
             </div>
+            <section className="merchant-report-export" aria-label="Exportación ampliada de pedidos">
+              <div><h2>Historial operativo ampliado</h2>
+                <p>Consulta hasta {CRECE_REPORT_PAGE_SIZE*CRECE_REPORT_PAGE_LIMIT} pedidos del comercio desde la API, sin direcciones, teléfonos ni PIN. La lectura es paginada y no equivale a un estado de cuenta o factura.</p>
+                {exportingHistory&&<small role="status">Consultando historial: {historyProgress} pedidos recibidos…</small>}
+              </div>
+              <div className="merchant-report-actions">
+                <button type="button" disabled={!online||!restaurant||Boolean(errors.orders)||exportingHistory}
+                  className="merchant-main-button" onClick={()=>void exportCreceHistory()}>
+                  <FileDown size={17}/>{exportingHistory?'Preparando historial…':'Exportar historial CSV'}
+                </button>
+                {exportingHistory&&<button type="button" className="merchant-neutral-button"
+                  onClick={()=>reportAbort.current?.abort()}>Cancelar consulta</button>}
+              </div>
+            </section>
             <button className="merchant-wallet-route" type="button" onClick={()=>setSection('wallet')}><Wallet size={19}/> Consultar wallet y liquidaciones <ChevronRight size={17}/></button>
           </>}
           {section==='wallet'&&<MerchantWallet key={restaurant?.id??'no-restaurant'} restaurantId={restaurant?.id??null}/>}
