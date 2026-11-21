@@ -66,7 +66,17 @@ export async function fetchCreceOrderReport(input:{
    if(seen.has(row.id))
     return invalid('CRECE_REPORT_PAGES_OVERLAP');
    seen.add(row.id);
-   orders.push(row);
+   // Project into an allowlist immediately. The API may return addresses,
+   // delivery PINs or customer fields that must NEVER remain in report state.
+   orders.push({
+    id:row.id,restaurant_id:row.restaurant_id,
+    status:row.status,created_at:row.created_at,
+    order_type:row.order_type,payment_method:row.payment_method,
+    payment_status:row.payment_status,total:row.total,
+    items:Array.isArray(row.items)?row.items.map(item=>({
+     name_snapshot:'',quantity:item.quantity,unit_price:'0'
+    })):[]
+   });
   }
   input.onProgress?.(page+1,orders.length);
   if(next.length<CRECE_REPORT_PAGE_SIZE)
