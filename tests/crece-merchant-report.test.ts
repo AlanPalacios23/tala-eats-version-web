@@ -30,6 +30,22 @@ describe('Tala Eats Crece: read-only, bounded merchant reporting',()=>{
   expect(result.pagesRead).toBe(3);
   expect(result.truncated).toBe(false);
  });
+ it('drops addresses, delivery PINs and customer identifiers before keeping report rows',async()=>{
+  const sensitive={...order(81),address:'Calle privada 51',
+   delivery_pin:'9845',customer_name:'Persona Cliente',
+   customer_phone:'5555555555'};
+  const result=await fetchCreceOrderReport({
+   storeId:7,fetchPage:async()=>[sensitive]
+  });
+  expect(result.orders).toHaveLength(1);
+  const kept=JSON.stringify(result.orders);
+  expect(kept).not.toContain('Calle privada');
+  expect(kept).not.toContain('9845');
+  expect(kept).not.toContain('Persona Cliente');
+  expect(kept).not.toContain('5555555555');
+  expect(kept).not.toContain('Taco'); // Even item names are not needed for CSV.
+  expect(result.orders[0]?.items[0]?.quantity).toBe(2);
+ });
  it('fails closed on mixed-store records rather than exporting another owner',async()=>{
   await expect(fetchCreceOrderReport({
    storeId:7,fetchPage:async()=>[order(1,8)]
