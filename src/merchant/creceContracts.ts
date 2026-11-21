@@ -36,7 +36,7 @@ export const CRECE_BENEFITS:readonly CreceBenefit[]=Object.freeze([
   {id:'combos',title:'Combos y paquetes',description:'Promociones de varios productos con precio versionado.',pillar:'operacion',state:'planeado',phase:2},
   {id:'sucursales',title:'Varias sucursales',description:'Visión central de diferentes sucursales para negocios que crecen.',pillar:'operacion',state:'planeado',phase:3},
   {id:'reporte',title:'Rendimiento histórico',description:'Consulta pedidos y ventas que devuelve la API de tu comercio.',pillar:'finanzas',state:'disponible',phase:1},
-  {id:'exportar',title:'Exportar vista de pedidos',description:'Descarga los pedidos visibles sin datos sensibles de entrega.',pillar:'finanzas',state:'disponible',phase:1},
+  {id:'exportar',title:'Exportar historial operativo',description:'Consulta paginada de hasta 2,000 pedidos para CSV, sin direcciones ni PIN. No sustituye conciliación contable.',pillar:'finanzas',state:'disponible',phase:1},
   {id:'wallet',title:'Wallet de consulta',description:'Revisa únicamente cifras y estados confirmados por el servidor.',pillar:'finanzas',state:'disponible',phase:1},
   {id:'comisiones',title:'Comisiones transparentes',description:'17% estándar sobre productos; políticas históricas se conservan por pedido.',pillar:'finanzas',state:'asistido',phase:1},
   {id:'soporte',title:'Acompañamiento local',description:'Capacitación y orientación durante el piloto.',pillar:'crecimiento',state:'asistido',phase:1},
